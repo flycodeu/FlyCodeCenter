@@ -1,0 +1,74 @@
+---
+export interface Props {
+  title: string;
+  desc?: string;
+  url?: string;
+  icon?: string;
+}
+
+const { title, desc, url, icon } = Astro.props;
+---
+<a href={url || "#"} target={url ? "_blank" : "_self"} class="custom-link-card">
+  <div class="card-icon">{icon || "🔗"}</div>
+  <div class="card-content">
+    <div class="card-title">{title}</div>
+    {desc && <div class="card-desc">{desc}</div>}
+  </div>
+</a>
+
+<style>
+  .custom-link-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+    margin: 1.5rem 0;
+  }
+  .custom-link-card:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 12px 24px -8px color-mix(in oklab, var(--brand) 20%, transparent 80%);
+  }
+  .card-icon {
+    font-size: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    transition: all 0.3s ease;
+  }
+  .custom-link-card:hover .card-icon {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+  }
+  .card-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text);
+    transition: color 0.3s ease;
+  }
+  .custom-link-card:hover .card-title {
+    color: var(--brand);
+  }
+  .card-desc {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+</style>

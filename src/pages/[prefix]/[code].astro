@@ -135,6 +135,7 @@ const articleUrl =
       : getProjectEntryUrl(entry as CollectionEntry<"projects">);
 const articleCode = resolveEntryCode(entry);
 const summary = entry.data.summary || entry.data.description;
+const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, '')}/blob/main/src/content/${collection}/${entry.id}`;
 ---
 
 <PostLayout
@@ -149,12 +150,14 @@ const summary = entry.data.summary || entry.data.description;
   wordCount={reading.wordCount}
   readingMinutes={reading.minutes}
   articleUrl={articleUrl}
+  githubEditUrl={githubEditUrl}
   encrypted={encrypted}
   encryptedFile={entry.data.encryptedFile ?? ""}
   passwordHint={entry.data.passwordHint ?? ""}
   prev={prev}
   next={next}
   cover={entry.data.cover}
+  hideCover={!entry.data.showCover}
 >
   {Content && <Content />}
 </PostLayout>

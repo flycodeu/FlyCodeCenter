@@ -8,19 +8,19 @@ const tags = makeTagItems(entries);
 
 <ListLayout
   title="标签"
-  description="按标签浏览所有文章，支持卡片样式统计。"
+  description="浏览所有文章标签，快速定位你的兴趣点。"
   stats={[
     { title: "标签数量", value: tags.length },
     { title: "文章总数", value: entries.length, href: "/archives" }
   ]}
   tags={tags}
 >
-  <section class="tag-grid">
+  <section class="tag-badge-container surface">
     {
       tags.map((item) => (
-        <a class="surface tag-card" href={item.href}>
-          <strong>{item.name}</strong>
-          <span>{item.count} 篇</span>
+        <a class="tag-badge" href={item.href}>
+          <span class="name">{item.name}</span>
+          <span class="count">{item.count}</span>
         </a>
       ))
     }
@@ -28,26 +28,49 @@ const tags = makeTagItems(entries);
 </ListLayout>
 
 <style>
-  .tag-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.75rem;
+  .tag-badge-container {
+    padding: 2rem;
+    border-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
-  .tag-card {
-    padding: 0.8rem;
-    display: grid;
-    gap: 0.35rem;
-    border-radius: 14px;
-    transition: transform 180ms ease;
+  .tag-badge {
+    display: inline-flex;
+    align-items: stretch;
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    border: 1px solid var(--line);
+    transition: all 0.2s ease;
+    background: var(--bg-elev);
   }
-  .tag-card:hover {
+  .tag-badge:hover {
+    border-color: var(--brand);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px color-mix(in oklab, var(--brand) 20%, transparent 80%);
   }
-  .tag-card strong {
-    font-family: var(--font-serif);
+  .tag-badge .name {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text);
   }
-  .tag-card span {
+  .tag-badge:hover .name {
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+  .tag-badge .count {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: monospace;
+    background: var(--line);
     color: var(--text-soft);
-    font-size: 0.86rem;
+    border-left: 1px solid var(--line);
+  }
+  .tag-badge:hover .count {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
   }
 </style>

@@ -1,31 +1,74 @@
-﻿---
+---
 import siteConfig from "@/site.config";
-import ListLayout from "@/layouts/ListLayout.astro";
-import ResourceCard from "@/components/ResourceCard.astro";
-import { fetchAllContentEntries, fetchReadingEntries, makeTagItems } from "@/utils/query";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchReadingEntries } from "@/utils/query";
+import { render } from "astro:content";
 
-const [entries, allEntries] = await Promise.all([fetchReadingEntries(), fetchAllContentEntries()]);
-const tags = makeTagItems(allEntries);
+const entries = await fetchReadingEntries();
 ---
 
-<ListLayout
-  title={siteConfig.pages.reading.title}
-  description="长期收藏的高质量文章与资料。"
-  stats={[
-    { title: "收藏条目", value: entries.length },
-    { title: "标签索引", value: "打开", href: "/tags" },
-    { title: "聚合网站", value: "打开", href: "/sites" }
-  ]}
-  tags={tags}
->
-  <div class="list">
-    {entries.map((entry) => <ResourceCard entry={entry} />)}
+<BaseLayout title={siteConfig.pages.reading.title} description="值得反复阅读的优秀文章与书籍推荐。">
+  <div class="reading-header surface fade-up">
+    <h1>{siteConfig.pages.reading.title}</h1>
+    <p>沉淀有价值的内容，在这里记录每一次思想的碰撞</p>
   </div>
-</ListLayout>
 
-<style>
-  .list {
-    display: grid;
-    gap: 0.7rem;
+  <div class="reading-container">
+    {entries.map(async (entry) => {
+      const { Content } = await render(entry);
+      return (
+        <section class="reading-group surface fade-up">
+          <h2 class="group-title">
+            <span class="icon">📖</span> {entry.data.title}
+          </h2>
+          <div class="reading-content custom-list-cards prose">
+            <Content />
+          </div>
+        </section>
+      );
+    })}
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .reading-header {
+    padding: 3rem 2rem;
+    text-align: center;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, var(--bg-elev), var(--brand-soft));
+  }
+  .reading-header h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.5rem;
+    font-family: var(--font-sans);
+    color: var(--text);
+  }
+  .reading-header p {
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--text-soft);
+  }
+  .reading-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .reading-group {
+    padding: 1.5rem;
+    border-radius: 12px;
+  }
+  .group-title {
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-family: var(--font-sans);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.75rem;
+  }
+  .group-title .icon {
+    opacity: 0.8;
   }
 </style>

@@ -6,10 +6,11 @@ const baseSchema = z.object({
   title: z.string(),
   description: z.string().default(""),
   summary: z.string().default(""),
-  pubDate: z.coerce.date(),
+  pubDate: z.coerce.date().default(() => new Date()),
   updatedDate: z.coerce.date().optional(),
   tags: z.array(z.string()).default([]),
   cover: z.string().default(""),
+  showCover: z.boolean().default(false),
   draft: z.boolean().default(false),
   encrypted: z.boolean().default(false),
   encryptedFile: z.string().optional(),
@@ -17,7 +18,7 @@ const baseSchema = z.object({
 });
 
 const blog = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/blog" }),
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
   schema: baseSchema.extend({
     pinned: z.boolean().default(false),
     pinOrder: z.number().int().nonnegative().default(999)
@@ -25,15 +26,15 @@ const blog = defineCollection({
 });
 
 const tutorial = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/tutorial" }),
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/tutorial" }),
   schema: baseSchema.extend({
-    series: z.string(),
+    series: z.string().default("未分类"),
     order: z.number().int().default(1)
   })
 });
 
 const projects = defineCollection({
-  loader: glob({ pattern: "**/README.md", base: "./src/content/projects" }),
+  loader: glob({ pattern: "**/README.{md,mdx}", base: "./src/content/projects" }),
   schema: baseSchema.extend({
     projectType: z.string().default("general"),
     repoUrl: z.string().url().optional(),
@@ -45,12 +46,12 @@ const projects = defineCollection({
 });
 
 const sites = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/sites" }),
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/sites" }),
   schema: z.object({
     title: z.string(),
     description: z.string().default(""),
-    url: z.string().url(),
-    pubDate: z.coerce.date(),
+    url: z.string().url().optional(),
+    pubDate: z.coerce.date().default(() => new Date()),
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
     cover: z.string().default(""),
@@ -62,13 +63,13 @@ const sites = defineCollection({
 });
 
 const reading = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/reading" }),
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/reading" }),
   schema: z.object({
     title: z.string(),
     description: z.string().default(""),
-    url: z.string().url(),
+    url: z.string().url().optional(),
     source: z.string().default(""),
-    pubDate: z.coerce.date(),
+    pubDate: z.coerce.date().default(() => new Date()),
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
     featured: z.boolean().default(false),

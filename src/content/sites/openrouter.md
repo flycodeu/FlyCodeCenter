@@ -13,3 +13,7 @@ draft: false
 
 支持统一模型入口，便于进行多模型对比和成本控制。
 
+
+[hello](www.flucode.icu)
+
+[hello](www.flucode.icu)

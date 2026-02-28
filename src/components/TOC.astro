@@ -79,29 +79,52 @@ const list = headings.filter(
 
 <style>
   .toc {
-    padding: 0.9rem;
+    padding: 1rem 0;
     position: sticky;
     top: 84px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
   .toc h3 {
-    margin: 0 0 0.7rem;
-    font-size: 0.95rem;
+    margin: 0 0 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
   }
   .toc ol {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    gap: 0.42rem;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--line);
+    margin-left: 1rem;
   }
-  .toc li[data-depth="3"] {
-    padding-left: 0.8rem;
+  .toc li {
+    margin: 0;
+  }
+  .toc li[data-depth="3"] a {
+    padding-left: 1.5rem;
   }
   .toc a {
+    display: block;
+    padding: 0.25rem 0 0.25rem 1rem;
     color: var(--text-soft);
-    font-size: 0.87rem;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    line-height: 1.5;
+    position: relative;
+    left: -1px;
+    border-left: 1px solid transparent;
+  }
+  .toc a:hover {
+    color: var(--text);
   }
   .toc a.active {
     color: var(--brand);
+    border-left-color: var(--brand);
+    font-weight: 500;
   }
 </style>

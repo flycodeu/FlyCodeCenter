@@ -207,7 +207,7 @@ function initSearchModal() {
 
   document.addEventListener("click", (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
+    if (!(target instanceof Element)) return;
     const trigger = target.closest('[data-action="open-search"]');
     if (!(trigger instanceof HTMLElement)) return;
     event.preventDefault();

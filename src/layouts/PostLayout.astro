@@ -33,12 +33,14 @@ interface Props {
   wordCount?: number;
   readingMinutes?: number;
   articleUrl: string;
+  githubEditUrl?: string;
   encrypted?: boolean;
   encryptedFile?: string;
   passwordHint?: string;
   prev?: Neighbor;
   next?: Neighbor;
   cover?: string;
+  hideCover?: boolean;
 }
 
 const {
@@ -53,12 +55,14 @@ const {
   wordCount = 0,
   readingMinutes = 0,
   articleUrl,
+  githubEditUrl,
   encrypted = false,
   encryptedFile = "",
   passwordHint = "",
   prev,
   next,
-  cover
+  cover,
+  hideCover = false
 } = Astro.props;
 
 const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
@@ -77,6 +81,19 @@ const jsonLd = buildArticleJsonLd({
   <ReadingProgress />
   <div class="grid-main">
     <section>
+      <div class="post-top-bar">
+        <a href="javascript:history.back()" class="back-link">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          返回上一级
+        </a>
+      </div>
+      
+      {!hideCover && cover && (
+        <div class="post-hero-image surface">
+          <img src={cover} alt={title} loading="eager" fetchpriority="high" />
+        </div>
+      )}
+
       <header class="surface post-head">
         {code && <div class="code-row"><span class="chip code-chip">{code}</span></div>}
         <h1>{title}</h1>
@@ -102,7 +119,7 @@ const jsonLd = buildArticleJsonLd({
         }
       </article>
 
-      <Copyright title={title} url={absoluteUrl(articleUrl)} />
+      <Copyright title={title} url={absoluteUrl(articleUrl)} editUrl={githubEditUrl} />
 
       {
         siteConfig.prevNext.enable && (prev || next) && (
@@ -148,7 +165,7 @@ const jsonLd = buildArticleJsonLd({
       const article = document.querySelector(".article-body");
       if (article) {
         const renderMermaid = async () => {
-          const blocks = article.querySelectorAll("pre code.language-mermaid");
+          const blocks = article.querySelectorAll("pre[data-language='mermaid'] code, pre code.language-mermaid");
           if (!blocks.length) return;
 
           const mod = await import(/* @vite-ignore */ mermaidBundle);
@@ -160,10 +177,25 @@ const jsonLd = buildArticleJsonLd({
             const pre = code.closest("pre");
             if (!pre) continue;
             const raw = code.textContent || "";
+            
+            const wrapper = document.createElement("div");
+            wrapper.className = "diagram-wrapper";
+            
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "diagram-copy-btn";
+            copyBtn.title = "复制 Mermaid 源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            wrapper.appendChild(copyBtn);
+
             const host = document.createElement("div");
             host.className = "diagram-host mermaid-host";
-            host.textContent = raw;
-            pre.replaceWith(host);
+            wrapper.appendChild(host);
+            pre.replaceWith(wrapper);
 
             const id = `mermaid-${index++}`;
             try {
@@ -174,6 +206,27 @@ const jsonLd = buildArticleJsonLd({
               console.error(error);
             }
           }
+        };
+
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
         };
 
         const renderDrawio = async () => {
@@ -252,9 +305,92 @@ const jsonLd = buildArticleJsonLd({
           }
         };
 
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
+        };
+
+        const addImageCopy = () => {
+          const images = article.querySelectorAll("img");
+          images.forEach(img => {
+            if (img.closest('.gallery-item')) return;
+            const wrapper = document.createElement("div");
+            wrapper.className = "img-wrapper";
+            img.parentNode.insertBefore(wrapper, img);
+            wrapper.appendChild(img);
+
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "img-copy-btn";
+            copyBtn.title = "复制图片链接";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(img.src);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            wrapper.appendChild(copyBtn);
+          });
+        };
+
         if (enableMermaid) renderMermaid().catch(console.error);
         if (enableDrawio) renderDrawio().catch(console.error);
         if (enableEcharts) renderCharts().catch(console.error);
+        addMathCopy();
+        addImageCopy();
+        
+        // Add Copy Button and Language label
+        const preElements = article.querySelectorAll("pre.astro-code, pre:not([class*='mermaid']):not([class*='drawio']):not([class*='chart'])");
+        preElements.forEach((pre) => {
+          const lang = pre.getAttribute("data-language") || pre.className.match(/language-(\w+)/)?.[1] || "";
+          if (["mermaid", "drawio", "chart"].some(l => lang.includes(l))) return;
+          if (pre.closest('.code-block-wrapper')) return;
+          
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const header = document.createElement("div");
+          header.className = "code-block-header";
+          
+          const langSpan = document.createElement("span");
+          langSpan.className = "code-block-lang";
+          langSpan.textContent = lang;
+          
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "code-block-copy";
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+          
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(pre.textContent || "");
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
+            copyBtn.classList.add("copied");
+            setTimeout(() => {
+              copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+              copyBtn.classList.remove("copied");
+            }, 2000);
+          };
+
+          header.appendChild(langSpan);
+          header.appendChild(copyBtn);
+          wrapper.insertBefore(header, pre);
+        });
       }
     }
   </script>
@@ -263,11 +399,38 @@ const jsonLd = buildArticleJsonLd({
 </BaseLayout>
 
 <style>
+  .post-top-bar {
+    margin-bottom: 1.5rem;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--text-soft);
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .back-link:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+  }
   .post-head {
-    padding: 0.72rem;
-    margin-bottom: 0.5rem;
+    padding: 2rem 0 1.5rem;
+    margin-bottom: 2rem;
     display: grid;
-    gap: 0.46rem;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
   }
   .code-row {
     display: flex;
@@ -275,56 +438,77 @@ const jsonLd = buildArticleJsonLd({
     justify-content: flex-start;
   }
   .code-chip {
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
     color: var(--brand);
+    background: var(--brand-soft);
+    border: none;
   }
   .post-head h1 {
     margin: 0;
-    font-family: var(--font-serif);
-    font-size: clamp(1.6rem, 1.2vw + 1.3rem, 2.3rem);
+    font-family: var(--font-sans);
+    font-size: clamp(2rem, 3vw + 1rem, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--text);
   }
   .summary {
     margin: 0;
     color: var(--text-soft);
     line-height: 1.6;
+    font-size: 1.125rem;
   }
   .meta-row,
   .tag-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-top: 0.08rem;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    align-items: center;
   }
   .tag-chip {
     color: var(--text);
+    background: transparent;
+    border: 1px solid var(--line);
   }
   .article-body {
-    padding: clamp(0.8rem, 0.55vw + 0.72rem, 1.08rem);
+    padding: 0 0 2rem 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
   .prev-next {
-    margin-top: 0.78rem;
-    padding: 0.74rem;
+    margin-top: 2rem;
+    padding: 1.5rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
+    gap: 1rem;
+    border-radius: 8px;
   }
   .prev-next a {
     color: var(--brand);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .prev-next a:hover {
+    color: var(--text);
   }
   .prev-next a:last-child {
     text-align: right;
   }
   :global(.diagram-host) {
-    margin: 1rem 0;
+    margin: 2rem 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 0.6rem;
-    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--bg-elev);
   }
   :global(.drawio-host figcaption) {
     color: var(--text-soft);
-    font-size: 0.88rem;
-    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 0.75rem;
+    text-align: center;
   }
 </style>

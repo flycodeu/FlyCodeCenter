@@ -166,8 +166,16 @@ function initAiModal() {
     const rt = await ensureRuntime();
     const prompt = chatInput instanceof HTMLInputElement ? chatInput.value.trim() : "";
     if (!rt || !prompt || !(output instanceof HTMLElement)) return;
-    output.textContent = "正在请求模型...";
-    output.textContent = await rt.chat(prompt);
+    if (chatInput instanceof HTMLInputElement) chatInput.value = "";
+    output.textContent = "正在请求模型...\n\n";
+    output.textContent += await rt.chat(prompt);
+  });
+
+  chatInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      chatBtn?.click();
+    }
   });
 }
 

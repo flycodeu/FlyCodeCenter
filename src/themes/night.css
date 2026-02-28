@@ -1,17 +1,17 @@
 :root[data-theme="night"] {
-  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-sans: "Inter", "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-serif: "Noto Serif SC", "Songti SC", serif;
-  --bg: #0e1320;
-  --bg-elev: #131a2bdc;
-  --bg-mesh-a: #1a2338;
-  --bg-mesh-b: #111729;
-  --text: #eaf0ff;
-  --text-soft: #9fafcf;
-  --line: #2a3552;
-  --brand: #7ca1ff;
-  --brand-soft: #1f2a46;
-  --accent: #ffd37d;
-  --card-shadow: 0 18px 32px rgba(2, 5, 13, 0.5);
-  --radius: 16px;
-  --header-blur: 14px;
+  --bg: #1e1e20;
+  --bg-elev: #252529;
+  --bg-mesh-a: transparent;
+  --bg-mesh-b: transparent;
+  --text: rgba(255, 255, 245, 0.86);
+  --text-soft: rgba(235, 235, 245, 0.6);
+  --line: #32363f;
+  --brand: #a8b1ff;
+  --brand-soft: #313355;
+  --accent: #10b981;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --radius: 8px;
+  --header-blur: 12px;
 }

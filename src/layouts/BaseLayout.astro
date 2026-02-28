@@ -6,6 +6,7 @@ import Watermark from "@/components/Watermark.astro";
 import AiProvider from "@/components/AiProvider.astro";
 import Mascot from "@/components/Mascot.astro";
 import { makePageTitle, resolveCanonical } from "@/utils/seo";
+import { ViewTransitions } from "astro:transitions";
 
 interface Props {
   title?: string;
@@ -51,6 +52,7 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
         <meta name={meta.name} content={meta.content} />
       ))
     }
+    {siteConfig.theme.transitions?.page && <ViewTransitions fallback="swap" />}
     <script is:inline>
       (() => {
         const root = document.documentElement;
@@ -63,7 +65,7 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
     </script>
   </head>
   <body>
-    <Watermark />
+    {siteConfig.watermark.enable && <Watermark />}
     <Header />
     <main class="container">
       <slot />

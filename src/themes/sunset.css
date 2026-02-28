@@ -1,0 +1,17 @@
+:root[data-theme="sunset"] {
+  --font-sans: "Inter", "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --bg: #fffcf0;
+  --bg-elev: #ffffff;
+  --bg-mesh-a: transparent;
+  --bg-mesh-b: transparent;
+  --text: #431407;
+  --text-soft: #78350f;
+  --line: #fde68a;
+  --brand: #d97706;
+  --brand-soft: #fef3c7;
+  --accent: #f59e0b;
+  --card-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.05), 0 2px 4px -2px rgba(217, 119, 6, 0.05);
+  --radius: 8px;
+  --header-blur: 12px;
+}

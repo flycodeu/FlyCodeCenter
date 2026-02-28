@@ -16,27 +16,35 @@ const enabled = siteConfig.search.provider !== "off";
         <div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索">
           <label class="search-input-wrap" for="search-input">
             <span class="sr-only">站内搜索</span>
-            <input id="search-input" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" />
+            <input id="search-input" type="search" placeholder="输入关键词搜索..." autocomplete="off" />
           </label>
           <ul id="search-results" class="search-results"></ul>
+          <div class="search-footer">
+            <span class="search-shortcut"><span class="kbd-key">↑</span><span class="kbd-key">↓</span> 切换</span>
+            <span class="search-shortcut"><span class="kbd-key">↵</span> 确认</span>
+            <span class="search-shortcut"><span class="kbd-key">ESC</span> 关闭</span>
+          </div>
         </div>
       </dialog>
       <div id="search-fallback" class="search-fallback" hidden>
         <div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索">
           <label class="search-input-wrap" for="search-input-fallback">
             <span class="sr-only">站内搜索</span>
-            <input id="search-input-fallback" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" />
+            <input id="search-input-fallback" type="search" placeholder="输入关键词搜索..." autocomplete="off" />
           </label>
           <ul id="search-results-fallback" class="search-results"></ul>
+          <div class="search-footer">
+            <span class="search-shortcut"><span class="kbd-key">↑</span><span class="kbd-key">↓</span> 切换</span>
+            <span class="search-shortcut"><span class="kbd-key">↵</span> 确认</span>
+            <span class="search-shortcut"><span class="kbd-key">ESC</span> 关闭</span>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-<script type="module">
-  import "../scripts/search-modal.ts";
-</script>
+<script src="../scripts/search-modal.ts"></script>
 
 <style>
   .search-modal {
@@ -46,14 +54,15 @@ const enabled = siteConfig.search.provider !== "off";
     padding: 0;
   }
   .search-modal::backdrop {
-    background: rgba(12, 16, 30, 0.36);
-    backdrop-filter: blur(3px);
+    background: rgba(12, 16, 30, 0.4);
+    backdrop-filter: blur(4px);
   }
   .search-fallback {
     position: fixed;
     inset: 0;
     z-index: 70;
-    background: rgba(12, 16, 30, 0.36);
+    background: rgba(12, 16, 30, 0.4);
+    backdrop-filter: blur(4px);
     padding: 8vh 14px 14px;
     display: none;
   }
@@ -61,20 +70,43 @@ const enabled = siteConfig.search.provider !== "off";
     display: block;
   }
   .search-panel {
-    padding: 0.8rem;
+    padding: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   .search-input-wrap {
-    display: block;
-    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .search-input-wrap::before {
+    content: "";
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-color: var(--text-soft);
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.343-4.343m0 0A8 8 0 1 0 5.343 5.343a8 8 0 0 0 11.314 11.314Z"/></svg>') no-repeat center / contain;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.343-4.343m0 0A8 8 0 1 0 5.343 5.343a8 8 0 0 0 11.314 11.314Z"/></svg>') no-repeat center / contain;
+    margin-left: 0.5rem;
   }
   .search-input-wrap input {
-    width: 100%;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    background: var(--bg);
+    flex: 1;
+    border: none;
+    background: transparent;
     color: var(--text);
-    padding: 0.75rem 0.9rem;
-    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.125rem;
+    outline: none;
+  }
+  .search-input-wrap input::placeholder {
+    color: color-mix(in oklab, var(--text-soft) 60%, transparent 40%);
   }
   .search-results {
     max-height: 60vh;
@@ -83,40 +115,85 @@ const enabled = siteConfig.search.provider !== "off";
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.25rem;
   }
   .result-item {
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.1s ease;
   }
   .result-item a {
     display: block;
-    padding: 0.65rem 0.75rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: inherit;
   }
   .result-item h4 {
     margin: 0;
-    font-size: 0.96rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
   }
   .result-item p {
-    margin: 0.45rem 0 0;
+    margin: 0.35rem 0 0;
     color: var(--text-soft);
-    font-size: 0.88rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .result-item :global(mark) {
-    background: color-mix(in oklab, var(--accent) 25%, transparent 75%);
-    color: inherit;
+    background: color-mix(in oklab, var(--brand) 25%, transparent 75%);
+    color: var(--brand);
     border-radius: 4px;
     padding: 0 2px;
+    font-weight: 600;
   }
   .result-item.active {
-    border-color: color-mix(in oklab, var(--brand) 60%, var(--line) 40%);
+    background: var(--brand-soft);
+    border-color: color-mix(in oklab, var(--brand) 40%, transparent 60%);
+  }
+  .result-item.active h4 {
+    color: var(--brand);
   }
   .result-empty {
     list-style: none;
     color: var(--text-soft);
-    padding: 1rem 0.4rem;
+    padding: 2rem 1rem;
     text-align: center;
+    font-size: 0.9375rem;
+  }
+  .search-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+    margin-top: 0.5rem;
+  }
+  .search-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-soft);
+  }
+  .kbd-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.25rem;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.7rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
   }
 </style>
 

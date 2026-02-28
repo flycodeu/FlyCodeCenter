@@ -1,0 +1,211 @@
+---
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import { fetchReadingEntries } from "@/utils/query";
+
+const entries = await fetchReadingEntries();
+---
+
+<ListLayout title="照片墙" description="记录生活中的精彩瞬间。" tags={[]}>
+  <div class="masonry-gallery" oncontextmenu="return false;">
+    {entries.map(async (entry) => {
+      if (!entry.data.cover) return null;
+      return (
+        <figure class="gallery-item surface fade-up">
+          <div class="image-wrapper">
+            <img src={entry.data.cover} alt={entry.data.title} loading="lazy" class="protected-img" />
+            <div class="glass-overlay"></div>
+          </div>
+          <figcaption>
+            <div class="fig-content">
+              <h4>{entry.data.title}</h4>
+              <p>{entry.data.description || "记录美好瞬间"}</p>
+            </div>
+            <a href={entry.data.cover} download class="download-btn" title="保存图片" rel="noreferrer">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>
+          </figcaption>
+        </figure>
+      );
+    })}
+    
+    <figure class="gallery-item surface fade-up">
+      <div class="image-wrapper">
+        <img src="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=800&q=80" alt="Nature" loading="lazy" class="protected-img" />
+        <div class="glass-overlay"></div>
+      </div>
+      <figcaption>
+        <div class="fig-content">
+          <h4>山川湖海</h4>
+          <p>冰岛的极致自然风光，令人心生敬畏。</p>
+        </div>
+        <a href="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=2400&q=100" download class="download-btn" title="保存图片" rel="noreferrer">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </a>
+      </figcaption>
+    </figure>
+    
+    <figure class="gallery-item surface fade-up">
+      <div class="image-wrapper">
+        <img src="https://images.unsplash.com/photo-1707343843437-caacff5cfa74?auto=format&fit=crop&w=600&q=80" alt="Architecture" loading="lazy" class="protected-img" />
+        <div class="glass-overlay"></div>
+      </div>
+      <figcaption>
+        <div class="fig-content">
+          <h4>现代建筑</h4>
+          <p>城市里的几何美学。</p>
+        </div>
+        <a href="#" download class="download-btn" title="保存图片">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </a>
+      </figcaption>
+    </figure>
+  </div>
+</ListLayout>
+
+<script is:inline>
+  document.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('protected-img')) {
+      e.preventDefault();
+    }
+  });
+</script>
+
+<style>
+  .masonry-gallery {
+    column-count: 3;
+    column-gap: 1.5rem;
+    padding-bottom: 2rem;
+  }
+  @media (max-width: 1024px) {
+    .masonry-gallery {
+      column-count: 2;
+    }
+  }
+  @media (max-width: 640px) {
+    .masonry-gallery {
+      column-count: 1;
+    }
+  }
+  
+  .gallery-item {
+    break-inside: avoid;
+    margin: 0 0 1.5rem;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--bg-elev);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--line);
+    transform: translateZ(0);
+    will-change: transform;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gallery-item:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+  }
+  
+  .image-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  .gallery-item img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .glass-overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    z-index: 1;
+  }
+  
+  .gallery-item:hover img {
+    transform: scale(1.08);
+    filter: brightness(0.9);
+  }
+  
+  .gallery-item figcaption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 1.25rem 1.25rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    color: #fff;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  .gallery-item:hover figcaption {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  
+  .fig-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    padding-right: 1rem;
+  }
+  
+  .gallery-item h4 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  
+  .gallery-item p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.85);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+  }
+  
+  .download-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .download-btn:hover {
+    background: #fff;
+    color: #000;
+    transform: scale(1.1);
+  }
+</style>

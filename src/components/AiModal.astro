@@ -11,159 +11,305 @@ import siteConfig from "@/site.config";
   data-default-model={siteConfig.ai.openaiCompatible.model}
 >
   <section class="surface ai-panel">
-    <header>
-      <h3>AI 看板</h3>
-      <button id="ai-close" aria-label="关闭">×</button>
+    <header class="ai-header">
+      <div class="ai-title">
+        <span class="ai-icon">✨</span>
+        <h3>AI 助手</h3>
+      </div>
+      <button id="ai-close" class="ai-close-btn" aria-label="关闭">×</button>
     </header>
 
-    <details class="ai-conn" open>
-      <summary>连接配置</summary>
-      <div class="conn-grid">
-        <label>
-          <span>API Base</span>
-          <input id="ai-base" type="url" placeholder="https://your-proxy.example.com/v1/chat/completions" />
-        </label>
-        <label>
-          <span>Model</span>
-          <input id="ai-model" type="text" placeholder="gpt-4o-mini" />
-        </label>
-        <label id="ai-key-wrap">
-          <span>API Key</span>
-          <input id="ai-key" type="password" placeholder="仅 hybrid 模式可用" />
-        </label>
+    <div class="ai-tabs">
+      <button class="ai-tab active" data-tab="chat">聊天</button>
+      <button class="ai-tab" data-tab="settings">设置</button>
+    </div>
+
+    <div class="ai-tab-content active" id="tab-chat">
+      <div id="ai-output" class="ai-output">在这里输入问题，开始与 AI 助手对话吧...</div>
+      
+      <div class="ai-quick-actions">
+        <button id="ai-summarize" class="ai-quick-btn">总结当前文章</button>
       </div>
-      <button id="ai-save-conn" class="save-btn">保存连接配置</button>
-    </details>
 
-    <div class="ai-actions">
-      <button id="ai-summarize">总结当前文章</button>
-      <input id="ai-question" type="text" placeholder="输入站内问题..." />
-      <button id="ai-ask">站内问答</button>
+      <div class="ai-chat-input-area">
+        <input id="ai-chat-input" type="text" placeholder="输入你想问的问题..." autocomplete="off" />
+        <button id="ai-chat-send" class="ai-send-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+      <div class="ai-chat-hint">按 Enter 发送 / 本地存储凭证，安全可靠</div>
     </div>
 
-    <div class="ai-chat">
-      <input id="ai-chat-input" type="text" placeholder="直接聊天：例如“帮我规划 Astro 内容架构”" />
-      <button id="ai-chat-send">发送</button>
+    <div class="ai-tab-content" id="tab-settings">
+      <div class="ai-settings-form">
+        <div class="form-group">
+          <label for="ai-base">接口地址 (API Base)</label>
+          <input id="ai-base" type="url" placeholder="例如: https://api.openai.com/v1" />
+        </div>
+        <div class="form-group">
+          <label for="ai-model">模型名称 (Model)</label>
+          <input id="ai-model" type="text" placeholder="例如: gpt-4o" />
+        </div>
+        <div class="form-group" id="ai-key-wrap">
+          <label for="ai-key">API 密钥 (API Key)</label>
+          <input id="ai-key" type="password" placeholder="sk-..." />
+        </div>
+        <button id="ai-save-conn" class="ai-save-btn">保存配置</button>
+      </div>
     </div>
 
-    <pre id="ai-output">按 Ctrl+Shift+K 或右下角按钮打开。</pre>
+    <input id="ai-question" type="hidden" />
+    <button id="ai-ask" hidden></button>
     <div id="ai-external"></div>
   </section>
 </dialog>
 
 <script type="module">
   import "../scripts/ai-modal.ts";
+  
+  // Tab switching logic
+  const tabs = document.querySelectorAll('.ai-tab');
+  const contents = document.querySelectorAll('.ai-tab-content');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+      
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
 </script>
 
 <style>
   .ai-modal {
-    width: min(860px, calc(100vw - 28px));
+    width: min(720px, calc(100vw - 28px));
     border: 0;
     background: transparent;
     padding: 0;
   }
   .ai-modal::backdrop {
-    background: rgba(10, 15, 28, 0.34);
+    background: rgba(12, 16, 30, 0.4);
+    backdrop-filter: blur(4px);
   }
   .ai-panel {
-    padding: 0.95rem;
+    padding: 1.25rem;
+    border-radius: 16px;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elev);
   }
-  .ai-panel header {
+  .ai-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
   }
-  .ai-panel h3 {
+  .ai-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ai-title h3 {
     margin: 0;
-  }
-  .ai-panel header button {
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text-soft);
-    cursor: pointer;
-  }
-  .ai-conn {
-    margin-bottom: 0.75rem;
-    border: 1px dashed var(--line);
-    border-radius: 12px;
-    padding: 0.6rem;
-  }
-  .ai-conn summary {
-    cursor: pointer;
-    color: var(--text-soft);
-    margin-bottom: 0.5rem;
-  }
-  .conn-grid {
-    display: grid;
-    gap: 0.55rem;
-    grid-template-columns: 1fr 1fr 1fr;
-    margin-bottom: 0.55rem;
-  }
-  .conn-grid label {
-    display: grid;
-    gap: 0.35rem;
-  }
-  .conn-grid span {
-    color: var(--text-soft);
-    font-size: 0.83rem;
-  }
-  .conn-grid input {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--bg);
+    font-size: 1.25rem;
+    font-family: var(--font-sans);
     color: var(--text);
-    padding: 0.52rem 0.65rem;
   }
-  .save-btn {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--bg);
+  .ai-icon {
+    font-size: 1.25rem;
+  }
+  .ai-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
     color: var(--text-soft);
-    padding: 0.46rem 0.7rem;
+    font-size: 1.5rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
   }
-  .ai-actions,
-  .ai-chat {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0.55rem;
-    margin-bottom: 0.75rem;
-  }
-  .ai-actions button,
-  .ai-actions input,
-  .ai-chat button,
-  .ai-chat input {
-    border: 1px solid var(--line);
-    background: var(--bg);
+  .ai-close-btn:hover {
+    background: var(--line);
     color: var(--text);
-    border-radius: 10px;
-    padding: 0.55rem 0.7rem;
-    font-size: 0.94rem;
   }
-  #ai-output {
+  
+  .ai-tabs {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1rem;
+  }
+  .ai-tab {
+    background: transparent;
+    border: none;
+    padding: 0.5rem 0.25rem;
+    color: var(--text-soft);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+  .ai-tab:hover {
+    color: var(--text);
+  }
+  .ai-tab.active {
+    color: var(--brand);
+  }
+  .ai-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--brand);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .ai-tab-content {
+    display: none;
+    flex-direction: column;
+  }
+  .ai-tab-content.active {
+    display: flex;
+  }
+
+  /* Chat Tab */
+  .ai-output {
     border-radius: 12px;
+    background: color-mix(in oklab, var(--bg) 80%, transparent);
     border: 1px solid var(--line);
-    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
-    padding: 0.8rem;
-    min-height: 150px;
+    padding: 1rem;
+    min-height: 240px;
+    max-height: 400px;
+    overflow-y: auto;
     white-space: pre-wrap;
-    margin: 0;
+    margin: 0 0 1rem 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--text);
   }
-  #ai-external {
-    margin-top: 0.75rem;
+  .ai-quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
-  @media (max-width: 780px) {
-    .conn-grid {
-      grid-template-columns: 1fr;
-    }
-    .ai-actions,
-    .ai-chat {
-      grid-template-columns: 1fr;
-    }
+  .ai-quick-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--brand);
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .ai-quick-btn:hover {
+    background: var(--brand);
+    color: #fff;
+  }
+  .ai-chat-input-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.25rem;
+    transition: border-color 0.2s ease;
+  }
+  .ai-chat-input-area:focus-within {
+    border-color: var(--brand);
+  }
+  .ai-chat-input-area input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+  }
+  .ai-chat-input-area input::placeholder {
+    color: color-mix(in oklab, var(--text-soft) 60%, transparent 40%);
+  }
+  .ai-send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: none;
+    background: var(--brand);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .ai-send-btn:hover {
+    background: color-mix(in oklab, var(--brand) 80%, #000);
+    transform: translateY(-1px);
+  }
+  .ai-chat-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-soft);
+    margin-top: 0.5rem;
+  }
+
+  /* Settings Tab */
+  .ai-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 0.5rem 0;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .form-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .form-group input {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .form-group input:focus {
+    border-color: var(--brand);
+  }
+  .ai-save-btn {
+    margin-top: 0.5rem;
+    padding: 0.875rem;
+    border-radius: 8px;
+    border: none;
+    background: var(--brand);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .ai-save-btn:hover {
+    background: color-mix(in oklab, var(--brand) 80%, #000);
   }
 </style>
 

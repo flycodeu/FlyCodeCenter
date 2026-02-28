@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="plume" data-default-theme="plume" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Markdown 组件与进阶语法测试 | 飞云的编程宝典</title><meta name="description" content="测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="canonical" href="https://flycodecenter.vercel.app/article/B-1F219B4E"><meta property="og:type" content="website"><meta property="og:title" content="Markdown 组件与进阶语法测试 | 飞云的编程宝典"><meta property="og:description" content="测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果"><meta property="og:image" content><meta property="og:url" content="https://flycodecenter.vercel.app/article/B-1F219B4E"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Markdown 组件与进阶语法测试 | 飞云的编程宝典"><meta name="twitter:description" content="测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果"><meta name="twitter:image" content><meta name="theme-color" content="#f6f8ff"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="swap"><script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js"></script><script>
+      (() => {
+        const root = document.documentElement;
+        const key = "flycode-theme";
+        const fallback = root.dataset.defaultTheme || "plume";
+        const saved = localStorage.getItem(key) || fallback;
+        root.dataset.theme = saved;
+        root.dataset.encryptedLocked = "0";
+      })();
+    </script><link rel="stylesheet" href="/_astro/_code_.lOIF_FCv.css">
+<link rel="stylesheet" href="/_astro/archives.CJ2ZJvoq.css"><style>.custom-card-grid{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(240px,1fr));gap:1.25rem;margin:2rem 0}.custom-card-grid>ul{display:contents!important}.custom-card-grid>ul>li{margin:0!important;padding:1.5rem!important;background:var(--bg-elev)!important;border:1px solid var(--line)!important;border-radius:16px!important;transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s cubic-bezier(.4,0,.2,1),border-color .3s ease!important;display:flex!important;flex-direction:column;gap:.75rem;list-style:none!important;position:relative;overflow:hidden}.custom-card-grid>ul>li:before{display:none!important}.custom-card-grid>ul>li:hover{border-color:var(--brand)!important;transform:translateY(-4px) scale(1.01)!important;box-shadow:0 12px 32px -8px color-mix(in oklab,var(--brand) 25%,transparent 75%)!important;z-index:1}.custom-card-grid>ul>li>a:first-child{font-size:1.125rem;font-weight:700;color:var(--text)!important;text-decoration:none!important;display:inline-flex;align-items:center;gap:.5rem;border-bottom:none!important}.custom-card-grid>ul>li>a:first-child:before{content:"";display:inline-block;width:20px;height:20px;background-color:var(--brand);mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain}.custom-card-grid>ul>li:hover>a:first-child{color:var(--brand)!important}@media(max-width:768px){.custom-card-grid{grid-template-columns:1fr}}
+</style><style>.custom-link-card[data-astro-cid-allout54]{display:flex;align-items:center;gap:1.25rem;padding:1.25rem;background:var(--bg-elev);border:1px solid var(--line);border-radius:16px;text-decoration:none!important;color:inherit!important;transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s cubic-bezier(.4,0,.2,1),border-color .3s ease;margin:1.5rem 0}.custom-link-card[data-astro-cid-allout54]:hover{border-color:var(--brand);transform:translateY(-2px) scale(1.01);box-shadow:0 12px 24px -8px color-mix(in oklab,var(--brand) 20%,transparent 80%)}.card-icon[data-astro-cid-allout54]{font-size:1.75rem;display:flex;align-items:center;justify-content:center;width:56px;height:56px;background:var(--bg);border-radius:12px;border:1px solid var(--line);transition:all .3s ease}.custom-link-card[data-astro-cid-allout54]:hover .card-icon[data-astro-cid-allout54]{border-color:var(--brand);background:var(--brand-soft)}.card-content[data-astro-cid-allout54]{display:flex;flex-direction:column;gap:.35rem;flex:1}.card-title[data-astro-cid-allout54]{font-size:1.125rem;font-weight:700;color:var(--text);transition:color .3s ease}.custom-link-card[data-astro-cid-allout54]:hover .card-title[data-astro-cid-allout54]{color:var(--brand)}.card-desc[data-astro-cid-allout54]{font-size:.9rem;color:var(--text-soft);line-height:1.5}
+</style></head> <body data-astro-cid-37fxchfa> <div class="watermark" style="--wm-opacity:0.05;--wm-rotate:-20deg;--wm-gap:200px;" aria-hidden="true" data-astro-cid-x6ybpy3i><span data-astro-cid-x6ybpy3i>FlyCodeCenter</span></div> <header class="site-header" data-astro-cid-3ef6ksr2> <div class="container header-inner" data-astro-cid-3ef6ksr2> <a class="logo" href="/" data-astro-cid-3ef6ksr2> <span class="logo-mark" data-astro-cid-3ef6ksr2>FC</span> <span class="logo-text" data-astro-cid-3ef6ksr2>FlyCodeCenter</span> </a> <nav class="nav" data-astro-cid-dmqpwcec> <a class="nav-link " href="/" data-astro-cid-dmqpwcec> 首页 </a><a class="nav-link " href="/blog" data-astro-cid-dmqpwcec> 博客 </a><a class="nav-link " href="/tutorials" data-astro-cid-dmqpwcec> 教程 </a><a class="nav-link " href="/sites" data-astro-cid-dmqpwcec> 聚合 </a><a class="nav-link " href="/gallery" data-astro-cid-dmqpwcec> 摄影 </a><a class="nav-link " href="/reading" data-astro-cid-dmqpwcec> 收藏 </a><a class="nav-link " href="/projects" data-astro-cid-dmqpwcec> 项目 </a><a class="nav-link " href="/about" data-astro-cid-dmqpwcec> 关于 </a> </nav>  <div class="actions" data-astro-cid-3ef6ksr2> <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-right:0.25rem" data-astro-cid-3ef6ksr2> <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.343-4.343m0 0A8 8 0 1 0 5.343 5.343a8 8 0 0 0 11.314 11.314Z" data-astro-cid-3ef6ksr2></path> </svg> <span class="search-hotkey" data-astro-cid-3ef6ksr2>/</span> <span class="search-text" data-astro-cid-3ef6ksr2>搜索</span> </button> <button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes="[&#34;plume&#34;,&#34;night&#34;,&#34;ocean&#34;,&#34;sunset&#34;]" data-astro-cid-x3pjskd3> <span class="theme-icon" aria-hidden="true" data-astro-cid-x3pjskd3>☼</span> </button> <script type="module">const storageKey = "flycode-theme";
+const enableTransition = true;
+
+  const button = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  const themes = JSON.parse(button?.dataset.themes ?? "[]");
+  const current = root.dataset.theme ?? themes[0];
+  if (current) {
+    localStorage.setItem(storageKey, current);
+  }
+
+  button?.addEventListener("click", () => {
+    if (!themes.length) return;
+    if (enableTransition) {
+      root.classList.add("theme-anim");
+      window.setTimeout(() => root.classList.remove("theme-anim"), 280);
+    }
+    const now = root.dataset.theme ?? themes[0];
+    const idx = themes.indexOf(now);
+    const next = themes[(idx + 1) % themes.length];
+    root.dataset.theme = next;
+    localStorage.setItem(storageKey, next);
+    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: next }));
+  });
+</script>  <a class="icon-btn" href="https://github.com/flycodecenter" target="_blank" rel="noreferrer" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" data-astro-cid-3ef6ksr2> <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58l-.02-2.17c-3.34.73-4.04-1.42-4.04-1.42-.55-1.37-1.34-1.74-1.34-1.74-1.09-.74.08-.72.08-.72 1.2.09 1.83 1.22 1.83 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.29.76-1.58-2.67-.3-5.48-1.31-5.48-5.84 0-1.29.47-2.34 1.22-3.16-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.31 1.21a11.6 11.6 0 0 1 6.03 0c2.3-1.53 3.3-1.2 3.3-1.2.66 1.65.25 2.88.13 3.18.76.82 1.22 1.87 1.22 3.16 0 4.54-2.81 5.54-5.49 5.83.43.36.81 1.08.81 2.18l-.01 3.23c0 .32.22.69.83.57A12 12 0 0 0 12 .5" data-astro-cid-3ef6ksr2></path> </svg> </a> </div> </div> </header>  <main class="container" data-astro-cid-37fxchfa>  <button id="reading-progress-fab" class="reading-progress-fab" aria-label="返回顶部" data-astro-cid-mu6cnre2> <svg class="progress-ring" width="48" height="48" data-astro-cid-mu6cnre2> <circle class="progress-ring-bg" stroke-width="3" fill="transparent" r="22" cx="24" cy="24" data-astro-cid-mu6cnre2></circle> <circle class="progress-ring-circle" stroke-width="3" fill="transparent" r="22" cx="24" cy="24" data-astro-cid-mu6cnre2></circle> </svg> <span class="progress-text" id="progress-text" data-astro-cid-mu6cnre2>0%</span> </button> <script type="module">
+  const fab = document.getElementById("reading-progress-fab");
+  const text = document.getElementById("progress-text");
+  const circle = document.querySelector(".progress-ring-circle");
+  if (fab && text && circle) {
+    const radius = circle.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = circumference;
+
+    let ticking = false;
+
+    const update = () => {
+      const scrollTop = window.scrollY;
+      const total = document.body.scrollHeight - window.innerHeight;
+      const progress = total > 0 ? Math.min(100, Math.round((scrollTop / total) * 100)) : 0;
+      
+      text.textContent = `${progress}`;
+      const offset = circumference - (progress / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      if (scrollTop > 200) {
+        fab.classList.add("visible");
+      } else {
+        fab.classList.remove("visible");
+      }
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+
+    fab.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+</script>  <div class="grid-main" data-astro-cid-gjtny2mx> <section data-astro-cid-gjtny2mx> <div class="post-top-bar" data-astro-cid-gjtny2mx> <a href="javascript:history.back()" class="back-link" data-astro-cid-gjtny2mx> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-gjtny2mx><path d="m15 18-6-6 6-6" data-astro-cid-gjtny2mx></path></svg>
+返回上一级
+</a> </div>  <header class="surface post-head" data-astro-cid-gjtny2mx> <div class="code-row" data-astro-cid-gjtny2mx><span class="chip code-chip" data-astro-cid-gjtny2mx>B-1F219B4E</span></div> <h1 data-astro-cid-gjtny2mx>Markdown 组件与进阶语法测试</h1> <p class="summary" data-astro-cid-gjtny2mx>测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果</p> <div class="meta-row" data-astro-cid-gjtny2mx> <span class="chip" data-astro-cid-gjtny2mx>517 字</span> <span class="chip" data-astro-cid-gjtny2mx>2 分钟</span> <span class="chip" data-astro-cid-gjtny2mx>发布 2026/02/28</span>  </div> <div class="tag-row" data-astro-cid-gjtny2mx> <a class="chip tag-chip" href="/tags/mdx" data-astro-cid-gjtny2mx>mdx</a><a class="chip tag-chip" href="/tags/components" data-astro-cid-gjtny2mx>components</a><a class="chip tag-chip" href="/tags/test" data-astro-cid-gjtny2mx>test</a> </div> </header> <article class="surface prose article-body" data-article-encrypted="0" data-astro-cid-gjtny2mx> <p>这是一篇测试 MDX 功能与进阶语法的文章，你可以在其中混合使用标准 Markdown 语法和我们刚刚封装的 React/Astro UI 组件。由于我们修改了前置配置（Frontmatter），现在不需要再手动填写 <code>pubDate</code>、<code>draft</code>、<code>encrypted</code> 等无聊的默认属性了！</p>
+<h2 id="1-自由分组卡片测试-ai-hub-示例">1. 自由分组卡片测试 (AI Hub 示例)</h2>
+<p>你可以通过自定义组件 <code>&lt;CardGrid&gt;</code> 来控制网格显示的列数，在里面嵌套普通的列表即可实现卡片组效果。</p>
+<div class="custom-card-grid" style="--grid-cols: 2"> <ul>
+<li>
+<p><a href="https://openai.com">OpenAI (ChatGPT)</a>
+全球领先的 AI 研发机构，ChatGPT 创造者。</p>
+</li>
+<li>
+<p><a href="https://anthropic.com">Anthropic (Claude)</a>
+以安全性为核心的下一代长文本 AI 模型。</p>
+</li>
+<li>
+<p><a href="https://midjourney.com">Midjourney</a>
+当前最强大的 AI 绘图与创意生成工具。</p>
+</li>
+<li>
+<p><a href="https://deepmind.google">Google DeepMind</a>
+Gemini 模型的诞生地，致力于解决最艰难的智能问题。</p>
+</li>
+</ul> </div> 
+<p>如果需要更个性化的带 Icon 的单独卡片，可以使用 <code>&lt;LinkCard&gt;</code>：</p>
+<a href="https://vitepress.dev" target="_blank" class="custom-link-card" data-astro-cid-allout54> <div class="card-icon" data-astro-cid-allout54>⚡</div> <div class="card-content" data-astro-cid-allout54> <div class="card-title" data-astro-cid-allout54>VitePress 官方文档</div> <div class="card-desc" data-astro-cid-allout54>Vue 驱动的极简静态网站生成器，本项目设计的灵感来源之一。</div> </div> </a> 
+<hr/>
+<h2 id="2-动图与视频测试">2. 动图与视频测试</h2>
+<p>直接插入动图与常规图片完全一样，Astro 会自动优化并支持懒加载。</p>
+<p><em>(这里放置一张测试 GIF)</em>
+<figure class="md-figure"><img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjQzYjYyODQxMzQxZGI4MWQ1ZTBiMmE3ZTc4MDFjMjMzMTAyYWMwYyZlcD12MV9pbnRlcm5hbF9naWZzX3NlYXJjaCZjdD1n/LmNwrBhejkK9EFP504/giphy.gif" alt="测试GIF" loading="lazy" decoding="async"/><figcaption>测试GIF</figcaption></figure></p>
+<h2 id="3-流程图渲染测试-mermaid">3. 流程图渲染测试 (Mermaid)</h2>
+<p>我们的博客内置了 Mermaid 渲染器，只需编写代码块，前端便会生成矢量图：</p>
+<pre class="astro-code vitesse-light" style="background-color:#ffffff;color:#393a34;overflow-x:auto;white-space:pre-wrap;word-wrap:break-word" tabindex="0" data-language="mermaid"><code><span class="line"><span style="color:#393A34">graph TD</span></span>
+<span class="line"><span style="color:#393A34">    A[用户请求] --&gt; B{路由判断}</span></span>
+<span class="line"><span style="color:#393A34">    B -- 静态页面 --&gt; C[返回 HTML]</span></span>
+<span class="line"><span style="color:#393A34">    B -- 动态接口 --&gt; D[请求数据库]</span></span>
+<span class="line"><span style="color:#393A34">    D --&gt; E[组装 JSON]</span></span>
+<span class="line"><span style="color:#393A34">    E --&gt; C</span></span></code></pre>
+<h2 id="4-数学公式-katex">4. 数学公式 (KaTeX)</h2>
+<p>无论是行内公式还是块级公式，都能完美呈现。著名的质能方程：<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">E = mc^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em"></span><span class="mord mathnormal" style="margin-right:0.05764em">E</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="base"><span class="strut" style="height:0.8141em"></span><span class="mord mathnormal">m</span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em"><span style="top:-3.063em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span>。</p>
+<p>复杂的积分公式：</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msubsup><mo>∫</mo><mrow><mo>−</mo><mi mathvariant="normal">∞</mi></mrow><mi mathvariant="normal">∞</mi></msubsup><msup><mi>e</mi><mrow><mo>−</mo><msup><mi>x</mi><mn>2</mn></msup></mrow></msup><mi>d</mi><mi>x</mi><mo>=</mo><msqrt><mi>π</mi></msqrt></mrow><annotation encoding="application/x-tex">\int_{-\infty}^\infty e^{-x^2} dx = \sqrt{\pi}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.3846em;vertical-align:-0.9703em"></span><span class="mop"><span class="mop op-symbol large-op" style="margin-right:0.44445em;position:relative;top:-0.0011em">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4143em"><span style="top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">∞</span></span></span></span><span style="top:-3.8129em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">∞</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9703em"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.0369em"><span style="top:-3.113em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913em"><span style="top:-2.931em;margin-right:0.0714em"><span class="pstrut" style="height:2.5em"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="mord mathnormal">d</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="base"><span class="strut" style="height:1.04em;vertical-align:-0.1908em"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8492em"><span class="svg-align" style="top:-3em"><span class="pstrut" style="height:3em"></span><span class="mord" style="padding-left:0.833em"><span class="mord mathnormal" style="margin-right:0.03588em">π</span></span></span><span style="top:-2.8092em"><span class="pstrut" style="height:3em"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1908em"><span></span></span></span></span></span></span></span></span></span>
+<h2 id="5-代码块高亮">5. 代码块高亮</h2>
+<p>支持极其丰富的语言高亮：</p>
+<pre class="astro-code vitesse-light" style="background-color:#ffffff;color:#393a34;overflow-x:auto;white-space:pre-wrap;word-wrap:break-word" tabindex="0" data-language="rust"><code><span class="line"><span style="color:#1E754F">fn</span><span style="color:#59873A"> main</span><span style="color:#999999">()</span><span style="color:#999999"> {</span></span>
+<span class="line"><span style="color:#AB5959">    let</span><span style="color:#AB5959"> mut</span><span style="color:#B07D48"> numbers</span><span style="color:#999999"> =</span><span style="color:#59873A"> vec!</span><span style="color:#999999">[</span><span style="color:#2F798A">3</span><span style="color:#999999">,</span><span style="color:#2F798A"> 1</span><span style="color:#999999">,</span><span style="color:#2F798A"> 4</span><span style="color:#999999">,</span><span style="color:#2F798A"> 1</span><span style="color:#999999">,</span><span style="color:#2F798A"> 5</span><span style="color:#999999">,</span><span style="color:#2F798A"> 9</span><span style="color:#999999">,</span><span style="color:#2F798A"> 2</span><span style="color:#999999">,</span><span style="color:#2F798A"> 6</span><span style="color:#999999">];</span></span>
+<span class="line"><span style="color:#B07D48">    numbers</span><span style="color:#AB5959">.</span><span style="color:#59873A">sort</span><span style="color:#999999">();</span></span>
+<span class="line"><span style="color:#59873A">    println!</span><span style="color:#999999">(</span><span style="color:#B5695977">&quot;</span><span style="color:#B56959">Sorted: </span><span style="color:#999999">{</span><span style="color:#B56959">:?</span><span style="color:#999999">}</span><span style="color:#B5695977">&quot;</span><span style="color:#999999">,</span><span style="color:#B07D48"> numbers</span><span style="color:#999999">);</span></span>
+<span class="line"><span style="color:#999999">}</span></span></code></pre> </article> <section class="surface copy-box" data-astro-cid-55hnotdj><div class="copy-header" data-astro-cid-55hnotdj><span class="copy-title" data-astro-cid-55hnotdj>版权所有</span><a href="https://github.com/flycodecenter/blob/main/src/content/blog/mdx-components-test" target="_blank" rel="noreferrer" class="edit-link" data-astro-cid-55hnotdj><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" data-astro-cid-55hnotdj><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" data-astro-cid-55hnotdj></path></svg>
+在 GitHub 上编辑此页
+</a></div><div class="copy-content" data-astro-cid-55hnotdj><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>版权归属：</span><span class="value" data-astro-cid-55hnotdj>飞云</span></div><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>本文链接：</span><a href="https://flycodecenter.vercel.app/article/B-1F219B4E" class="value url-link" data-astro-cid-55hnotdj>https://flycodecenter.vercel.app/article/B-1F219B4E</a></div><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>许可证：</span><span class="value" data-astro-cid-55hnotdj>CC-BY-4.0，
+<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" class="url-link" data-astro-cid-55hnotdj>https://creativecommons.org/licenses/by/4.0/</a></span></div></div></section> <nav class="surface prev-next" data-astro-cid-gjtny2mx> <a href="/article/B-F5446D5E" data-astro-cid-gjtny2mx>← Astro 性能手册：把 JS 预算花在刀刃上</a> <span data-astro-cid-gjtny2mx></span> </nav>  </section> <aside data-astro-cid-gjtny2mx><aside class="surface toc" data-astro-cid-obewoz47><h3 data-astro-cid-obewoz47>此页内容</h3><ol id="toc-list" data-astro-cid-obewoz47><li data-depth="2" data-astro-cid-obewoz47><a href="#1-自由分组卡片测试-ai-hub-示例" data-astro-cid-obewoz47>1. 自由分组卡片测试 (AI Hub 示例)</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#2-动图与视频测试" data-astro-cid-obewoz47>2. 动图与视频测试</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#3-流程图渲染测试-mermaid" data-astro-cid-obewoz47>3. 流程图渲染测试 (Mermaid)</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#4-数学公式-katex" data-astro-cid-obewoz47>4. 数学公式 (KaTeX)</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#5-代码块高亮" data-astro-cid-obewoz47>5. 代码块高亮</a></li></ol></aside><script type="module">
+      const root = document.getElementById("toc-list");
+      if (!root) {
+        // no-op
+      } else {
+        const links = new Map();
+        root.querySelectorAll("a").forEach((a) => {
+          const id = a.getAttribute("href")?.replace(/^#/, "");
+          if (!id) return;
+          links.set(id, a);
+        });
+
+        const setActive = (id) => {
+          links.forEach((anchor, key) => {
+            anchor.classList.toggle("active", key === id);
+          });
+        };
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((item) => item.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            if (!visible.length) return;
+            setActive(visible[0].target.id);
+          },
+          {
+            rootMargin: "-20% 0px -65% 0px",
+            threshold: [0.1, 0.35, 0.7]
+          }
+        );
+
+        links.forEach((_, id) => {
+          const heading = document.getElementById(id);
+          if (heading) observer.observe(heading);
+        });
+      }
+    </script></aside> </div> <script type="module">const isEncrypted = false;
+const enableMermaid = true;
+const enableDrawio = true;
+const enableEcharts = true;
+const mermaidBundle = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const mermaidTheme = "default";
+const drawioViewerBase = "https://viewer.diagrams.net";
+const echartsBundle = "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js";
+const chartHeight = 360;
+
+    const root = document.documentElement;
+    root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
+
+    if (isEncrypted) {
+      window.addEventListener("site:decrypted", () => {
+        root.dataset.encryptedLocked = "0";
+      });
+    }
+
+    if (isEncrypted) {
+      // encrypted article should not initialize rich diagram runtimes
+    } else {
+      const article = document.querySelector(".article-body");
+      if (article) {
+        const renderMermaid = async () => {
+          const blocks = article.querySelectorAll("pre[data-language='mermaid'] code, pre code.language-mermaid");
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ mermaidBundle);
+          const mermaid = mod.default ?? mod;
+          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+
+          let index = 0;
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = code.textContent || "";
+            
+            const wrapper = document.createElement("div");
+            wrapper.className = "diagram-wrapper";
+            
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "diagram-copy-btn";
+            copyBtn.title = "复制 Mermaid 源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            wrapper.appendChild(copyBtn);
+
+            const host = document.createElement("div");
+            host.className = "diagram-host mermaid-host";
+            wrapper.appendChild(host);
+            pre.replaceWith(wrapper);
+
+            const id = `mermaid-${index++}`;
+            try {
+              const result = await mermaid.render(id, raw);
+              host.innerHTML = result.svg;
+            } catch (error) {
+              host.textContent = "Mermaid 渲染失败，请检查语法。";
+              console.error(error);
+            }
+          }
+        };
+
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
+        };
+
+        const renderDrawio = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("drawio")) return true;
+            return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
+          });
+          if (!blocks.length) return;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const src = (code.textContent || "").trim();
+            const host = document.createElement("figure");
+            host.className = "diagram-host drawio-host";
+
+            if (!src) {
+              host.textContent = "Draw.io 代码块需要填写文件 URL。";
+              pre.replaceWith(host);
+              continue;
+            }
+
+            const iframe = document.createElement("iframe");
+            const encoded = btoa(unescape(encodeURIComponent(src)));
+            iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
+            iframe.loading = "lazy";
+            iframe.referrerPolicy = "no-referrer";
+            iframe.title = "drawio diagram";
+            iframe.style.width = "100%";
+            iframe.style.height = "460px";
+            iframe.style.border = "1px solid var(--line)";
+            iframe.style.borderRadius = "12px";
+            host.appendChild(iframe);
+
+            const note = document.createElement("figcaption");
+            note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
+            host.appendChild(note);
+            pre.replaceWith(host);
+          }
+        };
+
+        const renderCharts = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("chart")) return true;
+            if (!(lang.includes("json") || lang.includes("plain"))) return false;
+            return raw.startsWith("{") && raw.includes("\"series\"");
+          });
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ echartsBundle);
+          const echarts = mod.default ?? mod;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = (code.textContent || "{}").trim();
+            const host = document.createElement("div");
+            host.className = "diagram-host chart-host";
+            host.style.height = `${chartHeight}px`;
+            pre.replaceWith(host);
+
+            try {
+              const option = JSON.parse(raw);
+              const chart = echarts.init(host);
+              chart.setOption(option);
+              const resize = () => chart.resize();
+              window.addEventListener("resize", resize);
+            } catch (error) {
+              host.textContent = "图表配置 JSON 解析失败。";
+              console.error(error);
+            }
+          }
+        };
+
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
+        };
+
+        if (enableMermaid) renderMermaid().catch(console.error);
+        if (enableDrawio) renderDrawio().catch(console.error);
+        if (enableEcharts) renderCharts().catch(console.error);
+        addMathCopy();
+        
+        // Add Copy Button and Language label
+        const preElements = article.querySelectorAll("pre");
+        preElements.forEach((pre) => {
+          const lang = pre.getAttribute("data-language") || pre.className.match(/language-(\w+)/)?.[1] || "";
+          if (["mermaid", "drawio", "chart"].some(l => lang.includes(l))) return;
+          
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const header = document.createElement("div");
+          header.className = "code-block-header";
+          
+          const langSpan = document.createElement("span");
+          langSpan.className = "code-block-lang";
+          langSpan.textContent = lang;
+          
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "code-block-copy";
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+          
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(pre.textContent || "");
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
+            copyBtn.classList.add("copied");
+            setTimeout(() => {
+              copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+              copyBtn.classList.remove("copied");
+            }, 2000);
+          };
+
+          header.appendChild(langSpan);
+          header.appendChild(copyBtn);
+          wrapper.insertBefore(header, pre);
+        });
+      }
+    }
+  </script> <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Markdown 组件与进阶语法测试","description":"测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果","datePublished":"2026-02-28T14:28:48.649Z","dateModified":"2026-02-28T14:28:48.649Z","author":{"@type":"Person","name":"飞云"},"mainEntityOfPage":"https://flycodecenter.vercel.app/article/B-1F219B4E","image":"https://flycodecenter.vercel.app/og-default.svg","keywords":"mdx, components, test"}</script>  </main> <footer class="site-footer" data-astro-cid-37fxchfa> <div class="container footer-inner" data-astro-cid-37fxchfa> <p data-astro-cid-37fxchfa>Built with Astro. Static First.</p> <small data-astro-cid-37fxchfa>Copyright © 2026 飞云</small> </div> </footer> <div id="search-root" class="search-root" data-native="1" data-shortcut="/" data-astro-cid-qk3db3zz><dialog id="search-modal" class="search-modal" data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input" type="search" placeholder="输入关键词搜索..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results" class="search-results" data-astro-cid-qk3db3zz></ul><div class="search-footer" data-astro-cid-qk3db3zz><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↑</span><span class="kbd-key" data-astro-cid-qk3db3zz>↓</span> 切换</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↵</span> 确认</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>ESC</span> 关闭</span></div></div></dialog><div id="search-fallback" class="search-fallback" hidden data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input-fallback" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input-fallback" type="search" placeholder="输入关键词搜索..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results-fallback" class="search-results" data-astro-cid-qk3db3zz></ul><div class="search-footer" data-astro-cid-qk3db3zz><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↑</span><span class="kbd-key" data-astro-cid-qk3db3zz>↓</span> 切换</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↵</span> 确认</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>ESC</span> 关闭</span></div></div></div></div><script type="module" src="/_astro/SearchModal.astro_astro_type_script_index_0_lang.DwVmd-Nx.js"></script>    </body></html> 

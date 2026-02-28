@@ -1,7 +1,7 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo";
 export type AiProvider = "off" | "openaiCompatible" | "externalWidget";
-export type ThemeId = "plume" | "night";
+export type ThemeId = "plume" | "night" | "ocean" | "sunset";
 export type PaginationMode = "page" | "loadMore";
 export type CoverMode = "right" | "left" | "none";
 export type CardStyle = "rounded" | "square" | "glass";
@@ -76,17 +76,26 @@ const siteConfig = {
     showTopN: 30
   },
   home: {
-    heroImage: {
-      enable: false,
-      src: "https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=2400&q=80",
-      height: "min(34vh, 360px)",
-      objectPosition: "center 38%",
-      overlayOpacity: 0.46
+    hero: {
+      enable: true,
+      title: "飞云的编程宝典",
+      tagline: "持续探索前端与架构设计",
+      description: "在这里分享技术、生活与思考。致力于构建高性能、优美体验的现代 Web 应用。",
+      actions: [
+        { text: "浏览博客", link: "/blog", type: "primary" },
+        { text: "查看教程", link: "/tutorials", type: "secondary" },
+        { text: "关于我", link: "/about", type: "secondary" }
+      ],
+      image: {
+        enable: true,
+        src: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80",
+        alt: "Hero Image"
+      }
     }
   },
   theme: {
     defaultTheme: "plume" as ThemeId,
-    themes: ["plume", "night"] as ThemeId[],
+    themes: ["plume", "night", "ocean", "sunset"] as ThemeId[],
     appearance: true,
     logo: {
       text: "FlyCodeCenter",
@@ -102,9 +111,16 @@ const siteConfig = {
     },
     profile: {
       avatar: "https://avatars.githubusercontent.com/u/1?v=4",
+      shape: "rectangle" as "circle" | "rectangle",
       name: "飞云",
       desc: "资深前端 / Astro 架构实践",
-      location: "Shenzhen, China"
+      location: "Shenzhen, China",
+      quote: "Stay hungry, stay foolish.",
+      socials: [
+        { name: "GitHub", icon: "github", link: "https://github.com/flycodecenter" },
+        { name: "WeChat", icon: "wechat", link: "#" },
+        { name: "Discord", icon: "discord", link: "#" }
+      ]
     },
     toc: {
       enable: true,
@@ -115,10 +131,9 @@ const siteConfig = {
       { text: "首页", link: "/" },
       { text: "博客", link: "/blog" },
       { text: "教程", link: "/tutorials" },
-      { text: "标签", link: "/types" },
       { text: "聚合", link: "/sites" },
+      { text: "摄影", link: "/gallery" },
       { text: "收藏", link: "/reading" },
-      { text: "归档", link: "/archives" },
       { text: "项目", link: "/projects" },
       { text: "关于", link: "/about" }
     ],
@@ -250,11 +265,11 @@ const siteConfig = {
     }
   },
   watermark: {
-    enable: false,
+    enable: true,
     text: "FlyCodeCenter",
-    opacity: 0.08,
+    opacity: 0.05,
     rotate: -20,
-    gap: 160
+    gap: 200
   },
   comment: {
     provider: "giscus" as CommentProvider,
@@ -337,6 +352,10 @@ const siteConfig = {
       enable: true,
       title: "项目实践",
       showFeaturedFirst: true
+    },
+    archives: {
+      enable: true,
+      title: "归档"
     }
   }
 } as const;

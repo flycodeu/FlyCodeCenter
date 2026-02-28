@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="plume" data-default-theme="plume" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典</title><meta name="description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="canonical" href="https://flycodecenter.vercel.app/article/B-F5446D5E"><meta property="og:type" content="website"><meta property="og:title" content="Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典"><meta property="og:description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><meta property="og:image" content="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80"><meta property="og:url" content="https://flycodecenter.vercel.app/article/B-F5446D5E"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典"><meta name="twitter:description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><meta name="twitter:image" content="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80"><meta name="theme-color" content="#f6f8ff"><meta name="apple-mobile-web-app-capable" content="yes"><script>
+<!DOCTYPE html><html lang="zh-CN" data-theme="plume" data-default-theme="plume" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典</title><meta name="description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="canonical" href="https://flycodecenter.vercel.app/article/B-F5446D5E"><meta property="og:type" content="website"><meta property="og:title" content="Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典"><meta property="og:description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><meta property="og:image" content="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80"><meta property="og:url" content="https://flycodecenter.vercel.app/article/B-F5446D5E"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Astro 性能手册：把 JS 预算花在刀刃上 | 飞云的编程宝典"><meta name="twitter:description" content="从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。"><meta name="twitter:image" content="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80"><meta name="theme-color" content="#f6f8ff"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="swap"><script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js"></script><script>
       (() => {
         const root = document.documentElement;
         const key = "flycode-theme";
@@ -7,9 +7,8 @@
         root.dataset.theme = saved;
         root.dataset.encryptedLocked = "0";
       })();
-    </script><style>.toc[data-astro-cid-obewoz47]{padding:.9rem;position:sticky;top:84px}.toc[data-astro-cid-obewoz47] h3[data-astro-cid-obewoz47]{margin:0 0 .7rem;font-size:.95rem}.toc[data-astro-cid-obewoz47] ol[data-astro-cid-obewoz47]{list-style:none;margin:0;padding:0;display:grid;gap:.42rem}.toc[data-astro-cid-obewoz47] li[data-astro-cid-obewoz47][data-depth="3"]{padding-left:.8rem}.toc[data-astro-cid-obewoz47] a[data-astro-cid-obewoz47]{color:var(--text-soft);font-size:.87rem}.toc[data-astro-cid-obewoz47] a[data-astro-cid-obewoz47].active{color:var(--brand)}.comment-section[data-astro-cid-jvxsf75u]{margin-top:1.8rem;padding:.95rem}.comment-section[data-astro-cid-jvxsf75u] h3[data-astro-cid-jvxsf75u]{margin:0 0 .8rem}#reading-progress[data-astro-cid-mu6cnre2]{position:fixed;top:0;left:0;width:100%;height:3px;transform-origin:left center;transform:scaleX(0);z-index:120;background:linear-gradient(90deg,var(--brand),var(--accent))}.copy-box[data-astro-cid-55hnotdj]{margin-top:1.6rem;padding:.95rem}.copy-box[data-astro-cid-55hnotdj] strong[data-astro-cid-55hnotdj]{display:block;margin-bottom:.45rem}.copy-box[data-astro-cid-55hnotdj] p[data-astro-cid-55hnotdj]{margin:.2rem 0;color:var(--text-soft);font-size:.92rem}.copy-box[data-astro-cid-55hnotdj] a[data-astro-cid-55hnotdj]{color:var(--brand)}.post-head[data-astro-cid-gjtny2mx]{padding:.72rem;margin-bottom:.5rem;display:grid;gap:.46rem}.code-row[data-astro-cid-gjtny2mx]{display:flex;align-items:center;justify-content:flex-start}.code-chip[data-astro-cid-gjtny2mx]{font-size:.78rem;letter-spacing:.04em;color:var(--brand)}.post-head[data-astro-cid-gjtny2mx] h1[data-astro-cid-gjtny2mx]{margin:0;font-family:var(--font-serif);font-size:clamp(1.6rem,1.2vw + 1.3rem,2.3rem)}.summary[data-astro-cid-gjtny2mx]{margin:0;color:var(--text-soft);line-height:1.6}.meta-row[data-astro-cid-gjtny2mx],.tag-row[data-astro-cid-gjtny2mx]{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.08rem}.tag-chip[data-astro-cid-gjtny2mx]{color:var(--text)}.article-body[data-astro-cid-gjtny2mx]{padding:clamp(.8rem,.55vw + .72rem,1.08rem)}.prev-next[data-astro-cid-gjtny2mx]{margin-top:.78rem;padding:.74rem;display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.prev-next[data-astro-cid-gjtny2mx] a[data-astro-cid-gjtny2mx]{color:var(--brand)}.prev-next[data-astro-cid-gjtny2mx] a[data-astro-cid-gjtny2mx]:last-child{text-align:right}.diagram-host{margin:1rem 0;border:1px solid var(--line);border-radius:12px;padding:.6rem;background:color-mix(in oklab,var(--bg-elev) 86%,transparent 14%)}.drawio-host figcaption{color:var(--text-soft);font-size:.88rem;margin-top:.5rem}
-</style>
-<link rel="stylesheet" href="/_astro/_page_.CBJakrBw.css"></head> <body data-astro-cid-37fxchfa>  <header class="site-header" data-astro-cid-3ef6ksr2> <div class="container header-inner" data-astro-cid-3ef6ksr2> <a class="logo" href="/" data-astro-cid-3ef6ksr2> <span class="logo-mark" data-astro-cid-3ef6ksr2>FC</span> <span class="logo-text" data-astro-cid-3ef6ksr2>FlyCodeCenter</span> </a> <nav class="nav" data-astro-cid-dmqpwcec> <a class="nav-link " href="/" data-astro-cid-dmqpwcec> 首页 </a><a class="nav-link " href="/blog" data-astro-cid-dmqpwcec> 博客 </a><a class="nav-link " href="/tutorials" data-astro-cid-dmqpwcec> 教程 </a><a class="nav-link " href="/types" data-astro-cid-dmqpwcec> 标签 </a><a class="nav-link " href="/sites" data-astro-cid-dmqpwcec> 聚合 </a><a class="nav-link " href="/reading" data-astro-cid-dmqpwcec> 收藏 </a><a class="nav-link " href="/archives" data-astro-cid-dmqpwcec> 归档 </a><a class="nav-link " href="/projects" data-astro-cid-dmqpwcec> 项目 </a><a class="nav-link " href="/about" data-astro-cid-dmqpwcec> 关于 </a> </nav>  <div class="actions" data-astro-cid-3ef6ksr2> <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索" data-astro-cid-3ef6ksr2> <span class="search-hotkey" data-astro-cid-3ef6ksr2>/</span> <span class="search-text" data-astro-cid-3ef6ksr2>搜索</span> </button> <button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes="[&#34;plume&#34;,&#34;night&#34;]" data-astro-cid-x3pjskd3> <span class="theme-icon" aria-hidden="true" data-astro-cid-x3pjskd3>☼</span> </button> <script type="module">const storageKey = "flycode-theme";
+    </script><link rel="stylesheet" href="/_astro/_code_.lOIF_FCv.css">
+<link rel="stylesheet" href="/_astro/archives.CJ2ZJvoq.css"></head> <body data-astro-cid-37fxchfa> <div class="watermark" style="--wm-opacity:0.05;--wm-rotate:-20deg;--wm-gap:200px;" aria-hidden="true" data-astro-cid-x6ybpy3i><span data-astro-cid-x6ybpy3i>FlyCodeCenter</span></div> <header class="site-header" data-astro-cid-3ef6ksr2> <div class="container header-inner" data-astro-cid-3ef6ksr2> <a class="logo" href="/" data-astro-cid-3ef6ksr2> <span class="logo-mark" data-astro-cid-3ef6ksr2>FC</span> <span class="logo-text" data-astro-cid-3ef6ksr2>FlyCodeCenter</span> </a> <nav class="nav" data-astro-cid-dmqpwcec> <a class="nav-link " href="/" data-astro-cid-dmqpwcec> 首页 </a><a class="nav-link " href="/blog" data-astro-cid-dmqpwcec> 博客 </a><a class="nav-link " href="/tutorials" data-astro-cid-dmqpwcec> 教程 </a><a class="nav-link " href="/sites" data-astro-cid-dmqpwcec> 聚合 </a><a class="nav-link " href="/gallery" data-astro-cid-dmqpwcec> 摄影 </a><a class="nav-link " href="/reading" data-astro-cid-dmqpwcec> 收藏 </a><a class="nav-link " href="/projects" data-astro-cid-dmqpwcec> 项目 </a><a class="nav-link " href="/about" data-astro-cid-dmqpwcec> 关于 </a> </nav>  <div class="actions" data-astro-cid-3ef6ksr2> <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-right:0.25rem" data-astro-cid-3ef6ksr2> <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.343-4.343m0 0A8 8 0 1 0 5.343 5.343a8 8 0 0 0 11.314 11.314Z" data-astro-cid-3ef6ksr2></path> </svg> <span class="search-hotkey" data-astro-cid-3ef6ksr2>/</span> <span class="search-text" data-astro-cid-3ef6ksr2>搜索</span> </button> <button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes="[&#34;plume&#34;,&#34;night&#34;,&#34;ocean&#34;,&#34;sunset&#34;]" data-astro-cid-x3pjskd3> <span class="theme-icon" aria-hidden="true" data-astro-cid-x3pjskd3>☼</span> </button> <script type="module">const storageKey = "flycode-theme";
 const enableTransition = true;
 
   const button = document.getElementById("theme-toggle");
@@ -34,28 +33,52 @@ const enableTransition = true;
     localStorage.setItem(storageKey, next);
     window.dispatchEvent(new CustomEvent("site:theme-change", { detail: next }));
   });
-</script>  <a class="icon-btn" href="https://github.com/flycodecenter" target="_blank" rel="noreferrer" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" data-astro-cid-3ef6ksr2> <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58l-.02-2.17c-3.34.73-4.04-1.42-4.04-1.42-.55-1.37-1.34-1.74-1.34-1.74-1.09-.74.08-.72.08-.72 1.2.09 1.83 1.22 1.83 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.29.76-1.58-2.67-.3-5.48-1.31-5.48-5.84 0-1.29.47-2.34 1.22-3.16-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.31 1.21a11.6 11.6 0 0 1 6.03 0c2.3-1.53 3.3-1.2 3.3-1.2.66 1.65.25 2.88.13 3.18.76.82 1.22 1.87 1.22 3.16 0 4.54-2.81 5.54-5.49 5.83.43.36.81 1.08.81 2.18l-.01 3.23c0 .32.22.69.83.57A12 12 0 0 0 12 .5" data-astro-cid-3ef6ksr2></path> </svg> </a> </div> </div> </header>  <main class="container" data-astro-cid-37fxchfa>  <div id="reading-progress" data-astro-cid-mu6cnre2></div> <script type="module">
-  const bar = document.getElementById("reading-progress");
-  let ticking = false;
+</script>  <a class="icon-btn" href="https://github.com/flycodecenter" target="_blank" rel="noreferrer" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" data-astro-cid-3ef6ksr2> <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58l-.02-2.17c-3.34.73-4.04-1.42-4.04-1.42-.55-1.37-1.34-1.74-1.34-1.74-1.09-.74.08-.72.08-.72 1.2.09 1.83 1.22 1.83 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.29.76-1.58-2.67-.3-5.48-1.31-5.48-5.84 0-1.29.47-2.34 1.22-3.16-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.31 1.21a11.6 11.6 0 0 1 6.03 0c2.3-1.53 3.3-1.2 3.3-1.2.66 1.65.25 2.88.13 3.18.76.82 1.22 1.87 1.22 3.16 0 4.54-2.81 5.54-5.49 5.83.43.36.81 1.08.81 2.18l-.01 3.23c0 .32.22.69.83.57A12 12 0 0 0 12 .5" data-astro-cid-3ef6ksr2></path> </svg> </a> </div> </div> </header>  <main class="container" data-astro-cid-37fxchfa>  <button id="reading-progress-fab" class="reading-progress-fab" aria-label="返回顶部" data-astro-cid-mu6cnre2> <svg class="progress-ring" width="48" height="48" data-astro-cid-mu6cnre2> <circle class="progress-ring-bg" stroke-width="3" fill="transparent" r="22" cx="24" cy="24" data-astro-cid-mu6cnre2></circle> <circle class="progress-ring-circle" stroke-width="3" fill="transparent" r="22" cx="24" cy="24" data-astro-cid-mu6cnre2></circle> </svg> <span class="progress-text" id="progress-text" data-astro-cid-mu6cnre2>0%</span> </button> <script type="module">
+  const fab = document.getElementById("reading-progress-fab");
+  const text = document.getElementById("progress-text");
+  const circle = document.querySelector(".progress-ring-circle");
+  if (fab && text && circle) {
+    const radius = circle.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = circumference;
 
-  const update = () => {
-    if (!bar) return;
-    const scrollTop = window.scrollY;
-    const total = document.body.scrollHeight - window.innerHeight;
-    const progress = total > 0 ? Math.min(100, (scrollTop / total) * 100) : 0;
-    bar.style.transform = `scaleX(${progress / 100})`;
-    ticking = false;
-  };
+    let ticking = false;
 
-  const onScroll = () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  };
+    const update = () => {
+      const scrollTop = window.scrollY;
+      const total = document.body.scrollHeight - window.innerHeight;
+      const progress = total > 0 ? Math.min(100, Math.round((scrollTop / total) * 100)) : 0;
+      
+      text.textContent = `${progress}`;
+      const offset = circumference - (progress / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
 
-  window.addEventListener("scroll", onScroll, { passive: true });
-  update();
-</script>  <div class="grid-main" data-astro-cid-gjtny2mx> <section data-astro-cid-gjtny2mx> <header class="surface post-head" data-astro-cid-gjtny2mx> <div class="code-row" data-astro-cid-gjtny2mx><span class="chip code-chip" data-astro-cid-gjtny2mx>B-F5446D5E</span></div> <h1 data-astro-cid-gjtny2mx>Astro 性能手册：把 JS 预算花在刀刃上</h1> <p class="summary" data-astro-cid-gjtny2mx>聚焦构建期优化与运行时按需加载，建立可持续的性能基线。</p> <div class="meta-row" data-astro-cid-gjtny2mx> <span class="chip" data-astro-cid-gjtny2mx>122 字</span> <span class="chip" data-astro-cid-gjtny2mx>1 分钟</span> <span class="chip" data-astro-cid-gjtny2mx>发布 2026/02/16</span> <span class="chip" data-astro-cid-gjtny2mx>更新 2026/02/20</span> </div> <div class="tag-row" data-astro-cid-gjtny2mx> <a class="chip tag-chip" href="/tags/astro" data-astro-cid-gjtny2mx>astro</a><a class="chip tag-chip" href="/tags/performance" data-astro-cid-gjtny2mx>performance</a><a class="chip tag-chip" href="/tags/dx" data-astro-cid-gjtny2mx>dx</a> </div> </header> <article class="surface prose article-body" data-article-encrypted="0" data-astro-cid-gjtny2mx> <h2 id="为什么静态优先">为什么静态优先</h2>
+      if (scrollTop > 200) {
+        fab.classList.add("visible");
+      } else {
+        fab.classList.remove("visible");
+      }
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+
+    fab.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+</script>  <div class="grid-main" data-astro-cid-gjtny2mx> <section data-astro-cid-gjtny2mx> <div class="post-top-bar" data-astro-cid-gjtny2mx> <a href="javascript:history.back()" class="back-link" data-astro-cid-gjtny2mx> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-gjtny2mx><path d="m15 18-6-6 6-6" data-astro-cid-gjtny2mx></path></svg>
+返回上一级
+</a> </div>  <header class="surface post-head" data-astro-cid-gjtny2mx> <div class="code-row" data-astro-cid-gjtny2mx><span class="chip code-chip" data-astro-cid-gjtny2mx>B-F5446D5E</span></div> <h1 data-astro-cid-gjtny2mx>Astro 性能手册：把 JS 预算花在刀刃上</h1> <p class="summary" data-astro-cid-gjtny2mx>聚焦构建期优化与运行时按需加载，建立可持续的性能基线。</p> <div class="meta-row" data-astro-cid-gjtny2mx> <span class="chip" data-astro-cid-gjtny2mx>122 字</span> <span class="chip" data-astro-cid-gjtny2mx>1 分钟</span> <span class="chip" data-astro-cid-gjtny2mx>发布 2026/02/16</span> <span class="chip" data-astro-cid-gjtny2mx>更新 2026/02/20</span> </div> <div class="tag-row" data-astro-cid-gjtny2mx> <a class="chip tag-chip" href="/tags/astro" data-astro-cid-gjtny2mx>astro</a><a class="chip tag-chip" href="/tags/performance" data-astro-cid-gjtny2mx>performance</a><a class="chip tag-chip" href="/tags/dx" data-astro-cid-gjtny2mx>dx</a> </div> </header> <article class="surface prose article-body" data-article-encrypted="0" data-astro-cid-gjtny2mx> <h2 id="为什么静态优先">为什么静态优先</h2>
 <p>静态化的核心价值是把计算前置到构建阶段，运行时只做必要工作。</p>
 <h2 id="搜索和评论按需加载">搜索和评论按需加载</h2>
 <ul>
@@ -67,7 +90,10 @@ const enableTransition = true;
 <li>首屏 JS 控制在可交互需求范围内。</li>
 <li>图片统一裁剪尺寸并懒加载。</li>
 <li>高频组件优先做结构复用而不是样式堆叠。</li>
-</ol> </article> <section class="surface copy-box" data-astro-cid-55hnotdj><strong data-astro-cid-55hnotdj>版权声明</strong><p data-astro-cid-55hnotdj>本文标题：Astro 性能手册：把 JS 预算花在刀刃上</p><p data-astro-cid-55hnotdj>作者：飞云</p><p data-astro-cid-55hnotdj>许可协议：CC-BY-4.0</p><p data-astro-cid-55hnotdj>本文链接：<a href="https://flycodecenter.vercel.app/article/B-F5446D5E" data-astro-cid-55hnotdj>https://flycodecenter.vercel.app/article/B-F5446D5E</a></p></section> <nav class="surface prev-next" data-astro-cid-gjtny2mx> <a href="/article/B-8F68F0C7" data-astro-cid-gjtny2mx>← Astro 插件化架构：Provider 工厂与配置中心</a> <span data-astro-cid-gjtny2mx></span> </nav>  </section> <aside data-astro-cid-gjtny2mx><aside class="surface toc" data-astro-cid-obewoz47><h3 data-astro-cid-obewoz47>此页内容</h3><ol id="toc-list" data-astro-cid-obewoz47><li data-depth="2" data-astro-cid-obewoz47><a href="#为什么静态优先" data-astro-cid-obewoz47>为什么静态优先</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#搜索和评论按需加载" data-astro-cid-obewoz47>搜索和评论按需加载</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#性能预算建议" data-astro-cid-obewoz47>性能预算建议</a></li></ol></aside><script type="module">
+</ol> </article> <section class="surface copy-box" data-astro-cid-55hnotdj><div class="copy-header" data-astro-cid-55hnotdj><span class="copy-title" data-astro-cid-55hnotdj>版权所有</span><a href="https://github.com/flycodecenter/blob/main/src/content/blog/astro-performance-handbook" target="_blank" rel="noreferrer" class="edit-link" data-astro-cid-55hnotdj><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" data-astro-cid-55hnotdj><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" data-astro-cid-55hnotdj></path></svg>
+在 GitHub 上编辑此页
+</a></div><div class="copy-content" data-astro-cid-55hnotdj><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>版权归属：</span><span class="value" data-astro-cid-55hnotdj>飞云</span></div><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>本文链接：</span><a href="https://flycodecenter.vercel.app/article/B-F5446D5E" class="value url-link" data-astro-cid-55hnotdj>https://flycodecenter.vercel.app/article/B-F5446D5E</a></div><div class="copy-item" data-astro-cid-55hnotdj><span class="label" data-astro-cid-55hnotdj>许可证：</span><span class="value" data-astro-cid-55hnotdj>CC-BY-4.0，
+<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" class="url-link" data-astro-cid-55hnotdj>https://creativecommons.org/licenses/by/4.0/</a></span></div></div></section> <nav class="surface prev-next" data-astro-cid-gjtny2mx> <a href="/article/B-8F68F0C7" data-astro-cid-gjtny2mx>← Astro 插件化架构：Provider 工厂与配置中心</a> <a href="/article/B-1F219B4E" data-astro-cid-gjtny2mx>Markdown 组件与进阶语法测试 →</a> </nav>  </section> <aside data-astro-cid-gjtny2mx><aside class="surface toc" data-astro-cid-obewoz47><h3 data-astro-cid-obewoz47>此页内容</h3><ol id="toc-list" data-astro-cid-obewoz47><li data-depth="2" data-astro-cid-obewoz47><a href="#为什么静态优先" data-astro-cid-obewoz47>为什么静态优先</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#搜索和评论按需加载" data-astro-cid-obewoz47>搜索和评论按需加载</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#性能预算建议" data-astro-cid-obewoz47>性能预算建议</a></li></ol></aside><script type="module">
       const root = document.getElementById("toc-list");
       if (!root) {
         // no-op
@@ -129,7 +155,7 @@ const chartHeight = 360;
       const article = document.querySelector(".article-body");
       if (article) {
         const renderMermaid = async () => {
-          const blocks = article.querySelectorAll("pre code.language-mermaid");
+          const blocks = article.querySelectorAll("pre[data-language='mermaid'] code, pre code.language-mermaid");
           if (!blocks.length) return;
 
           const mod = await import(/* @vite-ignore */ mermaidBundle);
@@ -141,10 +167,25 @@ const chartHeight = 360;
             const pre = code.closest("pre");
             if (!pre) continue;
             const raw = code.textContent || "";
+            
+            const wrapper = document.createElement("div");
+            wrapper.className = "diagram-wrapper";
+            
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "diagram-copy-btn";
+            copyBtn.title = "复制 Mermaid 源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            wrapper.appendChild(copyBtn);
+
             const host = document.createElement("div");
             host.className = "diagram-host mermaid-host";
-            host.textContent = raw;
-            pre.replaceWith(host);
+            wrapper.appendChild(host);
+            pre.replaceWith(wrapper);
 
             const id = `mermaid-${index++}`;
             try {
@@ -155,6 +196,27 @@ const chartHeight = 360;
               console.error(error);
             }
           }
+        };
+
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
         };
 
         const renderDrawio = async () => {
@@ -233,11 +295,68 @@ const chartHeight = 360;
           }
         };
 
+        const addMathCopy = () => {
+          const displays = article.querySelectorAll(".katex-display");
+          displays.forEach(display => {
+            const annotation = display.querySelector("annotation[encoding='application/x-tex']");
+            if (!annotation) return;
+            const raw = annotation.textContent || "";
+            
+            display.classList.add("math-wrapper");
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "math-copy-btn";
+            copyBtn.title = "复制公式源码";
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(raw);
+              copyBtn.classList.add("copied");
+              setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+            };
+            display.appendChild(copyBtn);
+          });
+        };
+
         if (enableMermaid) renderMermaid().catch(console.error);
         if (enableDrawio) renderDrawio().catch(console.error);
         if (enableEcharts) renderCharts().catch(console.error);
+        addMathCopy();
+        
+        // Add Copy Button and Language label
+        const preElements = article.querySelectorAll("pre");
+        preElements.forEach((pre) => {
+          const lang = pre.getAttribute("data-language") || pre.className.match(/language-(\w+)/)?.[1] || "";
+          if (["mermaid", "drawio", "chart"].some(l => lang.includes(l))) return;
+          
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const header = document.createElement("div");
+          header.className = "code-block-header";
+          
+          const langSpan = document.createElement("span");
+          langSpan.className = "code-block-lang";
+          langSpan.textContent = lang;
+          
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "code-block-copy";
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+          
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(pre.textContent || "");
+            copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
+            copyBtn.classList.add("copied");
+            setTimeout(() => {
+              copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+              copyBtn.classList.remove("copied");
+            }, 2000);
+          };
+
+          header.appendChild(langSpan);
+          header.appendChild(copyBtn);
+          wrapper.insertBefore(header, pre);
+        });
       }
     }
-  </script> <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Astro 性能手册：把 JS 预算花在刀刃上","description":"从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。","datePublished":"2026-02-16T00:00:00.000Z","dateModified":"2026-02-20T00:00:00.000Z","author":{"@type":"Person","name":"飞云"},"mainEntityOfPage":"https://flycodecenter.vercel.app/article/B-F5446D5E","image":"https://flycodecenter.vercel.app/https:/images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80","keywords":"astro, performance, dx"}</script>  </main> <footer class="site-footer" data-astro-cid-37fxchfa> <div class="container footer-inner" data-astro-cid-37fxchfa> <p data-astro-cid-37fxchfa>Built with Astro. Static First.</p> <small data-astro-cid-37fxchfa>Copyright © 2026 飞云</small> </div> </footer> <div id="search-root" class="search-root" data-native="1" data-shortcut="/" data-astro-cid-qk3db3zz><dialog id="search-modal" class="search-modal" data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results" class="search-results" data-astro-cid-qk3db3zz></ul></div></dialog><div id="search-fallback" class="search-fallback" hidden data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input-fallback" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input-fallback" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results-fallback" class="search-results" data-astro-cid-qk3db3zz></ul></div></div></div><script type="module">
-  import "../scripts/search-modal.ts";
-</script>    </body></html> 
+  </script> <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Astro 性能手册：把 JS 预算花在刀刃上","description":"从路由、搜索、评论到 TOC，系统化落地 Astro 站点性能策略。","datePublished":"2026-02-16T00:00:00.000Z","dateModified":"2026-02-20T00:00:00.000Z","author":{"@type":"Person","name":"飞云"},"mainEntityOfPage":"https://flycodecenter.vercel.app/article/B-F5446D5E","image":"https://flycodecenter.vercel.app/https:/images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80","keywords":"astro, performance, dx"}</script>  </main> <footer class="site-footer" data-astro-cid-37fxchfa> <div class="container footer-inner" data-astro-cid-37fxchfa> <p data-astro-cid-37fxchfa>Built with Astro. Static First.</p> <small data-astro-cid-37fxchfa>Copyright © 2026 飞云</small> </div> </footer> <div id="search-root" class="search-root" data-native="1" data-shortcut="/" data-astro-cid-qk3db3zz><dialog id="search-modal" class="search-modal" data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input" type="search" placeholder="输入关键词搜索..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results" class="search-results" data-astro-cid-qk3db3zz></ul><div class="search-footer" data-astro-cid-qk3db3zz><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↑</span><span class="kbd-key" data-astro-cid-qk3db3zz>↓</span> 切换</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↵</span> 确认</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>ESC</span> 关闭</span></div></div></dialog><div id="search-fallback" class="search-fallback" hidden data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input-fallback" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input-fallback" type="search" placeholder="输入关键词搜索..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results-fallback" class="search-results" data-astro-cid-qk3db3zz></ul><div class="search-footer" data-astro-cid-qk3db3zz><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↑</span><span class="kbd-key" data-astro-cid-qk3db3zz>↓</span> 切换</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>↵</span> 确认</span><span class="search-shortcut" data-astro-cid-qk3db3zz><span class="kbd-key" data-astro-cid-qk3db3zz>ESC</span> 关闭</span></div></div></div></div><script type="module" src="/_astro/SearchModal.astro_astro_type_script_index_0_lang.DwVmd-Nx.js"></script>    </body></html> 

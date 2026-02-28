@@ -22,7 +22,7 @@ async function walk(dir) {
     const absolute = path.join(dir, item.name);
     if (item.isDirectory()) {
       files.push(...(await walk(absolute)));
-    } else if (item.isFile() && absolute.endsWith(".md")) {
+    } else if (item.isFile() && (absolute.endsWith(".md") || absolute.endsWith(".mdx"))) {
       files.push(absolute);
     }
   }

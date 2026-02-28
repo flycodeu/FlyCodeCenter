@@ -1,199 +1,136 @@
 ﻿---
 import siteConfig from "@/site.config";
-import ListLayout from "@/layouts/ListLayout.astro";
-import { fetchAllContentEntries, fetchSitesEntries, makeTagItems } from "@/utils/query";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchSitesEntries } from "@/utils/query";
+import { render } from "astro:content";
 
-const [entries, allEntries] = await Promise.all([fetchSitesEntries(), fetchAllContentEntries()]);
-const tags = makeTagItems(allEntries);
-
-const tagCounter = new Map<string, number>();
-for (const entry of entries) {
-  for (const tag of entry.data.tags) {
-    tagCounter.set(tag, (tagCounter.get(tag) ?? 0) + 1);
-  }
-}
-
-const siteTags = [...tagCounter.entries()]
-  .sort((a, b) => b[1] - a[1])
-  .map(([name, count]) => ({ name, count }));
-
-const grid = siteConfig.pages.sites.grid;
+const entries = await fetchSitesEntries();
 ---
 
-<ListLayout
-  title={siteConfig.pages.sites.title}
-  description="整合 AI 网站资源与工具服务，支持按标签快速筛选。"
-  stats={[
-    { title: "资源数量", value: entries.length },
-    { title: "站点标签", value: siteTags.length },
-    { title: "标签索引", value: "打开", href: "/tags" },
-    { title: "优秀文章", value: "打开", href: "/reading" }
-  ]}
-  tags={tags}
->
-  <section class="surface filter-panel" id="site-filter-root" data-default="all">
-    <button class="filter-chip active" type="button" data-site-filter="all">
-      全部 <span>{entries.length}</span>
-    </button>
-    {
-      siteTags.map((item) => (
-        <button class="filter-chip" type="button" data-site-filter={item.name}>
-          {item.name} <span>{item.count}</span>
-        </button>
-      ))
-    }
-  </section>
+<BaseLayout title={siteConfig.pages.sites.title} description="整合优质网站资源与工具服务">
+  <div class="sites-header surface fade-up">
+    <h1>优质网站导航</h1>
+    <p>发现、整理并分享日常使用的高效工具与学习资源</p>
+  </div>
 
-  <section
-    class="site-grid"
-    style={`--site-cols-md:${grid.columns.md};--site-cols-lg:${grid.columns.lg};--site-cols-xl:${grid.columns.xl};--site-gap:${grid.gap}px;`}
-  >
-    {
-      entries.map((entry) => {
-        const tagsText = entry.data.tags.join("||");
-        return (
-          <article class="surface site-card" data-site-card data-tags={tagsText}>
-            <header>
-              <a href={entry.data.url} target="_blank" rel="noreferrer" class="title-link">
-                {entry.data.title}
-              </a>
-              <span class={`status ${entry.data.status}`}>{entry.data.status}</span>
-            </header>
+  <div class="sites-container">
+    {entries.map(async (entry) => {
+      const { Content } = await render(entry);
+      return (
+        <section class="site-group surface fade-up">
+          <h2 class="group-title">
+            <span class="icon">#</span> {entry.data.title}
+          </h2>
+          <div class="site-content custom-list-cards prose">
+            <Content />
+          </div>
+        </section>
+      );
+    })}
+  </div>
+</BaseLayout>
 
-            <p>{entry.data.description}</p>
-
-            <div class="meta-row">
-              <strong>地址</strong>
-              <a href={entry.data.url} target="_blank" rel="noreferrer" class="site-url">
-                {entry.data.url.replace(/^https?:\/\//, "")}
-              </a>
-            </div>
-
-            <div class="meta-row">
-              <strong>标签</strong>
-              <div class="chip-wrap">
-                {entry.data.tags.map((item) => <span class="chip">{item}</span>)}
-              </div>
-            </div>
-          </article>
-        );
-      })
-    }
-  </section>
-
-  <script>
-    import "../scripts/sites-filter";
-  </script>
-</ListLayout>
-
-<style>
-  .filter-panel {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    padding: 0.66rem;
-    margin-bottom: 0.65rem;
+<style is:global>
+  .sites-header {
+    padding: 3rem 2rem;
+    text-align: center;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, var(--bg-elev), var(--brand-soft));
   }
-  .filter-chip {
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--bg-elev);
-    color: var(--text-soft);
-    padding: 0.32rem 0.62rem;
-    cursor: pointer;
-    font-size: 0.82rem;
-  }
-  .filter-chip span {
-    opacity: 0.7;
-  }
-  .filter-chip.active {
-    color: var(--brand);
-    border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
-    background: color-mix(in oklab, var(--brand-soft) 54%, var(--bg-elev) 46%);
-  }
-  .site-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--site-gap);
-  }
-  .site-card {
-    padding: 0.76rem;
-    display: grid;
-    gap: 0.56rem;
-    transition: transform 180ms ease, border-color 180ms ease;
-  }
-  .site-card:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--brand) 35%, var(--line) 65%);
-  }
-  .site-card[hidden] {
-    display: none;
-  }
-  .site-card header {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.65rem;
-    align-items: center;
-  }
-  .title-link {
-    font-family: var(--font-serif);
-    font-size: 1.02rem;
-    font-weight: 700;
-  }
-  .title-link:hover,
-  .site-url:hover {
-    color: var(--brand);
-  }
-  .status {
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    font-size: 0.74rem;
-    padding: 0.12rem 0.46rem;
-    text-transform: uppercase;
-    color: var(--text-soft);
-  }
-  .status.active {
-    color: var(--brand);
-  }
-  .status.beta {
-    color: var(--accent);
-  }
-  .meta-row {
-    display: grid;
-    gap: 0.32rem;
-  }
-  .meta-row strong {
-    font-size: 0.8rem;
-    color: var(--text-soft);
-  }
-  .site-url {
+  .sites-header h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.5rem;
+    font-family: var(--font-sans);
     color: var(--text);
-    font-size: 0.88rem;
-    overflow-wrap: anywhere;
   }
-  .chip-wrap {
+  .sites-header p {
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--text-soft);
+  }
+  .sites-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.34rem;
+    flex-direction: column;
+    gap: 2rem;
   }
-  .chip-wrap .chip {
-    font-size: 0.74rem;
+  .site-group {
+    padding: 1.5rem;
+    border-radius: 12px;
   }
-
-  @media (min-width: 760px) {
-    .site-grid {
-      grid-template-columns: repeat(var(--site-cols-md), minmax(0, 1fr));
-    }
+  .group-title {
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-family: var(--font-sans);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.75rem;
   }
-  @media (min-width: 1120px) {
-    .site-grid {
-      grid-template-columns: repeat(var(--site-cols-lg), minmax(0, 1fr));
-    }
+  .group-title .icon {
+    color: var(--brand);
+    opacity: 0.5;
   }
-  @media (min-width: 1520px) {
-    .site-grid {
-      grid-template-columns: repeat(var(--site-cols-xl), minmax(0, 1fr));
-    }
+  
+  /* Convert Markdown lists to Cards */
+  .custom-list-cards ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 1.5rem 0 0 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+    gap: 1.25rem !important;
+  }
+  .custom-list-cards li {
+    margin: 0 !important;
+    padding: 1.25rem !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .custom-list-cards li::before {
+    display: none !important;
+  }
+  .custom-list-cards li:hover {
+    border-color: var(--brand) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1) !important;
+  }
+  .custom-list-cards li a {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text) !important;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: none !important;
+  }
+  .custom-list-cards li a::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: var(--brand);
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
+  }
+  .custom-list-cards li a:hover {
+    color: var(--brand) !important;
+  }
+  .custom-list-cards li p {
+    margin: 0 !important;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>

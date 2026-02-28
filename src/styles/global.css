@@ -1,5 +1,8 @@
-﻿@import "../themes/plume.css";
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "../themes/plume.css";
 @import "../themes/night.css";
+@import "../themes/ocean.css";
+@import "../themes/sunset.css";
 @import "./katex-local.css";
 
 :root {
@@ -22,16 +25,11 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans);
   color: var(--text);
-  background:
-    radial-gradient(1200px 800px at 100% -20%, var(--bg-mesh-a), transparent 65%),
-    radial-gradient(900px 500px at -10% -10%, var(--bg-mesh-b), transparent 60%),
-    var(--bg);
+  background: var(--bg);
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
-}
-
-body.has-overlay {
-  overflow: hidden;
 }
 
 body::before {
@@ -39,13 +37,16 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--line) 25%, transparent 75%) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--line) 25%, transparent 75%) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at 20% 0%, #000 20%, transparent 72%);
-  opacity: 0.22;
+  background-image: 
+    radial-gradient(color-mix(in oklab, var(--line) 40%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse at 50% 0%, black 10%, transparent 80%);
+  opacity: 0.8;
   z-index: -1;
+}
+
+body.has-overlay {
+  overflow: hidden;
 }
 
 html.theme-anim *,
@@ -61,6 +62,11 @@ html.theme-anim *::after {
 a {
   color: inherit;
   text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--brand);
 }
 
 img {
@@ -69,25 +75,25 @@ img {
 }
 
 .container {
-  width: min(1360px, calc(100vw - 20px));
+  width: min(1152px, calc(100vw - 48px));
   margin: 0 auto;
 }
 
 .surface {
-  background:
-    linear-gradient(
-      160deg,
-      color-mix(in oklab, var(--bg-elev) 92%, transparent 8%),
-      color-mix(in oklab, var(--bg-elev) 72%, var(--brand-soft) 28%)
-    );
+  background: var(--bg-elev);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.surface:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
 }
 
 .surface-soft {
-  background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
-  border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
@@ -95,52 +101,60 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.6rem;
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
   border: 1px solid var(--line);
   color: var(--text-soft);
   background: var(--bg-elev);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.chip:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
 .section-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.2rem, 1vw + 1rem, 1.8rem);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(1.2rem, 1vw + 1rem, 1.5rem);
   margin: 0;
+  color: var(--text);
 }
 
 .grid-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 32px;
   align-items: start;
 }
 
-@media (max-width: 1020px) {
-  .container {
-    width: min(980px, calc(100vw - 22px));
-  }
+@media (max-width: 1024px) {
   .grid-main {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .prose {
-  line-height: 1.65;
-  font-size: 1rem;
+  line-height: 1.75;
+  font-size: 1.0625rem;
+  color: var(--text);
 }
 
 .prose p {
-  margin: 0.72rem 0;
+  margin: 1.25em 0;
 }
 
 .fade-up {
-  animation: fade-up 460ms cubic-bezier(.22, .95, .23, 1) both;
+  animation: fade-up 400ms ease-out both;
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -152,31 +166,67 @@ img {
 .prose h2,
 .prose h3,
 .prose h4 {
-  scroll-margin-top: 90px;
-  font-family: var(--font-serif);
-  line-height: 1.35;
+  scroll-margin-top: 100px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
 }
 
-.prose h2,
+.prose h1 {
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+
 .prose h3 {
-  margin-top: 1.45rem;
-  margin-bottom: 0.58rem;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .prose code {
   font-family: "JetBrains Mono", "Consolas", monospace;
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  background-color: var(--brand-soft);
+  color: var(--brand);
+  border-radius: 4px;
 }
 
 .prose pre {
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid var(--line);
-  padding: 0.9rem;
+  padding: 1rem;
   overflow: auto;
-  background: color-mix(in oklab, var(--bg-elev) 86%, var(--bg) 14%);
+  background-color: var(--bg-elev);
+  font-size: 0.875em;
+  line-height: 1.6;
 }
 
 .prose pre code {
-  counter-reset: code-line;
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+  border-radius: 0;
 }
 
 .prose pre code .line {
@@ -187,28 +237,169 @@ img {
   counter-increment: code-line;
   content: counter(code-line);
   display: inline-block;
-  width: 2ch;
-  margin-right: 1.2ch;
-  color: color-mix(in oklab, var(--text-soft) 75%, transparent 25%);
+  width: 1.5rem;
+  margin-right: 1rem;
+  color: var(--text-soft);
   text-align: right;
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+
+.code-block-wrapper {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background-color: var(--bg-elev);
+  overflow: hidden;
+}
+
+.code-block-wrapper pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  background: color-mix(in oklab, var(--bg-elev) 80%, var(--line) 20%);
+  border-bottom: 1px solid var(--line);
+  font-family: "JetBrains Mono", "Consolas", monospace;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.code-block-lang {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.code-block-copy {
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.code-block-copy:hover {
+  background: var(--line);
+  color: var(--text);
+}
+
+.code-block-copy.copied {
+  color: var(--brand);
+}
+
+.diagram-wrapper {
+  position: relative;
+  margin: 2rem 0;
+  border-radius: 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+}
+
+.diagram-wrapper .diagram-host {
+  margin: 0;
+  border: none;
+}
+
+.diagram-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  opacity: 0;
+}
+
+.diagram-wrapper:hover .diagram-copy-btn {
+  opacity: 1;
+}
+
+.diagram-copy-btn:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+.diagram-copy-btn.copied {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.math-wrapper {
+  position: relative;
+}
+
+.math-copy-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.math-wrapper:hover .math-copy-btn {
+  opacity: 1;
+}
+
+.math-copy-btn:hover {
+  background: var(--line);
+  color: var(--text);
+}
+
+.math-copy-btn.copied {
+  color: var(--brand);
 }
 
 .prose blockquote {
-  margin: 1.4rem 0;
-  padding: 0.8rem 1rem;
-  border-left: 3px solid var(--brand);
-  background: color-mix(in oklab, var(--brand-soft) 44%, transparent 56%);
-  border-radius: 8px;
+  margin: 1.5rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid var(--brand);
+  background: var(--bg-elev);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-soft);
+  font-style: italic;
 }
 
 .md-figure {
-  margin: 1.2rem 0;
+  margin: 2rem 0;
 }
 
 .md-figure figcaption {
+  text-align: center;
   color: var(--text-soft);
-  font-size: 0.9rem;
-  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
 }
 
 .img-mark-tip {
@@ -232,4 +423,24 @@ img {
   clip-path: inset(50%);
   clip: rect(0 0 0 0);
   overflow: hidden;
+}
+
+/* Custom Mac-style Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--line) 80%, transparent 20%);
+  border-radius: 10px;
+  border: 2px solid var(--bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-soft);
 }

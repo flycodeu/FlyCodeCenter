@@ -1,71 +1,143 @@
 ﻿---
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import { fetchAllEntries } from "@/utils/query";
+import ListLayout from "@/layouts/ListLayout.astro";
+import { fetchAllContentEntries, fetchAllEntries, makeTagItems } from "@/utils/query";
 import { buildArchiveBuckets, getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { formatDate } from "@/utils/date";
 
 const entries = await fetchAllEntries();
+const allContent = await fetchAllContentEntries();
+const tags = makeTagItems(allContent);
 const map = buildArchiveBuckets(entries);
 const months = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
+
+const stats = [
+  { title: "总文章数", value: entries.length, href: "/archives" },
+  { title: "标签总数", value: tags.length, href: "/types" }
+];
 ---
 
-<BaseLayout title="归档" description="按月份归档浏览全部文章。">
-  <section class="surface archives">
-    <h1>归档</h1>
+<ListLayout title="归档" description="时光的足迹，按月份记录的全部文章。" stats={stats} tags={tags}>
+  <section class="surface timeline-wrap">
     {
-      months.map((month) => (
-        <section class="archive-block">
-          <h2>{month}</h2>
-          <ul>
-            {(map.get(month) ?? []).map((entry) => {
-              const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
-              return (
-                <li>
-                  <a href={url}>{entry.data.title}</a>
-                  <time>{formatDate(entry.data.pubDate)}</time>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))
+      months.map((month) => {
+        const [y, m] = month.split("-");
+        return (
+          <div class="timeline-month">
+            <h2 class="month-title">
+              <span class="year">{y}</span>年<span class="month">{m}</span>月
+              <span class="count">{map.get(month)?.length || 0} 篇</span>
+            </h2>
+            <div class="timeline-list">
+              {(map.get(month) ?? []).map((entry) => {
+                const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
+                return (
+                  <a class="timeline-item" href={url}>
+                    <div class="date">{formatDate(entry.data.pubDate, "MM-DD")}</div>
+                    <div class="title">{entry.data.title}</div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })
     }
   </section>
-</BaseLayout>
+</ListLayout>
 
 <style>
-  .archives {
-    padding: 1rem;
+  .timeline-wrap {
+    padding: 2rem;
+    border-radius: 12px;
   }
-  .archives h1 {
-    margin: 0 0 0.8rem;
-    font-family: var(--font-serif);
+  .timeline-month {
+    position: relative;
+    padding-left: 2rem;
+    border-left: 2px solid var(--line);
+    margin-bottom: 2rem;
   }
-  .archive-block {
-    margin-top: 0.9rem;
+  .timeline-month:last-child {
+    margin-bottom: 0;
   }
-  .archive-block h2 {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
-    color: var(--text-soft);
+  .timeline-month::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 3px solid var(--brand);
   }
-  .archive-block ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    gap: 0.35rem;
-  }
-  .archive-block li {
+  .month-title {
+    margin: 0 0 1rem 0;
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
     display: flex;
-    justify-content: space-between;
-    gap: 0.8rem;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
   }
-  .archive-block a:hover {
+  .month-title .year {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .month-title .month {
+    font-weight: 600;
+  }
+  .month-title .count {
+    font-size: 0.875rem;
     color: var(--brand);
+    background: var(--brand-soft);
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 500;
+    margin-left: 0.5rem;
   }
-  .archive-block time {
+  .timeline-list {
+    display: grid;
+    gap: 1rem;
+  }
+  .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .timeline-item:hover {
+    border-color: var(--brand);
+    transform: translateX(4px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  .timeline-item .date {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.875rem;
     color: var(--text-soft);
-    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .timeline-item .title {
+    font-weight: 500;
+    font-size: 1.0625rem;
+    line-height: 1.4;
+  }
+  @media (max-width: 768px) {
+    .timeline-wrap {
+      padding: 1.5rem 1rem;
+    }
+    .timeline-month {
+      padding-left: 1.25rem;
+    }
+    .timeline-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
   }
 </style>

@@ -1,0 +1,72 @@
+---
+export interface Props {
+  columns?: number;
+}
+
+const { columns = 2 } = Astro.props;
+---
+<div class="custom-card-grid" style={`--grid-cols: ${columns}`}>
+  <slot />
+</div>
+
+<style is:global>
+  .custom-card-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-cols), minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin: 2rem 0;
+  }
+  .custom-card-grid > ul {
+    display: contents !important;
+  }
+  .custom-card-grid > ul > li {
+    margin: 0 !important;
+    padding: 1.5rem !important;
+    background: var(--bg-elev) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 16px !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none !important;
+    position: relative;
+    overflow: hidden;
+  }
+  .custom-card-grid > ul > li::before {
+    display: none !important;
+  }
+  .custom-card-grid > ul > li:hover {
+    border-color: var(--brand) !important;
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 12px 32px -8px color-mix(in oklab, var(--brand) 25%, transparent 75%) !important;
+    z-index: 1;
+  }
+  .custom-card-grid > ul > li > a:first-child {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text) !important;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: none !important;
+  }
+  .custom-card-grid > ul > li > a:first-child::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: var(--brand);
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
+  }
+  .custom-card-grid > ul > li:hover > a:first-child {
+    color: var(--brand) !important;
+  }
+  @media (max-width: 768px) {
+    .custom-card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
