@@ -1,0 +1,38 @@
+---
+import siteConfig from "@/site.config";
+---
+
+<section class="surface profile-card">
+  <img src={siteConfig.theme.profile.avatar} alt={siteConfig.theme.profile.name} loading="lazy" />
+  <h3>{siteConfig.theme.profile.name}</h3>
+  <p>{siteConfig.theme.profile.desc}</p>
+  <small>{siteConfig.theme.profile.location}</small>
+</section>
+
+<style>
+  .profile-card {
+    padding: 1rem;
+  }
+  .profile-card img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.6rem;
+    border: 1px solid var(--line);
+  }
+  .profile-card h3 {
+    margin: 0;
+    font-family: var(--font-serif);
+  }
+  .profile-card p {
+    margin: 0.45rem 0 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+  }
+  .profile-card small {
+    display: block;
+    margin-top: 0.45rem;
+    color: var(--text-soft);
+  }
+</style>

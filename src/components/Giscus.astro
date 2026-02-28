@@ -1,0 +1,91 @@
+---
+import siteConfig from "@/site.config";
+
+interface Props {
+  deferUntilEvent?: string;
+}
+
+const { deferUntilEvent } = Astro.props;
+const giscus = siteConfig.comment.giscus;
+const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(giscus.repoId) && Boolean(giscus.categoryId);
+---
+
+{
+  ready && (
+    <section class="comments-wrap">
+      <div id="giscus-anchor"></div>
+    </section>
+  )
+}
+
+<script type="module" define:vars={{ deferUntilEvent, giscus, ready }}>
+  if (!ready) {
+    // Skip script injection when giscus credentials are not configured.
+  }
+
+  const anchor = document.getElementById("giscus-anchor");
+  let mounted = false;
+  let readyToMount = !deferUntilEvent;
+
+  const themeOfSite = () => {
+    const theme = document.documentElement.dataset.theme;
+    return theme === "night" ? "dark" : "light";
+  };
+
+  const syncTheme = () => {
+    const frame = document.querySelector("iframe.giscus-frame");
+    if (!(frame instanceof HTMLIFrameElement)) return;
+    frame.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: themeOfSite() } } },
+      "https://giscus.app"
+    );
+  };
+
+  const mount = () => {
+    if (!ready || !anchor || mounted || !readyToMount) return;
+    mounted = true;
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.setAttribute("data-repo", giscus.repo);
+    script.setAttribute("data-repo-id", giscus.repoId);
+    script.setAttribute("data-category", giscus.category);
+    script.setAttribute("data-category-id", giscus.categoryId);
+    script.setAttribute("data-mapping", giscus.mapping);
+    script.setAttribute("data-reactions-enabled", giscus.reactionsEnabled);
+    script.setAttribute("data-emit-metadata", giscus.emitMetadata);
+    script.setAttribute("data-input-position", giscus.inputPosition);
+    script.setAttribute("data-theme", themeOfSite());
+    script.setAttribute("data-lang", giscus.lang);
+    anchor.appendChild(script);
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          mount();
+          observer.disconnect();
+          break;
+        }
+      }
+    },
+    { rootMargin: "200px 0px" }
+  );
+
+  if (anchor) observer.observe(anchor);
+
+  if (deferUntilEvent) {
+    window.addEventListener(
+      deferUntilEvent,
+      () => {
+        readyToMount = true;
+        mount();
+      },
+      { once: true }
+    );
+  }
+
+  window.addEventListener("site:theme-change", syncTheme);
+</script>

@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="plume" data-default-theme="plume" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ArrayList 入门：动态数组的扩容策略 | 飞云的编程宝典</title><meta name="description" content="理解容量、扩容倍数与摊还复杂度。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="canonical" href="https://flycodecenter.vercel.app/article/T-11675759"><meta property="og:type" content="website"><meta property="og:title" content="ArrayList 入门：动态数组的扩容策略 | 飞云的编程宝典"><meta property="og:description" content="理解容量、扩容倍数与摊还复杂度。"><meta property="og:image" content="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80"><meta property="og:url" content="https://flycodecenter.vercel.app/article/T-11675759"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="ArrayList 入门：动态数组的扩容策略 | 飞云的编程宝典"><meta name="twitter:description" content="理解容量、扩容倍数与摊还复杂度。"><meta name="twitter:image" content="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80"><meta name="theme-color" content="#f6f8ff"><meta name="apple-mobile-web-app-capable" content="yes"><script>
+      (() => {
+        const root = document.documentElement;
+        const key = "flycode-theme";
+        const fallback = root.dataset.defaultTheme || "plume";
+        const saved = localStorage.getItem(key) || fallback;
+        root.dataset.theme = saved;
+        root.dataset.encryptedLocked = "0";
+      })();
+    </script><style>.toc[data-astro-cid-obewoz47]{padding:.9rem;position:sticky;top:84px}.toc[data-astro-cid-obewoz47] h3[data-astro-cid-obewoz47]{margin:0 0 .7rem;font-size:.95rem}.toc[data-astro-cid-obewoz47] ol[data-astro-cid-obewoz47]{list-style:none;margin:0;padding:0;display:grid;gap:.42rem}.toc[data-astro-cid-obewoz47] li[data-astro-cid-obewoz47][data-depth="3"]{padding-left:.8rem}.toc[data-astro-cid-obewoz47] a[data-astro-cid-obewoz47]{color:var(--text-soft);font-size:.87rem}.toc[data-astro-cid-obewoz47] a[data-astro-cid-obewoz47].active{color:var(--brand)}.comment-section[data-astro-cid-jvxsf75u]{margin-top:1.8rem;padding:.95rem}.comment-section[data-astro-cid-jvxsf75u] h3[data-astro-cid-jvxsf75u]{margin:0 0 .8rem}#reading-progress[data-astro-cid-mu6cnre2]{position:fixed;top:0;left:0;width:100%;height:3px;transform-origin:left center;transform:scaleX(0);z-index:120;background:linear-gradient(90deg,var(--brand),var(--accent))}.copy-box[data-astro-cid-55hnotdj]{margin-top:1.6rem;padding:.95rem}.copy-box[data-astro-cid-55hnotdj] strong[data-astro-cid-55hnotdj]{display:block;margin-bottom:.45rem}.copy-box[data-astro-cid-55hnotdj] p[data-astro-cid-55hnotdj]{margin:.2rem 0;color:var(--text-soft);font-size:.92rem}.copy-box[data-astro-cid-55hnotdj] a[data-astro-cid-55hnotdj]{color:var(--brand)}.post-head[data-astro-cid-gjtny2mx]{padding:.72rem;margin-bottom:.5rem;display:grid;gap:.46rem}.code-row[data-astro-cid-gjtny2mx]{display:flex;align-items:center;justify-content:flex-start}.code-chip[data-astro-cid-gjtny2mx]{font-size:.78rem;letter-spacing:.04em;color:var(--brand)}.post-head[data-astro-cid-gjtny2mx] h1[data-astro-cid-gjtny2mx]{margin:0;font-family:var(--font-serif);font-size:clamp(1.6rem,1.2vw + 1.3rem,2.3rem)}.summary[data-astro-cid-gjtny2mx]{margin:0;color:var(--text-soft);line-height:1.6}.meta-row[data-astro-cid-gjtny2mx],.tag-row[data-astro-cid-gjtny2mx]{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.08rem}.tag-chip[data-astro-cid-gjtny2mx]{color:var(--text)}.article-body[data-astro-cid-gjtny2mx]{padding:clamp(.8rem,.55vw + .72rem,1.08rem)}.prev-next[data-astro-cid-gjtny2mx]{margin-top:.78rem;padding:.74rem;display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.prev-next[data-astro-cid-gjtny2mx] a[data-astro-cid-gjtny2mx]{color:var(--brand)}.prev-next[data-astro-cid-gjtny2mx] a[data-astro-cid-gjtny2mx]:last-child{text-align:right}.diagram-host{margin:1rem 0;border:1px solid var(--line);border-radius:12px;padding:.6rem;background:color-mix(in oklab,var(--bg-elev) 86%,transparent 14%)}.drawio-host figcaption{color:var(--text-soft);font-size:.88rem;margin-top:.5rem}
+</style>
+<link rel="stylesheet" href="/_astro/_page_.CBJakrBw.css"></head> <body data-astro-cid-37fxchfa>  <header class="site-header" data-astro-cid-3ef6ksr2> <div class="container header-inner" data-astro-cid-3ef6ksr2> <a class="logo" href="/" data-astro-cid-3ef6ksr2> <span class="logo-mark" data-astro-cid-3ef6ksr2>FC</span> <span class="logo-text" data-astro-cid-3ef6ksr2>FlyCodeCenter</span> </a> <nav class="nav" data-astro-cid-dmqpwcec> <a class="nav-link " href="/" data-astro-cid-dmqpwcec> 首页 </a><a class="nav-link " href="/blog" data-astro-cid-dmqpwcec> 博客 </a><a class="nav-link " href="/tutorials" data-astro-cid-dmqpwcec> 教程 </a><a class="nav-link " href="/types" data-astro-cid-dmqpwcec> 标签 </a><a class="nav-link " href="/sites" data-astro-cid-dmqpwcec> 聚合 </a><a class="nav-link " href="/reading" data-astro-cid-dmqpwcec> 收藏 </a><a class="nav-link " href="/archives" data-astro-cid-dmqpwcec> 归档 </a><a class="nav-link " href="/projects" data-astro-cid-dmqpwcec> 项目 </a><a class="nav-link " href="/about" data-astro-cid-dmqpwcec> 关于 </a> </nav>  <div class="actions" data-astro-cid-3ef6ksr2> <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索" data-astro-cid-3ef6ksr2> <span class="search-hotkey" data-astro-cid-3ef6ksr2>/</span> <span class="search-text" data-astro-cid-3ef6ksr2>搜索</span> </button> <button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes="[&#34;plume&#34;,&#34;night&#34;]" data-astro-cid-x3pjskd3> <span class="theme-icon" aria-hidden="true" data-astro-cid-x3pjskd3>☼</span> </button> <script type="module">const storageKey = "flycode-theme";
+const enableTransition = true;
+
+  const button = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  const themes = JSON.parse(button?.dataset.themes ?? "[]");
+  const current = root.dataset.theme ?? themes[0];
+  if (current) {
+    localStorage.setItem(storageKey, current);
+  }
+
+  button?.addEventListener("click", () => {
+    if (!themes.length) return;
+    if (enableTransition) {
+      root.classList.add("theme-anim");
+      window.setTimeout(() => root.classList.remove("theme-anim"), 280);
+    }
+    const now = root.dataset.theme ?? themes[0];
+    const idx = themes.indexOf(now);
+    const next = themes[(idx + 1) % themes.length];
+    root.dataset.theme = next;
+    localStorage.setItem(storageKey, next);
+    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: next }));
+  });
+</script>  <a class="icon-btn" href="https://github.com/flycodecenter" target="_blank" rel="noreferrer" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" data-astro-cid-3ef6ksr2> <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58l-.02-2.17c-3.34.73-4.04-1.42-4.04-1.42-.55-1.37-1.34-1.74-1.34-1.74-1.09-.74.08-.72.08-.72 1.2.09 1.83 1.22 1.83 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.29.76-1.58-2.67-.3-5.48-1.31-5.48-5.84 0-1.29.47-2.34 1.22-3.16-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.31 1.21a11.6 11.6 0 0 1 6.03 0c2.3-1.53 3.3-1.2 3.3-1.2.66 1.65.25 2.88.13 3.18.76.82 1.22 1.87 1.22 3.16 0 4.54-2.81 5.54-5.49 5.83.43.36.81 1.08.81 2.18l-.01 3.23c0 .32.22.69.83.57A12 12 0 0 0 12 .5" data-astro-cid-3ef6ksr2></path> </svg> </a> </div> </div> </header>  <main class="container" data-astro-cid-37fxchfa>  <div id="reading-progress" data-astro-cid-mu6cnre2></div> <script type="module">
+  const bar = document.getElementById("reading-progress");
+  let ticking = false;
+
+  const update = () => {
+    if (!bar) return;
+    const scrollTop = window.scrollY;
+    const total = document.body.scrollHeight - window.innerHeight;
+    const progress = total > 0 ? Math.min(100, (scrollTop / total) * 100) : 0;
+    bar.style.transform = `scaleX(${progress / 100})`;
+    ticking = false;
+  };
+
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  update();
+</script>  <div class="grid-main" data-astro-cid-gjtny2mx> <section data-astro-cid-gjtny2mx> <header class="surface post-head" data-astro-cid-gjtny2mx> <div class="code-row" data-astro-cid-gjtny2mx><span class="chip code-chip" data-astro-cid-gjtny2mx>T-11675759</span></div> <h1 data-astro-cid-gjtny2mx>ArrayList 入门：动态数组的扩容策略</h1> <p class="summary" data-astro-cid-gjtny2mx>从结构特性到复杂度分析，快速建立动态数组的实战认知。</p> <div class="meta-row" data-astro-cid-gjtny2mx> <span class="chip" data-astro-cid-gjtny2mx>58 字</span> <span class="chip" data-astro-cid-gjtny2mx>1 分钟</span> <span class="chip" data-astro-cid-gjtny2mx>发布 2026/02/10</span> <span class="chip" data-astro-cid-gjtny2mx>更新 2026/02/12</span> </div> <div class="tag-row" data-astro-cid-gjtny2mx> <a class="chip tag-chip" href="/tags/tutorial" data-astro-cid-gjtny2mx>tutorial</a><a class="chip tag-chip" href="/tags/datastruct" data-astro-cid-gjtny2mx>datastruct</a><a class="chip tag-chip" href="/tags/array" data-astro-cid-gjtny2mx>array</a> </div> </header> <article class="surface prose article-body" data-article-encrypted="0" data-astro-cid-gjtny2mx> <h2 id="动态数组是什么">动态数组是什么</h2>
+<p>动态数组在逻辑上是连续空间，容量不足时会触发扩容并搬移数据。</p>
+<h2 id="复杂度">复杂度</h2>
+<ul>
+<li>随机访问：<code>O(1)</code></li>
+<li>末尾插入：摊还 <code>O(1)</code></li>
+<li>中间插入：<code>O(n)</code></li>
+</ul> </article> <section class="surface copy-box" data-astro-cid-55hnotdj><strong data-astro-cid-55hnotdj>版权声明</strong><p data-astro-cid-55hnotdj>本文标题：ArrayList 入门：动态数组的扩容策略</p><p data-astro-cid-55hnotdj>作者：飞云</p><p data-astro-cid-55hnotdj>许可协议：CC-BY-4.0</p><p data-astro-cid-55hnotdj>本文链接：<a href="https://flycodecenter.vercel.app/article/T-11675759" data-astro-cid-55hnotdj>https://flycodecenter.vercel.app/article/T-11675759</a></p></section> <nav class="surface prev-next" data-astro-cid-gjtny2mx> <span data-astro-cid-gjtny2mx></span> <a href="/article/T-DAED723E" data-astro-cid-gjtny2mx>HashTable 实战：冲突处理与装载因子 →</a> </nav>  </section> <aside data-astro-cid-gjtny2mx><aside class="surface toc" data-astro-cid-obewoz47><h3 data-astro-cid-obewoz47>此页内容</h3><ol id="toc-list" data-astro-cid-obewoz47><li data-depth="2" data-astro-cid-obewoz47><a href="#动态数组是什么" data-astro-cid-obewoz47>动态数组是什么</a></li><li data-depth="2" data-astro-cid-obewoz47><a href="#复杂度" data-astro-cid-obewoz47>复杂度</a></li></ol></aside><script type="module">
+      const root = document.getElementById("toc-list");
+      if (!root) {
+        // no-op
+      } else {
+        const links = new Map();
+        root.querySelectorAll("a").forEach((a) => {
+          const id = a.getAttribute("href")?.replace(/^#/, "");
+          if (!id) return;
+          links.set(id, a);
+        });
+
+        const setActive = (id) => {
+          links.forEach((anchor, key) => {
+            anchor.classList.toggle("active", key === id);
+          });
+        };
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((item) => item.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            if (!visible.length) return;
+            setActive(visible[0].target.id);
+          },
+          {
+            rootMargin: "-20% 0px -65% 0px",
+            threshold: [0.1, 0.35, 0.7]
+          }
+        );
+
+        links.forEach((_, id) => {
+          const heading = document.getElementById(id);
+          if (heading) observer.observe(heading);
+        });
+      }
+    </script></aside> </div> <script type="module">const isEncrypted = false;
+const enableMermaid = true;
+const enableDrawio = true;
+const enableEcharts = true;
+const mermaidBundle = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const mermaidTheme = "default";
+const drawioViewerBase = "https://viewer.diagrams.net";
+const echartsBundle = "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js";
+const chartHeight = 360;
+
+    const root = document.documentElement;
+    root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
+
+    if (isEncrypted) {
+      window.addEventListener("site:decrypted", () => {
+        root.dataset.encryptedLocked = "0";
+      });
+    }
+
+    if (isEncrypted) {
+      // encrypted article should not initialize rich diagram runtimes
+    } else {
+      const article = document.querySelector(".article-body");
+      if (article) {
+        const renderMermaid = async () => {
+          const blocks = article.querySelectorAll("pre code.language-mermaid");
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ mermaidBundle);
+          const mermaid = mod.default ?? mod;
+          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+
+          let index = 0;
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = code.textContent || "";
+            const host = document.createElement("div");
+            host.className = "diagram-host mermaid-host";
+            host.textContent = raw;
+            pre.replaceWith(host);
+
+            const id = `mermaid-${index++}`;
+            try {
+              const result = await mermaid.render(id, raw);
+              host.innerHTML = result.svg;
+            } catch (error) {
+              host.textContent = "Mermaid 渲染失败，请检查语法。";
+              console.error(error);
+            }
+          }
+        };
+
+        const renderDrawio = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("drawio")) return true;
+            return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
+          });
+          if (!blocks.length) return;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const src = (code.textContent || "").trim();
+            const host = document.createElement("figure");
+            host.className = "diagram-host drawio-host";
+
+            if (!src) {
+              host.textContent = "Draw.io 代码块需要填写文件 URL。";
+              pre.replaceWith(host);
+              continue;
+            }
+
+            const iframe = document.createElement("iframe");
+            const encoded = btoa(unescape(encodeURIComponent(src)));
+            iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
+            iframe.loading = "lazy";
+            iframe.referrerPolicy = "no-referrer";
+            iframe.title = "drawio diagram";
+            iframe.style.width = "100%";
+            iframe.style.height = "460px";
+            iframe.style.border = "1px solid var(--line)";
+            iframe.style.borderRadius = "12px";
+            host.appendChild(iframe);
+
+            const note = document.createElement("figcaption");
+            note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
+            host.appendChild(note);
+            pre.replaceWith(host);
+          }
+        };
+
+        const renderCharts = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("chart")) return true;
+            if (!(lang.includes("json") || lang.includes("plain"))) return false;
+            return raw.startsWith("{") && raw.includes("\"series\"");
+          });
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ echartsBundle);
+          const echarts = mod.default ?? mod;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = (code.textContent || "{}").trim();
+            const host = document.createElement("div");
+            host.className = "diagram-host chart-host";
+            host.style.height = `${chartHeight}px`;
+            pre.replaceWith(host);
+
+            try {
+              const option = JSON.parse(raw);
+              const chart = echarts.init(host);
+              chart.setOption(option);
+              const resize = () => chart.resize();
+              window.addEventListener("resize", resize);
+            } catch (error) {
+              host.textContent = "图表配置 JSON 解析失败。";
+              console.error(error);
+            }
+          }
+        };
+
+        if (enableMermaid) renderMermaid().catch(console.error);
+        if (enableDrawio) renderDrawio().catch(console.error);
+        if (enableEcharts) renderCharts().catch(console.error);
+      }
+    }
+  </script> <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"ArrayList 入门：动态数组的扩容策略","description":"理解容量、扩容倍数与摊还复杂度。","datePublished":"2026-02-10T00:00:00.000Z","dateModified":"2026-02-12T00:00:00.000Z","author":{"@type":"Person","name":"飞云"},"mainEntityOfPage":"https://flycodecenter.vercel.app/article/T-11675759","image":"https://flycodecenter.vercel.app/https:/images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80","keywords":"tutorial, datastruct, array"}</script>  </main> <footer class="site-footer" data-astro-cid-37fxchfa> <div class="container footer-inner" data-astro-cid-37fxchfa> <p data-astro-cid-37fxchfa>Built with Astro. Static First.</p> <small data-astro-cid-37fxchfa>Copyright © 2026 飞云</small> </div> </footer> <div id="search-root" class="search-root" data-native="1" data-shortcut="/" data-astro-cid-qk3db3zz><dialog id="search-modal" class="search-modal" data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results" class="search-results" data-astro-cid-qk3db3zz></ul></div></dialog><div id="search-fallback" class="search-fallback" hidden data-astro-cid-qk3db3zz><div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索" data-astro-cid-qk3db3zz><label class="search-input-wrap" for="search-input-fallback" data-astro-cid-qk3db3zz><span class="sr-only" data-astro-cid-qk3db3zz>站内搜索</span><input id="search-input-fallback" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" data-astro-cid-qk3db3zz></label><ul id="search-results-fallback" class="search-results" data-astro-cid-qk3db3zz></ul></div></div></div><script type="module">
+  import "../scripts/search-modal.ts";
+</script>    </body></html> 

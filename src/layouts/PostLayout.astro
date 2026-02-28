@@ -1,0 +1,330 @@
+﻿---
+import siteConfig from "@/site.config";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TOC from "@/components/TOC.astro";
+import Comments from "@/components/Comments.astro";
+import ReadingProgress from "@/components/ReadingProgress.astro";
+import Copyright from "@/components/Copyright.astro";
+import EncryptGate from "@/components/EncryptGate.astro";
+import { formatDate } from "@/utils/date";
+import { absoluteUrl } from "@/utils/url";
+import { buildArticleJsonLd } from "@/utils/seo";
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface Props {
+  title: string;
+  code?: string;
+  summary?: string;
+  description: string;
+  tags: string[];
+  pubDate: Date;
+  updatedDate?: Date;
+  headings?: Heading[];
+  wordCount?: number;
+  readingMinutes?: number;
+  articleUrl: string;
+  encrypted?: boolean;
+  encryptedFile?: string;
+  passwordHint?: string;
+  prev?: Neighbor;
+  next?: Neighbor;
+  cover?: string;
+}
+
+const {
+  title,
+  code = "",
+  summary = "",
+  description,
+  tags,
+  pubDate,
+  updatedDate,
+  headings = [],
+  wordCount = 0,
+  readingMinutes = 0,
+  articleUrl,
+  encrypted = false,
+  encryptedFile = "",
+  passwordHint = "",
+  prev,
+  next,
+  cover
+} = Astro.props;
+
+const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
+const jsonLd = buildArticleJsonLd({
+  title,
+  description,
+  url: absoluteUrl(articleUrl),
+  datePublished: pubDate,
+  dateModified: updatedDate,
+  image: cover,
+  tags
+});
+---
+
+<BaseLayout title={title} description={description} canonicalPath={articleUrl} image={cover}>
+  <ReadingProgress />
+  <div class="grid-main">
+    <section>
+      <header class="surface post-head">
+        {code && <div class="code-row"><span class="chip code-chip">{code}</span></div>}
+        <h1>{title}</h1>
+        {summary && <p class="summary">{summary}</p>}
+        <div class="meta-row">
+          <span class="chip">{wordCount} 字</span>
+          {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
+          <span class="chip">发布 {formatDate(pubDate)}</span>
+          {updatedDate && <span class="chip">更新 {formatDate(updatedDate)}</span>}
+        </div>
+        <div class="tag-row">
+          {tags.map((tag) => <a class="chip tag-chip" href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>)}
+        </div>
+      </header>
+
+      <article class="surface prose article-body" data-article-encrypted={encrypted ? "1" : "0"}>
+        {
+          encrypted && siteConfig.encrypt.enable ? (
+            <EncryptGate encryptedFile={encryptedFile} passwordHint={passwordHint} />
+          ) : (
+            <slot />
+          )
+        }
+      </article>
+
+      <Copyright title={title} url={absoluteUrl(articleUrl)} />
+
+      {
+        siteConfig.prevNext.enable && (prev || next) && (
+          <nav class="surface prev-next">
+            {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
+            {next ? <a href={next.url}>{next.title} →</a> : <span />}
+          </nav>
+        )
+      }
+
+      <Comments deferUntilEvent={deferUntilEvent} />
+    </section>
+
+    {!encrypted && <aside><TOC headings={headings} /></aside>}
+  </div>
+
+  <script
+    type="module"
+    define:vars={{
+      isEncrypted: encrypted,
+      enableMermaid: siteConfig.features.diagram.mermaid,
+      enableDrawio: siteConfig.features.diagram.drawio,
+      enableEcharts: siteConfig.features.diagram.echarts,
+      mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
+      mermaidTheme: siteConfig.diagram.mermaid.theme,
+      drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
+      echartsBundle: siteConfig.diagram.echarts.bundleUrl,
+      chartHeight: siteConfig.diagram.echarts.defaultHeight
+    }}
+  >
+    const root = document.documentElement;
+    root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
+
+    if (isEncrypted) {
+      window.addEventListener("site:decrypted", () => {
+        root.dataset.encryptedLocked = "0";
+      });
+    }
+
+    if (isEncrypted) {
+      // encrypted article should not initialize rich diagram runtimes
+    } else {
+      const article = document.querySelector(".article-body");
+      if (article) {
+        const renderMermaid = async () => {
+          const blocks = article.querySelectorAll("pre code.language-mermaid");
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ mermaidBundle);
+          const mermaid = mod.default ?? mod;
+          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+
+          let index = 0;
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = code.textContent || "";
+            const host = document.createElement("div");
+            host.className = "diagram-host mermaid-host";
+            host.textContent = raw;
+            pre.replaceWith(host);
+
+            const id = `mermaid-${index++}`;
+            try {
+              const result = await mermaid.render(id, raw);
+              host.innerHTML = result.svg;
+            } catch (error) {
+              host.textContent = "Mermaid 渲染失败，请检查语法。";
+              console.error(error);
+            }
+          }
+        };
+
+        const renderDrawio = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("drawio")) return true;
+            return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
+          });
+          if (!blocks.length) return;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const src = (code.textContent || "").trim();
+            const host = document.createElement("figure");
+            host.className = "diagram-host drawio-host";
+
+            if (!src) {
+              host.textContent = "Draw.io 代码块需要填写文件 URL。";
+              pre.replaceWith(host);
+              continue;
+            }
+
+            const iframe = document.createElement("iframe");
+            const encoded = btoa(unescape(encodeURIComponent(src)));
+            iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
+            iframe.loading = "lazy";
+            iframe.referrerPolicy = "no-referrer";
+            iframe.title = "drawio diagram";
+            iframe.style.width = "100%";
+            iframe.style.height = "460px";
+            iframe.style.border = "1px solid var(--line)";
+            iframe.style.borderRadius = "12px";
+            host.appendChild(iframe);
+
+            const note = document.createElement("figcaption");
+            note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
+            host.appendChild(note);
+            pre.replaceWith(host);
+          }
+        };
+
+        const renderCharts = async () => {
+          const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
+            const raw = (code.textContent || "").trim();
+            const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
+            if (lang.includes("chart")) return true;
+            if (!(lang.includes("json") || lang.includes("plain"))) return false;
+            return raw.startsWith("{") && raw.includes("\"series\"");
+          });
+          if (!blocks.length) return;
+
+          const mod = await import(/* @vite-ignore */ echartsBundle);
+          const echarts = mod.default ?? mod;
+
+          for (const code of blocks) {
+            const pre = code.closest("pre");
+            if (!pre) continue;
+            const raw = (code.textContent || "{}").trim();
+            const host = document.createElement("div");
+            host.className = "diagram-host chart-host";
+            host.style.height = `${chartHeight}px`;
+            pre.replaceWith(host);
+
+            try {
+              const option = JSON.parse(raw);
+              const chart = echarts.init(host);
+              chart.setOption(option);
+              const resize = () => chart.resize();
+              window.addEventListener("resize", resize);
+            } catch (error) {
+              host.textContent = "图表配置 JSON 解析失败。";
+              console.error(error);
+            }
+          }
+        };
+
+        if (enableMermaid) renderMermaid().catch(console.error);
+        if (enableDrawio) renderDrawio().catch(console.error);
+        if (enableEcharts) renderCharts().catch(console.error);
+      }
+    }
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</BaseLayout>
+
+<style>
+  .post-head {
+    padding: 0.72rem;
+    margin-bottom: 0.5rem;
+    display: grid;
+    gap: 0.46rem;
+  }
+  .code-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .code-chip {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--brand);
+  }
+  .post-head h1 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: clamp(1.6rem, 1.2vw + 1.3rem, 2.3rem);
+  }
+  .summary {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+  }
+  .meta-row,
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.08rem;
+  }
+  .tag-chip {
+    color: var(--text);
+  }
+  .article-body {
+    padding: clamp(0.8rem, 0.55vw + 0.72rem, 1.08rem);
+  }
+  .prev-next {
+    margin-top: 0.78rem;
+    padding: 0.74rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+  .prev-next a {
+    color: var(--brand);
+  }
+  .prev-next a:last-child {
+    text-align: right;
+  }
+  :global(.diagram-host) {
+    margin: 1rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.6rem;
+    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
+  }
+  :global(.drawio-host figcaption) {
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    margin-top: 0.5rem;
+  }
+</style>

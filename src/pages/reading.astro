@@ -1,0 +1,31 @@
+﻿---
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import ResourceCard from "@/components/ResourceCard.astro";
+import { fetchAllContentEntries, fetchReadingEntries, makeTagItems } from "@/utils/query";
+
+const [entries, allEntries] = await Promise.all([fetchReadingEntries(), fetchAllContentEntries()]);
+const tags = makeTagItems(allEntries);
+---
+
+<ListLayout
+  title={siteConfig.pages.reading.title}
+  description="长期收藏的高质量文章与资料。"
+  stats={[
+    { title: "收藏条目", value: entries.length },
+    { title: "标签索引", value: "打开", href: "/tags" },
+    { title: "聚合网站", value: "打开", href: "/sites" }
+  ]}
+  tags={tags}
+>
+  <div class="list">
+    {entries.map((entry) => <ResourceCard entry={entry} />)}
+  </div>
+</ListLayout>
+
+<style>
+  .list {
+    display: grid;
+    gap: 0.7rem;
+  }
+</style>

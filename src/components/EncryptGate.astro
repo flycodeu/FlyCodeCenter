@@ -1,0 +1,65 @@
+﻿---
+interface Props {
+  encryptedFile: string;
+  passwordHint?: string;
+}
+
+const { encryptedFile, passwordHint = "" } = Astro.props;
+---
+
+<section class="surface encrypt-gate" data-encrypted-file={encryptedFile}>
+  <h2>本文已加密</h2>
+  <p>输入密码后将在浏览器本地解密渲染。</p>
+  {passwordHint && <p class="hint">提示：{passwordHint}</p>}
+  <form id="decrypt-form">
+    <input id="decrypt-password" type="password" placeholder="请输入访问密码" autocomplete="off" required />
+    <button type="submit">解密并阅读</button>
+  </form>
+  <p id="decrypt-message"></p>
+  <article id="decrypted-content" class="prose"></article>
+</section>
+
+<script>
+  import "../scripts/encrypt-gate";
+</script>
+
+<style>
+  .encrypt-gate {
+    padding: 1rem;
+  }
+  .encrypt-gate h2 {
+    margin-top: 0;
+  }
+  .hint {
+    color: var(--text-soft);
+    margin: 0.4rem 0;
+  }
+  form {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.8rem 0;
+    flex-wrap: wrap;
+  }
+  input,
+  button {
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.55rem 0.7rem;
+  }
+  input {
+    min-width: min(360px, 100%);
+    flex: 1;
+  }
+  button {
+    cursor: pointer;
+    background: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 70%, var(--line) 30%);
+    color: #fff;
+  }
+  #decrypt-message {
+    color: var(--text-soft);
+  }
+</style>
+

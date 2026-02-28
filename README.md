@@ -1,46 +1,116 @@
-# Astro Starter Kit: Basics
+﻿# FlyCodeCenter Astro Blog
 
-```sh
-npm create astro@latest -- --template basics
+静态优先、可插拔 provider、按需加载的 Astro 博客工程。
+
+## 本地启动
+
+```bash
+npm install
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 构建与预览
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```bash
+npm run build
+npm run preview
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+`build` 后会自动执行 `postbuild`：
 
-## 🧞 Commands
+1. 生成 `minisearch` 索引（`public/search/minisearch.json` 与 `dist/search/minisearch.json`）
+2. 生成 `pagefind` 索引（`dist/pagefind`）
 
-All commands are run from the root of the project, from a terminal:
+## 关键命令
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+```bash
+npm run build:minisearch
+npm run build:pagefind
+npm run encrypt
+```
 
-## 👀 Want to learn more?
+## Vercel 部署（<= 6 步）
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+1. 把仓库推到 GitHub。
+2. 在 Vercel 新建 Project 并导入仓库。
+3. Framework Preset 选择 Astro（默认即可）。
+4. Build Command 使用 `npm run build`，Output Directory 使用 `dist`。
+5. 在 Vercel Project Settings 配置可选环境变量（见下文）。
+6. 点击 Deploy。
+
+## 环境变量
+
+可选变量（不配也能构建）：
+
+```bash
+# Giscus
+PUBLIC_GISCUS_REPO=
+PUBLIC_GISCUS_REPO_ID=
+PUBLIC_GISCUS_CATEGORY=
+PUBLIC_GISCUS_CATEGORY_ID=
+
+# Algolia
+PUBLIC_ALGOLIA_APP_ID=
+PUBLIC_ALGOLIA_API_KEY=
+PUBLIC_ALGOLIA_INDEX_NAME=
+
+# AI
+PUBLIC_AI_API_BASE_URL=
+PUBLIC_AI_MODEL=
+PUBLIC_AI_WIDGET_SRC=
+PUBLIC_AI_WIDGET_IFRAME=
+
+# Waline/Twikoo
+PUBLIC_WALINE_SERVER=
+PUBLIC_TWIKOO_ENV_ID=
+
+# Encrypt script only
+ENCRYPT_PASSWORD=
+```
+
+## 统一配置
+
+所有可变项集中在 `src/site.config.ts`：
+
+- SEO、hostname、sitemap、rss、robots
+- 博客排序（置顶优先）
+- 卡片封面布局（左/右/无图）与封面高度/样式
+- 分页策略（`page` / `loadMore`）
+- 搜索 provider（`minisearch` / `pagefind` / `algolia`）
+- 评论 provider（`giscus` / `waline` / `twikoo`）
+- AI 看板连接策略（代理优先）
+- Mermaid / Draw.io / ECharts 图形能力开关
+- 看板娘开关与行为参数
+- 资源页与收藏页开关
+
+## 新增页面
+
+- `/types` 与 `/types/[domain]`：类型总览与域详情（blog/tutorial/sites/reading）
+- `/sites`：聚合网站
+- `/reading`：优秀文章收集
+
+## Markdown 图形语法
+
+文章内可使用以下 fenced code：
+
+~~~md
+```mermaid
+flowchart LR
+A-->B
+```
+
+```drawio
+https://your-drawio-file-url
+```
+
+```chart
+{ "xAxis": {"type":"category"}, "yAxis": {"type":"value"}, "series": [{"type":"bar","data":[1,2,3]}] }
+```
+~~~
+
+图形脚本按需加载，仅在文章出现对应代码块时加载。
+
+## 加密边界说明
+
+这是静态站前端解密方案（AES-GCM + PBKDF2），适合降低明文暴露风险，不等同于后端鉴权。  
+拥有构建产物和足够分析能力的攻击者仍可尝试离线破解，因此不适合高敏感数据。

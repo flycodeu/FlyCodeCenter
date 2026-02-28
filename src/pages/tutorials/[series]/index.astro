@@ -1,0 +1,51 @@
+﻿---
+import ListLayout from "@/layouts/ListLayout.astro";
+import PostCard from "@/components/PostCard.astro";
+import { fetchAllEntries, fetchTutorialEntries, fetchTutorialSeries, makeTagItems } from "@/utils/query";
+
+export async function getStaticPaths() {
+  const tutorials = await fetchTutorialEntries();
+  const series = [...new Set(tutorials.map((item) => item.data.series))];
+  return series.map((key) => ({
+    params: { series: key },
+    props: { series: key }
+  }));
+}
+
+const { series } = Astro.props;
+const [entries, allEntries] = await Promise.all([fetchTutorialSeries(series), fetchAllEntries()]);
+const tags = makeTagItems(allEntries);
+---
+
+<ListLayout
+  title={`教程系列：${series}`}
+  description="按章节顺序浏览该系列教程。"
+  stats={[
+    { title: "章节数量", value: entries.length },
+    { title: "教程总览", value: "打开", href: "/tutorials" },
+    { title: "归档页", value: "打开", href: "/archives" }
+  ]}
+  tags={tags}
+>
+  <div class="list">
+    {
+      entries.map((entry) => (
+        <div class="order-wrap">
+          <span class="chip">第 {entry.data.order} 章</span>
+          <PostCard entry={entry} kind="tutorial" />
+        </div>
+      ))
+    }
+  </div>
+</ListLayout>
+
+<style>
+  .list {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .order-wrap {
+    display: grid;
+    gap: 0.45rem;
+  }
+</style>

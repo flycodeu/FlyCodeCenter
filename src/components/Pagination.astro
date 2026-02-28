@@ -1,0 +1,148 @@
+﻿---
+import siteConfig from "@/site.config";
+import { getPageWindow } from "@/utils/pagination";
+
+interface Props {
+  currentPage?: number;
+  lastPage?: number;
+  basePath?: string;
+  mode?: "page" | "loadMore";
+  targetSelector?: string;
+  batchSize?: number;
+}
+
+const {
+  currentPage = 1,
+  lastPage = 1,
+  basePath = "/blog",
+  mode = siteConfig.blog.pagination.mode,
+  targetSelector = "",
+  batchSize = siteConfig.blog.pagination.pageSize
+} = Astro.props;
+
+const pageWindow = getPageWindow(currentPage, lastPage, siteConfig.blog.pagination.maxPageNumbers);
+
+function pageUrl(page: number) {
+  if (page <= 1) return basePath;
+  return `${basePath}/${page}`;
+}
+---
+
+{
+  mode === "page" && lastPage > 1 && (
+    <nav class="surface pager" aria-label="分页导航">
+      <a class={currentPage <= 1 ? "disabled" : ""} href={currentPage <= 1 ? "#" : pageUrl(currentPage - 1)}>
+        上一页
+      </a>
+      <div class="nums">
+        {
+          pageWindow.map((page) => (
+            <a href={pageUrl(page)} class={page === currentPage ? "active" : ""} aria-current={page === currentPage ? "page" : undefined}>
+              {page}
+            </a>
+          ))
+        }
+      </div>
+      <a class={currentPage >= lastPage ? "disabled" : ""} href={currentPage >= lastPage ? "#" : pageUrl(currentPage + 1)}>
+        下一页
+      </a>
+    </nav>
+  )
+}
+
+{
+  mode === "loadMore" && (
+    <div class="load-more-wrap">
+      <button id="list-load-more" class="surface load-more" data-target={targetSelector} data-batch-size={String(batchSize)}>
+        加载更多
+      </button>
+    </div>
+  )
+}
+
+{
+  mode === "loadMore" && (
+    <script type="module">
+      const button = document.getElementById("list-load-more");
+      if (!(button instanceof HTMLButtonElement)) {
+        // no-op
+      } else {
+        const selector = button.dataset.target || "";
+        const batchSize = Number(button.dataset.batchSize || 6);
+        const host = selector ? document.querySelector(selector) : null;
+        const items = host ? Array.from(host.querySelectorAll("[data-page-item]")) : [];
+
+        const update = () => {
+          const hidden = items.filter((item) => item.hasAttribute("hidden"));
+          button.hidden = hidden.length === 0;
+          button.disabled = hidden.length === 0;
+        };
+
+        button.addEventListener("click", () => {
+          let count = 0;
+          for (const item of items) {
+            if (!item.hasAttribute("hidden")) continue;
+            item.removeAttribute("hidden");
+            count += 1;
+            if (count >= batchSize) break;
+          }
+          update();
+        });
+
+        update();
+      }
+    </script>
+  )
+}
+
+<style>
+  .pager {
+    margin-top: 0.95rem;
+    padding: 0.85rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .pager a {
+    color: var(--brand);
+  }
+  .pager a.disabled {
+    pointer-events: none;
+    color: var(--text-soft);
+  }
+  .nums {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .nums a {
+    min-width: 2rem;
+    height: 2rem;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
+  }
+  .nums a.active {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+    background: color-mix(in oklab, var(--brand-soft) 78%, transparent 22%);
+  }
+  .load-more-wrap {
+    margin-top: 0.95rem;
+    display: flex;
+    justify-content: center;
+  }
+  .load-more {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.65rem 1.15rem;
+    color: var(--text);
+  }
+</style>

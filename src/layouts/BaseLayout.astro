@@ -1,0 +1,115 @@
+﻿---
+import siteConfig from "@/site.config";
+import Header from "@/components/Header.astro";
+import SearchModal from "@/components/SearchModal.astro";
+import Watermark from "@/components/Watermark.astro";
+import AiProvider from "@/components/AiProvider.astro";
+import Mascot from "@/components/Mascot.astro";
+import { makePageTitle, resolveCanonical } from "@/utils/seo";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  canonicalPath?: string;
+}
+
+const {
+  title,
+  description = siteConfig.site.description,
+  image = siteConfig.seo.defaultOgImage,
+  canonicalPath = Astro.url.pathname
+} = Astro.props;
+const pageTitle = makePageTitle(title);
+const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
+---
+
+<!doctype html>
+<html
+  lang={siteConfig.site.lang}
+  data-theme={siteConfig.theme.defaultTheme}
+  data-default-theme={siteConfig.theme.defaultTheme}
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={siteConfig.site.icon} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:url" content={canonical || Astro.url.toString()} />
+    <meta name="twitter:card" content={siteConfig.seo.twitterCard} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    {
+      siteConfig.site.head.meta.map((meta) => (
+        <meta name={meta.name} content={meta.content} />
+      ))
+    }
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const key = "flycode-theme";
+        const fallback = root.dataset.defaultTheme || "plume";
+        const saved = localStorage.getItem(key) || fallback;
+        root.dataset.theme = saved;
+        root.dataset.encryptedLocked = "0";
+      })();
+    </script>
+  </head>
+  <body>
+    <Watermark />
+    <Header />
+    <main class="container">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>{siteConfig.theme.footer.message}</p>
+        <small>{siteConfig.theme.footer.copyright}</small>
+      </div>
+    </footer>
+    <SearchModal />
+    <AiProvider />
+    <Mascot />
+  </body>
+</html>
+
+<style is:global>
+  @import "../styles/global.css";
+</style>
+
+<style>
+  main {
+    padding: 0.7rem 0 1.1rem;
+  }
+  .site-footer {
+    border-top: 1px solid var(--line);
+    margin-top: 0.95rem;
+  }
+  .footer-inner {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+  }
+  .footer-inner p,
+  .footer-inner small {
+    margin: 0;
+  }
+  @media (max-width: 760px) {
+    .footer-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.65rem 0;
+    }
+  }
+</style>

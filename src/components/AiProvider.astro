@@ -1,0 +1,21 @@
+﻿---
+import siteConfig from "@/site.config";
+import AiEntryButton from "@/components/AiEntryButton.astro";
+import AiModal from "@/components/AiModal.astro";
+
+interface Props {
+  disabled?: boolean;
+}
+
+const { disabled = false } = Astro.props;
+const enabled = siteConfig.ai.provider !== "off" && siteConfig.features.assistant.aiPanel && !disabled;
+---
+
+{
+  enabled && (
+    <>
+      <AiEntryButton />
+      <AiModal />
+    </>
+  )
+}

@@ -1,0 +1,51 @@
+﻿---
+import siteConfig from "@/site.config";
+
+const themes = siteConfig.theme.themes;
+const storageKey = "flycode-theme";
+const enableTransition = siteConfig.theme.transitions.theme;
+---
+
+<button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes={JSON.stringify(themes)}>
+  <span class="theme-icon" aria-hidden="true">☼</span>
+</button>
+
+<script type="module" define:vars={{ storageKey, enableTransition }}>
+  const button = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+
+  const themes = JSON.parse(button?.dataset.themes ?? "[]");
+  const current = root.dataset.theme ?? themes[0];
+  if (current) {
+    localStorage.setItem(storageKey, current);
+  }
+
+  button?.addEventListener("click", () => {
+    if (!themes.length) return;
+    if (enableTransition) {
+      root.classList.add("theme-anim");
+      window.setTimeout(() => root.classList.remove("theme-anim"), 280);
+    }
+    const now = root.dataset.theme ?? themes[0];
+    const idx = themes.indexOf(now);
+    const next = themes[(idx + 1) % themes.length];
+    root.dataset.theme = next;
+    localStorage.setItem(storageKey, next);
+    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: next }));
+  });
+</script>
+
+<style>
+  .theme-toggle {
+    border: 1px solid var(--line);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--bg-elev);
+    cursor: pointer;
+  }
+  .theme-icon {
+    font-size: 0.95rem;
+  }
+</style>

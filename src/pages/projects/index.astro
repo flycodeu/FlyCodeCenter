@@ -1,0 +1,97 @@
+﻿---
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import { fetchAllContentEntries, fetchProjectEntries, makeTagItems } from "@/utils/query";
+import { formatDate } from "@/utils/date";
+import { getProjectEntryUrl } from "@/utils/content";
+
+const [entries, allEntries] = await Promise.all([fetchProjectEntries(), fetchAllContentEntries()]);
+const tags = makeTagItems(allEntries);
+---
+
+<ListLayout
+  title={siteConfig.pages.projects.title}
+  description="项目实践记录与可复用方案沉淀。"
+  stats={[
+    { title: "项目总数", value: entries.length },
+    { title: "重点项目", value: entries.filter((item) => item.data.featured).length },
+    { title: "文章归档", value: "打开", href: "/archives" },
+    { title: "标签索引", value: "打开", href: "/tags" }
+  ]}
+  tags={tags}
+>
+  <section class="project-grid">
+    {
+      entries.map((entry) => (
+        <article class="surface project-card">
+          <header>
+            <a href={getProjectEntryUrl(entry)} class="title-link">{entry.data.title}</a>
+            {entry.data.featured && <span class="chip featured">重点</span>}
+          </header>
+          <p>{entry.data.description}</p>
+
+          <div class="meta-row">
+            <span>发布时间：{formatDate(entry.data.pubDate)}</span>
+            <span>标签：{entry.data.tags.slice(0, 2).join(" / ") || "未设置"}</span>
+          </div>
+
+          <div class="meta-row links">
+            {entry.data.repoUrl && (
+              <a class="chip" href={entry.data.repoUrl} target="_blank" rel="noreferrer">仓库</a>
+            )}
+            {entry.data.docUrl && (
+              <a class="chip" href={entry.data.docUrl} target="_blank" rel="noreferrer">文档</a>
+            )}
+            {entry.data.demoUrl && (
+              <a class="chip" href={entry.data.demoUrl} target="_blank" rel="noreferrer">演示</a>
+            )}
+          </div>
+        </article>
+      ))
+    }
+  </section>
+</ListLayout>
+
+<style>
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.72rem;
+  }
+  .project-card {
+    padding: 0.76rem;
+    display: grid;
+    gap: 0.55rem;
+  }
+  .project-card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  .title-link {
+    font-family: var(--font-serif);
+    font-size: 1.06rem;
+    font-weight: 700;
+  }
+  .title-link:hover {
+    color: var(--brand);
+  }
+  .featured {
+    color: var(--brand);
+  }
+  .project-card p {
+    margin: 0;
+    color: var(--text-soft);
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.52rem;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+  }
+  .links .chip {
+    color: var(--text);
+  }
+</style>

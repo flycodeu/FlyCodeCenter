@@ -1,0 +1,29 @@
+---
+import fs from "node:fs/promises";
+import path from "node:path";
+
+interface Props {
+  file: string;
+  lang?: string;
+}
+
+const { file, lang = "text" } = Astro.props;
+const absolute = path.resolve(process.cwd(), file);
+let content = "";
+try {
+  content = await fs.readFile(absolute, "utf8");
+} catch (error) {
+  content = `// include failed: ${file}`;
+}
+---
+
+<pre class="code-include"><code class={`language-${lang}`}>{content}</code></pre>
+
+<style>
+  .code-include {
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    padding: 0.8rem;
+    overflow: auto;
+  }
+</style>

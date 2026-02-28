@@ -1,0 +1,169 @@
+﻿---
+import siteConfig from "@/site.config";
+---
+
+<dialog
+  id="ai-modal"
+  class="ai-modal"
+  data-shortcut={siteConfig.ai.triggerShortcut}
+  data-connection-mode={siteConfig.ai.connectionMode}
+  data-default-base={siteConfig.ai.openaiCompatible.apiBaseUrl}
+  data-default-model={siteConfig.ai.openaiCompatible.model}
+>
+  <section class="surface ai-panel">
+    <header>
+      <h3>AI 看板</h3>
+      <button id="ai-close" aria-label="关闭">×</button>
+    </header>
+
+    <details class="ai-conn" open>
+      <summary>连接配置</summary>
+      <div class="conn-grid">
+        <label>
+          <span>API Base</span>
+          <input id="ai-base" type="url" placeholder="https://your-proxy.example.com/v1/chat/completions" />
+        </label>
+        <label>
+          <span>Model</span>
+          <input id="ai-model" type="text" placeholder="gpt-4o-mini" />
+        </label>
+        <label id="ai-key-wrap">
+          <span>API Key</span>
+          <input id="ai-key" type="password" placeholder="仅 hybrid 模式可用" />
+        </label>
+      </div>
+      <button id="ai-save-conn" class="save-btn">保存连接配置</button>
+    </details>
+
+    <div class="ai-actions">
+      <button id="ai-summarize">总结当前文章</button>
+      <input id="ai-question" type="text" placeholder="输入站内问题..." />
+      <button id="ai-ask">站内问答</button>
+    </div>
+
+    <div class="ai-chat">
+      <input id="ai-chat-input" type="text" placeholder="直接聊天：例如“帮我规划 Astro 内容架构”" />
+      <button id="ai-chat-send">发送</button>
+    </div>
+
+    <pre id="ai-output">按 Ctrl+Shift+K 或右下角按钮打开。</pre>
+    <div id="ai-external"></div>
+  </section>
+</dialog>
+
+<script type="module">
+  import "../scripts/ai-modal.ts";
+</script>
+
+<style>
+  .ai-modal {
+    width: min(860px, calc(100vw - 28px));
+    border: 0;
+    background: transparent;
+    padding: 0;
+  }
+  .ai-modal::backdrop {
+    background: rgba(10, 15, 28, 0.34);
+  }
+  .ai-panel {
+    padding: 0.95rem;
+  }
+  .ai-panel header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .ai-panel h3 {
+    margin: 0;
+  }
+  .ai-panel header button {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+  .ai-conn {
+    margin-bottom: 0.75rem;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    padding: 0.6rem;
+  }
+  .ai-conn summary {
+    cursor: pointer;
+    color: var(--text-soft);
+    margin-bottom: 0.5rem;
+  }
+  .conn-grid {
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-bottom: 0.55rem;
+  }
+  .conn-grid label {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .conn-grid span {
+    color: var(--text-soft);
+    font-size: 0.83rem;
+  }
+  .conn-grid input {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.52rem 0.65rem;
+  }
+  .save-btn {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text-soft);
+    padding: 0.46rem 0.7rem;
+    cursor: pointer;
+  }
+  .ai-actions,
+  .ai-chat {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+  .ai-actions button,
+  .ai-actions input,
+  .ai-chat button,
+  .ai-chat input {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.94rem;
+  }
+  #ai-output {
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
+    padding: 0.8rem;
+    min-height: 150px;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+  #ai-external {
+    margin-top: 0.75rem;
+  }
+  @media (max-width: 780px) {
+    .conn-grid {
+      grid-template-columns: 1fr;
+    }
+    .ai-actions,
+    .ai-chat {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+

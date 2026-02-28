@@ -1,0 +1,235 @@
+﻿@import "../themes/plume.css";
+@import "../themes/night.css";
+@import "./katex-local.css";
+
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background:
+    radial-gradient(1200px 800px at 100% -20%, var(--bg-mesh-a), transparent 65%),
+    radial-gradient(900px 500px at -10% -10%, var(--bg-mesh-b), transparent 60%),
+    var(--bg);
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+body.has-overlay {
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--line) 25%, transparent 75%) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--line) 25%, transparent 75%) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 20% 0%, #000 20%, transparent 72%);
+  opacity: 0.22;
+  z-index: -1;
+}
+
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.container {
+  width: min(1360px, calc(100vw - 20px));
+  margin: 0 auto;
+}
+
+.surface {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--bg-elev) 92%, transparent 8%),
+      color-mix(in oklab, var(--bg-elev) 72%, var(--brand-soft) 28%)
+    );
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+
+.surface-soft {
+  background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
+  border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
+  border-radius: var(--radius);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-soft);
+  background: var(--bg-elev);
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 1vw + 1rem, 1.8rem);
+  margin: 0;
+}
+
+.grid-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 1020px) {
+  .container {
+    width: min(980px, calc(100vw - 22px));
+  }
+  .grid-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.prose {
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+.prose p {
+  margin: 0.72rem 0;
+}
+
+.fade-up {
+  animation: fade-up 460ms cubic-bezier(.22, .95, .23, 1) both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  scroll-margin-top: 90px;
+  font-family: var(--font-serif);
+  line-height: 1.35;
+}
+
+.prose h2,
+.prose h3 {
+  margin-top: 1.45rem;
+  margin-bottom: 0.58rem;
+}
+
+.prose code {
+  font-family: "JetBrains Mono", "Consolas", monospace;
+}
+
+.prose pre {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 0.9rem;
+  overflow: auto;
+  background: color-mix(in oklab, var(--bg-elev) 86%, var(--bg) 14%);
+}
+
+.prose pre code {
+  counter-reset: code-line;
+}
+
+.prose pre code .line {
+  display: block;
+}
+
+.prose pre code .line::before {
+  counter-increment: code-line;
+  content: counter(code-line);
+  display: inline-block;
+  width: 2ch;
+  margin-right: 1.2ch;
+  color: color-mix(in oklab, var(--text-soft) 75%, transparent 25%);
+  text-align: right;
+}
+
+.prose blockquote {
+  margin: 1.4rem 0;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--brand);
+  background: color-mix(in oklab, var(--brand-soft) 44%, transparent 56%);
+  border-radius: 8px;
+}
+
+.md-figure {
+  margin: 1.2rem 0;
+}
+
+.md-figure figcaption {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+
+.img-mark-tip {
+  outline: 2px dashed var(--accent);
+  border-radius: 8px;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}

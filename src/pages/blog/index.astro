@@ -1,0 +1,51 @@
+﻿---
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import PostCard from "@/components/PostCard.astro";
+import Pagination from "@/components/Pagination.astro";
+import { fetchAllEntries, fetchBlogEntries, makeTagItems } from "@/utils/query";
+import { paginatePageMode } from "@/utils/pagination";
+
+const [entries, allEntries] = await Promise.all([fetchBlogEntries(), fetchAllEntries()]);
+const pageSize = siteConfig.blog.pagination.pageSize;
+const pageData = paginatePageMode(entries, 1, pageSize);
+const tags = makeTagItems(allEntries);
+const mode = siteConfig.blog.pagination.mode;
+const pinnedCount = entries.filter((entry) => entry.data.pinned).length;
+---
+
+<ListLayout
+  title="博客"
+  description="按时间更新与置顶优先展示。"
+  stats={[
+    { title: "博客文章", value: entries.length },
+    { title: "置顶文章", value: pinnedCount },
+    { title: "标签总数", value: tags.length, href: "/tags" }
+  ]}
+  tags={tags}
+>
+  <div class="list" id="blog-list">
+    {
+      entries.map((entry, idx) => (
+        <div data-page-item hidden={mode === "loadMore" && idx >= pageSize ? true : undefined}>
+          <PostCard entry={entry} kind="blog" />
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    mode === "page" ? (
+      <Pagination currentPage={1} lastPage={pageData.lastPage} basePath="/blog" mode="page" />
+    ) : (
+      <Pagination mode="loadMore" targetSelector="#blog-list" batchSize={pageSize} />
+    )
+  }
+</ListLayout>
+
+<style>
+  .list {
+    display: grid;
+    gap: 0.66rem;
+  }
+</style>

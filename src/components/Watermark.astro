@@ -1,0 +1,40 @@
+---
+import siteConfig from "@/site.config";
+
+const enabled = siteConfig.watermark.enable;
+---
+
+{
+  enabled && (
+    <div
+      class="watermark"
+      style={`--wm-opacity:${siteConfig.watermark.opacity};--wm-rotate:${siteConfig.watermark.rotate}deg;--wm-gap:${siteConfig.watermark.gap}px;`}
+      aria-hidden="true"
+    >
+      <span>{siteConfig.watermark.text}</span>
+    </div>
+  )
+}
+
+<style>
+  .watermark {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: var(--wm-opacity);
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 calc(var(--wm-gap) - 1px),
+      color-mix(in oklab, var(--text-soft) 26%, transparent 74%) calc(var(--wm-gap) - 1px) var(--wm-gap)
+    );
+    display: grid;
+    place-items: center;
+  }
+  .watermark span {
+    transform: rotate(var(--wm-rotate));
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    color: var(--text-soft);
+    letter-spacing: 0.4rem;
+  }
+</style>

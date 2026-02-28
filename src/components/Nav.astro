@@ -1,0 +1,72 @@
+---
+import siteConfig from "@/site.config";
+
+const pathname = Astro.url.pathname;
+---
+
+<nav class="nav">
+  {
+    siteConfig.theme.navbar.map((item) => {
+      const active = pathname === item.link || pathname.startsWith(`${item.link}/`);
+      return (
+        <a class={`nav-link ${active ? "active" : ""}`} href={item.link}>
+          {item.text}
+        </a>
+      );
+    })
+  }
+</nav>
+
+<style>
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 0.36rem;
+    min-width: 0;
+  }
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0.5rem 0.8rem;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    color: var(--text-soft);
+    white-space: nowrap;
+    font-size: 0.92rem;
+    transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+  }
+  .nav-link:hover {
+    color: var(--text);
+    background: color-mix(in oklab, var(--brand-soft) 50%, transparent 50%);
+    border-color: color-mix(in oklab, var(--brand-soft) 85%, var(--line) 15%);
+  }
+  .nav-link.active {
+    color: var(--brand);
+    background: color-mix(in oklab, var(--brand-soft) 80%, transparent 20%);
+    border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+  }
+  @media (max-width: 900px) {
+    .nav {
+      width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 0.1rem;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+    }
+    .nav::-webkit-scrollbar {
+      display: none;
+    }
+    .nav-link {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0.54rem 0.88rem;
+      border-color: color-mix(in oklab, var(--line) 72%, transparent 28%);
+      background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+      scroll-snap-align: start;
+    }
+  }
+</style>

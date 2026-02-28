@@ -1,14 +1,38 @@
 {
   "name": "flycodecenter",
+  "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "postbuild": "tsx ./scripts/build-minisearch.mjs && node ./scripts/pagefind-index.mjs",
+    "build:minisearch": "tsx ./scripts/build-minisearch.mjs",
+    "build:pagefind": "node ./scripts/pagefind-index.mjs",
+    "encrypt": "tsx ./scripts/encrypt.mjs"
   },
   "dependencies": {
-    "astro": "^5.17.1"
+    "@astrojs/rss": "^4.0.12",
+    "@astrojs/sitemap": "^3.6.0",
+    "@astrojs/vercel": "^9.0.4",
+    "@shikijs/transformers": "^3.13.0",
+    "@shikijs/twoslash": "^3.13.0",
+    "algoliasearch": "^5.41.0",
+    "astro": "^5.17.1",
+    "gray-matter": "^4.0.3",
+    "marked": "^16.4.2",
+    "mdast-util-from-markdown": "^2.0.2",
+    "micromatch": "^4.0.8",
+    "minisearch": "^7.2.0",
+    "reading-time": "^1.5.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "pagefind": "^1.4.0",
+    "tsx": "^4.20.5"
   }
 }

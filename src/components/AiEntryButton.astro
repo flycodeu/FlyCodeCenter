@@ -1,0 +1,38 @@
+﻿---
+import siteConfig from "@/site.config";
+
+const enabled = siteConfig.ai.provider !== "off" && siteConfig.features.assistant.aiPanel;
+---
+
+{
+  enabled && (
+    <button id="open-ai" class="ai-entry" aria-label="打开 AI 助手">
+      AI
+    </button>
+  )
+}
+
+<script type="module">
+  const btn = document.getElementById("open-ai");
+  btn?.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("site:open-ai"));
+  });
+</script>
+
+<style>
+  .ai-entry {
+    position: fixed;
+    right: 22px;
+    bottom: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: linear-gradient(140deg, var(--brand), color-mix(in oklab, var(--accent) 74%, var(--brand) 26%));
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 44;
+    box-shadow: 0 14px 30px color-mix(in oklab, var(--brand) 20%, transparent 80%);
+  }
+</style>

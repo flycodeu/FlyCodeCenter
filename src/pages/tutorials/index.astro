@@ -1,0 +1,51 @@
+﻿---
+import ListLayout from "@/layouts/ListLayout.astro";
+import PostCard from "@/components/PostCard.astro";
+import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
+
+const [tutorials, allEntries] = await Promise.all([fetchTutorialEntries(), fetchAllEntries()]);
+const series = [...new Set(tutorials.map((item) => item.data.series))];
+const tags = makeTagItems(allEntries);
+---
+
+<ListLayout
+  title="教程总览"
+  description="按系列组织的学习路径，覆盖从入门到实战。"
+  stats={[
+    { title: "教程文章", value: tutorials.length },
+    { title: "系列数量", value: series.length },
+    { title: "时间轴", value: "查看", href: "/timeline" }
+  ]}
+  tags={tags}
+>
+  <section class="surface series-grid">
+    {series.map((key) => <a href={`/tutorials/${key}`}>系列：{key}</a>)}
+  </section>
+  <div class="list">
+    {tutorials.slice(0, 10).map((entry) => <PostCard entry={entry} kind="tutorial" />)}
+  </div>
+</ListLayout>
+
+<style>
+  .series-grid {
+    margin-bottom: 0.85rem;
+    padding: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+  .series-grid a {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-soft);
+  }
+  .series-grid a:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 60%, var(--line) 40%);
+  }
+  .list {
+    display: grid;
+    gap: 0.8rem;
+  }
+</style>

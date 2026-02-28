@@ -1,0 +1,122 @@
+﻿---
+import siteConfig from "@/site.config";
+
+const enabled = siteConfig.search.provider !== "off";
+---
+
+{
+  enabled && (
+    <div
+      id="search-root"
+      class="search-root"
+      data-native={siteConfig.search.ui.useNativeDialog ? "1" : "0"}
+      data-shortcut={siteConfig.search.ui.openShortcut}
+    >
+      <dialog id="search-modal" class="search-modal">
+        <div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索">
+          <label class="search-input-wrap" for="search-input">
+            <span class="sr-only">站内搜索</span>
+            <input id="search-input" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" />
+          </label>
+          <ul id="search-results" class="search-results"></ul>
+        </div>
+      </dialog>
+      <div id="search-fallback" class="search-fallback" hidden>
+        <div class="search-panel surface" role="dialog" aria-modal="true" aria-label="站内搜索">
+          <label class="search-input-wrap" for="search-input-fallback">
+            <span class="sr-only">站内搜索</span>
+            <input id="search-input-fallback" type="search" placeholder="输入关键词，按 / 可快速唤起..." autocomplete="off" />
+          </label>
+          <ul id="search-results-fallback" class="search-results"></ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<script type="module">
+  import "../scripts/search-modal.ts";
+</script>
+
+<style>
+  .search-modal {
+    width: min(760px, calc(100vw - 28px));
+    border: 0;
+    background: transparent;
+    padding: 0;
+  }
+  .search-modal::backdrop {
+    background: rgba(12, 16, 30, 0.36);
+    backdrop-filter: blur(3px);
+  }
+  .search-fallback {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(12, 16, 30, 0.36);
+    padding: 8vh 14px 14px;
+    display: none;
+  }
+  .search-fallback.open {
+    display: block;
+  }
+  .search-panel {
+    padding: 0.8rem;
+  }
+  .search-input-wrap {
+    display: block;
+    margin-bottom: 0.7rem;
+  }
+  .search-input-wrap input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.75rem 0.9rem;
+    font-size: 1rem;
+  }
+  .search-results {
+    max-height: 60vh;
+    overflow: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+  }
+  .result-item {
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
+  }
+  .result-item a {
+    display: block;
+    padding: 0.65rem 0.75rem;
+  }
+  .result-item h4 {
+    margin: 0;
+    font-size: 0.96rem;
+  }
+  .result-item p {
+    margin: 0.45rem 0 0;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+  }
+  .result-item :global(mark) {
+    background: color-mix(in oklab, var(--accent) 25%, transparent 75%);
+    color: inherit;
+    border-radius: 4px;
+    padding: 0 2px;
+  }
+  .result-item.active {
+    border-color: color-mix(in oklab, var(--brand) 60%, var(--line) 40%);
+  }
+  .result-empty {
+    list-style: none;
+    color: var(--text-soft);
+    padding: 1rem 0.4rem;
+    text-align: center;
+  }
+</style>
+

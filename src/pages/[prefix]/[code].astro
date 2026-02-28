@@ -1,0 +1,160 @@
+---
+import siteConfig from "@/site.config";
+import { getEntry, render, type CollectionEntry } from "astro:content";
+import PostLayout from "@/layouts/PostLayout.astro";
+import { fetchBlogEntries, fetchProjectEntries, fetchTutorialEntries } from "@/utils/query";
+import { getBlogEntryUrl, getProjectEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { summarizeReading } from "@/utils/reading-time";
+import { resolveEntryCode } from "@/utils/content-code";
+import { stripSlashes } from "@/utils/url";
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface RouteProps {
+  collection: "blog" | "tutorial" | "projects";
+  entryId: string;
+  prev?: Neighbor;
+  next?: Neighbor;
+}
+
+export async function getStaticPaths() {
+  const [blogEntries, tutorialEntries, projectEntries] = await Promise.all([
+    fetchBlogEntries(),
+    fetchTutorialEntries(),
+    fetchProjectEntries()
+  ]);
+
+  const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
+  const codeMap = new Map<string, string>();
+  const ensureUniqueCode = (code: string, identity: string) => {
+    const existing = codeMap.get(code);
+    if (!existing) {
+      codeMap.set(code, identity);
+      return;
+    }
+    throw new Error(`Duplicate article code "${code}" for "${identity}" and "${existing}"`);
+  };
+  const paths: Array<{ params: { prefix: string; code: string }; props: RouteProps }> = [];
+
+  for (const [index, entry] of blogEntries.entries()) {
+    const code = resolveEntryCode(entry);
+    ensureUniqueCode(code, `blog:${entry.id}`);
+    const prev = blogEntries[index - 1];
+    const next = blogEntries[index + 1];
+    paths.push({
+      params: { prefix, code },
+      props: {
+        collection: "blog",
+        entryId: entry.id,
+        prev: prev ? { title: prev.data.title, url: getBlogEntryUrl(prev) } : undefined,
+        next: next ? { title: next.data.title, url: getBlogEntryUrl(next) } : undefined
+      }
+    });
+  }
+
+  const tutorialSeries = new Map<string, CollectionEntry<"tutorial">[]>();
+  for (const entry of tutorialEntries) {
+    const list = tutorialSeries.get(entry.data.series) ?? [];
+    list.push(entry);
+    tutorialSeries.set(entry.data.series, list);
+  }
+
+  for (const seriesEntries of tutorialSeries.values()) {
+    const sorted = [...seriesEntries].sort((a, b) => {
+      if (a.data.order === b.data.order) return a.data.pubDate.getTime() - b.data.pubDate.getTime();
+      return a.data.order - b.data.order;
+    });
+    for (const [index, entry] of sorted.entries()) {
+      const code = resolveEntryCode(entry);
+      ensureUniqueCode(code, `tutorial:${entry.id}`);
+      const prev = sorted[index - 1];
+      const next = sorted[index + 1];
+      paths.push({
+        params: { prefix, code },
+        props: {
+          collection: "tutorial",
+          entryId: entry.id,
+          prev: prev ? { title: prev.data.title, url: getTutorialEntryUrl(prev) } : undefined,
+          next: next ? { title: next.data.title, url: getTutorialEntryUrl(next) } : undefined
+        }
+      });
+    }
+  }
+
+  for (const [index, entry] of projectEntries.entries()) {
+    const code = resolveEntryCode(entry);
+    ensureUniqueCode(code, `projects:${entry.id}`);
+    const prev = projectEntries[index - 1];
+    const next = projectEntries[index + 1];
+    paths.push({
+      params: { prefix, code },
+      props: {
+        collection: "projects",
+        entryId: entry.id,
+        prev: prev ? { title: prev.data.title, url: getProjectEntryUrl(prev) } : undefined,
+        next: next ? { title: next.data.title, url: getProjectEntryUrl(next) } : undefined
+      }
+    });
+  }
+
+  return paths;
+}
+
+const { collection, entryId, prev, next } = Astro.props as RouteProps;
+let entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects"> | undefined;
+if (collection === "blog") {
+  entry = await getEntry("blog", entryId);
+} else if (collection === "tutorial") {
+  entry = await getEntry("tutorial", entryId);
+} else {
+  entry = await getEntry("projects", entryId);
+}
+
+if (!entry) {
+  throw new Error(`Entry not found: ${collection}:${entryId}`);
+}
+
+const encrypted = entry.data.encrypted && siteConfig.encrypt.enable;
+let Content: any = null;
+let headings: any[] = [];
+if (!encrypted) {
+  const rendered = await render(entry);
+  Content = rendered.Content;
+  headings = rendered.headings;
+}
+
+const reading = summarizeReading(entry.body);
+const articleUrl =
+  collection === "blog"
+    ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
+    : collection === "tutorial"
+      ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
+      : getProjectEntryUrl(entry as CollectionEntry<"projects">);
+const articleCode = resolveEntryCode(entry);
+const summary = entry.data.summary || entry.data.description;
+---
+
+<PostLayout
+  title={entry.data.title}
+  summary={summary}
+  description={entry.data.description}
+  code={articleCode}
+  tags={entry.data.tags}
+  pubDate={entry.data.pubDate}
+  updatedDate={entry.data.updatedDate}
+  headings={headings}
+  wordCount={reading.wordCount}
+  readingMinutes={reading.minutes}
+  articleUrl={articleUrl}
+  encrypted={encrypted}
+  encryptedFile={entry.data.encryptedFile ?? ""}
+  passwordHint={entry.data.passwordHint ?? ""}
+  prev={prev}
+  next={next}
+  cover={entry.data.cover}
+>
+  {Content && <Content />}
+</PostLayout>

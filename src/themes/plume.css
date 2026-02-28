@@ -1,0 +1,17 @@
+:root[data-theme="plume"] {
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --bg: #f8faff;
+  --bg-elev: #ffffffd9;
+  --bg-mesh-a: #eaf2ff;
+  --bg-mesh-b: #f5f8ff;
+  --text: #1f2533;
+  --text-soft: #56607a;
+  --line: #dde3f3;
+  --brand: #3a63ff;
+  --brand-soft: #e5ebff;
+  --accent: #ff8a3d;
+  --card-shadow: 0 18px 36px rgba(39, 62, 133, 0.1);
+  --radius: 16px;
+  --header-blur: 14px;
+}

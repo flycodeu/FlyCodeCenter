@@ -1,0 +1,207 @@
+﻿---
+import type { CollectionEntry } from "astro:content";
+import siteConfig from "@/site.config";
+import { formatDate } from "@/utils/date";
+import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+
+type PostKind = "blog" | "tutorial";
+
+interface Props {
+  entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial">;
+  kind: PostKind;
+  coverMode?: "left" | "right" | "none";
+  coverHeight?: number;
+  cardStyle?: "rounded" | "square" | "glass";
+}
+
+const { entry, kind, coverMode, coverHeight, cardStyle } = Astro.props;
+
+const pageOverride = siteConfig.blog.pageCardOverrides[kind === "blog" ? "blog" : "tutorial"];
+const mode = coverMode ?? pageOverride.coverMode ?? siteConfig.blog.listCard.defaultCoverMode;
+const height = coverHeight ?? siteConfig.blog.listCard.coverHeight;
+const styleVariant = cardStyle ?? siteConfig.blog.listCard.cardStyle;
+
+const link = kind === "blog" ? getBlogEntryUrl(entry as CollectionEntry<"blog">) : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
+const cover = entry.data.cover || "";
+const hasCover = mode !== "none" && Boolean(cover);
+const width = siteConfig.blog.listCard.coverWidth;
+const ratio = siteConfig.blog.listCard.coverRatio;
+const pinned = kind === "blog" && Boolean((entry as CollectionEntry<"blog">).data.pinned);
+const summary = (entry.data.summary || entry.data.description || "").trim();
+const compactMetaClass = summary ? "meta" : "meta no-summary";
+---
+
+<article class={`surface post-card cover-${mode} style-${styleVariant} fade-up`} style={`--cover-width:${width}px;--cover-height:${height}px;--cover-ratio:${ratio};`}>
+  <div class={compactMetaClass}>
+    <div class="card-head">
+      {pinned && <span class="pin">置顶</span>}
+      <a class="title" href={link}>{entry.data.title}</a>
+    </div>
+    {summary && <p class="summary">{summary}</p>}
+    <div class="card-foot">
+      <span class="date">{formatDate(entry.data.pubDate)}</span>
+      <div class="tags">
+        {entry.data.tags.slice(0, 4).map((item) => <span class="chip tag-chip">{item}</span>)}
+      </div>
+    </div>
+  </div>
+
+  {
+    hasCover && (
+      <a class="cover-wrap" href={link}>
+        <img src={cover} alt={entry.data.title} loading="lazy" />
+      </a>
+    )
+  }
+</article>
+
+<style>
+  .post-card {
+    display: grid;
+    gap: 0.62rem;
+    padding: 0.66rem;
+    align-items: center;
+    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  }
+  .post-card.cover-right {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .post-card.cover-left {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .post-card.cover-left .meta {
+    order: 2;
+  }
+  .post-card.cover-left .cover-wrap {
+    order: 1;
+  }
+  .post-card.cover-none {
+    grid-template-columns: 1fr;
+  }
+  .post-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    box-shadow: 0 24px 38px color-mix(in oklab, var(--brand) 16%, transparent 84%);
+  }
+  .post-card.style-square {
+    border-radius: 8px;
+  }
+  .post-card.style-glass {
+    background: color-mix(in oklab, var(--bg-elev) 68%, transparent 32%);
+    backdrop-filter: blur(8px);
+  }
+  .meta {
+    min-height: var(--cover-height);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0.34rem;
+    align-items: stretch;
+  }
+  .meta.no-summary {
+    min-height: auto;
+    grid-template-rows: auto auto;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.42rem;
+    flex-wrap: wrap;
+    align-self: start;
+  }
+  .pin {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid color-mix(in oklab, var(--brand) 68%, transparent 32%);
+    color: var(--brand);
+    font-size: 0.75rem;
+    padding: 0.18rem 0.48rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brand-soft) 80%, transparent 20%);
+  }
+  .title {
+    font-family: var(--font-serif);
+    font-size: clamp(0.98rem, 0.28vw + 0.95rem, 1.08rem);
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+  }
+  .title:hover {
+    color: var(--brand);
+  }
+  .summary {
+    margin: 0;
+    color: var(--text-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    align-self: center;
+    line-height: 1.52;
+  }
+  .meta.no-summary .summary {
+    display: none;
+  }
+  .card-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.42rem;
+    color: var(--text-soft);
+    font-size: 0.8rem;
+    align-items: center;
+    align-self: end;
+  }
+  .date {
+    white-space: nowrap;
+  }
+  .tags {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.28rem;
+  }
+  .tag-chip {
+    font-size: 0.68rem;
+    padding: 0.14rem 0.44rem;
+    color: var(--text-soft);
+  }
+  .cover-wrap {
+    width: var(--cover-width);
+    min-height: var(--cover-height);
+    aspect-ratio: var(--cover-ratio);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--brand-soft) 28%, var(--bg-elev) 72%);
+  }
+  .cover-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 280ms ease;
+  }
+  .post-card:hover .cover-wrap img {
+    transform: scale(1.04);
+  }
+  @media (max-width: 760px) {
+    .post-card.cover-right,
+    .post-card.cover-left {
+      grid-template-columns: 1fr;
+    }
+    .post-card.cover-left .meta,
+    .post-card.cover-left .cover-wrap {
+      order: initial;
+    }
+    .cover-wrap {
+      width: 100%;
+    }
+    .meta {
+      min-height: auto;
+      grid-template-rows: auto auto auto;
+    }
+    .card-foot {
+      justify-content: flex-start;
+    }
+  }
+</style>

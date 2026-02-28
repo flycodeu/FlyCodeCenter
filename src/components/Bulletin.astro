@@ -1,0 +1,82 @@
+---
+import { marked } from "marked";
+import siteConfig from "@/site.config";
+
+const enabled = siteConfig.bulletin.enable;
+const content =
+  siteConfig.bulletin.contentType === "markdown"
+    ? (marked.parse(siteConfig.bulletin.content) as string)
+    : siteConfig.bulletin.content;
+---
+
+{
+  enabled && (
+    <aside id="bulletin" class="surface bulletin">
+      <header>
+        <strong>{siteConfig.bulletin.title}</strong>
+        <button id="bulletin-close" aria-label="关闭公告">×</button>
+      </header>
+      <div class="content" set:html={content}></div>
+    </aside>
+  )
+}
+
+{
+  enabled && (
+    <script type="module" define:vars={{ bulletinId: siteConfig.bulletin.id }}>
+      const root = document.getElementById("bulletin");
+      const close = document.getElementById("bulletin-close");
+      const key = `site-bulletin-dismissed:${bulletinId}`;
+      const dismissed = localStorage.getItem(key) === "1";
+      if (dismissed && root) {
+        root.style.display = "none";
+      }
+      close?.addEventListener("click", () => {
+        localStorage.setItem(key, "1");
+        if (root) root.style.display = "none";
+      });
+    </script>
+  )
+}
+
+<style>
+  .bulletin {
+    position: fixed;
+    top: 88px;
+    right: 18px;
+    width: min(320px, calc(100vw - 24px));
+    padding: 0.8rem;
+    z-index: 50;
+  }
+  .bulletin header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+  }
+  .bulletin button {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+  .content {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+  }
+  .content :global(ul) {
+    margin: 0.4rem 0;
+    padding-left: 1rem;
+  }
+  @media (max-width: 780px) {
+    .bulletin {
+      top: auto;
+      bottom: 16px;
+      right: 14px;
+    }
+  }
+</style>

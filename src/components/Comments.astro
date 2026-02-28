@@ -1,0 +1,81 @@
+﻿---
+import siteConfig from "@/site.config";
+import Giscus from "@/components/Giscus.astro";
+
+interface Props {
+  deferUntilEvent?: string;
+}
+
+const { deferUntilEvent } = Astro.props;
+const provider = siteConfig.comment.provider;
+const giscus = siteConfig.comment.giscus;
+const giscusReady =
+  Boolean(giscus.repo && giscus.repo !== "owner/repo") &&
+  Boolean(giscus.repoId) &&
+  Boolean(giscus.categoryId);
+const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
+---
+
+{
+  activeProvider === "off" ? null : (
+    <section class="surface comment-section">
+      <h3>评论</h3>
+      {activeProvider === "giscus" && <Giscus deferUntilEvent={deferUntilEvent} />}
+      {activeProvider === "waline" && <div id="waline-root" data-defer={deferUntilEvent ?? ""}></div>}
+      {activeProvider === "twikoo" && <div id="twikoo-root" data-defer={deferUntilEvent ?? ""}></div>}
+    </section>
+  )
+}
+
+{
+  activeProvider === "waline" && (
+    <script type="module" define:vars={{ deferUntilEvent, serverUrl: siteConfig.comment.waline.serverUrl }}>
+      const mount = async () => {
+        const root = document.getElementById("waline-root");
+        if (!root || !serverUrl) return;
+        const { init } = await import("https://unpkg.com/@waline/client@v3/dist/waline.js");
+        init({
+          el: "#waline-root",
+          serverURL: serverUrl,
+          dark: document.documentElement.dataset.theme === "night"
+        });
+      };
+      if (deferUntilEvent) {
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+      } else {
+        mount().catch(console.error);
+      }
+    </script>
+  )
+}
+
+{
+  activeProvider === "twikoo" && (
+    <script type="module" define:vars={{ deferUntilEvent, envId: siteConfig.comment.twikoo.envId }}>
+      const mount = async () => {
+        const root = document.getElementById("twikoo-root");
+        if (!root || !envId) return;
+        await import("https://cdn.staticfile.org/twikoo/1.6.43/twikoo.all.min.js");
+        window.twikoo?.init({
+          envId,
+          el: "#twikoo-root"
+        });
+      };
+      if (deferUntilEvent) {
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+      } else {
+        mount().catch(console.error);
+      }
+    </script>
+  )
+}
+
+<style>
+  .comment-section {
+    margin-top: 1.8rem;
+    padding: 0.95rem;
+  }
+  .comment-section h3 {
+    margin: 0 0 0.8rem;
+  }
+</style>

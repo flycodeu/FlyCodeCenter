@@ -1,0 +1,53 @@
+﻿---
+import ListLayout from "@/layouts/ListLayout.astro";
+import { fetchAllEntries, makeTagItems } from "@/utils/query";
+
+const entries = await fetchAllEntries();
+const tags = makeTagItems(entries);
+---
+
+<ListLayout
+  title="标签"
+  description="按标签浏览所有文章，支持卡片样式统计。"
+  stats={[
+    { title: "标签数量", value: tags.length },
+    { title: "文章总数", value: entries.length, href: "/archives" }
+  ]}
+  tags={tags}
+>
+  <section class="tag-grid">
+    {
+      tags.map((item) => (
+        <a class="surface tag-card" href={item.href}>
+          <strong>{item.name}</strong>
+          <span>{item.count} 篇</span>
+        </a>
+      ))
+    }
+  </section>
+</ListLayout>
+
+<style>
+  .tag-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+  .tag-card {
+    padding: 0.8rem;
+    display: grid;
+    gap: 0.35rem;
+    border-radius: 14px;
+    transition: transform 180ms ease;
+  }
+  .tag-card:hover {
+    transform: translateY(-2px);
+  }
+  .tag-card strong {
+    font-family: var(--font-serif);
+  }
+  .tag-card span {
+    color: var(--text-soft);
+    font-size: 0.86rem;
+  }
+</style>

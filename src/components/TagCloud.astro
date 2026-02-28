@@ -1,0 +1,54 @@
+﻿---
+interface Item {
+  name: string;
+  count: number;
+  href: string;
+}
+
+interface Props {
+  title: string;
+  items: Item[];
+}
+
+const { title, items } = Astro.props;
+---
+
+<section class="surface tag-cloud">
+  <h3>{title}</h3>
+  <div class="tags">
+    {
+      items.map((item) => (
+        <a class="chip" href={item.href}>
+          {item.name}
+          <span>{item.count}</span>
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .tag-cloud {
+    padding: 0.75rem;
+  }
+  .tag-cloud h3 {
+    margin: 0 0 0.54rem;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.48rem;
+  }
+  .tags .chip {
+    transition: color 180ms ease, border-color 180ms ease;
+  }
+  .tags .chip:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+  }
+  .tags .chip span {
+    opacity: 0.75;
+  }
+</style>

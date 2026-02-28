@@ -1,0 +1,12 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3a63ff"/>
+      <stop offset="100%" stop-color="#8fd3ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="url(#g1)"/>
+  <circle cx="1000" cy="120" r="180" fill="#ffffff22"/>
+  <text x="96" y="300" fill="white" font-size="72" font-family="Segoe UI, sans-serif" font-weight="700">Astro Modular Core</text>
+  <text x="96" y="370" fill="#eef4ff" font-size="34" font-family="Segoe UI, sans-serif">Static First · Provider Driven</text>
+</svg>

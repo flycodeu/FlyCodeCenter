@@ -1,0 +1,41 @@
+---
+import siteConfig from "@/site.config";
+
+interface Props {
+  title: string;
+  url: string;
+}
+
+const { title, url } = Astro.props;
+---
+
+{
+  siteConfig.copyright.enable && (
+    <section class="surface copy-box">
+      <strong>版权声明</strong>
+      <p>本文标题：{title}</p>
+      <p>作者：{siteConfig.copyright.author}</p>
+      <p>许可协议：{siteConfig.copyright.license}</p>
+      {siteConfig.copyright.showLink && <p>本文链接：<a href={url}>{url}</a></p>}
+    </section>
+  )
+}
+
+<style>
+  .copy-box {
+    margin-top: 1.6rem;
+    padding: 0.95rem;
+  }
+  .copy-box strong {
+    display: block;
+    margin-bottom: 0.45rem;
+  }
+  .copy-box p {
+    margin: 0.2rem 0;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+  }
+  .copy-box a {
+    color: var(--brand);
+  }
+</style>

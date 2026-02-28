@@ -1,0 +1,71 @@
+﻿---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchAllEntries } from "@/utils/query";
+import { buildArchiveBuckets, getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { formatDate } from "@/utils/date";
+
+const entries = await fetchAllEntries();
+const map = buildArchiveBuckets(entries);
+const months = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
+---
+
+<BaseLayout title="归档" description="按月份归档浏览全部文章。">
+  <section class="surface archives">
+    <h1>归档</h1>
+    {
+      months.map((month) => (
+        <section class="archive-block">
+          <h2>{month}</h2>
+          <ul>
+            {(map.get(month) ?? []).map((entry) => {
+              const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
+              return (
+                <li>
+                  <a href={url}>{entry.data.title}</a>
+                  <time>{formatDate(entry.data.pubDate)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .archives {
+    padding: 1rem;
+  }
+  .archives h1 {
+    margin: 0 0 0.8rem;
+    font-family: var(--font-serif);
+  }
+  .archive-block {
+    margin-top: 0.9rem;
+  }
+  .archive-block h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--text-soft);
+  }
+  .archive-block ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .archive-block li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+  .archive-block a:hover {
+    color: var(--brand);
+  }
+  .archive-block time {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+  }
+</style>

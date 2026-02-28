@@ -1,0 +1,78 @@
+﻿---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchAllEntries } from "@/utils/query";
+import { buildYearBuckets, getBlogEntryUrl, getTutorialEntryUrl, sortByDateDesc } from "@/utils/content";
+import { formatDate } from "@/utils/date";
+
+const entries = await fetchAllEntries();
+const map = buildYearBuckets(entries);
+const years = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
+---
+
+<BaseLayout title="时间轴" description="按年份查看文章与教程更新轨迹。">
+  <section class="surface timeline">
+    <h1>时间轴</h1>
+    {
+      years.map((year) => (
+        <section class="year">
+          <h2>{year}</h2>
+          <ul>
+            {sortByDateDesc(map.get(year) ?? []).map((entry) => {
+              const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
+              return (
+                <li>
+                  <time>{formatDate(entry.data.pubDate)}</time>
+                  <a href={url}>{entry.data.title}</a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .timeline {
+    padding: 1rem;
+  }
+  .timeline h1 {
+    margin: 0 0 1rem;
+    font-family: var(--font-serif);
+  }
+  .year {
+    margin-top: 0.7rem;
+  }
+  .year h2 {
+    margin: 0;
+    color: var(--brand);
+    font-size: 1.1rem;
+  }
+  .year ul {
+    margin: 0.4rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.44rem;
+  }
+  .year li {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 0.7rem;
+    align-items: center;
+  }
+  .year li time {
+    color: var(--text-soft);
+    font-size: 0.88rem;
+  }
+  .year li a:hover {
+    color: var(--brand);
+  }
+  @media (max-width: 680px) {
+    .year li {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+</style>

@@ -1,0 +1,58 @@
+﻿---
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import PostCard from "@/components/PostCard.astro";
+import Pagination from "@/components/Pagination.astro";
+import { fetchAllEntries, makeTagItems } from "@/utils/query";
+
+export async function getStaticPaths() {
+  const entries = await fetchAllEntries();
+  const tags = new Set<string>();
+  for (const entry of entries) {
+    for (const tag of entry.data.tags) tags.add(tag);
+  }
+  return [...tags].map((tag) => ({
+    params: { tag: encodeURIComponent(tag) },
+    props: { tag }
+  }));
+}
+
+const { tag } = Astro.props;
+const allEntries = await fetchAllEntries();
+const matched = allEntries.filter((entry) => entry.data.tags.includes(tag));
+const tags = makeTagItems(allEntries);
+const mode = siteConfig.blog.pagination.mode;
+const pageSize = siteConfig.blog.pagination.pageSize;
+const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
+---
+
+<ListLayout
+  title={`标签：${tag}`}
+  description="符合该标签的博客与教程条目。"
+  stats={[
+    { title: "命中结果", value: matched.length },
+    { title: "全部标签", value: tags.length, href: "/tags" }
+  ]}
+  tags={tags}
+>
+  <div class="list" id="tag-post-list">
+    {
+      matched.map((entry, idx) => (
+        <div data-page-item hidden={mode === "loadMore" && idx >= pageSize ? true : undefined}>
+          <PostCard entry={entry} kind={entry.collection === "blog" ? "blog" : "tutorial"} coverMode={tagCoverMode} />
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    mode === "loadMore" && <Pagination mode="loadMore" targetSelector="#tag-post-list" batchSize={pageSize} />
+  }
+</ListLayout>
+
+<style>
+  .list {
+    display: grid;
+    gap: 0.8rem;
+  }
+</style>
