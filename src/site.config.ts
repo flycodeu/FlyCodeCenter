@@ -1,12 +1,9 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo";
-export type AiProvider = "off" | "openaiCompatible" | "externalWidget";
 export type ThemeId = "plume" | "night" | "ocean" | "sunset" | "tech";
 export type PaginationMode = "page" | "loadMore";
 export type CoverMode = "right" | "left" | "none";
 export type CardStyle = "rounded" | "square" | "glass";
-export type MascotProvider = "off" | "live2d";
-export type AiConnectionMode = "proxyOnly" | "hybrid";
 import { defineSiteConfig } from "./config/define-site-config";
 import articleMetaConfig from "./config/article-meta.config";
 
@@ -133,8 +130,8 @@ const siteConfig = defineSiteConfig({
   },
   theme: {
     defaultTheme: "plume" as ThemeId,
-    themes: ["plume", "tech", "night", "ocean", "sunset"] as ThemeId[],
-    switchableThemes: ["plume", "night"] as ThemeId[],
+    themes: ["plume", "ocean", "sunset", "night", "tech"] as ThemeId[],
+    switchableThemes: ["plume", "ocean", "sunset", "night", "tech"] as ThemeId[],
     appearance: true,
     logo: {
       text: "FlyCodeCenter",
@@ -146,7 +143,7 @@ const siteConfig = defineSiteConfig({
     },
     footer: {
       message: "Built with Astro. Static First.",
-      copyright: "Copyright © 2026 飞云"
+      copyright: "Copyright (c) 2026 飞云"
     },
     profile: {
       avatar: "https://avatars.githubusercontent.com/u/1?v=4",
@@ -163,7 +160,7 @@ const siteConfig = defineSiteConfig({
     },
     toc: {
       enable: true,
-      minDepth: 2,
+      minDepth: 1,
       maxDepth: 3
     },
     navbar: [
@@ -174,6 +171,7 @@ const siteConfig = defineSiteConfig({
       { text: "摄影", link: "/gallery" },
       { text: "优秀文章", link: "/reading" },
       { text: "项目", link: "/projects" },
+      { text: "Jarvis", link: "/jarvis" },
       { text: "标签", link: "/tags" },
       { text: "关于", link: "/about" }
     ],
@@ -200,6 +198,7 @@ const siteConfig = defineSiteConfig({
       { text: "摄影", link: "/gallery" },
       { text: "优秀文章", link: "/reading" },
       { text: "项目", link: "/projects" },
+      { text: "Jarvis", link: "/jarvis" },
       { text: "标签", link: "/tags" },
       { text: "关于", link: "/about" }
     ]
@@ -266,10 +265,6 @@ const siteConfig = defineSiteConfig({
       mermaid: true,
       drawio: true,
       echarts: true
-    },
-    assistant: {
-      aiPanel: true,
-      mascot: true
     }
   },
   diagram: {
@@ -287,8 +282,63 @@ const siteConfig = defineSiteConfig({
   },
   codeHighlight: {
     provider: "shiki",
-    theme: "vitesse-light",
-    languages: ["ts", "js", "javascript", "java", "sql", "bash", "json", "md", "yaml", "rust", "cpp", "mermaid", "txt"],
+    theme: {
+      light: "vitesse-light",
+      dark: "vitesse-dark"
+    },
+    languages: [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "javascript",
+      "typescript",
+      "java",
+      "kotlin",
+      "kt",
+      "kts",
+      "groovy",
+      "sql",
+      "bash",
+      "sh",
+      "shell",
+      "powershell",
+      "ps1",
+      "cmd",
+      "bat",
+      "python",
+      "py",
+      "go",
+      "c",
+      "cpp",
+      "csharp",
+      "cs",
+      "rust",
+      "json",
+      "json5",
+      "jsonc",
+      "md",
+      "markdown",
+      "yaml",
+      "yml",
+      "toml",
+      "ini",
+      "properties",
+      "dotenv",
+      "html",
+      "xml",
+      "vue",
+      "docker",
+      "dockerfile",
+      "nginx",
+      "makefile",
+      "diff",
+      "http",
+      "log",
+      "mermaid",
+      "txt",
+      "plaintext"
+    ],
     lineNumbers: true,
     showWhitespace: false,
     twoslash: false
@@ -370,44 +420,19 @@ const siteConfig = defineSiteConfig({
     algorithm: "AES-GCM",
     manifestFile: "public/encrypted/manifest.json"
   },
-  ai: {
-    provider: "openaiCompatible" as AiProvider,
-    triggerShortcut: "k",
-    connectionMode: "hybrid" as AiConnectionMode,
-    defaultModel: "gpt-4o-mini",
-    models: [
-      { id: "gpt-4o-mini", label: "GPT-4o mini", provider: "openai", apiBaseUrl: "https://api.openai.com/v1" },
-      { id: "gpt-4o", label: "GPT-4o", provider: "openai", apiBaseUrl: "https://api.openai.com/v1" },
-      { id: "deepseek-chat", label: "DeepSeek Chat", provider: "openai-compatible", apiBaseUrl: "https://api.deepseek.com/v1" },
-      { id: "qwen-plus", label: "Qwen Plus", provider: "openai-compatible", apiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
-    ],
-    promptTemplates: [
-      { id: "assistant-default", name: "通用助手", content: "你是站点 AI 助手，回答准确、结构清晰、简洁。必要时给出步骤。" },
-      { id: "frontend-review", name: "前端评审", content: "你是高级前端代码评审专家。先给问题与风险，再给修复建议和示例代码。" },
-      { id: "article-summary", name: "文章总结", content: "请先输出 3-5 条核心结论，再给关键证据点和可执行建议。" },
-      { id: "learning-coach", name: "学习教练", content: "你是学习教练。根据用户目标给出短周期计划、练习清单和检查点。" }
-    ],
-    openaiCompatible: {
-      apiBaseUrl: PUBLIC_ENV.PUBLIC_AI_API_BASE_URL ?? "https://api.openai.com/v1",
-      model: PUBLIC_ENV.PUBLIC_AI_MODEL ?? "gpt-4o-mini",
-      allowClientOverride: true,
-      headers: {
-        "X-Client-Name": "flycodecenter"
-      }
+  jarvis: {
+    enable: true,
+    route: "/jarvis",
+    floatingOrb: {
+      enable: true,
+      label: "JARVIS"
     },
-    externalWidget: {
-      scriptSrc: PUBLIC_ENV.PUBLIC_AI_WIDGET_SRC ?? "",
-      iframeSrc: PUBLIC_ENV.PUBLIC_AI_WIDGET_IFRAME ?? ""
-    }
-  },
-  mascot: {
-    provider: "off" as MascotProvider,
-    modelUrl: "",
-    sprite: "/mascot.png",
-    position: "right" as "left" | "right",
-    draggable: true,
-    mobileHidden: true,
-    speed: 24
+    defaultModels: [
+      { id: "gpt-4o-mini", name: "GPT-4o mini", apiBase: "https://api.openai.com/v1" },
+      { id: "gpt-4o", name: "GPT-4o", apiBase: "https://api.openai.com/v1" },
+      { id: "deepseek-chat", name: "DeepSeek Chat", apiBase: "https://api.deepseek.com/v1" },
+      { id: "qwen-plus", name: "Qwen Plus", apiBase: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
+    ]
   },
   pages: {
     types: {
@@ -451,3 +476,12 @@ const siteConfig = defineSiteConfig({
 
 export type SiteConfig = typeof siteConfig;
 export default siteConfig;
+
+
+
+
+
+
+
+
+

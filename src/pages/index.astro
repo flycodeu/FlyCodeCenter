@@ -14,43 +14,43 @@ const hero = siteConfig.home.hero;
 ---
 
 <BaseLayout>
-  {
-    hero.enable && (
-      <section class="hero surface fade-up">
-        {hero.image?.enable && (
-          <div class="hero-bg">
-            <img src={hero.image.src} alt={hero.image.alt} loading="lazy" />
-            <div class="hero-overlay" />
-          </div>
-        )}
-        <div class="hero-content">
-          <h1>{hero.title}</h1>
-          {hero.tagline && <p class="tagline">{hero.tagline}</p>}
-          <p class="description">{hero.description}</p>
-          {hero.actions && hero.actions.length > 0 && (
-            <div class="hero-actions">
-              {hero.actions.map((action) => (
-                <a href={action.link} class={`btn ${action.type}`}>{action.text}</a>
-              ))}
+  <div class="home-content">
+    {
+      hero.enable && (
+        <section class="hero surface fade-up">
+          {hero.image?.enable && (
+            <div class="hero-bg">
+              <img src={hero.image.src} alt={hero.image.alt} loading="lazy" />
+              <div class="hero-overlay" />
             </div>
           )}
+          <div class="hero-content">
+            <h1>{hero.title}</h1>
+            {hero.tagline && <p class="tagline">{hero.tagline}</p>}
+            <p class="description">{hero.description}</p>
+            {hero.actions && hero.actions.length > 0 && (
+              <div class="hero-actions">
+                {hero.actions.map((action) => (
+                  <a href={action.link} class={`btn ${action.type}`}>{action.text}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    }
+
+    <div class="home-shell">
+      <section class="home-main">
+        <div class="stream-head">
+          <h2 class="section-title">最新文章</h2>
+          <a href="/blog">全部文章 →</a>
+        </div>
+        <div class="blog-stream">
+          {latestBlogs.map((entry) => <PostCard entry={entry} kind="blog" />)}
         </div>
       </section>
-    )
-  }
 
-  <div class="grid-main">
-    <section class="home-main">
-      <div class="stream-head">
-        <h2 class="section-title">最新文章</h2>
-        <a href="/blog">全部文章 →</a>
-      </div>
-      <div class="blog-stream">
-        {latestBlogs.map((entry) => <PostCard entry={entry} kind="blog" />)}
-      </div>
-    </section>
-
-    <aside class="home-side">
       <section class="home-secondary surface">
         <div class="secondary-head">
           <h3>教程更新</h3>
@@ -67,24 +67,31 @@ const hero = siteConfig.home.hero;
           }
         </ul>
       </section>
-    </aside>
+    </div>
   </div>
 </BaseLayout>
 
 <style>
+  .home-content {
+    width: min(900px, 100%);
+    margin: 0 auto;
+  }
+
   .hero {
     position: relative;
-    padding: 6rem 2rem;
-    margin-bottom: 3rem;
+    padding: 5.2rem 2rem 4.7rem;
+    width: 100%;
+    margin: 0 auto 1.35rem;
     text-align: center;
-    border-radius: 16px;
+    border-radius: 20px;
     overflow: hidden;
-    background: var(--bg-elev);
+    background:
+      radial-gradient(120% 180% at 0% 0%, color-mix(in oklab, var(--brand-soft) 56%, transparent 44%), transparent 62%),
+      color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 50vh;
+    min-height: 46vh;
   }
   .hero-bg {
     position: absolute;
@@ -105,18 +112,20 @@ const hero = siteConfig.home.hero;
   .hero-content {
     position: relative;
     z-index: 1;
-    max-width: 800px;
+    max-width: 760px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
   }
   .hero-content h1 {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+    font-size: clamp(2.2rem, 3.6vw + 0.9rem, 4rem);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--text), var(--brand));
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--text), color-mix(in oklab, var(--brand) 70%, #ffffff 30%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1.1;
@@ -128,14 +137,16 @@ const hero = siteConfig.home.hero;
     margin: 1rem 0 0;
   }
   .description {
-    margin: 1.5rem 0 0;
+    margin: 1rem 0 0;
     color: var(--text-soft);
     font-size: 1.125rem;
     line-height: 1.6;
-    max-width: 600px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
   }
   .hero-actions {
-    margin-top: 2.5rem;
+    margin-top: 1.8rem;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -150,10 +161,10 @@ const hero = siteConfig.home.hero;
     text-decoration: none;
   }
   .btn.primary {
-    color: #fff;
-    background: var(--brand);
-    border: 1px solid var(--brand);
-    box-shadow: 0 4px 14px 0 color-mix(in oklab, var(--brand) 40%, transparent 60%);
+    color: #031421;
+    background: linear-gradient(135deg, color-mix(in oklab, var(--brand) 92%, #ffffff 8%), color-mix(in oklab, var(--accent) 54%, var(--brand) 46%));
+    border: 1px solid color-mix(in oklab, var(--brand) 62%, #ffffff 38%);
+    box-shadow: 0 8px 20px -10px color-mix(in oklab, var(--brand) 58%, transparent 42%);
   }
   .btn.primary:hover {
     transform: translateY(-2px);
@@ -161,7 +172,7 @@ const hero = siteConfig.home.hero;
   }
   .btn.secondary {
     color: var(--text);
-    background: var(--bg-elev);
+    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
     border: 1px solid var(--line);
   }
   .btn.secondary:hover {
@@ -170,9 +181,15 @@ const hero = siteConfig.home.hero;
     background: var(--brand-soft);
   }
 
+  .home-shell {
+    width: 100%;
+    margin: 0;
+    display: grid;
+    gap: 1.25rem;
+  }
   .home-main {
     display: grid;
-    gap: 1.5rem;
+    gap: 1rem;
   }
   .stream-head,
   .secondary-head {
@@ -205,11 +222,6 @@ const hero = siteConfig.home.hero;
     gap: 1.25rem;
   }
 
-  .home-side {
-    position: sticky;
-    top: 84px;
-    height: fit-content;
-  }
   .home-secondary {
     padding: 1.5rem;
     border-radius: 12px;

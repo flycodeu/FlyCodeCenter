@@ -2,7 +2,7 @@
   const CLEANUP_KEY = "__flySearchCleanup";
 
   function escapeHtml(input) {
-    return String(input)
+    return String(input || "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
@@ -16,17 +16,25 @@
 
   function normalizeUrl(url) {
     if (!url) return "/";
-    if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
+    if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) return url;
     return "/";
   }
 
-  function isTypingContext(target) {
-    if (!(target instanceof HTMLElement)) return false;
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true;
-    if (target.isContentEditable) return true;
-    return Boolean(target.closest("[contenteditable='true'], input, textarea"));
+  function toReadablePath(url) {
+    const value = normalizeUrl(url);
+    if (value.startsWith("http://") || value.startsWith("https://")) return value;
+    return value.replace(/\/{2,}/g, "/");
+  }
+
+  function inferDomain(url) {
+    const value = normalizeUrl(url);
+    if (value.startsWith("/article/") || value.startsWith("/blog")) return "博客";
+    if (value.startsWith("/tutorial")) return "教程";
+    if (value.startsWith("/projects")) return "项目";
+    if (value.startsWith("/sites")) return "收藏";
+    if (value.startsWith("/reading")) return "优秀文章";
+    if (value.startsWith("/tags")) return "标签";
+    return "页面";
   }
 
   function tokenize(input) {
@@ -46,26 +54,13 @@
     return [single];
   }
 
-  function countIncludes(text, term) {
-    if (!text || !term) return 0;
-    let count = 0;
-    let index = 0;
-    while (true) {
-      const hit = text.indexOf(term, index);
-      if (hit === -1) break;
-      count += 1;
-      index = hit + Math.max(term.length, 1);
-    }
-    return count;
-  }
-
   function highlightText(raw, terms) {
     let output = escapeHtml(raw || "");
-    const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
-    for (const term of sortedTerms) {
+    const sorted = [...terms].sort((a, b) => b.length - a.length);
+    for (const term of sorted) {
       if (!term) continue;
       const safe = escapeRegExp(escapeHtml(term));
-      output = output.replace(new RegExp(safe, "gi"), (match) => `<mark>${match}</mark>`);
+      output = output.replace(new RegExp(safe, "gi"), (m) => `<mark>${m}</mark>`);
     }
     return output;
   }
@@ -77,46 +72,85 @@
     const lower = source.toLowerCase();
     let start = 0;
     for (const term of terms) {
-      const idx = lower.indexOf(term);
-      if (idx >= 0) {
-        start = Math.max(0, idx - 34);
+      const hit = lower.indexOf(term);
+      if (hit >= 0) {
+        start = Math.max(0, hit - 34);
         break;
       }
     }
 
-    const rawSnippet = source.slice(start, start + 144);
+    const part = source.slice(start, start + 150);
     const prefix = start > 0 ? "…" : "";
-    const suffix = start + 144 < source.length ? "…" : "";
-    return `${prefix}${highlightText(rawSnippet, terms)}${suffix}`;
+    const suffix = start + 150 < source.length ? "…" : "";
+    return `${prefix}${highlightText(part, terms)}${suffix}`;
   }
 
-  function domainLabel(domain) {
-    const key = String(domain || "").toLowerCase();
-    if (key === "blog") return "博客";
-    if (key === "tutorial") return "教程";
-    if (key === "projects") return "项目";
-    if (key === "sites") return "收藏";
-    if (key === "reading") return "优秀文章";
-    return "页面";
+  function isTypingContext(target) {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true;
+    if (target.isContentEditable) return true;
+    return Boolean(target.closest("[contenteditable='true'], input, textarea"));
   }
 
-  function toReadablePath(url) {
-    const value = normalizeUrl(String(url || "/"));
-    if (value.startsWith("http://") || value.startsWith("https://")) return value;
-    return value.replace(/\/{2,}/g, "/");
+  function createPagefindEngine(bundlePath, topK) {
+    let pagefindPromise = null;
+
+    const load = async () => {
+      if (!pagefindPromise) {
+        pagefindPromise = import(/* @vite-ignore */ bundlePath).then((mod) => mod.default ?? mod);
+      }
+      return pagefindPromise;
+    };
+
+    return {
+      warmup() {
+        load().catch(() => {});
+      },
+      async search(query) {
+        const api = await load();
+        const terms = tokenize(query);
+        const raw = await api.search(query, { limit: topK });
+        const list = await Promise.all(
+          (raw?.results || []).map(async (item) => {
+            const data = await item.data();
+            const url = normalizeUrl(String(data?.url || "/"));
+            const excerpt = String(data?.excerpt || "");
+            return {
+              title: String(data?.meta?.title || "Untitled"),
+              url,
+              domain: inferDomain(url),
+              snippet: makeSnippet(excerpt, terms),
+              score: 1
+            };
+          })
+        );
+        return list;
+      }
+    };
   }
 
-  function createEngine(indexPath, topK) {
+  function countIncludes(text, term) {
+    if (!text || !term) return 0;
+    let count = 0;
+    let idx = 0;
+    while (true) {
+      const hit = text.indexOf(term, idx);
+      if (hit < 0) break;
+      count += 1;
+      idx = hit + Math.max(term.length, 1);
+    }
+    return count;
+  }
+
+  function createMiniEngine(indexPath, topK) {
     let docsPromise = null;
 
     const loadDocs = async () => {
       if (!docsPromise) {
         docsPromise = fetch(indexPath, { cache: "force-cache" })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`索引加载失败：${response.status}`);
-            }
-            return response.json();
+          .then((resp) => {
+            if (!resp.ok) throw new Error(`索引加载失败：${resp.status}`);
+            return resp.json();
           })
           .then((payload) => payload?.documents || []);
       }
@@ -124,6 +158,13 @@
     };
 
     return {
+      warmup() {
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => loadDocs().catch(() => {}), { timeout: 1200 });
+        } else {
+          window.setTimeout(() => loadDocs().catch(() => {}), 180);
+        }
+      },
       async search(query) {
         const terms = tokenize(query);
         if (!terms.length) return [];
@@ -148,16 +189,15 @@
             score += countIncludes(code, term) * 2;
             score += countIncludes(content, term);
           }
-
           if (score <= 0) continue;
 
-          const rawSnippet = doc.description || doc.content || "";
+          const url = normalizeUrl(String(doc.url || "/"));
           scored.push({
             title: String(doc.title || "Untitled"),
-            url: normalizeUrl(String(doc.url || "/")),
-            snippet: makeSnippet(rawSnippet, terms),
-            score,
-            domain: String(doc.domain || "content")
+            url,
+            domain: inferDomain(url),
+            snippet: makeSnippet(doc.description || doc.content || "", terms),
+            score
           });
         }
 
@@ -172,26 +212,24 @@
     if (!(root instanceof HTMLElement)) return () => {};
 
     const nativePreferred = root.getAttribute("data-native") === "1";
-    const shortcut = (root.getAttribute("data-shortcut") || "k").toLowerCase();
+    const shortcut = (root.getAttribute("data-shortcut") || "/").toLowerCase();
+    const provider = root.getAttribute("data-provider") || "minisearch";
     const indexPath = root.getAttribute("data-index-path") || "/search/minisearch.json";
+    const pagefindPath = root.getAttribute("data-pagefind-path") || "/pagefind/pagefind.js";
     const topK = Number(root.getAttribute("data-top-k") || "8");
     const groupByDomain = root.getAttribute("data-group-by-domain") === "1";
 
     const dialog = document.getElementById("search-modal");
     const fallback = document.getElementById("search-fallback");
 
-    const useDialog =
-      nativePreferred &&
-      dialog instanceof HTMLDialogElement &&
-      typeof dialog.showModal === "function";
-
+    const useDialog = nativePreferred && dialog instanceof HTMLDialogElement && typeof dialog.showModal === "function";
     const input = document.getElementById(useDialog ? "search-input" : "search-input-fallback");
     const resultsEl = document.getElementById(useDialog ? "search-results" : "search-results-fallback");
     const countEl = document.getElementById(useDialog ? "search-count" : "search-count-fallback");
 
     if (!(input instanceof HTMLInputElement) || !(resultsEl instanceof HTMLElement)) return () => {};
 
-    const engine = createEngine(indexPath, topK);
+    const engine = provider === "pagefind" ? createPagefindEngine(pagefindPath, topK) : createMiniEngine(indexPath, topK);
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -203,8 +241,21 @@
     let destroyed = false;
 
     const setCount = (count) => {
-      if (!(countEl instanceof HTMLElement)) return;
-      countEl.textContent = `${count} 条结果`;
+      if (countEl instanceof HTMLElement) {
+        countEl.textContent = `${count} 条结果`;
+      }
+    };
+
+    const setActiveIndex = (next) => {
+      if (next === focusedIndex) return;
+      const prevItem = resultsEl.querySelector(`.result-item[data-index="${focusedIndex}"]`);
+      if (prevItem instanceof HTMLElement) prevItem.classList.remove("active");
+      focusedIndex = next;
+      const nextItem = resultsEl.querySelector(`.result-item[data-index="${focusedIndex}"]`);
+      if (nextItem instanceof HTMLElement) {
+        nextItem.classList.add("active");
+        nextItem.scrollIntoView({ block: "nearest" });
+      }
     };
 
     const mountFallback = () => {
@@ -223,7 +274,6 @@
 
     const renderItem = (item, idx) => {
       const cls = idx === focusedIndex ? "result-item active" : "result-item";
-      const pathText = toReadablePath(item.url);
       return `<li class="${cls}" data-url="${item.url}" data-index="${idx}">
         <a href="${item.url}">
           <div class="result-title-row">
@@ -231,11 +281,11 @@
             <span class="result-rank">#${idx + 1}</span>
           </div>
           <div class="result-meta">
-            <span class="result-domain">${domainLabel(item.domain)}</span>
-            <span class="result-path">${escapeHtml(pathText)}</span>
+            <span class="result-domain">${escapeHtml(item.domain || inferDomain(item.url))}</span>
+            <span class="result-path">${escapeHtml(toReadablePath(item.url))}</span>
           </div>
           <div class="result-divider"></div>
-          <p class="result-snippet">${item.snippet}</p>
+          <p class="result-snippet">${item.snippet || ""}</p>
         </a>
       </li>`;
     };
@@ -243,15 +293,15 @@
     const renderResults = (query) => {
       if (!query) {
         resultsEl.innerHTML = "<li class='result-empty'>输入关键词开始搜索</li>";
-        focusedIndex = -1;
         setCount(0);
+        focusedIndex = -1;
         return;
       }
 
       if (!currentResults.length) {
         resultsEl.innerHTML = "<li class='result-empty'>没有命中结果</li>";
-        focusedIndex = -1;
         setCount(0);
+        focusedIndex = -1;
         return;
       }
 
@@ -263,13 +313,13 @@
 
       const groups = new Map();
       for (const item of currentResults) {
-        const key = String(item.domain || "content");
+        const key = String(item.domain || inferDomain(item.url));
         const list = groups.get(key) || [];
         list.push(item);
         groups.set(key, list);
       }
 
-      const order = ["blog", "tutorial", "projects", "sites", "reading"];
+      const order = ["博客", "教程", "项目", "收藏", "优秀文章", "标签", "页面"];
       const keys = [...groups.keys()].sort((a, b) => {
         const aIdx = order.indexOf(a);
         const bIdx = order.indexOf(b);
@@ -279,17 +329,17 @@
         return aIdx - bIdx;
       });
 
-      const lines = [];
+      const chunks = [];
       keys.forEach((key) => {
-        lines.push(`<li class="result-group-title">${domainLabel(key)}</li>`);
+        chunks.push(`<li class="result-group-title">${escapeHtml(key)}</li>`);
         const list = groups.get(key) || [];
         list.forEach((item) => {
           const idx = currentResults.indexOf(item);
-          lines.push(renderItem(item, idx));
+          chunks.push(renderItem(item, idx));
         });
       });
 
-      resultsEl.innerHTML = lines.join("");
+      resultsEl.innerHTML = chunks.join("");
       setCount(currentResults.length);
     };
 
@@ -303,33 +353,27 @@
       }
 
       const runId = ++sequence;
+      activeTerms = tokenize(query);
       try {
-        activeTerms = tokenize(query);
-        const nextResults = await engine.search(query);
+        const list = await engine.search(query);
         if (runId !== sequence) return;
-        currentResults = nextResults;
-        focusedIndex = currentResults.length ? 0 : -1;
+        currentResults = list;
+        focusedIndex = list.length ? 0 : -1;
         renderResults(query);
       } catch (error) {
         console.error(error);
-        resultsEl.innerHTML = "<li class='result-empty'>搜索初始化失败，请刷新页面后重试。</li>";
+        resultsEl.innerHTML = "<li class='result-empty'>搜索初始化失败，请刷新后重试。</li>";
         setCount(0);
       }
     };
 
     const openSearch = () => {
       if (destroyed) return;
-      const canUseDialog =
-        useDialog &&
-        dialog instanceof HTMLDialogElement &&
-        dialog.isConnected &&
-        typeof dialog.showModal === "function";
 
-      if (canUseDialog) {
+      if (useDialog && dialog instanceof HTMLDialogElement) {
         try {
           if (!dialog.open) dialog.showModal();
-        } catch (error) {
-          console.warn("search modal showModal failed", error);
+        } catch {
           mountFallback();
         }
       } else {
@@ -338,23 +382,22 @@
 
       renderResults("");
       window.requestAnimationFrame(() => input.focus());
+      engine.warmup?.();
     };
 
     const closeSearch = () => {
-      if (useDialog && dialog instanceof HTMLDialogElement && dialog.isConnected && dialog.open) {
+      if (useDialog && dialog instanceof HTMLDialogElement && dialog.open) {
         dialog.close();
       }
       unmountFallback();
     };
 
-    const handleInput = () => {
+    input.addEventListener("input", () => {
       window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
         runSearch().catch(console.error);
       }, 120);
-    };
-
-    input.addEventListener("input", handleInput, { signal });
+    }, { signal });
 
     if (dialog instanceof HTMLDialogElement) {
       dialog.addEventListener("click", (event) => {
@@ -371,8 +414,7 @@
       if (!(target instanceof HTMLElement)) return;
       const item = target.closest(".result-item");
       if (!(item instanceof HTMLElement)) return;
-      focusedIndex = Number(item.dataset.index ?? -1);
-      renderResults(input.value.trim());
+      setActiveIndex(Number(item.dataset.index ?? -1));
     }, { signal });
 
     resultsEl.addEventListener("click", (event) => {
@@ -401,14 +443,9 @@
 
     window.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
-      if ((event.ctrlKey || event.metaKey) && key === "k") {
-        event.preventDefault();
-        openSearch();
-        return;
-      }
-
       const slashShortcut = shortcut === "/" && key === "/";
       const customShortcut = shortcut !== "/" && (event.ctrlKey || event.metaKey) && key === shortcut;
+
       if ((slashShortcut || customShortcut) && !isTypingContext(event.target)) {
         event.preventDefault();
         openSearch();
@@ -416,9 +453,8 @@
       }
 
       const opened = useDialog
-        ? dialog instanceof HTMLDialogElement && dialog.isConnected && dialog.open
+        ? dialog instanceof HTMLDialogElement && dialog.open
         : fallback instanceof HTMLElement && fallback.classList.contains("open");
-
       if (!opened) return;
 
       if (event.key === "Escape") {
@@ -430,27 +466,31 @@
       if (event.key === "ArrowDown") {
         event.preventDefault();
         if (!currentResults.length) return;
-        focusedIndex = (focusedIndex + 1 + currentResults.length) % currentResults.length;
-        renderResults(input.value.trim());
+        setActiveIndex((focusedIndex + 1 + currentResults.length) % currentResults.length);
         return;
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
         if (!currentResults.length) return;
-        focusedIndex = (focusedIndex - 1 + currentResults.length) % currentResults.length;
-        renderResults(input.value.trim());
+        setActiveIndex((focusedIndex - 1 + currentResults.length) % currentResults.length);
         return;
       }
 
       if (event.key === "Enter") {
-        const result = currentResults[focusedIndex];
-        if (!result) return;
+        const item = currentResults[focusedIndex];
+        if (!item) return;
         event.preventDefault();
         closeSearch();
-        window.location.href = normalizeUrl(result.url);
+        window.location.href = normalizeUrl(item.url);
       }
     }, { signal });
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(() => engine.warmup?.(), { timeout: 1400 });
+    } else {
+      window.setTimeout(() => engine.warmup?.(), 260);
+    }
 
     renderResults("");
 
@@ -477,3 +517,4 @@
 
   document.addEventListener("astro:page-load", bootSearchModal);
 })();
+

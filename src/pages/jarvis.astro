@@ -1,0 +1,839 @@
+﻿---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import siteConfig from "@/site.config";
+
+const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
+---
+
+<BaseLayout title="JARVIS 控制台" description="多模型配置与未来风对话控制台">
+  <section class="jarvis-page">
+    <div class="jarvis-console surface">
+      <header class="jarvis-head">
+        <div>
+          <p class="jarvis-kicker">AUTONOMOUS INTELLIGENCE CORE</p>
+          <h1>JARVIS Console</h1>
+        </div>
+        <div class="jarvis-active-chip" id="jarvis-active-chip">未连接模型</div>
+      </header>
+
+      <div id="jarvis-stream" class="jarvis-stream" aria-live="polite"></div>
+
+      <form id="jarvis-form" class="jarvis-form">
+        <textarea id="jarvis-input" rows="2" placeholder="向 Jarvis 输入指令，Enter 发送，Shift+Enter 换行"></textarea>
+        <button id="jarvis-send" type="submit">发送</button>
+      </form>
+    </div>
+
+    <button id="jarvis-settings-toggle" class="jarvis-settings-toggle" type="button" aria-label="打开模型设置">
+      模型设置
+    </button>
+
+    <aside id="jarvis-settings-panel" class="jarvis-settings-panel" hidden>
+      <header>
+        <h3>模型配置</h3>
+        <button id="jarvis-settings-close" type="button">关闭</button>
+      </header>
+
+      <label>
+        当前模型
+        <select id="jarvis-model-select"></select>
+      </label>
+
+      <label>
+        显示名称
+        <input id="jarvis-model-name" type="text" placeholder="例如 GPT-4o mini" />
+      </label>
+
+      <label>
+        模型 ID
+        <input id="jarvis-model-id" type="text" placeholder="例如 gpt-4o-mini" />
+      </label>
+
+      <label>
+        API Base
+        <input id="jarvis-model-base" type="url" placeholder="https://api.openai.com/v1" />
+      </label>
+
+      <label>
+        API Key
+        <input id="jarvis-model-key" type="password" placeholder="sk-..." />
+      </label>
+
+      <label>
+        Temperature
+        <input id="jarvis-model-temp" type="number" min="0" max="2" step="0.1" value="0.7" />
+      </label>
+
+      <div class="jarvis-settings-actions">
+        <button id="jarvis-model-new" type="button">新建</button>
+        <button id="jarvis-model-save" type="button" class="primary">保存</button>
+        <button id="jarvis-model-delete" type="button">删除</button>
+      </div>
+
+      <div class="jarvis-settings-actions">
+        <button id="jarvis-model-default" type="button" class="primary">设为默认并启用</button>
+      </div>
+
+      <p id="jarvis-settings-status" class="jarvis-settings-status" aria-live="polite"></p>
+    </aside>
+  </section>
+
+  <script type="module" define:vars={{ defaultModels }}>
+    const STORAGE_MODELS = "jarvis-models-v1";
+    const STORAGE_ACTIVE = "jarvis-model-active-v1";
+
+    const fallbackModels = (defaultModels || []).map((item, idx) => ({
+      uid: `default-${idx}`,
+      name: item.name,
+      id: item.id,
+      apiBase: item.apiBase,
+      apiKey: "",
+      temperature: 0.7,
+      isDefault: idx === 0
+    }));
+
+    const el = {
+      stream: document.getElementById("jarvis-stream"),
+      form: document.getElementById("jarvis-form"),
+      input: document.getElementById("jarvis-input"),
+      send: document.getElementById("jarvis-send"),
+      activeChip: document.getElementById("jarvis-active-chip"),
+
+      toggle: document.getElementById("jarvis-settings-toggle"),
+      panel: document.getElementById("jarvis-settings-panel"),
+      close: document.getElementById("jarvis-settings-close"),
+      status: document.getElementById("jarvis-settings-status"),
+
+      select: document.getElementById("jarvis-model-select"),
+      name: document.getElementById("jarvis-model-name"),
+      id: document.getElementById("jarvis-model-id"),
+      base: document.getElementById("jarvis-model-base"),
+      key: document.getElementById("jarvis-model-key"),
+      temp: document.getElementById("jarvis-model-temp"),
+
+      create: document.getElementById("jarvis-model-new"),
+      save: document.getElementById("jarvis-model-save"),
+      remove: document.getElementById("jarvis-model-delete"),
+      activate: document.getElementById("jarvis-model-default")
+    };
+
+    const requiredNodes = [
+      el.stream,
+      el.form,
+      el.input,
+      el.send,
+      el.activeChip,
+      el.toggle,
+      el.panel,
+      el.close,
+      el.status,
+      el.select,
+      el.name,
+      el.id,
+      el.base,
+      el.key,
+      el.temp,
+      el.create,
+      el.save,
+      el.remove,
+      el.activate
+    ];
+
+    if (requiredNodes.some((node) => !node)) {
+      console.error("jarvis ui not ready");
+    } else {
+      const readModels = () => {
+        try {
+          const raw = localStorage.getItem(STORAGE_MODELS);
+          const parsed = raw ? JSON.parse(raw) : null;
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch {}
+        return fallbackModels.length ? fallbackModels : [
+          {
+            uid: "fallback-openai",
+            name: "OpenAI",
+            id: "gpt-4o-mini",
+            apiBase: "https://api.openai.com/v1",
+            apiKey: "",
+            temperature: 0.7,
+            isDefault: true
+          }
+        ];
+      };
+
+      const normalizeModel = (model, idx) => ({
+        uid: String(model?.uid || `m-${Date.now()}-${idx}`),
+        name: String(model?.name || `模型 ${idx + 1}`),
+        id: String(model?.id || ""),
+        apiBase: String(model?.apiBase || ""),
+        apiKey: String(model?.apiKey || ""),
+        temperature: Number.isFinite(Number(model?.temperature)) ? Number(model.temperature) : 0.7,
+        isDefault: Boolean(model?.isDefault)
+      });
+
+      let models = readModels().map(normalizeModel);
+      if (!models.some((m) => m.isDefault)) models[0].isDefault = true;
+
+      let activeUid = localStorage.getItem(STORAGE_ACTIVE) || models.find((m) => m.isDefault)?.uid || models[0].uid;
+      if (!models.some((m) => m.uid === activeUid)) activeUid = models[0].uid;
+
+      let draftUid = activeUid;
+      let messages = [
+        {
+          role: "assistant",
+          content: "系统已上线。请先在左下角设置模型，然后开始对话。"
+        }
+      ];
+      let sending = false;
+
+      const setStatus = (text, mode = "info") => {
+        el.status.textContent = text;
+        if (mode === "error") {
+          el.status.style.color = "#f87171";
+        } else if (mode === "success") {
+          el.status.style.color = "#34d399";
+        } else {
+          el.status.style.color = "#7dd3fc";
+        }
+      };
+
+      const persist = () => {
+        localStorage.setItem(STORAGE_MODELS, JSON.stringify(models));
+        localStorage.setItem(STORAGE_ACTIVE, activeUid);
+      };
+
+      const getActiveModel = () => models.find((item) => item.uid === activeUid) || models[0];
+      const getDraftModel = () => models.find((item) => item.uid === draftUid) || models[0];
+
+      const syncChip = () => {
+        const model = getActiveModel();
+        el.activeChip.textContent = model ? `在线模型：${model.name} (${model.id})` : "未连接模型";
+      };
+
+      const renderMessages = () => {
+        el.stream.innerHTML = messages
+          .map((message) => {
+            const role = message.role === "user" ? "user" : "assistant";
+            return `<article class="jarvis-msg ${role}">
+              <div class="jarvis-msg-role">${role === "user" ? "YOU" : "JARVIS"}</div>
+              <div class="jarvis-msg-content">${String(message.content || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll("\n", "<br/>")}</div>
+            </article>`;
+          })
+          .join("");
+        el.stream.scrollTop = el.stream.scrollHeight;
+      };
+
+      const renderModelSelect = () => {
+        el.select.innerHTML = models
+          .map((item) => {
+            const suffix = item.uid === activeUid ? "（当前）" : "";
+            return `<option value="${item.uid}">${item.name} ${suffix}</option>`;
+          })
+          .join("");
+        el.select.value = draftUid;
+      };
+
+      const fillDraftForm = () => {
+        const model = getDraftModel();
+        if (!model) return;
+        el.name.value = model.name;
+        el.id.value = model.id;
+        el.base.value = model.apiBase;
+        el.key.value = model.apiKey;
+        el.temp.value = String(model.temperature ?? 0.7);
+      };
+
+      const renderAll = () => {
+        renderMessages();
+        renderModelSelect();
+        fillDraftForm();
+        syncChip();
+        persist();
+      };
+
+      const addNewModel = () => {
+        const uid = `m-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+        const model = {
+          uid,
+          name: "新模型",
+          id: "",
+          apiBase: "",
+          apiKey: "",
+          temperature: 0.7,
+          isDefault: false
+        };
+        models.push(model);
+        draftUid = uid;
+        renderAll();
+        setStatus("已创建新模型草稿。", "success");
+      };
+
+      const saveDraftModel = () => {
+        const name = el.name.value.trim();
+        const modelId = el.id.value.trim();
+        const apiBase = el.base.value.trim();
+        const apiKey = el.key.value.trim();
+        const temperature = Number(el.temp.value || "0.7");
+
+        if (!name) return setStatus("显示名称不能为空。", "error");
+        if (!modelId) return setStatus("模型 ID 不能为空。", "error");
+        if (!apiBase) return setStatus("API Base 不能为空。", "error");
+
+        const model = getDraftModel();
+        if (!model) return;
+        model.name = name;
+        model.id = modelId;
+        model.apiBase = apiBase;
+        if (apiKey) model.apiKey = apiKey;
+        model.temperature = Math.max(0, Math.min(2, Number.isFinite(temperature) ? temperature : 0.7));
+
+        setStatus("模型已保存。", "success");
+        renderAll();
+      };
+
+      const deleteDraftModel = () => {
+        if (models.length <= 1) {
+          return setStatus("至少保留一个模型。", "error");
+        }
+
+        models = models.filter((item) => item.uid !== draftUid);
+        if (!models.some((item) => item.uid === activeUid)) {
+          activeUid = models[0].uid;
+        }
+        if (!models.some((item) => item.uid === draftUid)) {
+          draftUid = models[0].uid;
+        }
+        if (!models.some((item) => item.isDefault)) {
+          models[0].isDefault = true;
+        }
+
+        setStatus("模型已删除。", "success");
+        renderAll();
+      };
+
+      const activateDraftModel = () => {
+        const model = getDraftModel();
+        if (!model) return;
+
+        models.forEach((item) => {
+          item.isDefault = item.uid === model.uid;
+        });
+        activeUid = model.uid;
+
+        setStatus(`已切换到 ${model.name}。`, "success");
+        renderAll();
+      };
+
+      const typewriter = async (messageIndex, fullText) => {
+        const safeText = String(fullText || "").trim() || "模型未返回内容。";
+        let cursor = 0;
+        messages[messageIndex].content = "";
+        renderMessages();
+
+        while (cursor < safeText.length) {
+          const step = Math.max(1, Math.ceil((safeText.length - cursor) / 36));
+          cursor = Math.min(safeText.length, cursor + step);
+          messages[messageIndex].content = safeText.slice(0, cursor);
+          renderMessages();
+          await new Promise((resolve) => window.setTimeout(resolve, 16));
+        }
+      };
+
+      const parseSseEventBlock = (block) => {
+        const lines = block.split(/\r?\n/);
+        let event = "message";
+        const dataLines = [];
+
+        for (const line of lines) {
+          if (line.startsWith("event:")) {
+            event = line.slice(6).trim() || "message";
+            continue;
+          }
+          if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trim());
+          }
+        }
+
+        if (!dataLines.length) return null;
+
+        const raw = dataLines.join("\n");
+        try {
+          return { event, data: JSON.parse(raw) };
+        } catch {
+          return { event, data: { text: raw } };
+        }
+      };
+
+      const streamMessage = async (payload, messageIndex) => {
+        const response = await fetch("/api/jarvis/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error(`流式请求失败：${response.status}`);
+        }
+
+        const decoder = new TextDecoder();
+        const reader = response.body.getReader();
+        let buffer = "";
+        let hasDelta = false;
+        let doneReceived = false;
+        let streamError = null;
+
+        const applyDelta = (text) => {
+          const delta = String(text || "");
+          if (!delta) return;
+          hasDelta = true;
+          messages[messageIndex].content += delta;
+          renderMessages();
+        };
+
+        const consumeBuffer = (flush = false) => {
+          while (true) {
+            const marker = buffer.indexOf("\n\n");
+            if (marker < 0) break;
+            const block = buffer.slice(0, marker).trim();
+            buffer = buffer.slice(marker + 2);
+            if (!block) continue;
+
+            const packet = parseSseEventBlock(block);
+            if (!packet) continue;
+
+            if (packet.event === "delta") {
+              applyDelta(packet.data?.text);
+              continue;
+            }
+            if (packet.event === "error") {
+              streamError = new Error(packet.data?.message || "流式响应异常");
+              return;
+            }
+            if (packet.event === "done") {
+              doneReceived = true;
+              return;
+            }
+          }
+
+          if (flush && buffer.trim()) {
+            const packet = parseSseEventBlock(buffer.trim());
+            buffer = "";
+            if (packet?.event === "delta") {
+              applyDelta(packet.data?.text);
+            } else if (packet?.event === "error") {
+              streamError = new Error(packet.data?.message || "流式响应异常");
+            } else if (packet?.event === "done") {
+              doneReceived = true;
+            }
+          }
+        };
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true }).replaceAll("\r\n", "\n");
+            consumeBuffer(false);
+            if (doneReceived || streamError) break;
+          }
+          buffer += decoder.decode().replaceAll("\r\n", "\n");
+          consumeBuffer(true);
+          if (!streamError && !doneReceived && buffer.trim()) {
+            streamError = new Error("流式响应提前结束");
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        return { done: doneReceived, hasDelta, error: streamError };
+      };
+
+      const fallbackNonStream = async (payload, messageIndex) => {
+        const response = await fetch("/api/jarvis/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `请求失败：${response.status}`);
+        }
+
+        const data = await response.json();
+        await typewriter(messageIndex, data?.content || "模型未返回内容。");
+      };
+
+      const sendMessage = async (prompt) => {
+        if (sending) return;
+        const model = getActiveModel();
+        if (!model) {
+          setStatus("没有可用模型。", "error");
+          return;
+        }
+        if (!model.apiBase || !model.id) {
+          setStatus("请先配置模型 API Base 和模型 ID。", "error");
+          return;
+        }
+
+        sending = true;
+        el.send.disabled = true;
+
+        messages.push({ role: "user", content: prompt });
+        messages.push({ role: "assistant", content: "" });
+        const assistantIndex = messages.length - 1;
+        renderMessages();
+
+        try {
+          const payload = {
+            apiBase: model.apiBase,
+            apiKey: model.apiKey,
+            model: model.id,
+            temperature: model.temperature,
+            messages: messages
+              .slice(0, -1)
+              .map((item) => ({ role: item.role, content: item.content }))
+          };
+
+          setStatus("流式连接中...", "info");
+
+          const streamResult = await streamMessage(payload, assistantIndex);
+          if (streamResult.error) {
+            if (!streamResult.hasDelta) {
+              await fallbackNonStream(payload, assistantIndex);
+              setStatus("流式不可用，已自动回退普通模式。", "info");
+              return;
+            }
+            setStatus("流式连接中断，已返回部分内容。", "error");
+            return;
+          }
+
+          if (!streamResult.hasDelta) {
+            await fallbackNonStream(payload, assistantIndex);
+            setStatus("流式无增量，已自动回退普通模式。", "info");
+            return;
+          }
+
+          if (!streamResult.done) {
+            setStatus("流式连接中断，已返回部分内容。", "error");
+          } else {
+            setStatus("流式响应完成。", "success");
+          }
+        } catch (error) {
+          messages[assistantIndex].content = `请求失败：${error instanceof Error ? error.message : "未知错误"}`;
+          renderMessages();
+          setStatus("对话请求失败，请检查模型配置。", "error");
+        } finally {
+          sending = false;
+          el.send.disabled = false;
+        }
+      };
+
+      el.toggle.addEventListener("click", () => {
+        el.panel.hidden = false;
+      });
+
+      el.close.addEventListener("click", () => {
+        el.panel.hidden = true;
+      });
+
+      el.select.addEventListener("change", () => {
+        draftUid = el.select.value;
+        fillDraftForm();
+      });
+
+      el.create.addEventListener("click", addNewModel);
+      el.save.addEventListener("click", saveDraftModel);
+      el.remove.addEventListener("click", deleteDraftModel);
+      el.activate.addEventListener("click", activateDraftModel);
+
+      el.form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const prompt = el.input.value.trim();
+        if (!prompt) return;
+        el.input.value = "";
+        await sendMessage(prompt);
+      });
+
+      el.input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          el.form.dispatchEvent(new Event("submit"));
+        }
+      });
+
+      renderAll();
+      setStatus("可在此配置多个模型，默认仅启用一个。", "info");
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  .jarvis-page {
+    position: relative;
+    min-height: calc(100vh - 170px);
+    padding: 0.5rem 0 2.5rem;
+  }
+
+  .jarvis-console {
+    min-height: calc(100vh - 210px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid color-mix(in oklab, var(--line) 78%, var(--brand) 22%);
+    background:
+      radial-gradient(780px 360px at 0% 0%, color-mix(in oklab, var(--brand-soft) 72%, transparent 28%), transparent 68%),
+      radial-gradient(600px 260px at 100% 0%, color-mix(in oklab, var(--accent) 18%, transparent 82%), transparent 72%),
+      color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
+  }
+
+  .jarvis-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .jarvis-kicker {
+    margin: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    color: color-mix(in oklab, var(--brand) 72%, var(--text-soft) 28%);
+  }
+
+  .jarvis-head h1 {
+    margin: 0.25rem 0 0;
+    font-size: clamp(1.35rem, 2vw + 0.8rem, 2rem);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .jarvis-active-chip {
+    font-size: 0.78rem;
+    border: 1px solid color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    background: color-mix(in oklab, var(--brand-soft) 76%, transparent 24%);
+    color: color-mix(in oklab, var(--brand) 80%, var(--text) 20%);
+    white-space: nowrap;
+  }
+
+  .jarvis-stream {
+    overflow: auto;
+    display: grid;
+    align-content: start;
+    gap: 0.7rem;
+    padding: 0.95rem 0.15rem;
+  }
+
+  .jarvis-msg {
+    max-width: min(960px, 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 0.66rem 0.75rem;
+    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
+  }
+
+  .jarvis-msg.user {
+    margin-left: auto;
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    background: color-mix(in oklab, var(--brand-soft) 70%, transparent 30%);
+  }
+
+  .jarvis-msg-role {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    margin-bottom: 0.35rem;
+    color: var(--text-soft);
+  }
+
+  .jarvis-msg-content {
+    line-height: 1.62;
+    font-size: 0.94rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .jarvis-form {
+    border-top: 1px solid var(--line);
+    padding-top: 0.8rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: end;
+  }
+
+  .jarvis-form textarea {
+    width: 100%;
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--bg) 94%, transparent 6%);
+    color: var(--text);
+    padding: 0.6rem 0.72rem;
+    resize: none;
+    min-height: 56px;
+    max-height: 220px;
+    outline: none;
+  }
+
+  .jarvis-form button {
+    height: 42px;
+    min-width: 78px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in oklab, var(--brand) 70%, var(--line) 30%);
+    background: linear-gradient(130deg, color-mix(in oklab, var(--brand) 82%, #fff 18%), color-mix(in oklab, var(--accent) 48%, var(--brand) 52%));
+    color: #041019;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .jarvis-settings-toggle {
+    position: fixed;
+    left: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    z-index: 76;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 0.82rem;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -18px color-mix(in oklab, var(--brand) 46%, transparent 54%);
+  }
+
+  .jarvis-settings-panel {
+    position: fixed;
+    left: 1rem;
+    bottom: calc(4rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    width: min(360px, calc(100vw - 2rem));
+    max-height: min(68vh, 640px);
+    overflow: auto;
+    z-index: 77;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 22px 40px -24px color-mix(in oklab, #020617 50%, transparent 50%);
+    padding: 0.8rem;
+    display: grid;
+    gap: 0.55rem;
+    align-content: start;
+  }
+
+  .jarvis-settings-panel header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.55rem;
+  }
+
+  .jarvis-settings-panel h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .jarvis-settings-panel header button {
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--bg);
+    color: var(--text-soft);
+    font-size: 0.76rem;
+    padding: 0.26rem 0.55rem;
+    cursor: pointer;
+  }
+
+  .jarvis-settings-panel label {
+    display: grid;
+    gap: 0.28rem;
+    font-size: 0.76rem;
+    color: var(--text-soft);
+  }
+
+  .jarvis-settings-panel input,
+  .jarvis-settings-panel select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
+    color: var(--text);
+    padding: 0.45rem 0.56rem;
+    font-size: 0.84rem;
+    outline: none;
+  }
+
+  .jarvis-settings-actions {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .jarvis-settings-actions button {
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: color-mix(in oklab, var(--bg) 94%, transparent 6%);
+    color: var(--text-soft);
+    padding: 0.32rem 0.58rem;
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+
+  .jarvis-settings-actions button.primary {
+    border-color: color-mix(in oklab, var(--brand) 62%, var(--line) 38%);
+    color: color-mix(in oklab, var(--brand) 80%, var(--text) 20%);
+    background: color-mix(in oklab, var(--brand-soft) 78%, transparent 22%);
+  }
+
+  .jarvis-settings-status {
+    margin: 0.2rem 0 0;
+    font-size: 0.74rem;
+    min-height: 1.2em;
+    color: #7dd3fc;
+  }
+
+  @media (max-width: 900px) {
+    .jarvis-console {
+      min-height: calc(100vh - 230px);
+      padding: 0.78rem;
+    }
+
+    .jarvis-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .jarvis-form {
+      grid-template-columns: 1fr;
+    }
+
+    .jarvis-form button {
+      width: 100%;
+    }
+
+    .jarvis-settings-toggle {
+      left: 0.8rem;
+      bottom: calc(0.8rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    }
+
+    .jarvis-settings-panel {
+      left: 0.8rem;
+      right: 0.8rem;
+      width: auto;
+      bottom: calc(3.8rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+      max-height: min(74vh, 640px);
+    }
+  }
+</style>
+

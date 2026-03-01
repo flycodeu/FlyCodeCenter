@@ -50,7 +50,7 @@ Spring AI 支持本地与在线模型的统一封装调用，结合 MCP（Model 
 
 ### 2️⃣ 配置 `application.yml`
 
-```ym;
+```yaml
 spring:  
   ai:
     ollama:

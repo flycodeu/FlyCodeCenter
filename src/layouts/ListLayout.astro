@@ -22,7 +22,7 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class={`grid-main ${hideSidebar ? "no-side" : ""}`}>
+  <div class={`grid-main list-layout-shell ${hideSidebar ? "no-side" : ""}`}>
     <section class="list-main">
       <slot />
     </section>
@@ -42,13 +42,17 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 </BaseLayout>
 
 <style>
+  .list-layout-shell {
+    position: relative;
+  }
+
   .list-main {
     display: grid;
-    gap: 0.72rem;
+    gap: 0.82rem;
   }
   .list-side {
     display: grid;
-    gap: 1.25rem;
+    gap: 1rem;
     align-content: start;
     position: sticky;
     top: 84px;

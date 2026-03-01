@@ -1,4 +1,4 @@
----
+﻿---
 import siteConfig from "@/site.config";
 
 interface Heading {
@@ -7,50 +7,65 @@ interface Heading {
   text: string;
 }
 
+interface TocItem extends Heading {
+  level: number;
+}
+
 interface Props {
   headings?: Heading[];
 }
 
 const { headings = [] } = Astro.props;
-const list = headings.filter(
-  (item) =>
-    item.depth >= siteConfig.theme.toc.minDepth &&
-    item.depth <= siteConfig.theme.toc.maxDepth
+const filtered = headings.filter(
+  (item) => item.depth >= siteConfig.theme.toc.minDepth && item.depth <= siteConfig.theme.toc.maxDepth
 );
+const baseDepth = filtered.length > 0 ? Math.min(...filtered.map((item) => item.depth)) : siteConfig.theme.toc.minDepth;
+
+const list: TocItem[] = filtered.map((item) => {
+  const level = Math.max(1, item.depth - baseDepth + 1);
+  return {
+    ...item,
+    level
+  };
+});
 ---
 
 {
   siteConfig.theme.toc.enable && list.length > 0 && (
     <>
-      <aside class="toc-desktop-wrap" aria-label="Article contents">
-        <nav class="surface toc toc-desktop">
-          <h3>Contents</h3>
+      <div class="toc-desktop-wrap" aria-label="文章目录">
+        <nav class="surface toc toc-desktop" aria-label="文章目录">
+          <h3>本文目录</h3>
           <ol class="toc-list toc-list-desktop">
             {list.map((item) => (
-              <li data-depth={item.depth}>
-                <a href={`#${item.slug}`}>{item.text}</a>
+              <li style={`--toc-level:${item.level}`}>
+                <a href={`#${item.slug}`}>
+                  <span class="toc-text">{item.text}</span>
+                </a>
               </li>
             ))}
           </ol>
         </nav>
-      </aside>
+      </div>
 
-      <button id="toc-mobile-toggle" class="toc-mobile-toggle" type="button" aria-label="Open contents">
-        TOC
+      <button id="toc-mobile-toggle" class="toc-mobile-toggle" type="button" aria-label="打开目录">
+        目录
       </button>
       <div id="toc-mobile-overlay" class="toc-mobile-overlay" hidden></div>
-      <aside id="toc-mobile-panel" class="toc-mobile-panel" hidden aria-label="Article contents">
+      <aside id="toc-mobile-panel" class="toc-mobile-panel" hidden aria-label="文章目录">
         <nav class="surface toc toc-mobile">
           <header class="toc-mobile-head">
-            <h3>Contents</h3>
-            <button id="toc-mobile-close" class="toc-mobile-close" type="button" aria-label="Close contents">
-              Close
+            <h3>本文目录</h3>
+            <button id="toc-mobile-close" class="toc-mobile-close" type="button" aria-label="关闭目录">
+              关闭
             </button>
           </header>
           <ol class="toc-list toc-list-mobile">
             {list.map((item) => (
-              <li data-depth={item.depth}>
-                <a href={`#${item.slug}`}>{item.text}</a>
+              <li style={`--toc-level:${item.level}`}>
+                <a href={`#${item.slug}`}>
+                  <span class="toc-text">{item.text}</span>
+                </a>
               </li>
             ))}
           </ol>
@@ -63,18 +78,34 @@ const list = headings.filter(
 {
   siteConfig.theme.toc.enable && list.length > 0 && (
     <script type="module">
-      const links = [...document.querySelectorAll(".toc-list a")].filter((item) => item instanceof HTMLAnchorElement);
-      if (!links.length) {
-        // no-op
-      } else {
-        const records = [];
-        links.forEach((anchor) => {
+      const cleanupKey = "__flyTocCleanup";
+
+      const initToc = () => {
+        if (typeof window[cleanupKey] === "function") {
+          window[cleanupKey]();
+        }
+
+        const anchors = [...document.querySelectorAll(".toc-list a")].filter((item) => item instanceof HTMLAnchorElement);
+        if (!anchors.length) return;
+
+        const sections = [];
+        const bucket = new Map();
+
+        anchors.forEach((anchor) => {
           const id = anchor.getAttribute("href")?.replace(/^#/, "");
           if (!id) return;
+          if (!bucket.has(id)) bucket.set(id, []);
+          bucket.get(id).push(anchor);
+        });
+
+        bucket.forEach((group, id) => {
           const heading = document.getElementById(id);
           if (!heading) return;
-          records.push({ id, anchor, heading });
+          sections.push({ id, heading, links: group });
         });
+
+        sections.sort((a, b) => a.heading.offsetTop - b.heading.offsetTop);
+        if (!sections.length) return;
 
         const toggleBtn = document.getElementById("toc-mobile-toggle");
         const closeBtn = document.getElementById("toc-mobile-close");
@@ -105,68 +136,84 @@ const list = headings.filter(
           }, 180);
         };
 
+        const onDesktopResize = () => {
+          if (window.innerWidth > 1024) closeMobileToc();
+        };
+
         toggleBtn?.addEventListener("click", openMobileToc);
         closeBtn?.addEventListener("click", closeMobileToc);
         overlay?.addEventListener("click", closeMobileToc);
+        window.addEventListener("resize", onDesktopResize);
 
-        window.addEventListener("resize", () => {
-          if (window.innerWidth > 1024) {
-            closeMobileToc();
-          }
-        });
+        let activeId = "";
+        const activate = (id) => {
+          if (!id || id === activeId) return;
+          activeId = id;
 
-        if (!records.length) {
-          // no-op
-        } else {
-          let activeId = "";
-          let ticking = false;
+          sections.forEach((item) => {
+            const isActive = item.id === id;
+            item.links.forEach((link) => link.classList.toggle("active", isActive));
+          });
 
-          const syncActive = (id) => {
-            if (!id || id === activeId) return;
-            activeId = id;
-            records.forEach((record) => {
-              const isActive = record.id === id;
-              record.anchor.classList.toggle("active", isActive);
-            });
-            if (desktopList instanceof HTMLElement) {
-              const active = desktopList.querySelector("a.active");
-              if (active instanceof HTMLElement) {
-                active.scrollIntoView({ block: "nearest" });
-              }
+          if (desktopList instanceof HTMLElement) {
+            const active = desktopList.querySelector("a.active");
+            if (active instanceof HTMLElement) {
+              active.scrollIntoView({ block: "nearest" });
             }
-          };
+          }
+        };
 
-          const updateByScroll = () => {
-            const offset = 132;
-            let current = records[0];
-            for (const record of records) {
-              const top = record.heading.getBoundingClientRect().top;
-              if (top - offset <= 0) {
-                current = record;
-                continue;
-              }
+        let ticking = false;
+        const updateActive = () => {
+          const edge = 140;
+          let current = sections[0];
+          for (const section of sections) {
+            const top = section.heading.getBoundingClientRect().top;
+            if (top - edge <= 0) {
+              current = section;
+            } else {
               break;
             }
-            syncActive(current.id);
-            ticking = false;
-          };
+          }
+          activate(current?.id || sections[0]?.id || "");
+          ticking = false;
+        };
 
-          const onScroll = () => {
-            if (ticking) return;
-            ticking = true;
-            window.requestAnimationFrame(updateByScroll);
-          };
+        const queueUpdate = () => {
+          if (ticking) return;
+          ticking = true;
+          window.requestAnimationFrame(updateActive);
+        };
 
-          window.addEventListener("scroll", onScroll, { passive: true });
-          window.addEventListener("resize", onScroll);
-          window.addEventListener("hashchange", onScroll);
-          onScroll();
-        }
+        window.addEventListener("scroll", queueUpdate, { passive: true });
+        window.addEventListener("resize", queueUpdate);
+        window.addEventListener("hashchange", queueUpdate);
+        window.addEventListener("site:decrypted", queueUpdate);
 
         document.querySelectorAll(".toc-list-mobile a").forEach((anchor) => {
-          anchor.addEventListener("click", () => {
-            closeMobileToc();
-          });
+          anchor.addEventListener("click", closeMobileToc);
+        });
+
+        queueUpdate();
+
+        window[cleanupKey] = () => {
+          toggleBtn?.removeEventListener("click", openMobileToc);
+          closeBtn?.removeEventListener("click", closeMobileToc);
+          overlay?.removeEventListener("click", closeMobileToc);
+          window.removeEventListener("resize", onDesktopResize);
+          window.removeEventListener("scroll", queueUpdate);
+          window.removeEventListener("resize", queueUpdate);
+          window.removeEventListener("hashchange", queueUpdate);
+          window.removeEventListener("site:decrypted", queueUpdate);
+        };
+      };
+
+      initToc();
+
+      if (!window.__flyTocPageLoadBound) {
+        window.__flyTocPageLoadBound = true;
+        document.addEventListener("astro:page-load", () => {
+          initToc();
         });
       }
     </script>
@@ -175,54 +222,70 @@ const list = headings.filter(
 
 <style>
   .toc {
-    padding: 0.85rem 0;
-    background: var(--bg-elev);
-    border: 1px solid var(--line);
+    padding: 0.88rem 0;
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+    border: 1px solid var(--line-strong);
     box-shadow: var(--card-shadow);
+    backdrop-filter: blur(10px);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
+
   .toc h3 {
     margin: 0 0 0.75rem 1rem;
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 650;
     color: var(--text);
   }
+
   .toc-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--line-soft);
     margin-left: 1rem;
     max-height: inherit;
   }
+
   .toc-list li {
     margin: 0;
   }
-  .toc-list li[data-depth="3"] a {
-    padding-left: 1.5rem;
-  }
+
   .toc-list a {
     display: block;
-    padding: 0.28rem 0 0.28rem 1rem;
-    color: var(--text-soft);
+    padding: 0.3rem 0.4rem 0.3rem calc(0.9rem + (var(--toc-level, 1) - 1) * 0.85rem);
+    color: var(--text-muted);
     font-size: 0.875rem;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-left-color 0.2s ease;
     line-height: 1.45;
     position: relative;
     left: -1px;
     border-left: 1px solid transparent;
+    border-radius: 0 8px 8px 0;
   }
+
+  .toc-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .toc-list a:hover {
     color: var(--text);
   }
+
   .toc-list a.active {
     color: var(--brand);
     border-left-color: var(--brand);
-    font-weight: 500;
+    border-left-width: 2px;
+    font-weight: 700;
+    background: color-mix(in oklab, var(--brand-soft) 60%, transparent 40%);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 18%, transparent 82%);
   }
-
   .toc-desktop-wrap {
     display: none;
   }
@@ -230,11 +293,11 @@ const list = headings.filter(
   .toc-mobile-toggle {
     position: fixed;
     right: 1rem;
-    bottom: calc(5rem + env(safe-area-inset-bottom));
-    z-index: 81;
+    bottom: calc(5rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    z-index: 78;
     border: 1px solid var(--line);
     border-radius: 999px;
-    background: var(--bg-elev);
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
     color: var(--text);
     font-size: 0.82rem;
     font-weight: 600;
@@ -251,6 +314,7 @@ const list = headings.filter(
     opacity: 0;
     transition: opacity 180ms ease;
   }
+
   .toc-mobile-overlay.open {
     opacity: 1;
   }
@@ -266,26 +330,31 @@ const list = headings.filter(
     transition: transform 180ms ease;
     padding: 0.65rem 0.65rem 0.75rem;
   }
+
   .toc-mobile-panel.open {
     transform: translateX(0);
   }
+
   .toc-mobile {
     height: 100%;
     border-radius: 14px;
     display: flex;
     flex-direction: column;
   }
+
   .toc-mobile .toc-list {
     overflow: auto;
     max-height: none;
     padding-bottom: 0.5rem;
   }
+
   .toc-mobile-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-right: 0.75rem;
   }
+
   .toc-mobile-close {
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -305,16 +374,15 @@ const list = headings.filter(
     .toc-mobile-panel {
       display: none;
     }
+
     .toc-desktop-wrap {
       display: block;
-      position: fixed;
-      top: 84px;
-      right: max(16px, calc((100vw - min(1152px, calc(100vw - 48px))) / 2));
-      width: 280px;
-      z-index: 45;
+      height: 100%;
     }
+
     .toc-desktop {
-      max-height: calc(100vh - 112px);
+      max-height: none;
+      height: 100%;
       overflow: auto;
     }
   }

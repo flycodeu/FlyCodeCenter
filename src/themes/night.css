@@ -1,18 +1,24 @@
-﻿:root[data-theme="night"] {
-  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+:root[data-theme="night"] {
+  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-serif: "Noto Serif SC", "Songti SC", serif;
-  --bg: #1e1e20;
-  --bg-elev: #252529;
-  --bg-mesh-a: transparent;
-  --bg-mesh-b: transparent;
-  --text: rgba(255, 255, 245, 0.86);
-  --text-soft: rgba(235, 235, 245, 0.6);
-  --line: #32363f;
-  --brand: #a8b1ff;
-  --brand-soft: #313355;
-  --accent: #10b981;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --radius: 8px;
-  --header-blur: 12px;
+  --bg: #0f1727;
+  --bg-elev: #132238;
+  --bg-mesh-a: color-mix(in oklab, #38bdf8 12%, transparent 88%);
+  --bg-mesh-b: color-mix(in oklab, #2dd4bf 8%, transparent 92%);
+  --text: #e7effd;
+  --text-soft: #9cb0cb;
+  --text-muted: #8297b4;
+  --line: #2a4568;
+  --line-soft: #335074;
+  --line-strong: #45648c;
+  --surface-1: #14263d;
+  --surface-2: #172b45;
+  --brand: #45b7ef;
+  --brand-soft: #14324f;
+  --accent: #38cbd9;
+  --code-bg: #0f1e33;
+  --code-border: #355275;
+  --card-shadow: 0 16px 38px -26px rgba(2, 8, 23, 0.5);
+  --radius: 12px;
+  --header-blur: 15px;
 }
-

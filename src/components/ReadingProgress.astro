@@ -29,73 +29,114 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   define:vars={{ minScrollableHeight: progressConfig.minScrollableHeight ?? 40 }}
 >
   const minScrollableHeightValue = Number(minScrollableHeight ?? 40);
-  const fab = document.getElementById("reading-progress-fab");
-  const text = document.getElementById("progress-text");
-  const circle = document.querySelector(".progress-ring-circle");
-  const article = document.querySelector(".article-body");
+  const state = window.__flyReadingProgressState ?? {
+    fab: null,
+    text: null,
+    circle: null,
+    article: null,
+    circumference: 0,
+    ticking: false,
+    bound: false
+  };
+  window.__flyReadingProgressState = state;
 
-  if (fab && text && circle instanceof SVGCircleElement && article instanceof HTMLElement) {
-    const radius = circle.r.baseVal.value;
-    const circumference = radius * 2 * Math.PI;
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    circle.style.strokeDashoffset = circumference;
+  const bindTargets = () => {
+    state.fab = document.getElementById("reading-progress-fab");
+    state.text = document.getElementById("progress-text");
+    state.circle = document.querySelector(".progress-ring-circle");
+    state.article = document.querySelector(".article-body");
 
-    const getProgress = () => {
-      const rect = article.getBoundingClientRect();
-      const viewport = window.innerHeight || document.documentElement.clientHeight || 1;
-      const articleTop = rect.top + window.scrollY;
-      const articleHeight = Math.max(article.offsetHeight, 1);
-      const start = articleTop - 40;
-      const end = articleTop + articleHeight - viewport + 40;
-      const total = Math.max(end - start, 1);
-      const consumed = Math.min(Math.max(window.scrollY - start, 0), total);
-      return Math.round((consumed / total) * 100);
-    };
+    if (!(state.circle instanceof SVGCircleElement)) return false;
+    const radius = state.circle.r.baseVal.value;
+    state.circumference = radius * 2 * Math.PI;
+    state.circle.style.strokeDasharray = `${state.circumference} ${state.circumference}`;
+    state.circle.style.strokeDashoffset = String(state.circumference);
+    return true;
+  };
 
-    const isScrollableEnough = () => {
-      const total = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) - window.innerHeight;
-      return total >= minScrollableHeightValue;
-    };
+  const isReady = () =>
+    state.fab instanceof HTMLElement &&
+    state.text instanceof HTMLElement &&
+    state.circle instanceof SVGCircleElement &&
+    state.article instanceof HTMLElement;
 
-    const render = () => {
-      if (!isScrollableEnough()) {
-        fab.classList.remove("visible");
-        return;
-      }
-      const progress = getProgress();
-      text.textContent = `${progress}%`;
-      circle.style.strokeDashoffset = String(circumference - (progress / 100) * circumference);
-      fab.setAttribute("aria-label", `返回顶部，当前阅读 ${progress}%`);
-      fab.title = `返回顶部（${progress}%）`;
-      fab.classList.add("visible");
-    };
+  const getProgress = () => {
+    if (!(state.article instanceof HTMLElement)) return 0;
+    const rect = state.article.getBoundingClientRect();
+    const viewport = window.innerHeight || document.documentElement.clientHeight || 1;
+    const articleTop = rect.top + window.scrollY;
+    const articleHeight = Math.max(state.article.offsetHeight, 1);
+    const start = articleTop - 40;
+    const end = articleTop + articleHeight - viewport + 40;
+    const total = Math.max(end - start, 1);
+    const consumed = Math.min(Math.max(window.scrollY - start, 0), total);
+    return Math.round((consumed / total) * 100);
+  };
 
-    let ticking = false;
-    const requestRender = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        render();
-        ticking = false;
+  const isScrollableEnough = () => {
+    const pageScrollable = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) - window.innerHeight;
+    const articleScrollable =
+      state.article instanceof HTMLElement ? Math.max(state.article.scrollHeight - window.innerHeight, 0) : 0;
+    return pageScrollable >= minScrollableHeightValue || articleScrollable >= minScrollableHeightValue;
+  };
+
+  const render = () => {
+    if (!isReady()) return;
+    if (!isScrollableEnough()) {
+      state.fab.classList.remove("visible");
+      return;
+    }
+    const progress = getProgress();
+    state.text.textContent = `${progress}%`;
+    state.circle.style.strokeDashoffset = String(state.circumference - (progress / 100) * state.circumference);
+    state.fab.setAttribute("aria-label", `返回顶部，当前阅读 ${progress}%`);
+    state.fab.title = `返回顶部（${progress}%）`;
+    state.fab.classList.add("visible");
+  };
+
+  const requestRender = () => {
+    if (state.ticking) return;
+    state.ticking = true;
+    requestAnimationFrame(() => {
+      render();
+      state.ticking = false;
+    });
+  };
+
+  const init = () => {
+    const ok = bindTargets();
+    if (!ok || !isReady()) return;
+    requestRender();
+    if (state.fab instanceof HTMLElement && !state.fab.dataset.bound) {
+      state.fab.dataset.bound = "1";
+      state.fab.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
-    };
+    }
+  };
 
+  if (!state.bound) {
+    state.bound = true;
     window.addEventListener("scroll", requestRender, { passive: true });
     window.addEventListener("resize", requestRender);
-    window.addEventListener("site:decrypted", requestRender);
-    requestRender();
-
-    fab.addEventListener("click", () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    window.addEventListener("site:decrypted", () => {
+      init();
+      requestRender();
+    });
+    document.addEventListener("astro:page-load", () => {
+      init();
+      requestRender();
     });
   }
+
+  init();
 </script>
 
 <style>
   .reading-progress-fab {
     position: fixed;
     right: var(--side-offset, 18px);
-    bottom: calc(1rem + env(safe-area-inset-bottom));
+    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     transform: translateY(12px) scale(0.96);
     width: 52px;
     height: 52px;
@@ -107,7 +148,7 @@ const progressConfig = siteConfig.article.ui.readingProgress;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 80;
+    z-index: 86;
     opacity: 0;
     visibility: hidden;
     transition: opacity 220ms ease, transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
@@ -159,7 +200,7 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   @media (max-width: 1024px) {
     .reading-progress-fab {
       right: 1rem;
-      bottom: calc(0.8rem + env(safe-area-inset-bottom));
+      bottom: calc(0.8rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     }
   }
 </style>

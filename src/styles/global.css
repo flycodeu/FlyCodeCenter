@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap");
 @import "../themes/plume.css";
 @import "../themes/night.css";
 @import "../themes/ocean.css";
@@ -7,7 +7,25 @@
 @import "./katex-local.css";
 
 :root {
+  --floating-safe-bottom: 0px;
+  --surface-1: #ffffff;
+  --surface-2: #f7f9fc;
+  --line-soft: #dbe4ef;
+  --line-strong: #b9c8da;
+  --text-muted: #64748b;
+  --code-bg: #f8fafc;
+  --code-border: #cfd8e3;
+}
+
+:root[data-theme="plume"],
+:root[data-theme="ocean"],
+:root[data-theme="sunset"] {
   color-scheme: light;
+}
+
+:root[data-theme="night"],
+:root[data-theme="tech"] {
+  color-scheme: dark;
 }
 
 *,
@@ -27,8 +45,9 @@ body {
   font-family: var(--font-sans);
   color: var(--text);
   background:
-    radial-gradient(1200px 420px at 10% -14%, var(--bg-mesh-a), transparent 70%),
-    radial-gradient(900px 380px at 100% -20%, var(--bg-mesh-b), transparent 72%),
+    radial-gradient(1020px 460px at -8% -18%, var(--bg-mesh-a), transparent 74%),
+    radial-gradient(860px 400px at 110% -12%, var(--bg-mesh-b), transparent 76%),
+    radial-gradient(900px 620px at 48% 125%, color-mix(in oklab, var(--brand) 6%, transparent), transparent 82%),
     var(--bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -41,11 +60,27 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: 
-    radial-gradient(color-mix(in oklab, var(--line) 40%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse at 50% 0%, black 10%, transparent 80%);
-  opacity: 0.55;
+  background-image:
+    radial-gradient(color-mix(in oklab, var(--line) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(120deg, transparent 20%, color-mix(in oklab, var(--brand) 12%, transparent) 50%, transparent 80%);
+  background-size: 24px 24px, 100% 100%;
+  mask-image: radial-gradient(ellipse at 50% 0%, black 12%, transparent 78%);
+  opacity: 0.24;
+  z-index: -1;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--brand) 8%, transparent) 0%,
+    transparent 42%,
+    color-mix(in oklab, var(--accent) 7%, transparent) 100%
+  );
+  opacity: 0.35;
   z-index: -1;
 }
 
@@ -84,15 +119,19 @@ img {
 }
 
 .surface {
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 95%, transparent 5%), color-mix(in oklab, var(--surface-2) 92%, transparent 8%));
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(12px);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
 }
 
 .surface:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px -28px color-mix(in oklab, var(--brand) 26%, transparent 74%);
+  border-color: color-mix(in oklab, var(--brand) 34%, var(--line-strong) 66%);
 }
 
 :root[data-theme="tech"] .surface {
@@ -102,8 +141,8 @@ img {
 }
 
 .surface-soft {
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
+  background: var(--surface-1);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius);
 }
 
@@ -115,27 +154,35 @@ img {
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
   color: var(--text-soft);
-  background: var(--bg-elev);
+  background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .chip:hover {
-  background: var(--brand-soft);
+  background: color-mix(in oklab, var(--brand-soft) 74%, var(--surface-1) 26%);
   color: var(--brand);
 }
 
 .tag-badge {
-  --tag-hue: 220;
-  --tag-border: hsl(var(--tag-hue) 66% 52% / 0.42);
-  --tag-bg: hsl(var(--tag-hue) 72% 96%);
-  --tag-text: hsl(var(--tag-hue) 58% 31%);
-  --tag-count-bg: hsl(var(--tag-hue) 52% 90%);
+  --tag-hue: 210;
+  --tag-border: hsl(var(--tag-hue) 72% 62% / 0.35);
+  --tag-bg: hsl(var(--tag-hue) 84% 94% / 0.85);
+  --tag-text: hsl(var(--tag-hue) 72% 34%);
+  --tag-count-bg: hsl(var(--tag-hue) 72% 86% / 0.88);
   border: 1px solid var(--tag-border);
   border-radius: 7px;
   background: var(--tag-bg);
   color: var(--tag-text);
+}
+
+:root[data-theme="night"] .tag-badge,
+:root[data-theme="tech"] .tag-badge {
+  --tag-bg: hsl(var(--tag-hue) 56% 24% / 0.42);
+  --tag-text: hsl(var(--tag-hue) 84% 84%);
+  --tag-border: hsl(var(--tag-hue) 84% 68% / 0.32);
+  --tag-count-bg: hsl(var(--tag-hue) 56% 40% / 0.6);
 }
 
 .section-title {
@@ -148,9 +195,13 @@ img {
 
 .grid-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
   align-items: start;
+}
+
+.grid-main > * {
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {
@@ -160,19 +211,21 @@ img {
 }
 
 .prose {
-  line-height: 1.62;
-  font-size: 1.03rem;
+  line-height: 1.75;
+  font-size: 1.06rem;
+  letter-spacing: 0.002em;
   color: var(--text);
 }
 
 .prose p {
-  margin: 0.78em 0;
+  margin: 0.95em 0;
+  color: color-mix(in oklab, var(--text) 92%, var(--text-soft) 8%);
 }
 
 .prose ul,
 .prose ol {
-  margin: 0.9em 0;
-  padding-left: 1.4em;
+  margin: 1.05em 0;
+  padding-left: 1.45em;
 }
 
 .prose table {
@@ -182,23 +235,30 @@ img {
   font-size: 0.95rem;
   overflow: hidden;
   border-radius: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
+  background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
 }
 
 .prose th,
 .prose td {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
   padding: 0.6rem 0.72rem;
   text-align: left;
 }
 
 .prose th {
   font-weight: 600;
-  background: color-mix(in oklab, var(--bg-elev) 86%, var(--brand-soft) 14%);
+  background: color-mix(in oklab, var(--surface-2) 72%, var(--brand-soft) 28%);
 }
 
 .fade-up {
   animation: fade-up 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    animation: none;
+  }
 }
 
 @keyframes fade-up {
@@ -230,16 +290,16 @@ img {
 
 .prose h2 {
   font-size: 1.5rem;
-  margin-top: 3rem;
-  margin-bottom: 1.5rem;
+  margin-top: 2.6rem;
+  margin-bottom: 1.35rem;
   padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-strong);
 }
 
 .prose h3 {
   font-size: 1.25rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.9rem;
 }
 
 .prose a {
@@ -253,23 +313,45 @@ img {
   text-underline-offset: 4px;
 }
 
-.prose code {
+.prose :where(p, li, td, th, blockquote) > code {
   font-family: "JetBrains Mono", "Consolas", monospace;
-  font-size: 0.875em;
-  padding: 0.2em 0.4em;
-  background-color: var(--brand-soft);
-  color: var(--brand);
-  border-radius: 4px;
+  font-size: 0.84em;
+  padding: 0.16em 0.46em;
+  background: color-mix(in oklab, var(--code-bg) 80%, var(--brand-soft) 20%);
+  color: color-mix(in oklab, var(--brand) 84%, var(--text) 16%);
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--code-border) 78%, transparent 22%);
 }
 
 .prose pre {
-  border-radius: 8px;
-  border: 1px solid var(--line);
+  border-radius: 10px;
+  border: 1px solid var(--code-border);
   padding: 0.9rem;
   overflow: auto;
-  background-color: var(--bg-elev);
+  background-color: var(--code-bg);
   font-size: 0.845em;
-  line-height: 1.38;
+  line-height: 1.42;
+}
+
+.prose pre.astro-code {
+  border-color: var(--code-border);
+  background-color: var(--code-bg) !important;
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+:root[data-theme="plume"] .prose pre.astro-code,
+:root[data-theme="ocean"] .prose pre.astro-code,
+:root[data-theme="sunset"] .prose pre.astro-code {
+  color: var(--shiki-light, inherit) !important;
+  background-color: var(--shiki-light-bg, var(--code-bg)) !important;
+}
+
+:root[data-theme="night"] .prose pre.astro-code,
+:root[data-theme="tech"] .prose pre.astro-code {
+  color: var(--shiki-dark, inherit) !important;
+  background-color: var(--shiki-dark-bg, var(--code-bg)) !important;
 }
 
 .prose pre code {
@@ -280,16 +362,18 @@ img {
   border-radius: 0;
   white-space: pre;
   counter-reset: code-line;
+  line-height: 1.42;
 }
 
 .prose pre code .line {
   display: block;
   margin: 0;
   white-space: pre;
-  line-height: 1.38;
+  line-height: 1.42;
 }
 
-.prose pre code .line:empty {
+/* Keep intentional blank lines, only trim a trailing synthetic empty line from the renderer. */
+.prose pre code .line:last-child:empty {
   display: none;
 }
 
@@ -299,18 +383,50 @@ img {
   display: inline-block;
   width: 1.5rem;
   margin-right: 1rem;
-  color: var(--text-soft);
+  color: var(--text-muted);
   text-align: right;
   font-size: 0.85em;
-  opacity: 0.6;
+  opacity: 0.8;
+}
+
+main pre.has-global-copy {
+  position: relative;
+  padding-top: 2.2rem;
+}
+
+.global-pre-copy {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--line) 76%, transparent 24%);
+  background: color-mix(in oklab, var(--bg) 88%, transparent 12%);
+  color: var(--text-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.global-pre-copy:hover {
+  color: var(--brand);
+  border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+}
+
+.global-pre-copy.copied {
+  color: #10b981;
+  border-color: #10b981;
 }
 
 .code-block-wrapper {
   position: relative;
   margin: 1.5rem 0;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background-color: var(--bg-elev);
+  border-radius: 10px;
+  border: 1px solid var(--code-border);
+  background-color: var(--surface-1);
   overflow: hidden;
 }
 
@@ -327,8 +443,8 @@ img {
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0.8rem;
-  background: color-mix(in oklab, var(--bg-elev) 80%, var(--line) 20%);
-  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+  border-bottom: 1px solid var(--line-soft);
   font-family: "JetBrains Mono", "Consolas", monospace;
   font-size: 0.8rem;
   color: var(--text-soft);
@@ -354,7 +470,7 @@ img {
 }
 
 .code-block-copy:hover {
-  background: var(--line);
+  background: color-mix(in oklab, var(--line-soft) 72%, transparent 28%);
   color: var(--text);
 }
 
@@ -365,9 +481,9 @@ img {
 .diagram-wrapper {
   position: relative;
   margin: 2rem 0;
-  border-radius: 8px;
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--line-soft);
 }
 
 .diagram-wrapper .diagram-host {
@@ -379,8 +495,8 @@ img {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
+  background: var(--surface-1);
+  border: 1px solid var(--line-soft);
   color: var(--text-soft);
   cursor: pointer;
   padding: 0.25rem;
@@ -433,7 +549,7 @@ img {
 }
 
 .math-copy-btn:hover {
-  background: var(--line);
+  background: color-mix(in oklab, var(--line-soft) 72%, transparent 28%);
   color: var(--text);
 }
 
@@ -443,12 +559,15 @@ img {
 
 .prose blockquote {
   margin: 1.5rem 0;
-  padding: 0.5rem 1rem;
+  padding: 0.7rem 1rem;
   border-left: 4px solid var(--brand);
-  background: var(--bg-elev);
-  border-radius: 0 8px 8px 0;
+  background: color-mix(in oklab, var(--surface-2) 84%, transparent 16%);
+  border-radius: 0 10px 10px 0;
   color: var(--text-soft);
-  font-style: italic;
+  font-style: normal;
+  border-top: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .md-figure {
@@ -504,4 +623,3 @@ img {
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--text-soft);
 }
-

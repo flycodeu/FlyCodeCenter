@@ -22,8 +22,8 @@ const { columns = 2 } = Astro.props;
   .custom-card-grid > ul > li {
     margin: 0 !important;
     padding: 1.5rem !important;
-    background: var(--bg-elev) !important;
-    border: 1px solid var(--line) !important;
+    background: var(--surface-1) !important;
+    border: 1px solid var(--line-strong) !important;
     border-radius: 16px !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease !important;
     display: flex !important;
@@ -37,7 +37,7 @@ const { columns = 2 } = Astro.props;
     display: none !important;
   }
   .custom-card-grid > ul > li:hover {
-    border-color: var(--brand) !important;
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line-strong) 60%) !important;
     transform: translateY(-4px) scale(1.01) !important;
     box-shadow: 0 12px 32px -8px color-mix(in oklab, var(--brand) 25%, transparent 75%) !important;
     z-index: 1;

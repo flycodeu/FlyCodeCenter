@@ -3,8 +3,7 @@ import siteConfig from "@/site.config";
 import Header from "@/components/Header.astro";
 import SearchModal from "@/components/SearchModal.astro";
 import Watermark from "@/components/Watermark.astro";
-import AiProvider from "@/components/AiProvider.astro";
-import Mascot from "@/components/Mascot.astro";
+import JarvisOrb from "@/components/JarvisOrb.astro";
 import { makePageTitle, resolveCanonical } from "@/utils/seo";
 import { ViewTransitions } from "astro:transitions";
 
@@ -23,6 +22,7 @@ const {
 } = Astro.props;
 const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
+const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarvis");
 ---
 
 <!doctype html>
@@ -110,6 +110,11 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
     </script>
   </head>
   <body>
+    <div class="aurora-bg" aria-hidden="true">
+      <span class="aurora-orb orb-a"></span>
+      <span class="aurora-orb orb-b"></span>
+      <span class="aurora-orb orb-c"></span>
+    </div>
     {siteConfig.watermark.enable && <Watermark />}
     <Header />
     <main class="container">
@@ -122,9 +127,81 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
       </div>
     </footer>
     <SearchModal />
-    <AiProvider />
-    <Mascot />
+    {showJarvisOrb && <JarvisOrb />}
     <script is:inline>
+      const initFloatingSafeArea = () => {
+        const root = document.documentElement;
+        const update = () => {
+          const footer = document.querySelector(".site-footer");
+          if (!(footer instanceof HTMLElement)) {
+            root.style.setProperty("--floating-safe-bottom", "0px");
+            return;
+          }
+          const rect = footer.getBoundingClientRect();
+          const overlap = Math.max(0, window.innerHeight - rect.top + 12);
+          const safe = Math.min(overlap, rect.height + 24);
+          root.style.setProperty("--floating-safe-bottom", `${safe}px`);
+        };
+
+        let ticking = false;
+        const requestUpdate = () => {
+          if (ticking) return;
+          ticking = true;
+          window.requestAnimationFrame(() => {
+            update();
+            ticking = false;
+          });
+        };
+
+        if (!window.__flyFloatingSafeBound) {
+          window.__flyFloatingSafeBound = true;
+          window.addEventListener("scroll", requestUpdate, { passive: true });
+          window.addEventListener("resize", requestUpdate);
+        }
+        requestUpdate();
+      };
+
+      const initGlobalCodeCopy = () => {
+        const icon =
+          '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
+        const success =
+          '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
+
+        const copy = async (button, text) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            button.innerHTML = success;
+            button.classList.add("copied");
+            window.setTimeout(() => {
+              button.innerHTML = icon;
+              button.classList.remove("copied");
+            }, 1400);
+          } catch (error) {
+            console.error("global pre copy failed", error);
+          }
+        };
+
+        document.querySelectorAll("main pre").forEach((pre) => {
+          if (!(pre instanceof HTMLElement)) return;
+          if (pre.closest(".article-body")) return;
+          if (pre.querySelector(".global-pre-copy")) return;
+
+          const code = pre.querySelector("code");
+          const text = (code?.textContent || pre.textContent || "").trim();
+          if (!text) return;
+
+          pre.classList.add("has-global-copy");
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "global-pre-copy";
+          button.title = "复制代码";
+          button.ariaLabel = "复制代码";
+          button.innerHTML = icon;
+          button.addEventListener("click", () => copy(button, text));
+          pre.appendChild(button);
+        });
+      };
+
       document.addEventListener("astro:page-load", () => {
         document.body.classList.remove("has-overlay");
         for (const dialog of document.querySelectorAll("dialog[open]")) {
@@ -134,7 +211,11 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
             } catch {}
           }
         }
+        initGlobalCodeCopy();
+        initFloatingSafeArea();
       });
+      initGlobalCodeCopy();
+      initFloatingSafeArea();
     </script>
   </body>
 </html>
@@ -145,14 +226,20 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
 
 <style>
   main {
-    padding: 0.7rem 0 1.1rem;
+    padding: 1rem 0 1.3rem;
+    position: relative;
+    z-index: 1;
   }
   .site-footer {
     border-top: 1px solid var(--line);
-    margin-top: 0.95rem;
+    margin-top: 1.1rem;
+    position: relative;
+    z-index: 1;
+    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
+    backdrop-filter: blur(10px);
   }
   .footer-inner {
-    min-height: 60px;
+    min-height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -163,6 +250,66 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
   .footer-inner p,
   .footer-inner small {
     margin: 0;
+  }
+
+  .aurora-bg {
+    position: fixed;
+    inset: -20vh -20vw;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    filter: blur(54px);
+  }
+
+  .aurora-orb {
+    position: absolute;
+    border-radius: 999px;
+    opacity: 0.34;
+    animation: aurora-float 16s ease-in-out infinite;
+  }
+
+  .orb-a {
+    width: 38vw;
+    height: 38vw;
+    min-width: 320px;
+    min-height: 320px;
+    left: 0;
+    top: 8%;
+    background: color-mix(in oklab, var(--brand) 68%, transparent 32%);
+  }
+
+  .orb-b {
+    width: 30vw;
+    height: 30vw;
+    min-width: 260px;
+    min-height: 260px;
+    right: 6%;
+    top: 3%;
+    background: color-mix(in oklab, var(--accent) 60%, transparent 40%);
+    animation-delay: -6s;
+  }
+
+  .orb-c {
+    width: 26vw;
+    height: 26vw;
+    min-width: 220px;
+    min-height: 220px;
+    left: 28%;
+    bottom: 10%;
+    background: color-mix(in oklab, #0ea5e9 62%, transparent 38%);
+    animation-delay: -11s;
+  }
+
+  @keyframes aurora-float {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(2.5vw, -1.8vh, 0) scale(1.06);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
   }
   @media (max-width: 760px) {
     .footer-inner {

@@ -21,31 +21,37 @@ const pathname = Astro.url.pathname;
   .nav {
     display: flex;
     align-items: center;
-    gap: 0.36rem;
+    gap: 0.42rem;
     min-width: 0;
   }
   .nav-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 38px;
-    padding: 0.5rem 0.8rem;
-    border-radius: 11px;
-    border: 1px solid transparent;
+    min-height: 40px;
+    padding: 0.52rem 0.88rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--line) 70%, transparent 30%);
+    background: color-mix(in oklab, var(--bg-elev) 76%, transparent 24%);
     color: var(--text-soft);
     white-space: nowrap;
-    font-size: 0.92rem;
-    transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+    font-size: 0.88rem;
+    letter-spacing: 0.01em;
+    transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease;
   }
   .nav-link:hover {
     color: var(--text);
-    background: color-mix(in oklab, var(--brand-soft) 50%, transparent 50%);
-    border-color: color-mix(in oklab, var(--brand-soft) 85%, var(--line) 15%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+    border-color: color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    transform: translateY(-1px);
   }
   .nav-link.active {
     color: var(--brand);
-    background: color-mix(in oklab, var(--brand-soft) 80%, transparent 20%);
-    border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+    background:
+      linear-gradient(120deg, color-mix(in oklab, var(--brand) 22%, transparent 78%), transparent),
+      color-mix(in oklab, var(--brand-soft) 82%, transparent 18%);
+    border-color: color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
+    box-shadow: 0 12px 28px -22px color-mix(in oklab, var(--brand) 62%, transparent 38%);
   }
   @media (max-width: 900px) {
     .nav {

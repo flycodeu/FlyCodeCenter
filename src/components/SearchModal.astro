@@ -11,7 +11,9 @@ const enabled = siteConfig.search.provider !== "off";
       class="search-root"
       data-native={siteConfig.search.ui.useNativeDialog ? "1" : "0"}
       data-shortcut={siteConfig.search.ui.openShortcut}
+      data-provider={siteConfig.search.provider}
       data-index-path={siteConfig.search.minisearch.indexPath}
+      data-pagefind-path={siteConfig.search.pagefind.bundlePath}
       data-top-k={String(siteConfig.search.topK)}
       data-group-by-domain={siteConfig.search.ui.groupByDomain ? "1" : "0"}
     >

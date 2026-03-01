@@ -1,4 +1,4 @@
----
+﻿---
 import siteConfig from "@/site.config";
 
 const themes = siteConfig.theme.switchableThemes ?? siteConfig.theme.themes;
@@ -8,7 +8,7 @@ const enableTransition = siteConfig.theme.transitions.theme;
 ---
 
 <button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes={JSON.stringify(themes)}>
-  <span class="theme-icon" aria-hidden="true">☼</span>
+  <span class="theme-icon" id="theme-toggle-icon" aria-hidden="true">TH</span>
 </button>
 
 <script is:inline define:vars={{ storageKey, explicitKey, enableTransition }}>
@@ -17,6 +17,23 @@ const enableTransition = siteConfig.theme.transitions.theme;
     window.__flyThemeToggleBound = true;
 
     const root = document.documentElement;
+    const icon = document.getElementById("theme-toggle-icon");
+
+    const nameMap = {
+      plume: "晨曦",
+      ocean: "海蓝",
+      sunset: "暖阳",
+      night: "夜幕",
+      tech: "未来"
+    };
+
+    const glyphMap = {
+      plume: "PL",
+      ocean: "OC",
+      sunset: "SS",
+      night: "NT",
+      tech: "TK"
+    };
 
     const readThemes = (button) => {
       try {
@@ -36,10 +53,22 @@ const enableTransition = siteConfig.theme.transitions.theme;
       return themes[0] || "plume";
     };
 
+    const syncToggleUi = (theme) => {
+      const button = document.getElementById("theme-toggle");
+      if (!(button instanceof HTMLElement)) return;
+      if (icon instanceof HTMLElement) {
+        icon.textContent = glyphMap[theme] || "TH";
+      }
+      const label = nameMap[theme] || theme;
+      button.setAttribute("aria-label", `切换主题，当前 ${label}`);
+      button.title = `当前主题：${label}`;
+    };
+
     const applyTheme = (theme) => {
       root.dataset.theme = theme;
       localStorage.setItem(storageKey, theme);
       localStorage.setItem(explicitKey, "1");
+      syncToggleUi(theme);
       window.dispatchEvent(new CustomEvent("site:theme-change", { detail: theme }));
     };
 
@@ -62,6 +91,12 @@ const enableTransition = siteConfig.theme.transitions.theme;
       const next = normalizeTheme(themes, themes[(index + 1) % themes.length]);
       applyTheme(next);
     });
+
+    document.addEventListener("astro:page-load", () => {
+      syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || "plume");
+    });
+
+    syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || "plume");
   })();
 </script>
 
@@ -69,13 +104,26 @@ const enableTransition = siteConfig.theme.transitions.theme;
   .theme-toggle {
     border: 1px solid var(--line);
     color: var(--text);
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
-    background: var(--bg-elev);
+    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
     cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
+
+  .theme-toggle:hover {
+    border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
+    color: var(--brand);
+    transform: translateY(-1px);
+  }
+
   .theme-icon {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    line-height: 1;
+    font-weight: 700;
   }
 </style>
+

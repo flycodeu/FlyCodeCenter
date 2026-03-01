@@ -40,7 +40,7 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 <article class={`surface post-card cover-${mode} style-${styleVariant} fade-up ${pinned ? "is-pinned" : ""}`} style={`--cover-width:${width}px;--cover-height:${height}px;--cover-ratio:${ratio};`}>
   <div class="meta">
     <header class="card-head">
-      {pinned && <span class="pin">置顶</span>}
+      {pinned && <span class="pin">Pinned</span>}
       <a class="title" href={link}>{meta.title}</a>
     </header>
 
@@ -64,7 +64,7 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 
   {
     hasCover && (
-      <a class="cover-wrap" href={link} aria-label={`查看 ${meta.title}`}>
+      <a class="cover-wrap" href={link} aria-label={`View ${meta.title}`}>
         <img src={cover} alt={meta.title} loading="lazy" />
       </a>
     )
@@ -76,9 +76,12 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
     position: relative;
     display: grid;
     gap: 1.15rem;
-    padding: 1.05rem;
+    padding: 1.08rem;
     align-items: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
+    background:
+      radial-gradient(120% 160% at 0% 0%, color-mix(in oklab, var(--brand-soft) 28%, transparent 72%), transparent 62%),
+      color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
   }
 
   .post-card.cover-right {
@@ -102,9 +105,9 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
   }
 
   .post-card:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--line) 70%, var(--brand) 30%);
-    box-shadow: 0 12px 24px -18px rgba(15, 23, 42, 0.32);
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--brand) 38%, var(--line-strong) 62%);
+    box-shadow: 0 20px 38px -30px color-mix(in oklab, var(--brand) 56%, transparent 44%);
   }
 
   .post-card.style-square {
@@ -112,7 +115,7 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
   }
 
   .post-card.style-glass {
-    background: rgba(var(--bg-elev), 0.7);
+    background: color-mix(in oklab, var(--surface-1) 74%, transparent 26%);
     backdrop-filter: blur(9px);
   }
 
@@ -164,7 +167,7 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 
   .summary {
     margin: 0;
-    color: var(--text-soft);
+    color: color-mix(in oklab, var(--text-soft) 90%, #ffffff 10%);
     line-height: 1.52;
     font-size: 0.92rem;
     display: -webkit-box;
@@ -222,10 +225,10 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
     width: var(--cover-width);
     min-height: var(--cover-height);
     aspect-ratio: var(--cover-ratio);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid color-mix(in oklab, var(--line) 92%, transparent 8%);
-    background: var(--bg-elev);
+    border: 1px solid color-mix(in oklab, var(--line-strong) 88%, transparent 12%);
+    background: color-mix(in oklab, var(--surface-2) 90%, transparent 10%);
   }
 
   .cover-wrap img {
