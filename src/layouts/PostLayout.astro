@@ -106,7 +106,6 @@ const jsonLd = buildArticleJsonLd({
           <span class="chip">{wordCount} 字</span>
           {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
           {siteConfig.stats.enable && <span class="chip" id="post-view-count" data-view-slug={articleUrl}>阅读 --</span>}
-          {code && <span class="chip code-chip">编码 {code}</span>}
           <span class="chip date-chip">
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
             创建于 {formatDate(pubDate, "YYYY/MM/DD HH:mm:ss")}
@@ -213,39 +212,107 @@ const jsonLd = buildArticleJsonLd({
       return btn;
     };
 
-    const renderMermaid = async (article) => {
-      const blocks = article.querySelectorAll("pre[data-language='mermaid'] code, pre code.language-mermaid");
-      if (!blocks.length) return;
+    const scheduleIdle = (task) => {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(task, { timeout: 500 });
+      } else {
+        window.setTimeout(() => task({ timeRemaining: () => 8 }), 20);
+      }
+    };
 
-      const mod = await import(/* @vite-ignore */ mermaidBundle);
-      const mermaid = mod.default ?? mod;
-      mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+    const getLanguage = (code) => {
+      const pre = code.closest("pre");
+      const raw =
+        pre?.getAttribute("data-language") ||
+        code.getAttribute("data-language") ||
+        code.className ||
+        "";
+      const match = raw.match(/language-([a-z0-9-]+)/i);
+      return (match?.[1] || raw).toLowerCase();
+    };
 
-      let index = 0;
-      for (const code of blocks) {
-        const pre = code.closest("pre");
-        if (!pre) continue;
-        const raw = (code.textContent || "").trim();
+    const isMermaidBlock = (code) => {
+      const language = getLanguage(code);
+      return language.includes("mermaid");
+    };
 
-        const wrapper = document.createElement("div");
-        wrapper.className = "diagram-wrapper";
+    const isDrawioBlock = (code) => {
+      const raw = (code.textContent || "").trim();
+      const language = getLanguage(code);
+      if (language.includes("drawio")) return true;
+      return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
+    };
 
-        if (enableMermaidCopy) {
-          wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制 Mermaid 源码", () => raw));
-        }
+    const isChartBlock = (code) => {
+      const raw = (code.textContent || "").trim();
+      const language = getLanguage(code);
+      if (language.includes("chart")) return true;
+      if (!(language.includes("json") || language.includes("plain"))) return false;
+      return raw.startsWith("{") && raw.includes('"series"');
+    };
 
-        const host = document.createElement("div");
-        host.className = "diagram-host mermaid-host";
-        wrapper.appendChild(host);
-        pre.replaceWith(wrapper);
+    let mermaidRenderIndex = 0;
+    let mermaidApiPromise = null;
+    const getMermaidApi = async () => {
+      if (!mermaidApiPromise) {
+        mermaidApiPromise = import(/* @vite-ignore */ mermaidBundle).then((mod) => {
+          const mermaid = mod.default ?? mod;
+          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+          return mermaid;
+        });
+      }
+      return mermaidApiPromise;
+    };
 
-        try {
-          const result = await mermaid.render(`mermaid-${index++}`, raw);
-          host.innerHTML = result.svg;
-        } catch (error) {
-          host.textContent = "Mermaid 渲染失败，请检查语法。";
-          console.error(error);
-        }
+    let echartsApiPromise = null;
+    const chartInstances = [];
+    let chartResizeBound = false;
+    const getEchartsApi = async () => {
+      if (!echartsApiPromise) {
+        echartsApiPromise = import(/* @vite-ignore */ echartsBundle).then((mod) => mod.default ?? mod);
+      }
+      return echartsApiPromise;
+    };
+
+    const bindChartResize = () => {
+      if (chartResizeBound) return;
+      chartResizeBound = true;
+      window.addEventListener("resize", () => {
+        chartInstances.forEach((chart) => {
+          try {
+            chart.resize();
+          } catch {
+            // no-op
+          }
+        });
+      });
+    };
+
+    const renderMermaidBlock = async (code) => {
+      const pre = code.closest("pre");
+      if (!pre || pre.dataset.diagramEnhanced === "1") return;
+      pre.dataset.diagramEnhanced = "1";
+      const raw = (code.textContent || "").trim();
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "diagram-wrapper";
+
+      if (enableMermaidCopy) {
+        wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制 Mermaid 源码", () => raw));
+      }
+
+      const host = document.createElement("div");
+      host.className = "diagram-host mermaid-host";
+      wrapper.appendChild(host);
+      pre.replaceWith(wrapper);
+
+      try {
+        const mermaid = await getMermaidApi();
+        const result = await mermaid.render(`mermaid-${mermaidRenderIndex++}`, raw);
+        host.innerHTML = result.svg;
+      } catch (error) {
+        host.textContent = "Mermaid 渲染失败，请检查语法。";
+        console.error(error);
       }
     };
 
@@ -262,109 +329,163 @@ const jsonLd = buildArticleJsonLd({
       });
     };
 
-    const renderDrawio = async (article) => {
-      const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
-        const raw = (code.textContent || "").trim();
-        const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
-        if (lang.includes("drawio")) return true;
-        return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
-      });
-      if (!blocks.length) return;
+    const renderDrawioBlock = async (code) => {
+      const pre = code.closest("pre");
+      if (!pre || pre.dataset.diagramEnhanced === "1") return;
+      pre.dataset.diagramEnhanced = "1";
+      const src = (code.textContent || "").trim();
+      const host = document.createElement("figure");
+      host.className = "diagram-host drawio-host";
 
-      for (const code of blocks) {
-        const pre = code.closest("pre");
-        if (!pre) continue;
-        const src = (code.textContent || "").trim();
-        const host = document.createElement("figure");
-        host.className = "diagram-host drawio-host";
-
-        if (!src) {
-          host.textContent = "Draw.io 代码块需要填写文件 URL。";
-          pre.replaceWith(host);
-          continue;
-        }
-
-        const iframe = document.createElement("iframe");
-        const encoded = btoa(unescape(encodeURIComponent(src)));
-        iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
-        iframe.loading = "lazy";
-        iframe.referrerPolicy = "no-referrer";
-        iframe.title = "drawio diagram";
-        iframe.style.width = "100%";
-        iframe.style.height = "460px";
-        iframe.style.border = "1px solid var(--line)";
-        iframe.style.borderRadius = "12px";
-        host.appendChild(iframe);
-
-        const note = document.createElement("figcaption");
-        note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
-        host.appendChild(note);
+      if (!src) {
+        host.textContent = "Draw.io 代码块需要填写文件 URL。";
         pre.replaceWith(host);
+        return;
+      }
+
+      const iframe = document.createElement("iframe");
+      const encoded = btoa(unescape(encodeURIComponent(src)));
+      iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
+      iframe.loading = "lazy";
+      iframe.referrerPolicy = "no-referrer";
+      iframe.title = "drawio diagram";
+      iframe.style.width = "100%";
+      iframe.style.height = "460px";
+      iframe.style.border = "1px solid var(--line)";
+      iframe.style.borderRadius = "12px";
+      host.appendChild(iframe);
+
+      const note = document.createElement("figcaption");
+      note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
+      host.appendChild(note);
+      pre.replaceWith(host);
+    };
+
+    const renderChartBlock = async (code) => {
+      const pre = code.closest("pre");
+      if (!pre || pre.dataset.diagramEnhanced === "1") return;
+      pre.dataset.diagramEnhanced = "1";
+      const raw = (code.textContent || "{}").trim();
+      const host = document.createElement("div");
+      host.className = "diagram-host chart-host";
+      host.style.height = `${chartHeight}px`;
+      pre.replaceWith(host);
+
+      try {
+        const echarts = await getEchartsApi();
+        const option = JSON.parse(raw);
+        const chart = echarts.init(host);
+        chartInstances.push(chart);
+        bindChartResize();
+        chart.setOption(option);
+      } catch (error) {
+        host.textContent = "图表配置 JSON 解析失败。";
+        console.error(error);
       }
     };
 
-    const renderCharts = async (article) => {
-      const blocks = [...article.querySelectorAll("pre code")].filter((code) => {
-        const raw = (code.textContent || "").trim();
-        const lang = (code.getAttribute("data-language") || code.className || "").toLowerCase();
-        if (lang.includes("chart")) return true;
-        if (!(lang.includes("json") || lang.includes("plain"))) return false;
-        return raw.startsWith("{") && raw.includes('"series"');
-      });
-      if (!blocks.length) return;
+    const enhanceCodeBlock = (pre) => {
+      if (pre.dataset.codeEnhanced === "1" || pre.closest(".code-block-wrapper")) return;
+      const codeNode = pre.querySelector("code");
+      const language = (
+        pre.getAttribute("data-language") ||
+        codeNode?.getAttribute("data-language") ||
+        pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+        "text"
+      ).toLowerCase();
+      if (["mermaid", "drawio", "chart"].some((name) => language.includes(name))) return;
 
-      const mod = await import(/* @vite-ignore */ echartsBundle);
-      const echarts = mod.default ?? mod;
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block-wrapper";
+      pre.parentNode?.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
 
-      for (const code of blocks) {
-        const pre = code.closest("pre");
-        if (!pre) continue;
-        const raw = (code.textContent || "{}").trim();
-        const host = document.createElement("div");
-        host.className = "diagram-host chart-host";
-        host.style.height = `${chartHeight}px`;
-        pre.replaceWith(host);
+      const header = document.createElement("div");
+      header.className = "code-block-header";
 
-        try {
-          const option = JSON.parse(raw);
-          const chart = echarts.init(host);
-          chart.setOption(option);
-          window.addEventListener("resize", () => chart.resize());
-        } catch (error) {
-          host.textContent = "图表配置 JSON 解析失败。";
-          console.error(error);
-        }
+      const langSpan = document.createElement("span");
+      langSpan.className = "code-block-lang";
+      langSpan.textContent = language;
+      header.appendChild(langSpan);
+
+      if (enableCodeCopy) {
+        const btn = createCopyBtn("code-block-copy", "复制代码", () => codeNode?.textContent || pre.textContent || "");
+        header.appendChild(btn);
       }
+
+      wrapper.insertBefore(header, pre);
+      pre.dataset.codeEnhanced = "1";
     };
 
-    const enhanceCodeBlocks = (article) => {
-      const preElements = article.querySelectorAll("pre.astro-code, pre");
-      preElements.forEach((pre) => {
-        if (pre.closest(".code-block-wrapper")) return;
-        const language = (pre.getAttribute("data-language") || pre.className.match(/language-([a-z0-9-]+)/i)?.[1] || "text").toLowerCase();
-        if (["mermaid", "drawio", "chart"].some((name) => language.includes(name))) return;
+    const enhanceCodeBlocksInBatches = (article) => {
+      const preElements = [...article.querySelectorAll("pre")].filter((pre) => pre instanceof HTMLElement);
+      let index = 0;
 
-        const wrapper = document.createElement("div");
-        wrapper.className = "code-block-wrapper";
-        pre.parentNode?.insertBefore(wrapper, pre);
-        wrapper.appendChild(pre);
-
-        const header = document.createElement("div");
-        header.className = "code-block-header";
-
-        const langSpan = document.createElement("span");
-        langSpan.className = "code-block-lang";
-        langSpan.textContent = language;
-        header.appendChild(langSpan);
-
-        if (enableCodeCopy) {
-          const codeNode = pre.querySelector("code");
-          const btn = createCopyBtn("code-block-copy", "复制代码", () => codeNode?.textContent || pre.textContent || "");
-          header.appendChild(btn);
+      const step = (deadline) => {
+        while (index < preElements.length) {
+          const pre = preElements[index];
+          const code = pre.querySelector("code");
+          if (code && !isMermaidBlock(code) && !isDrawioBlock(code) && !isChartBlock(code)) {
+            enhanceCodeBlock(pre);
+          }
+          index += 1;
+          if (deadline && typeof deadline.timeRemaining === "function" && deadline.timeRemaining() < 4) {
+            break;
+          }
         }
+        if (index < preElements.length) {
+          scheduleIdle(step);
+        }
+      };
 
-        wrapper.insertBefore(header, pre);
+      scheduleIdle(step);
+    };
+
+    const observeAndRenderDiagrams = (article) => {
+      const allCodeBlocks = [...article.querySelectorAll("pre code")];
+      const targets = allCodeBlocks.filter((code) => {
+        if (isMermaidBlock(code)) return Boolean(enableMermaid);
+        if (isDrawioBlock(code)) return Boolean(enableDrawio);
+        if (isChartBlock(code)) return Boolean(enableEcharts);
+        return false;
       });
+
+      if (!targets.length) return;
+
+      const runForCode = (code) => {
+        if (isMermaidBlock(code) && enableMermaid) {
+          renderMermaidBlock(code).catch(console.error);
+          return;
+        }
+        if (isDrawioBlock(code) && enableDrawio) {
+          renderDrawioBlock(code).catch(console.error);
+          return;
+        }
+        if (isChartBlock(code) && enableEcharts) {
+          renderChartBlock(code).catch(console.error);
+        }
+      };
+
+      if (!("IntersectionObserver" in window)) {
+        targets.forEach((code) => scheduleIdle(() => runForCode(code)));
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+            const code = entry.target;
+            if (code instanceof HTMLElement) {
+              scheduleIdle(() => runForCode(code));
+            }
+          });
+        },
+        { rootMargin: "220px 0px" }
+      );
+
+      targets.forEach((code) => observer.observe(code));
     };
 
     const initArticleEnhancements = async () => {
@@ -374,11 +495,9 @@ const jsonLd = buildArticleJsonLd({
       if (article.dataset.enhanced === "1") return;
       article.dataset.enhanced = "1";
 
-      if (enableMermaid) await renderMermaid(article);
-      if (enableDrawio) await renderDrawio(article);
-      if (enableEcharts) await renderCharts(article);
       addMathCopy(article);
-      enhanceCodeBlocks(article);
+      observeAndRenderDiagrams(article);
+      enhanceCodeBlocksInBatches(article);
     };
 
     const VIEW_CLIENT_KEY = "fly-view-client-id";
@@ -546,9 +665,6 @@ const jsonLd = buildArticleJsonLd({
     gap: 0.75rem;
     margin-top: 0.5rem;
     align-items: center;
-  }
-  .code-chip {
-    font-family: "JetBrains Mono", monospace;
   }
   .tag-row-badge {
     margin-top: 0.45rem;

@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /encrypted/
-Disallow: /gallery/
-Sitemap: https://flycodecenter.vercel.app/sitemap-index.xml

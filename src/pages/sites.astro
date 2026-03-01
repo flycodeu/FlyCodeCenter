@@ -1,4 +1,4 @@
----
+ï»¿---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchSitesEntries } from "@/utils/query";
@@ -19,7 +19,7 @@ const entries = await Promise.all(
     return {
       entry,
       Content,
-      category: (entry.data.category || entry.data.title || "Î´·ÖÀà").trim(),
+      category: (entry.data.category || entry.data.title || "æœªåˆ†ç±»").trim(),
       cards
     };
   })
@@ -34,37 +34,45 @@ const resolveIcon = (url: string, icon: string) => {
   if (icon?.trim()) return icon.trim();
   return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=64`;
 };
+
+const getHost = (url: string) => {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
 ---
 
 <BaseLayout title={siteConfig.pages.sites.title} description={siteConfig.pages.sites.description}>
-  <section class="collection-head surface">
-    <div>
+  <section class="vault-hero surface">
+    <div class="hero-copy">
       <h1>{siteConfig.pages.sites.title}</h1>
       <p>{siteConfig.pages.sites.description}</p>
     </div>
-    <div class="head-stats">
-      <span class="stat-item">{groups.length} ¸öÀà±ğ</span>
-      <span class="stat-item">{totalItems} ¸öÕ¾µã</span>
+    <div class="hero-stats">
+      <span class="stat-pill">{groups.length} ä¸ªåˆ†ç±»</span>
+      <span class="stat-pill">{totalItems} ä¸ªç«™ç‚¹</span>
     </div>
   </section>
 
   {
     showFilter && (
-      <section class="collection-filter" id="collection-filter">
-        <button type="button" class="filter-btn active" data-filter="all" style="--tag-hue: 216">
-          <span class="label">È«²¿</span>
-          <span class="count">{totalItems}</span>
+      <section class="vault-filter" id="vault-filter">
+        <button type="button" class="filter-chip active" data-filter="all" style="--tag-hue:216">
+          <span>å…¨éƒ¨</span>
+          <small>{totalItems}</small>
         </button>
         {
           groups.map((group) => (
             <button
               type="button"
-              class="filter-btn"
+              class="filter-chip"
               data-filter={group.category}
               style={getTagColorVars(group.category)}
             >
-              <span class="label">{group.category}</span>
-              <span class="count">{group.cards.length}</span>
+              <span>{group.category}</span>
+              <small>{group.cards.length}</small>
             </button>
           ))
         }
@@ -72,19 +80,19 @@ const resolveIcon = (url: string, icon: string) => {
     )
   }
 
-  <section class="collection-sections" id="collection-sections" data-default={defaultCategory}>
+  <section class="vault-groups" id="vault-groups" data-default={defaultCategory}>
     {
       groups.map((group) => (
-        <section class="collection-group surface" data-group={group.category}>
+        <section class="vault-group surface" data-group={group.category}>
           <header class="group-head">
-            <div class="group-title-wrap">
+            <div>
               <h2>{group.entry.data.title}</h2>
-              <p>{group.entry.data.description || "¸Ã·ÖÀàÏÂµÄÍøÕ¾¿¨Æ¬ÁĞ±í¡£"}</p>
+              <p>{group.entry.data.description || "æŒ‰è¯¥ä¸»é¢˜ç»„ç»‡çš„ç½‘ç«™æ”¶è—æ¸…å•ã€‚"}</p>
             </div>
-            <small>{group.cards.length} ¸öÕ¾µã</small>
+            <span class="group-count">{group.cards.length} ä¸ªç«™ç‚¹</span>
           </header>
 
-          <div class="group-body prose">
+          <div class="group-intro prose">
             <group.Content />
           </div>
 
@@ -92,7 +100,7 @@ const resolveIcon = (url: string, icon: string) => {
             {
               group.cards.map((card) => (
                 <article class="site-card">
-                  <header class="site-head">
+                  <header class="site-card-head">
                     <img src={resolveIcon(card.url, card.icon)} alt="" loading="lazy" decoding="async" />
                     <div class="site-title-wrap">
                       <h3 title={card.title}>{card.title}</h3>
@@ -100,18 +108,17 @@ const resolveIcon = (url: string, icon: string) => {
                     </div>
                   </header>
 
-                  {card.desc && <p class="desc">{card.desc}</p>}
+                  <p class="site-desc">{card.desc || "æš‚æ— æè¿°"}</p>
 
-                  <div class="meta-row">
-                    {card.category && (
-                      <span class="meta-tag meta-tag-strong tag-badge" style={getTagColorVars(card.category)}>{card.category}</span>
-                    )}
-                    {card.tags.slice(0, 3).map((tag) => (
-                      <span class="meta-tag tag-badge" style={getTagColorVars(tag)}>{tag}</span>
-                    ))}
+                  <div class="site-meta">
+                    {card.category && <span class="tag-badge meta-tag" style={getTagColorVars(card.category)}>{card.category}</span>}
+                    {card.tags.slice(0, 3).map((tag) => <span class="tag-badge meta-tag" style={getTagColorVars(tag)}>{tag}</span>)}
                   </div>
 
-                  <a class="visit-link" href={card.url} target="_blank" rel="noreferrer">·ÃÎÊÕ¾µã</a>
+                  <footer class="site-foot">
+                    <span class="site-host">{getHost(card.url)}</span>
+                    <a class="visit-btn" href={card.url} target="_blank" rel="noreferrer">è®¿é—®ç«™ç‚¹</a>
+                  </footer>
                 </article>
               ))
             }
@@ -123,9 +130,9 @@ const resolveIcon = (url: string, icon: string) => {
 </BaseLayout>
 
 <script is:inline>
-  const initCollectionFilter = () => {
-    const root = document.getElementById('collection-sections');
-    const filter = document.getElementById('collection-filter');
+  const initVaultFilter = () => {
+    const root = document.getElementById('vault-groups');
+    const filter = document.getElementById('vault-filter');
     if (!root || !filter) return;
 
     if (window.__flySitesFilterCleanup) {
@@ -135,8 +142,8 @@ const resolveIcon = (url: string, icon: string) => {
     const controller = new AbortController();
     const { signal } = controller;
 
-    const buttons = Array.from(filter.querySelectorAll('.filter-btn'));
-    const groups = Array.from(root.querySelectorAll('.collection-group'));
+    const buttons = Array.from(filter.querySelectorAll('.filter-chip'));
+    const groups = Array.from(root.querySelectorAll('.vault-group'));
     const normalize = (value) => String(value || '').trim().toLowerCase();
 
     const setFilter = (value, syncQuery = true) => {
@@ -187,166 +194,159 @@ const resolveIcon = (url: string, icon: string) => {
     };
   };
 
-  document.addEventListener('astro:page-load', initCollectionFilter);
-  initCollectionFilter();
+  document.addEventListener('astro:page-load', initVaultFilter);
+  initVaultFilter();
 </script>
 
-<style is:global>
-  .collection-head {
-    margin-bottom: 0.8rem;
-    padding: 0.9rem 1rem;
+<style>
+  .vault-hero {
+    margin-bottom: 0.9rem;
+    padding: 1rem 1.05rem;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 0.8rem;
+    gap: 1rem;
   }
 
-  .collection-head h1 {
+  .hero-copy h1 {
     margin: 0;
-    font-size: clamp(1.35rem, 1vw + 1rem, 1.68rem);
+    font-size: clamp(1.35rem, 1vw + 1rem, 1.72rem);
+    letter-spacing: -0.01em;
   }
 
-  .collection-head p {
-    margin: 0.18rem 0 0;
+  .hero-copy p {
+    margin: 0.22rem 0 0;
     color: var(--text-soft);
-    font-size: 0.88rem;
+    font-size: 0.9rem;
   }
 
-  .head-stats {
+  .hero-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.44rem;
+    gap: 0.45rem;
   }
 
-  .stat-item {
+  .stat-pill {
     border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 0.16rem 0.46rem;
-    font-size: 0.74rem;
+    border-radius: 999px;
+    padding: 0.18rem 0.52rem;
+    font-size: 0.73rem;
     color: var(--text-soft);
-    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
     white-space: nowrap;
   }
 
-  .collection-filter {
+  .vault-filter {
     position: sticky;
     top: 74px;
-    z-index: 5;
+    z-index: 8;
     display: flex;
-    gap: 0.42rem;
     flex-wrap: wrap;
-    margin-bottom: 0.76rem;
+    gap: 0.42rem;
+    margin-bottom: 0.82rem;
     padding: 0.62rem;
     border: 1px solid var(--line);
-    border-radius: 10px;
-    background: color-mix(in oklab, var(--bg-elev) 94%, transparent 6%);
+    border-radius: 11px;
+    background: color-mix(in oklab, var(--bg-elev) 95%, transparent 5%);
     backdrop-filter: blur(10px);
   }
 
-  .collection-filter .filter-btn {
-    --tag-border: color-mix(in oklab, var(--line) 84%, transparent 16%);
-    --tag-bg: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+  .filter-chip {
+    --tag-border: color-mix(in oklab, var(--line) 86%, transparent 14%);
+    --tag-bg: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
     --tag-text: var(--text-soft);
-    --tag-count-bg: color-mix(in oklab, var(--bg) 88%, transparent 12%);
 
     border: 1px solid var(--tag-border);
     background: var(--tag-bg);
     color: var(--tag-text);
     border-radius: 999px;
     padding: 0.24rem 0.56rem;
-    cursor: pointer;
     font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
     gap: 0.34rem;
-    transition: all 150ms ease;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
 
-  .collection-filter .filter-btn .count {
-    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
+  .filter-chip small {
+    border: 1px solid color-mix(in oklab, var(--tag-border) 82%, transparent 18%);
     border-radius: 999px;
     padding: 0.02rem 0.3rem;
     font-size: 0.68rem;
-    background: var(--tag-count-bg);
-    color: inherit;
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
   }
 
-  .collection-filter .filter-btn.active {
-    color: var(--tag-text);
-    border-color: color-mix(in oklab, var(--tag-border) 78%, var(--brand) 22%);
+  .filter-chip.active {
+    border-color: color-mix(in oklab, var(--tag-border) 74%, var(--brand) 26%);
     box-shadow: 0 8px 16px -14px color-mix(in oklab, var(--brand) 22%, transparent 78%);
   }
 
-  .collection-sections {
+  .vault-groups {
     display: grid;
-    gap: 0.78rem;
+    gap: 0.9rem;
   }
 
-  .collection-group {
-    border-radius: 12px;
-    padding: 0.82rem;
+  .vault-group {
+    padding: 0.85rem;
     display: grid;
-    gap: 0.66rem;
+    gap: 0.78rem;
   }
 
   .group-head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.72rem;
+    gap: 0.8rem;
     border-bottom: 1px solid var(--line);
-    padding-bottom: 0.46rem;
-  }
-
-  .group-title-wrap {
-    min-width: 0;
+    padding-bottom: 0.52rem;
   }
 
   .group-head h2 {
     margin: 0;
-    font-size: 1.08rem;
+    font-size: 1.05rem;
   }
 
   .group-head p {
-    margin: 0.18rem 0 0;
+    margin: 0.2rem 0 0;
     color: var(--text-soft);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
 
-  .group-head small {
-    font-size: 0.72rem;
-    color: var(--text-soft);
+  .group-count {
     border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 0.08rem 0.36rem;
-    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    border-radius: 999px;
+    padding: 0.08rem 0.38rem;
+    font-size: 0.71rem;
+    color: var(--text-soft);
+    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
     white-space: nowrap;
   }
 
-  .group-body {
+  .group-intro {
     margin: 0;
-    font-size: 0.8rem;
     color: var(--text-soft);
+    font-size: 0.82rem;
   }
 
-  .group-body p {
-    margin: 0.28rem 0;
+  .group-intro p {
+    margin: 0.3rem 0;
   }
 
   .group-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 0.62rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.68rem;
   }
 
   .site-card {
     border: 1px solid color-mix(in oklab, var(--line) 88%, var(--brand) 12%);
-    border-radius: 10px;
+    border-radius: 12px;
     background: color-mix(in oklab, var(--bg-elev) 96%, transparent 4%);
-    padding: 0.68rem;
+    padding: 0.72rem;
     display: grid;
-    gap: 0.42rem;
-    min-height: 184px;
+    gap: 0.5rem;
+    min-height: 204px;
     transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
   }
 
@@ -356,16 +356,16 @@ const resolveIcon = (url: string, icon: string) => {
     transform: translateY(-1px);
   }
 
-  .site-head {
+  .site-card-head {
     display: flex;
     align-items: center;
-    gap: 0.54rem;
+    gap: 0.56rem;
   }
 
-  .site-head img {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+  .site-card-head img {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     border: 1px solid var(--line);
     background: var(--bg);
     padding: 2px;
@@ -377,7 +377,7 @@ const resolveIcon = (url: string, icon: string) => {
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.35rem;
     flex-wrap: wrap;
   }
 
@@ -385,9 +385,9 @@ const resolveIcon = (url: string, icon: string) => {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.36;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .site-badge {
@@ -395,68 +395,80 @@ const resolveIcon = (url: string, icon: string) => {
     border-radius: 999px;
     padding: 0.03rem 0.35rem;
     font-size: 0.65rem;
-    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
-    background: color-mix(in oklab, var(--brand-soft) 45%, var(--bg-elev) 55%);
+    color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
+    background: color-mix(in oklab, var(--brand-soft) 42%, var(--bg-elev) 58%);
   }
 
-  .site-card .desc {
+  .site-desc {
     margin: 0;
     color: var(--text-soft);
-    font-size: 0.79rem;
-    line-height: 1.44;
+    font-size: 0.8rem;
+    line-height: 1.45;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  .meta-row {
+  .site-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.26rem;
+    gap: 0.28rem;
     align-content: start;
   }
 
   .meta-tag {
-    font-size: 0.67rem;
-    padding: 0.04rem 0.36rem;
+    font-size: 0.68rem;
+    padding: 0.03rem 0.35rem;
     border-radius: 7px;
-    line-height: 1.35;
   }
 
-  .meta-tag-strong {
-    font-weight: 600;
-  }
-
-  .visit-link {
+  .site-foot {
     margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.52rem;
+  }
+
+  .site-host {
+    font-size: 0.72rem;
+    color: var(--text-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .visit-btn {
     border: 1px solid color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
     border-radius: 8px;
     background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
-    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
+    color: color-mix(in oklab, var(--text) 68%, var(--brand) 32%);
     text-align: center;
-    padding: 0.34rem 0.58rem;
+    padding: 0.3rem 0.58rem;
     font-size: 0.76rem;
+    white-space: nowrap;
     transition: background-color 150ms ease, color 150ms ease;
   }
 
-  .visit-link:hover {
+  .visit-btn:hover {
     background: color-mix(in oklab, var(--brand-soft) 54%, var(--bg-elev) 46%);
     color: color-mix(in oklab, var(--text) 62%, var(--brand) 38%);
   }
 
   @media (max-width: 900px) {
-    .collection-filter {
+    .vault-filter {
       position: static;
       top: auto;
     }
   }
 
   @media (max-width: 700px) {
-    .collection-head {
+    .vault-hero {
       align-items: flex-start;
       flex-direction: column;
     }
+
     .group-grid {
       grid-template-columns: 1fr;
     }

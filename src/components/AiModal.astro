@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 
 const aiUiConfig = {
@@ -19,114 +19,150 @@ const aiUiConfig = {
   <section id="ai-shell" class="ai-shell" role="dialog" aria-modal="true" aria-label="AI 聊天面板">
     <aside class="ai-sidebar">
       <header class="ai-sidebar-head">
-        <h3>AI Chat</h3>
+        <h3>对话</h3>
         <button id="ai-new-session" type="button">新建</button>
       </header>
       <ul id="ai-session-list" class="ai-session-list"></ul>
+      <footer class="ai-sidebar-foot">
+        <button id="ai-open-settings" type="button" class="settings-btn">设置</button>
+      </footer>
     </aside>
 
     <main class="ai-main">
       <header class="ai-main-head">
-        <div>
+        <div class="title-wrap">
           <h3 id="ai-active-title">新会话</h3>
-          <p>像 OpenAI 一样直接对话，设置项在右侧面板</p>
+          <small id="ai-active-role">默认助手</small>
         </div>
-        <div class="ai-head-actions">
-          <button id="ai-toggle-settings" type="button" class="head-btn">设置</button>
-          <button id="ai-close" type="button" class="head-btn" aria-label="关闭">关闭</button>
-        </div>
+        <button id="ai-close" type="button" class="close-btn" aria-label="关闭">关闭</button>
       </header>
 
       <div id="ai-chat-stream" class="ai-chat-stream" aria-live="polite"></div>
 
       <form id="ai-chat-form" class="ai-composer">
-        <textarea id="ai-chat-input" rows="2" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
-        <div class="ai-composer-actions">
-          <button id="ai-summarize" type="button" class="ghost-btn">总结当前文章</button>
-          <button id="ai-chat-send" type="submit" class="primary-btn">发送</button>
+        <div class="ai-composer-inner">
+          <textarea id="ai-chat-input" rows="2" placeholder="发消息给 AI（Enter 发送，Shift+Enter 换行）"></textarea>
+          <button id="ai-chat-send" type="submit" class="send-btn">发送</button>
         </div>
       </form>
     </main>
 
-    <aside id="ai-settings-panel" class="ai-settings" hidden>
-      <header class="ai-settings-head">
-        <h4>对话设置</h4>
-        <button id="ai-settings-close" type="button" class="head-btn" aria-label="关闭设置">关闭</button>
+    <section id="ai-settings-panel" class="ai-settings-panel" hidden>
+      <header class="settings-head">
+        <h4>模型与角色设置</h4>
+        <button id="ai-close-settings" type="button" class="ghost-btn">关闭</button>
       </header>
 
       <div class="setting-group">
-        <label for="ai-model-select">模型</label>
-        <select id="ai-model-select"></select>
+        <label for="ai-provider-select">Provider 预设</label>
+        <select id="ai-provider-select">
+          <option value="openai">OpenAI</option>
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini</option>
+          <option value="custom">Custom</option>
+        </select>
       </div>
 
       <div class="setting-group">
-        <label for="ai-prompt-select">提示词模板</label>
-        <select id="ai-prompt-select"></select>
+        <label for="ai-base-input">API Base</label>
+        <input id="ai-base-input" type="url" placeholder="https://api.openai.com/v1" />
       </div>
 
       <div class="setting-group">
-        <label for="ai-system-prompt">系统提示词</label>
-        <textarea id="ai-system-prompt" rows="4" placeholder="用于当前会话的系统提示词"></textarea>
+        <label for="ai-model-input">Model</label>
+        <input id="ai-model-input" type="text" placeholder="gpt-4o-mini" />
       </div>
 
       <div class="setting-group">
-        <label for="ai-base">接口地址</label>
-        <input id="ai-base" type="url" placeholder="https://api.openai.com/v1" />
+        <label for="ai-key-input">API Key（加密存储）</label>
+        <input id="ai-key-input" type="password" placeholder="sk-..." />
       </div>
 
       <div class="setting-group">
-        <label for="ai-key">API Key</label>
-        <input id="ai-key" type="password" placeholder="sk-..." />
+        <label for="ai-master-pass">主密码（用于加密/解锁）</label>
+        <input id="ai-master-pass" type="password" placeholder="至少 8 位" />
       </div>
 
-      <button id="ai-save-conn" type="button" class="primary-btn block-btn">保存连接配置</button>
-    </aside>
+      <div class="setting-actions">
+        <button id="ai-unlock-key" type="button" class="ghost-btn">解锁密钥</button>
+        <button id="ai-clear-key" type="button" class="ghost-btn danger">清除密钥</button>
+        <button id="ai-save-settings" type="button" class="primary-btn">保存配置</button>
+      </div>
+
+      <div class="setting-divider"></div>
+
+      <div class="setting-group">
+        <label for="ai-role-select">角色</label>
+        <select id="ai-role-select"></select>
+      </div>
+
+      <div class="setting-group">
+        <label for="ai-role-name">角色名称</label>
+        <input id="ai-role-name" type="text" placeholder="例如：前端评审官" />
+      </div>
+
+      <div class="setting-group">
+        <label for="ai-role-prompt">系统提示词</label>
+        <textarea id="ai-role-prompt" rows="5" placeholder="定义该角色的行为边界与输出风格"></textarea>
+      </div>
+
+      <div class="setting-actions">
+        <button id="ai-new-role" type="button" class="ghost-btn">新角色</button>
+        <button id="ai-save-role" type="button" class="primary-btn">保存角色</button>
+        <button id="ai-delete-role" type="button" class="ghost-btn danger">删除角色</button>
+      </div>
+
+      <p id="ai-settings-status" class="settings-status" aria-live="polite"></p>
+    </section>
   </section>
 </dialog>
 
 <script is:inline define:vars={{ aiUiConfig }}>
   window.__siteAiUiConfig = aiUiConfig;
 </script>
-<script type="module" src="/scripts/ai-modal.js"></script>
+<script is:inline src="/scripts/ai-modal.js"></script>
 
 <style>
   .ai-modal {
-    width: min(1180px, calc(100vw - 20px));
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
     border: 0;
     background: transparent;
     padding: 0;
+    margin: 0;
   }
 
   .ai-modal::backdrop {
-    background: rgba(10, 12, 20, 0.56);
-    backdrop-filter: blur(8px);
+    background: rgba(8, 11, 18, 0.72);
+    backdrop-filter: blur(12px);
   }
 
   .ai-shell {
-    position: relative;
-    display: grid;
-    grid-template-columns: 250px minmax(0, 1fr);
-    min-height: min(82vh, 820px);
-    max-height: 90vh;
+    width: min(1400px, calc(100vw - 24px));
+    height: calc(100vh - 24px);
+    margin: 12px auto;
     border: 1px solid var(--line);
     border-radius: 16px;
     overflow: hidden;
-    background: color-mix(in oklab, var(--bg-elev) 95%, transparent 5%);
-    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.22);
-  }
-
-  .ai-shell.settings-open {
-    grid-template-columns: 250px minmax(0, 1fr) 320px;
+    display: grid;
+    grid-template-columns: 286px minmax(0, 1fr);
+    background: color-mix(in oklab, var(--bg) 94%, #0b1118 6%);
+    box-shadow: 0 34px 70px rgba(0, 0, 0, 0.4);
+    position: relative;
   }
 
   .ai-sidebar {
-    border-right: 1px solid var(--line);
-    padding: 0.64rem;
     display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 0.52rem;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0.72rem;
     min-height: 0;
-    background: color-mix(in oklab, var(--bg) 94%, var(--bg-elev) 6%);
+    padding: 0.9rem 0.74rem 0.74rem;
+    border-right: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 16% 14%, color-mix(in oklab, var(--brand-soft) 50%, transparent 50%), transparent 52%),
+      color-mix(in oklab, var(--bg-elev) 96%, var(--bg) 4%);
   }
 
   .ai-sidebar-head {
@@ -138,68 +174,73 @@ const aiUiConfig = {
 
   .ai-sidebar-head h3 {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.98rem;
+    font-weight: 650;
     letter-spacing: 0.02em;
   }
 
-  .ai-sidebar-head button {
+  .ai-sidebar-head button,
+  .settings-btn {
     border: 1px solid var(--line);
-    background: var(--bg-elev);
+    border-radius: 9px;
+    background: color-mix(in oklab, var(--bg) 90%, var(--bg-elev) 10%);
     color: var(--text);
-    border-radius: 7px;
-    padding: 0.24rem 0.52rem;
-    font-size: 0.74rem;
     cursor: pointer;
+    padding: 0.32rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .settings-btn {
+    width: 100%;
+    text-align: center;
   }
 
   .ai-session-list {
+    list-style: none;
     margin: 0;
     padding: 0;
-    list-style: none;
     overflow: auto;
     display: grid;
-    gap: 0.32rem;
+    align-content: start;
+    gap: 0.4rem;
   }
 
-  .session-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.36rem;
-    align-items: center;
-  }
-
-  .session-item {
+  .session-card {
     width: 100%;
-    border: 1px solid transparent;
-    background: transparent;
-    text-align: left;
-    border-radius: 8px;
-    padding: 0.46rem 0.52rem;
-    cursor: pointer;
+    border: 1px solid color-mix(in oklab, var(--line) 88%, transparent 12%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--bg) 93%, transparent 7%);
     color: var(--text);
+    cursor: pointer;
+    padding: 0.56rem 0.62rem;
     display: grid;
-    gap: 0.16rem;
+    gap: 0.2rem;
   }
 
-  .session-item:hover {
-    border-color: var(--line);
-    background: color-mix(in oklab, var(--bg-elev) 90%, var(--bg) 10%);
+  .session-card:hover {
+    border-color: color-mix(in oklab, var(--line) 68%, var(--brand) 32%);
+    background: color-mix(in oklab, var(--bg) 94%, var(--brand-soft) 6%);
   }
 
-  .session-item.active {
-    border-color: color-mix(in oklab, var(--brand) 48%, var(--line) 52%);
-    background: var(--brand-soft);
+  .session-card.active {
+    border-color: color-mix(in oklab, var(--line) 58%, var(--brand) 42%);
+    background: color-mix(in oklab, var(--brand-soft) 42%, var(--bg) 58%);
   }
 
-  .session-item .title {
-    font-size: 0.8rem;
+  .session-card:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--brand) 52%, transparent 48%);
+    outline-offset: 2px;
+  }
+
+  .session-card .title {
+    font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .session-item .meta {
+  .session-card .meta {
     font-size: 0.7rem;
     color: var(--text-soft);
     white-space: nowrap;
@@ -207,247 +248,215 @@ const aiUiConfig = {
     text-overflow: ellipsis;
   }
 
-  .session-delete {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    border: 1px solid var(--line);
-    background: transparent;
-    color: var(--text-soft);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.74rem;
-    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
-  }
-
-  .session-delete:hover {
-    color: #ef4444;
-    border-color: color-mix(in oklab, #ef4444 60%, var(--line) 40%);
-    background: color-mix(in oklab, #ef4444 8%, transparent 92%);
-  }
-
   .ai-main {
     min-height: 0;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
-    background: color-mix(in oklab, var(--bg) 92%, var(--bg-elev) 8%);
+    background:
+      radial-gradient(circle at 68% 8%, color-mix(in oklab, var(--brand-soft) 32%, transparent 68%), transparent 62%),
+      var(--bg);
   }
 
   .ai-main-head {
-    border-bottom: 1px solid var(--line);
-    padding: 0.68rem 0.82rem;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
     gap: 0.8rem;
-    background: var(--bg-elev);
+    border-bottom: 1px solid var(--line);
+    padding: 0.84rem 1rem;
+    background: color-mix(in oklab, var(--bg-elev) 95%, var(--bg) 5%);
   }
 
-  .ai-main-head h3 {
+  .title-wrap h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.98rem;
+    font-weight: 630;
   }
 
-  .ai-main-head p {
-    margin: 0.2rem 0 0;
-    font-size: 0.74rem;
+  .title-wrap small {
+    display: inline-block;
+    margin-top: 0.2rem;
+    color: var(--text-soft);
+    font-size: 0.75rem;
+  }
+
+  .close-btn,
+  .ghost-btn,
+  .primary-btn {
+    border-radius: 9px;
+    cursor: pointer;
+    padding: 0.3rem 0.62rem;
+    font-size: 0.75rem;
+  }
+
+  .close-btn,
+  .ghost-btn {
+    border: 1px solid var(--line);
+    background: var(--bg);
     color: var(--text-soft);
   }
 
-  .ai-head-actions {
-    display: flex;
-    gap: 0.4rem;
+  .primary-btn {
+    border: 1px solid color-mix(in oklab, var(--brand) 72%, #000 28%);
+    background: color-mix(in oklab, var(--brand) 84%, #000 16%);
+    color: #fff;
   }
 
-  .head-btn {
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text);
-    border-radius: 7px;
-    padding: 0.28rem 0.58rem;
-    font-size: 0.74rem;
-    cursor: pointer;
+  .ghost-btn.danger {
+    color: #ef4444;
   }
 
   .ai-chat-stream {
     min-height: 0;
     overflow: auto;
-    padding: 0.9rem 1rem;
+    padding: 1.1rem clamp(0.9rem, 4vw, 2.5rem);
     display: grid;
-    gap: 0.76rem;
     align-content: start;
-    background:
-      radial-gradient(680px 200px at 50% -30%, color-mix(in oklab, var(--brand-soft) 38%, transparent 62%), transparent 70%),
-      var(--bg);
+    gap: 0.86rem;
   }
 
-  .chat-message {
-    max-width: min(90%, 760px);
-    padding: 0.62rem 0.72rem;
-    border-radius: 14px;
-    line-height: 1.55;
-    font-size: 0.91rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    border: 1px solid var(--line);
-    background: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
+  .message-row {
+    width: min(920px, 100%);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.56rem;
   }
 
-  .chat-message.user {
-    margin-left: auto;
-    background: color-mix(in oklab, var(--brand-soft) 70%, transparent 30%);
-    border-color: color-mix(in oklab, var(--brand) 34%, var(--line) 66%);
-  }
-
-  .chat-message.assistant {
+  .message-row.assistant {
     margin-right: auto;
   }
 
-  .msg-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.2rem;
+  .message-row.user {
+    margin-left: auto;
+    justify-content: flex-end;
   }
 
-  .chat-message .role {
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    flex: 0 0 30px;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    background: color-mix(in oklab, var(--brand-soft) 62%, var(--bg) 38%);
+    display: grid;
+    place-items: center;
+    color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
+    font-size: 0.67rem;
+    font-weight: 700;
+  }
+
+  .bubble {
+    max-width: min(820px, calc(100vw - 140px));
+    border-radius: 16px;
+    padding: 0.72rem 0.85rem;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--bg-elev) 96%, transparent 4%);
+  }
+
+  .message-row.user .bubble {
+    border-color: color-mix(in oklab, var(--brand) 34%, var(--line) 66%);
+    background: color-mix(in oklab, var(--brand-soft) 44%, var(--bg) 56%);
+  }
+
+  .bubble .role {
     display: block;
+    margin-bottom: 0.3rem;
     font-size: 0.68rem;
     color: var(--text-soft);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
-  .msg-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-  }
-
-  .edited {
-    font-size: 0.64rem;
-    color: var(--text-soft);
-    border: 1px dashed var(--line);
-    border-radius: 999px;
-    padding: 0.02rem 0.3rem;
-  }
-
-  .msg-btn {
-    border: 1px solid var(--line);
-    background: transparent;
-    color: var(--text-soft);
-    border-radius: 6px;
-    padding: 0.08rem 0.34rem;
-    font-size: 0.67rem;
-    cursor: pointer;
-    line-height: 1.2;
-    transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
-  }
-
-  .msg-btn:hover {
-    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
-    color: var(--brand);
-    background: color-mix(in oklab, var(--brand-soft) 55%, transparent 45%);
-  }
-
-  .msg-btn.danger:hover {
-    color: #ef4444;
-    border-color: color-mix(in oklab, #ef4444 60%, var(--line) 40%);
-    background: color-mix(in oklab, #ef4444 10%, transparent 90%);
-  }
-
-  .msg-content {
-    line-height: 1.58;
+  .bubble .msg-content {
+    line-height: 1.62;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .ai-composer {
     border-top: 1px solid var(--line);
-    padding: 0.68rem 0.82rem;
+    background: color-mix(in oklab, var(--bg-elev) 96%, var(--bg) 4%);
+    padding: 0.88rem clamp(0.8rem, 3vw, 1.3rem) 1.05rem;
+  }
+
+  .ai-composer-inner {
+    width: min(900px, 100%);
+    margin: 0 auto;
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    border-radius: 18px;
+    padding: 0.62rem 0.7rem;
+    background: color-mix(in oklab, var(--bg) 97%, var(--bg-elev) 3%);
     display: grid;
-    gap: 0.5rem;
-    background: var(--bg-elev);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.6rem;
   }
 
-  .ai-composer textarea {
+  .ai-composer-inner textarea {
     width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--bg);
-    color: var(--text);
-    padding: 0.58rem 0.64rem;
-    resize: none;
-    min-height: 58px;
-    font-size: 0.9rem;
-    line-height: 1.42;
+    min-height: 62px;
+    max-height: 220px;
+    border: 0;
     outline: none;
-  }
-
-  .ai-composer textarea:focus {
-    border-color: color-mix(in oklab, var(--brand) 55%, var(--line) 45%);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-soft) 46%, transparent 54%);
-  }
-
-  .ai-composer-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .ghost-btn,
-  .primary-btn {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 0.36rem 0.72rem;
-    font-size: 0.78rem;
-    cursor: pointer;
-  }
-
-  .ghost-btn {
-    background: var(--bg);
+    resize: none;
+    background: transparent;
     color: var(--text);
+    padding: 0.12rem 0.2rem;
+    font-size: 0.96rem;
+    line-height: 1.5;
   }
 
-  .primary-btn {
-    background: var(--brand);
+  .send-btn {
+    height: 36px;
+    min-width: 68px;
+    border: 1px solid color-mix(in oklab, var(--brand) 74%, #000 26%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--brand) 84%, #000 16%);
     color: #fff;
-    border-color: color-mix(in oklab, var(--brand) 75%, #000 25%);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0 0.75rem;
   }
 
-  .primary-btn:hover {
-    filter: saturate(1.08);
+  .send-btn:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
   }
 
-  .ai-settings {
-    border-left: 1px solid var(--line);
-    padding: 0.7rem;
-    background: color-mix(in oklab, var(--bg) 96%, var(--bg-elev) 4%);
+  .ai-settings-panel {
+    position: absolute;
+    left: 300px;
+    bottom: 12px;
+    width: min(420px, calc(100vw - 40px));
+    max-height: calc(100vh - 90px);
     overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--bg) 96%, var(--bg-elev) 4%);
+    box-shadow: 0 22px 46px rgba(0, 0, 0, 0.32);
+    z-index: 5;
+    padding: 0.78rem;
     display: grid;
     align-content: start;
-    gap: 0.58rem;
+    gap: 0.62rem;
   }
 
-  .ai-settings.is-open {
-    display: grid;
-  }
-
-  .ai-settings-head {
+  .settings-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    padding-bottom: 0.4rem;
+    gap: 0.6rem;
     border-bottom: 1px solid var(--line);
+    padding-bottom: 0.46rem;
+    cursor: move;
+    user-select: none;
   }
 
-  .ai-settings-head h4 {
+  .settings-head h4 {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
   }
 
   .setting-group {
@@ -456,7 +465,7 @@ const aiUiConfig = {
   }
 
   .setting-group label {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     color: var(--text-soft);
   }
 
@@ -465,57 +474,91 @@ const aiUiConfig = {
   .setting-group textarea {
     width: 100%;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 9px;
     background: var(--bg-elev);
     color: var(--text);
-    padding: 0.45rem 0.52rem;
-    font-size: 0.82rem;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.8rem;
     outline: none;
   }
 
   .setting-group textarea {
-    min-height: 90px;
     resize: vertical;
-    line-height: 1.4;
+    min-height: 90px;
+    line-height: 1.45;
   }
 
-  .block-btn {
-    width: 100%;
-    margin-top: 0.2rem;
+  .setting-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
   }
 
-  @media (max-width: 1060px) {
+  .setting-divider {
+    border-top: 1px dashed var(--line);
+    margin-top: 0.1rem;
+  }
+
+  .settings-status {
+    margin: 0;
+    min-height: 1.3em;
+    color: var(--text-soft);
+    font-size: 0.74rem;
+  }
+
+  @media (max-width: 980px) {
     .ai-shell {
       grid-template-columns: 220px minmax(0, 1fr);
     }
 
-    .ai-settings {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      bottom: 12px;
-      width: min(360px, calc(100vw - 36px));
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
-      z-index: 2;
+    .ai-settings-panel {
+      left: 230px;
+      width: min(420px, calc(100vw - 250px));
     }
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 760px) {
+    .ai-modal {
+      width: 100vw;
+      height: 100vh;
+    }
+
     .ai-shell {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      border-radius: 0;
+      border: 0;
       grid-template-columns: 1fr;
-      min-height: 90vh;
+      grid-template-rows: auto minmax(0, 1fr);
     }
 
     .ai-sidebar {
-      max-height: 180px;
-      border-right: none;
+      border-right: 0;
       border-bottom: 1px solid var(--line);
+      max-height: 172px;
+      padding: 0.7rem 0.62rem;
+      gap: 0.5rem;
     }
 
-    .chat-message {
-      max-width: 92%;
+    .ai-chat-stream {
+      padding: 0.82rem;
+    }
+
+    .bubble {
+      max-width: calc(100vw - 110px);
+    }
+
+    .ai-composer {
+      padding: 0.72rem 0.72rem 0.9rem;
+    }
+
+    .ai-settings-panel {
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      width: auto;
+      max-height: calc(100vh - 28px);
     }
   }
 </style>

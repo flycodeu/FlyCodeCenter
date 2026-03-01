@@ -1,4 +1,4 @@
----
+ï»¿---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchReadingEntries } from "@/utils/query";
@@ -17,28 +17,37 @@ for (const entry of entries) {
 const tags = [...tagMap.entries()]
   .sort((a, b) => b[1] - a[1])
   .map(([name, count]) => ({ name, count }));
+
+const getHost = (url?: string) => {
+  if (!url) return "";
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
 ---
 
-<BaseLayout title={siteConfig.pages.reading.title} description="°´±êÇ©Î¬»¤ÓÅĞã²©¿ÍÓëÎÄÕÂÁ´½Ó¡£">
+<BaseLayout title={siteConfig.pages.reading.title} description="æŒ‰æ ‡ç­¾ç­›é€‰å’Œæ”¶è—é«˜è´¨é‡æ–‡ç« ã€‚">
   <section class="reading-shell">
-    <section class="reading-head surface">
+    <section class="reading-hero surface">
       <div>
         <h1>{siteConfig.pages.reading.title}</h1>
-        <p>°´±êÇ©É¸Ñ¡²¢¿ìËÙ·ÃÎÊ¸ßÖÊÁ¿Íâ²¿ÎÄÕÂ¡£</p>
+        <p>æŒ‰æ ‡ç­¾ç­›é€‰å¹¶å¿«é€Ÿè®¿é—®å€¼å¾—åå¤é˜…è¯»çš„å¤–éƒ¨æ–‡ç« ã€‚</p>
       </div>
-      <span class="total-count">¹² {entries.length} Æª</span>
+      <span class="total-pill">å…± {entries.length} ç¯‡</span>
     </section>
 
     <section class="reading-filter" id="reading-filter">
-      <button type="button" class="tag-btn active" data-tag="all" style="--tag-hue:216">
-        <span class="label">È«²¿</span>
-        <span class="count">{entries.length}</span>
+      <button type="button" class="tag-chip active" data-tag="all" style="--tag-hue:216">
+        <span>å…¨éƒ¨</span>
+        <small>{entries.length}</small>
       </button>
       {
         tags.map((tag) => (
-          <button type="button" class="tag-btn" data-tag={tag.name} style={getTagColorVars(tag.name)}>
-            <span class="label">{tag.name}</span>
-            <span class="count">{tag.count}</span>
+          <button type="button" class="tag-chip" data-tag={tag.name} style={getTagColorVars(tag.name)}>
+            <span>{tag.name}</span>
+            <small>{tag.count}</small>
           </button>
         ))
       }
@@ -48,11 +57,17 @@ const tags = [...tagMap.entries()]
       {
         entries.map((entry) => (
           <article class="reading-card surface" data-item data-tags={entry.data.tags.map((tag) => tag.toLowerCase().trim()).join("||")}>
-            <header>
+            <header class="card-head">
               <div class="title-wrap">
                 <h3>{entry.data.title}</h3>
                 <div class="meta-row">
-                  <span>{entry.data.source || "ÓÅĞãÎÄÕÂ"}</span>
+                  <span>{entry.data.source || "ä¼˜ç§€æ–‡ç« "}</span>
+                  {entry.data.url && (
+                    <>
+                      <span class="dot" aria-hidden="true"></span>
+                      <span class="host">{getHost(entry.data.url)}</span>
+                    </>
+                  )}
                   <span class="dot" aria-hidden="true"></span>
                   <span class="date-chip">
                     <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
@@ -62,10 +77,10 @@ const tags = [...tagMap.entries()]
                   </span>
                 </div>
               </div>
-              {entry.data.rating > 0 && <span class="score">{entry.data.rating.toFixed(1)}</span>}
+              {entry.data.rating > 0 && <span class="score-pill">{entry.data.rating.toFixed(1)}</span>}
             </header>
 
-            <p>{entry.data.description || "ÔİÎŞÕªÒª"}</p>
+            <p class="summary">{entry.data.description || "æš‚æ— æ‘˜è¦"}</p>
 
             <div class="tag-row">
               {entry.data.tags.map((tag) => <span class="meta-tag tag-badge" style={getTagColorVars(tag)}>{tag}</span>)}
@@ -73,9 +88,9 @@ const tags = [...tagMap.entries()]
 
             {
               entry.data.url ? (
-                <a class="visit-link" href={entry.data.url} target="_blank" rel="noreferrer">ÔÄ¶ÁÈ«ÎÄ</a>
+                <a class="read-btn" href={entry.data.url} target="_blank" rel="noreferrer">é˜…è¯»å…¨æ–‡</a>
               ) : (
-                <span class="visit-link disabled">ÔİÎŞÁ´½Ó</span>
+                <span class="read-btn disabled">æš‚æ— é“¾æ¥</span>
               )
             }
           </article>
@@ -98,7 +113,7 @@ const tags = [...tagMap.entries()]
     const controller = new AbortController();
     const { signal } = controller;
 
-    const buttons = Array.from(filter.querySelectorAll('.tag-btn'));
+    const buttons = Array.from(filter.querySelectorAll('.tag-chip'));
     const items = Array.from(grid.querySelectorAll('[data-item]'));
     const normalize = (value) => String(value || '').trim().toLowerCase();
 
@@ -156,35 +171,35 @@ const tags = [...tagMap.entries()]
 <style>
   .reading-shell {
     display: grid;
-    gap: 0.8rem;
+    gap: 0.84rem;
   }
 
-  .reading-head {
-    padding: 0.86rem 0.94rem;
+  .reading-hero {
+    padding: 0.92rem 0.98rem;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 0.8rem;
+    gap: 0.9rem;
   }
 
-  .reading-head h1 {
+  .reading-hero h1 {
     margin: 0;
-    font-size: clamp(1.25rem, 1vw + 1rem, 1.5rem);
+    font-size: clamp(1.25rem, 1vw + 1rem, 1.56rem);
   }
 
-  .reading-head p {
-    margin: 0.2rem 0 0;
+  .reading-hero p {
+    margin: 0.22rem 0 0;
     color: var(--text-soft);
-    font-size: 0.84rem;
+    font-size: 0.86rem;
   }
 
-  .total-count {
+  .total-pill {
     border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 0.14rem 0.42rem;
-    font-size: 0.73rem;
+    border-radius: 999px;
+    padding: 0.16rem 0.48rem;
+    font-size: 0.72rem;
     color: var(--text-soft);
-    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
     white-space: nowrap;
   }
 
@@ -194,19 +209,18 @@ const tags = [...tagMap.entries()]
     gap: 0.42rem;
     position: sticky;
     top: 74px;
-    z-index: 5;
-    padding: 0.6rem;
+    z-index: 8;
+    padding: 0.62rem;
     border: 1px solid var(--line);
-    border-radius: 10px;
-    background: color-mix(in oklab, var(--bg-elev) 94%, transparent 6%);
+    border-radius: 11px;
+    background: color-mix(in oklab, var(--bg-elev) 95%, transparent 5%);
     backdrop-filter: blur(10px);
   }
 
-  .tag-btn {
-    --tag-border: color-mix(in oklab, var(--line) 84%, transparent 16%);
-    --tag-bg: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+  .tag-chip {
+    --tag-border: color-mix(in oklab, var(--line) 86%, transparent 14%);
+    --tag-bg: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
     --tag-text: var(--text-soft);
-    --tag-count-bg: color-mix(in oklab, var(--bg) 88%, transparent 12%);
 
     border: 1px solid var(--tag-border);
     background: var(--tag-bg);
@@ -219,47 +233,35 @@ const tags = [...tagMap.entries()]
     gap: 0.34rem;
     cursor: pointer;
     max-width: min(220px, 48vw);
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
 
-  .tag-btn .label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tag-btn .count {
-    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
+  .tag-chip small {
+    border: 1px solid color-mix(in oklab, var(--tag-border) 82%, transparent 18%);
     border-radius: 999px;
     padding: 0.02rem 0.3rem;
     font-size: 0.68rem;
-    background: var(--tag-count-bg);
-    color: inherit;
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
   }
 
-  .tag-btn:hover {
-    transform: translateY(-1px);
-  }
-
-  .tag-btn.active {
-    border-color: color-mix(in oklab, var(--tag-border) 78%, var(--brand) 22%);
+  .tag-chip.active {
+    border-color: color-mix(in oklab, var(--tag-border) 74%, var(--brand) 26%);
     box-shadow: 0 8px 16px -14px color-mix(in oklab, var(--brand) 22%, transparent 78%);
   }
 
   .reading-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 0.62rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.68rem;
   }
 
   .reading-card {
-    border-radius: 10px;
-    padding: 0.66rem;
+    border-radius: 12px;
+    padding: 0.72rem;
     display: grid;
-    gap: 0.44rem;
-    min-height: 206px;
-    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    gap: 0.5rem;
+    min-height: 220px;
+    transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
   }
 
   .reading-card:hover {
@@ -268,11 +270,11 @@ const tags = [...tagMap.entries()]
     transform: translateY(-1px);
   }
 
-  .reading-card header {
+  .card-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 0.45rem;
+    gap: 0.5rem;
   }
 
   .title-wrap {
@@ -282,17 +284,24 @@ const tags = [...tagMap.entries()]
   .reading-card h3 {
     margin: 0;
     font-size: 0.95rem;
-    line-height: 1.36;
+    line-height: 1.38;
   }
 
   .meta-row {
     margin-top: 0.16rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.36rem;
+    gap: 0.34rem;
     color: var(--text-soft);
     font-size: 0.72rem;
     flex-wrap: wrap;
+  }
+
+  .host {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dot {
@@ -308,23 +317,23 @@ const tags = [...tagMap.entries()]
     gap: 0.2rem;
   }
 
-  .score {
+  .score-pill {
     border: 1px solid color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
-    border-radius: 6px;
-    padding: 0.02rem 0.35rem;
+    border-radius: 999px;
+    padding: 0.04rem 0.34rem;
     color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
     font-size: 0.7rem;
     white-space: nowrap;
     background: color-mix(in oklab, var(--brand-soft) 42%, var(--bg-elev) 58%);
   }
 
-  .reading-card p {
+  .summary {
     margin: 0;
     color: var(--text-soft);
-    font-size: 0.8rem;
-    line-height: 1.45;
+    font-size: 0.82rem;
+    line-height: 1.46;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -332,33 +341,33 @@ const tags = [...tagMap.entries()]
   .tag-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.24rem;
+    gap: 0.26rem;
   }
 
   .meta-tag {
     font-size: 0.68rem;
-    padding: 0.02rem 0.34rem;
+    padding: 0.03rem 0.34rem;
     border-radius: 7px;
   }
 
-  .visit-link {
+  .read-btn {
     margin-top: auto;
     border: 1px solid color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
-    border-radius: 7px;
+    border-radius: 8px;
     background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
     color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
     text-align: center;
-    padding: 0.32rem 0.54rem;
+    padding: 0.34rem 0.54rem;
     font-size: 0.76rem;
     transition: background-color 140ms ease, color 140ms ease;
   }
 
-  .visit-link:hover {
+  .read-btn:hover {
     background: color-mix(in oklab, var(--brand-soft) 54%, var(--bg-elev) 46%);
     color: color-mix(in oklab, var(--text) 62%, var(--brand) 38%);
   }
 
-  .visit-link.disabled {
+  .read-btn.disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
@@ -371,10 +380,11 @@ const tags = [...tagMap.entries()]
   }
 
   @media (max-width: 700px) {
-    .reading-head {
+    .reading-hero {
       align-items: flex-start;
       flex-direction: column;
     }
+
     .reading-grid {
       grid-template-columns: 1fr;
     }

@@ -1,14 +1,15 @@
 ---
-title: "Astro 插件化架构：Provider 工厂与配置中心"
-createTime: "2026/02/22 00:00:00"
-code: "r6q2m9ad"
-permalink: "/article/r6q2m9ad/"
-summary: "统一配置 + Provider 工厂，构建可维护且可扩展的内容站底座。"
+title: Astro 插件化架构：Provider 工厂与配置中心
+createTime: '2026/02/22 00:00:00'
+code: r6q2m9ad
+permalink: /article/r6q2m9ad/
+summary: 统一配置 + Provider 工厂，构建可维护且可扩展的内容站底座。
 tags:
-  - "astro"
-  - "architecture"
-  - "provider"
-cover: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80"
+  - Astro
+  - architecture
+  - provider
+cover: >-
+  https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80
 ---
 
 ## 统一配置的价值

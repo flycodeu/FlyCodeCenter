@@ -20,10 +20,11 @@ const years = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
           <ul>
             {sortByDateDesc(map.get(year) ?? []).map((entry) => {
               const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
+              const meta = resolveArticleMeta(entry);
               return (
                 <li>
-                  <time>{formatDate(resolveArticleMeta(entry).createTime)}</time>
-                  <a href={url}>{entry.data.title}</a>
+                  <time>{formatDate(meta.createTime)}</time>
+                  <a href={url}>{meta.title}</a>
                 </li>
               );
             })}

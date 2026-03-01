@@ -1,7 +1,7 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 
-const themes = siteConfig.theme.themes;
+const themes = siteConfig.theme.switchableThemes ?? siteConfig.theme.themes;
 const storageKey = "flycode-theme";
 const explicitKey = "flycode-theme-explicit";
 const enableTransition = siteConfig.theme.transitions.theme;
@@ -11,42 +11,58 @@ const enableTransition = siteConfig.theme.transitions.theme;
   <span class="theme-icon" aria-hidden="true">☼</span>
 </button>
 
-<script type="module" define:vars={{ storageKey, explicitKey, enableTransition }}>
-  const button = document.getElementById("theme-toggle");
-  const root = document.documentElement;
+<script is:inline define:vars={{ storageKey, explicitKey, enableTransition }}>
+  (() => {
+    if (window.__flyThemeToggleBound) return;
+    window.__flyThemeToggleBound = true;
 
-  const parsed = JSON.parse(button?.dataset.themes ?? "[]");
-  const themes = Array.isArray(parsed)
-    ? parsed.filter((item) => typeof item === "string" && item.trim())
-    : [];
-  const fallback = root.dataset.defaultTheme ?? themes[0] ?? "plume";
-  const normalizeTheme = (value) => {
-    const next = String(value ?? "").trim();
-    if (themes.includes(next)) return next;
-    return themes.includes(fallback) ? fallback : themes[0] ?? "plume";
-  };
+    const root = document.documentElement;
 
-  const current = normalizeTheme(root.dataset.theme);
-  if (current) {
-    root.dataset.theme = current;
-    localStorage.setItem(storageKey, current);
-  }
+    const readThemes = (button) => {
+      try {
+        const parsed = JSON.parse(button?.dataset.themes ?? "[]");
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item) => typeof item === "string" && item.trim());
+        }
+      } catch {}
+      return [];
+    };
 
-  button?.addEventListener("click", () => {
-    if (!themes.length) return;
-    if (enableTransition) {
-      root.classList.add("theme-anim");
-      window.setTimeout(() => root.classList.remove("theme-anim"), 280);
-    }
-    const now = normalizeTheme(root.dataset.theme);
-    const idx = themes.indexOf(now);
-    const next = themes[(idx + 1) % themes.length];
-    const safeNext = normalizeTheme(next);
-    root.dataset.theme = safeNext;
-    localStorage.setItem(storageKey, safeNext);
-    localStorage.setItem(explicitKey, "1");
-    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: safeNext }));
-  });
+    const normalizeTheme = (themes, input) => {
+      const fallback = root.dataset.defaultTheme || themes[0] || "plume";
+      const next = String(input ?? "").trim();
+      if (themes.includes(next)) return next;
+      if (themes.includes(fallback)) return fallback;
+      return themes[0] || "plume";
+    };
+
+    const applyTheme = (theme) => {
+      root.dataset.theme = theme;
+      localStorage.setItem(storageKey, theme);
+      localStorage.setItem(explicitKey, "1");
+      window.dispatchEvent(new CustomEvent("site:theme-change", { detail: theme }));
+    };
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest("#theme-toggle");
+      if (!(button instanceof HTMLElement)) return;
+
+      const themes = readThemes(button);
+      if (!themes.length) return;
+
+      if (enableTransition) {
+        root.classList.add("theme-anim");
+        window.setTimeout(() => root.classList.remove("theme-anim"), 280);
+      }
+
+      const current = normalizeTheme(themes, root.dataset.theme);
+      const index = themes.indexOf(current);
+      const next = normalizeTheme(themes, themes[(index + 1) % themes.length]);
+      applyTheme(next);
+    });
+  })();
 </script>
 
 <style>

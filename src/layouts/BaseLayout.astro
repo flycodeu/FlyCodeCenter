@@ -2,7 +2,6 @@
 import siteConfig from "@/site.config";
 import Header from "@/components/Header.astro";
 import SearchModal from "@/components/SearchModal.astro";
-import CommandPalette from "@/components/CommandPalette.astro";
 import Watermark from "@/components/Watermark.astro";
 import AiProvider from "@/components/AiProvider.astro";
 import Mascot from "@/components/Mascot.astro";
@@ -31,7 +30,7 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
   lang={siteConfig.site.lang}
   data-theme={siteConfig.theme.defaultTheme}
   data-default-theme={siteConfig.theme.defaultTheme}
-  data-theme-list={JSON.stringify(siteConfig.theme.themes)}
+  data-theme-list={JSON.stringify(siteConfig.theme.switchableThemes ?? siteConfig.theme.themes)}
 >
   <head>
     <meta charset="utf-8" />
@@ -123,7 +122,6 @@ const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "
       </div>
     </footer>
     <SearchModal />
-    <CommandPalette />
     <AiProvider />
     <Mascot />
     <script is:inline>

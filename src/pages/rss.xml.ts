@@ -13,7 +13,7 @@ export async function GET(context: any) {
   const items = posts.slice(0, siteConfig.seo.rss.limit).map((post) => {
     const meta = resolveArticleMeta(post);
     return {
-      title: post.data.title,
+      title: meta.title,
       description: meta.description || meta.summary,
       pubDate: meta.createTime,
       link: getBlogEntryUrl(post)

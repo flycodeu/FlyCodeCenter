@@ -31,13 +31,14 @@ export async function getStaticPaths() {
   const codeMap = new Map<string, string>();
   const slugMap = new Map<string, string>();
   const permalinkMap = new Map<string, string>();
-  const parsePermalinkSlug = (permalink: string, identity: string) => {
+  const parsePermalinkSlug = (permalink: string, identity: string, fallbackCode: string) => {
     const normalized = stripSlashes(permalink);
     const parts = normalized.split("/").filter(Boolean);
     if (parts.length !== 2 || parts[0] !== prefix) {
-      throw new Error(
-        `Invalid permalink "${permalink}" for "${identity}". Expected format: /${prefix}/{slug}/`
+      console.warn(
+        `[route] Invalid permalink "${permalink}" for "${identity}". Fallback to /${prefix}/${fallbackCode}/`
       );
+      return fallbackCode;
     }
     return parts[1];
   };
@@ -69,7 +70,7 @@ export async function getStaticPaths() {
 
   for (const [index, entry] of blogEntries.entries()) {
     const meta = resolveArticleMeta(entry);
-    const slug = parsePermalinkSlug(meta.permalink, `blog:${entry.id}`);
+    const slug = parsePermalinkSlug(meta.permalink, `blog:${entry.id}`, meta.code);
     ensureUniqueCode(meta.code, `blog:${entry.id}`);
     ensureUniqueSlug(slug, `blog:${entry.id}`);
     ensureUniquePermalink(meta.permalink, `blog:${entry.id}`);
@@ -80,8 +81,8 @@ export async function getStaticPaths() {
       props: {
         collection: "blog",
         entryId: entry.id,
-        prev: prev ? { title: prev.data.title, url: getBlogEntryUrl(prev) } : undefined,
-        next: next ? { title: next.data.title, url: getBlogEntryUrl(next) } : undefined
+        prev: prev ? { title: resolveArticleMeta(prev).title, url: getBlogEntryUrl(prev) } : undefined,
+        next: next ? { title: resolveArticleMeta(next).title, url: getBlogEntryUrl(next) } : undefined
       }
     });
   }
@@ -111,7 +112,7 @@ export async function getStaticPaths() {
     });
     for (const [index, entry] of sorted.entries()) {
       const meta = getTutorialMeta(entry);
-      const slug = parsePermalinkSlug(meta.permalink, `tutorial:${entry.id}`);
+      const slug = parsePermalinkSlug(meta.permalink, `tutorial:${entry.id}`, meta.code);
       ensureUniqueCode(meta.code, `tutorial:${entry.id}`);
       ensureUniqueSlug(slug, `tutorial:${entry.id}`);
       ensureUniquePermalink(meta.permalink, `tutorial:${entry.id}`);
@@ -122,8 +123,8 @@ export async function getStaticPaths() {
         props: {
           collection: "tutorial",
           entryId: entry.id,
-          prev: prev ? { title: prev.data.title, url: getTutorialEntryUrl(prev) } : undefined,
-          next: next ? { title: next.data.title, url: getTutorialEntryUrl(next) } : undefined
+          prev: prev ? { title: resolveArticleMeta(prev).title, url: getTutorialEntryUrl(prev) } : undefined,
+          next: next ? { title: resolveArticleMeta(next).title, url: getTutorialEntryUrl(next) } : undefined
         }
       });
     }
@@ -131,7 +132,7 @@ export async function getStaticPaths() {
 
   for (const [index, entry] of projectEntries.entries()) {
     const meta = resolveArticleMeta(entry);
-    const slug = parsePermalinkSlug(meta.permalink, `projects:${entry.id}`);
+    const slug = parsePermalinkSlug(meta.permalink, `projects:${entry.id}`, meta.code);
     ensureUniqueCode(meta.code, `projects:${entry.id}`);
     ensureUniqueSlug(slug, `projects:${entry.id}`);
     ensureUniquePermalink(meta.permalink, `projects:${entry.id}`);
@@ -142,8 +143,8 @@ export async function getStaticPaths() {
       props: {
         collection: "projects",
         entryId: entry.id,
-        prev: prev ? { title: prev.data.title, url: getProjectEntryUrl(prev) } : undefined,
-        next: next ? { title: next.data.title, url: getProjectEntryUrl(next) } : undefined
+        prev: prev ? { title: resolveArticleMeta(prev).title, url: getProjectEntryUrl(prev) } : undefined,
+        next: next ? { title: resolveArticleMeta(next).title, url: getProjectEntryUrl(next) } : undefined
       }
     });
   }
@@ -185,7 +186,7 @@ const articleUrl =
       ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
       : getProjectEntryUrl(entry as CollectionEntry<"projects">);
 const summary = entryMeta.summary;
-const description = entryMeta.description || entry.data.title;
+const description = entryMeta.description || entryMeta.title;
 const tags = entryMeta.tags;
 const createTime = entryMeta.createTime;
 const updatedTime = entryMeta.updatedTime;
@@ -194,7 +195,7 @@ const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, '')}/blob
 ---
 
 <PostLayout
-  title={entry.data.title}
+  title={entryMeta.title}
   summary={summary}
   description={description}
   tags={tags}

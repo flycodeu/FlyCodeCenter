@@ -18,31 +18,34 @@ const enabled = siteConfig.ai.provider !== "off" && siteConfig.features.assistan
     position: fixed;
     right: 18px;
     bottom: 86px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    min-width: 92px;
+    height: 44px;
+    border-radius: 999px;
     border: 1px solid var(--line);
-    background: linear-gradient(140deg, var(--brand), color-mix(in oklab, var(--accent) 72%, var(--brand) 28%));
-    color: #fff;
-    font-weight: 700;
+    background: color-mix(in oklab, var(--bg-elev) 94%, transparent 6%);
+    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
+    font-weight: 600;
     cursor: pointer;
     z-index: 44;
-    box-shadow: 0 14px 30px color-mix(in oklab, var(--brand) 20%, transparent 80%);
-    display: grid;
-    place-items: center;
+    box-shadow: 0 12px 24px color-mix(in oklab, var(--brand) 12%, transparent 88%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.22rem;
+    padding: 0 0.74rem;
     line-height: 1;
     transition: transform 160ms ease, box-shadow 160ms ease;
   }
   .ai-entry span {
-    font-size: 0.86rem;
-    letter-spacing: 0.04em;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
   }
   .ai-entry small {
-    font-size: 0.58rem;
-    opacity: 0.9;
+    font-size: 0.66rem;
+    opacity: 0.82;
   }
   .ai-entry:hover {
     transform: translateY(-2px);
-    box-shadow: 0 18px 34px color-mix(in oklab, var(--brand) 26%, transparent 74%);
+    box-shadow: 0 16px 30px color-mix(in oklab, var(--brand) 18%, transparent 82%);
   }
 </style>

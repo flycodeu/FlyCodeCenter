@@ -1,14 +1,14 @@
 ---
-title: "Astro 模块化博客内核"
-createTime: "2026/02/12 00:00:00"
-code: "astro-mod-blog"
-permalink: "/article/astro-mod-blog/"
-summary: "适合沉淀工程化内容站能力的可复用项目基线。"
+title: Astro 模块化博客内核
+createTime: '2026/02/12 00:00:00'
+code: astro-mod-blog
+permalink: /article/astro-mod-blog/
+summary: 适合沉淀工程化内容站能力的可复用项目基线。
 tags:
-  - "astro"
-  - "architecture"
-  - "dx"
-cover: "/covers/astro-core.svg"
+  - Astro
+  - architecture
+  - dx
+cover: /covers/astro-core.svg
 ---
 
 ## 项目定位

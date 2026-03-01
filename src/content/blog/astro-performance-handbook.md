@@ -1,14 +1,13 @@
 ---
-title: "Astro 性能手册：把 JS 预算花在刀刃上"
-createTime: "2026/02/16 00:00:00"
-code: "r57x3pt2"
-permalink: "/article/r57x3pt2/"
-summary: "聚焦构建期优化与运行时按需加载，建立可持续的性能基线。"
+title: Astro 性能手册：把 JS 预算花在刀刃上
+createTime: '2026/02/16 00:00:00'
+summary: 聚焦构建期优化与运行时按需加载，建立可持续的性能基线。
 tags:
-  - "astro"
-  - "performance"
-  - "dx"
-cover: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80"
+  - Astro
+  - performance
+  - dx
+cover: >-
+  https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80
 ---
 
 ## 为什么静态优先

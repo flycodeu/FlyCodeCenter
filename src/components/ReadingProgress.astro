@@ -24,7 +24,11 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   )
 }
 
-<script type="module">
+<script
+  type="module"
+  define:vars={{ minScrollableHeight: progressConfig.minScrollableHeight ?? 40 }}
+>
+  const minScrollableHeightValue = Number(minScrollableHeight ?? 40);
   const fab = document.getElementById("reading-progress-fab");
   const text = document.getElementById("progress-text");
   const circle = document.querySelector(".progress-ring-circle");
@@ -48,10 +52,21 @@ const progressConfig = siteConfig.article.ui.readingProgress;
       return Math.round((consumed / total) * 100);
     };
 
+    const isScrollableEnough = () => {
+      const total = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) - window.innerHeight;
+      return total >= minScrollableHeightValue;
+    };
+
     const render = () => {
+      if (!isScrollableEnough()) {
+        fab.classList.remove("visible");
+        return;
+      }
       const progress = getProgress();
       text.textContent = `${progress}%`;
       circle.style.strokeDashoffset = String(circumference - (progress / 100) * circumference);
+      fab.setAttribute("aria-label", `返回顶部，当前阅读 ${progress}%`);
+      fab.title = `返回顶部（${progress}%）`;
       fab.classList.add("visible");
     };
 
@@ -67,6 +82,7 @@ const progressConfig = siteConfig.article.ui.readingProgress;
 
     window.addEventListener("scroll", requestRender, { passive: true });
     window.addEventListener("resize", requestRender);
+    window.addEventListener("site:decrypted", requestRender);
     requestRender();
 
     fab.addEventListener("click", () => {

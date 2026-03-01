@@ -9,6 +9,7 @@ import { transformerRenderWhitespace } from "@shikijs/transformers";
 import { transformerTwoslash } from "@shikijs/twoslash";
 import siteConfig from "./src/site.config.ts";
 import { remarkMarkdownInclude } from "./src/utils/markdown/remark-include.ts";
+import { remarkNormalizeCodeLang } from "./src/utils/markdown/remark-normalize-code-lang.ts";
 import { rehypeImageEnhance } from "./src/utils/markdown/rehype-image-enhance.ts";
 
 const integrations = [mdx()];
@@ -25,6 +26,7 @@ if (siteConfig.codeHighlight.twoslash) {
 }
 
 const remarkPlugins = [];
+remarkPlugins.push(remarkNormalizeCodeLang);
 if (siteConfig.markdown.gfm.enable) {
   remarkPlugins.push(remarkGfm);
 }

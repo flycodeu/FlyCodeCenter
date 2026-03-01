@@ -2,15 +2,17 @@
 import { glob } from "astro/loaders";
 
 const articleSchema = z.object({
-  title: z.string(),
+  title: z.string().optional(),
   createTime: z
     .string()
-    .regex(/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/, "createTime must be YYYY/MM/DD HH:mm:ss"),
+    .regex(/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/, "createTime must be YYYY/MM/DD HH:mm:ss")
+    .optional(),
   code: z.string().optional(),
   permalink: z.string().optional(),
   summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  cover: z.string().optional()
+  cover: z.string().optional(),
+  coverMode: z.enum(["left", "right", "none"]).optional()
 });
 
 const blog = defineCollection({

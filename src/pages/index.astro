@@ -60,7 +60,7 @@ const hero = siteConfig.home.hero;
           {
             latestTutorials.map((entry) => (
               <li>
-                <a href={getTutorialEntryUrl(entry)}>{entry.data.title}</a>
+                <a href={getTutorialEntryUrl(entry)}>{resolveArticleMeta(entry).title}</a>
                 <small>{resolveArticleMeta(entry).series}</small>
               </li>
             ))

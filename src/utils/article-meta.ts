@@ -1,6 +1,12 @@
 ﻿import type { CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
+import { normalizeTags as normalizeTagList } from "@/config/tag-normalize.config";
 import { resolveEntryCode } from "@/utils/content-code";
+import {
+  resolveDerivedCreateTimeText,
+  resolveDerivedTags,
+  resolveDerivedTitle
+} from "@/utils/content-derived";
 import { stripSlashes } from "@/utils/url";
 
 type ArticleEntry =
@@ -12,6 +18,7 @@ type ArticleDefaults = typeof siteConfig.articleMeta.defaults;
 type ArticleOverride = Partial<ArticleDefaults>;
 
 export interface ResolvedArticleMeta {
+  title: string;
   code: string;
   permalink: string;
   summary: string;
@@ -94,9 +101,7 @@ function pickDate(...values: Array<unknown>): Date | undefined {
 function normalizeTags(...values: Array<unknown>): string[] {
   for (const value of values) {
     if (!Array.isArray(value)) continue;
-    const tags = value
-      .map((tag) => String(tag || "").trim())
-      .filter(Boolean);
+    const tags = normalizeTagList(value.map((tag) => String(tag || "")));
     if (tags.length) return [...new Set(tags)];
   }
   return [];
@@ -121,7 +126,20 @@ function normalizePermalink(input: string, code: string): string {
   let path = value.startsWith("/") ? value : `/${value}`;
   path = path.replace(/\/{2,}/g, "/");
   if (!path.endsWith("/")) path += "/";
-  return path;
+  const normalized = stripSlashes(path);
+  const parts = normalized.split("/").filter(Boolean);
+  if (!parts.length) return fallback;
+
+  if (parts[0] === prefix) {
+    const slug = parts[1] || code;
+    return `/${prefix}/${slug}/`;
+  }
+
+  if (parts.length === 1) {
+    return `/${prefix}/${parts[0]}/`;
+  }
+
+  return fallback;
 }
 
 export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
@@ -129,11 +147,20 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
   const code = resolveEntryCode(entry);
   const override = (siteConfig.articleMeta.overridesByCode[code] ?? {}) as ArticleOverride;
 
-  const summary = pickText(override.summary, entry.data.summary, defaults.summary);
-  const description = pickText(override.description, summary, defaults.description, entry.data.title);
-  const tags = normalizeTags(override.tags, entry.data.tags, defaults.tags);
+  const title = resolveDerivedTitle(entry);
+  const derivedCreateTime = resolveDerivedCreateTimeText(entry);
+  const derivedTags = resolveDerivedTags(entry.data.tags);
 
-  const createTime = pickDate(override.createTime, entry.data.createTime, defaults.createTime) ?? new Date("2026-01-01T00:00:00.000Z");
+  const summary = pickText(override.summary, entry.data.summary, defaults.summary);
+  const description = pickText(override.description, summary, defaults.description, title);
+  const tags = normalizeTags(override.tags, entry.data.tags, derivedTags, defaults.tags);
+
+  const createTime = pickDate(
+    override.createTime,
+    entry.data.createTime,
+    derivedCreateTime,
+    defaults.createTime
+  ) ?? new Date("2026-01-01T00:00:00.000Z");
   const updatedTime = pickDate(override.updatedTime, defaults.updatedTime);
   const cover = pickText(override.cover, entry.data.cover, defaults.cover);
   const permalink = normalizePermalink(
@@ -142,6 +169,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
   );
 
   return {
+    title,
     code,
     permalink,
     summary,

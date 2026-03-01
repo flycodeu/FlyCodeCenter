@@ -35,7 +35,7 @@ const getMeta = (entry: (typeof entries)[number]) => {
         return (
           <article class="surface project-card">
             <header>
-              <a href={getProjectEntryUrl(entry)} class="title-link">{entry.data.title}</a>
+              <a href={getProjectEntryUrl(entry)} class="title-link">{meta.title}</a>
               {meta.featured && <span class="chip featured">重点</span>}
             </header>
             <p>{meta.description || meta.summary || "暂无描述"}</p>

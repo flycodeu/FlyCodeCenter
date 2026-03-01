@@ -13,6 +13,7 @@ const pageData = paginatePageMode(entries, 1, pageSize);
 const tags = makeTagItems(allEntries);
 const mode = siteConfig.blog.pagination.mode;
 const pinnedCount = entries.filter((entry) => resolveArticleMeta(entry).pinned).length;
+const visibleEntries = mode === "page" ? pageData.items : entries;
 ---
 
 <ListLayout
@@ -27,7 +28,7 @@ const pinnedCount = entries.filter((entry) => resolveArticleMeta(entry).pinned).
 >
   <div class="list" id="blog-list">
     {
-      entries.map((entry, idx) => (
+      visibleEntries.map((entry, idx) => (
         <div data-page-item hidden={mode === "loadMore" && idx >= pageSize ? true : undefined}>
           <PostCard entry={entry} kind="blog" />
         </div>

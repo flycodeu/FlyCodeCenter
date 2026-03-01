@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 
 interface Heading {
@@ -21,56 +21,152 @@ const list = headings.filter(
 
 {
   siteConfig.theme.toc.enable && list.length > 0 && (
-    <aside class="surface toc">
-      <h3>此页内容</h3>
-      <ol id="toc-list">
-        {list.map((item) => (
-          <li data-depth={item.depth}>
-            <a href={`#${item.slug}`}>{item.text}</a>
-          </li>
-        ))}
-      </ol>
-    </aside>
+    <>
+      <aside class="toc-desktop-wrap" aria-label="Article contents">
+        <nav class="surface toc toc-desktop">
+          <h3>Contents</h3>
+          <ol class="toc-list toc-list-desktop">
+            {list.map((item) => (
+              <li data-depth={item.depth}>
+                <a href={`#${item.slug}`}>{item.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
+
+      <button id="toc-mobile-toggle" class="toc-mobile-toggle" type="button" aria-label="Open contents">
+        TOC
+      </button>
+      <div id="toc-mobile-overlay" class="toc-mobile-overlay" hidden></div>
+      <aside id="toc-mobile-panel" class="toc-mobile-panel" hidden aria-label="Article contents">
+        <nav class="surface toc toc-mobile">
+          <header class="toc-mobile-head">
+            <h3>Contents</h3>
+            <button id="toc-mobile-close" class="toc-mobile-close" type="button" aria-label="Close contents">
+              Close
+            </button>
+          </header>
+          <ol class="toc-list toc-list-mobile">
+            {list.map((item) => (
+              <li data-depth={item.depth}>
+                <a href={`#${item.slug}`}>{item.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
+    </>
   )
 }
 
 {
   siteConfig.theme.toc.enable && list.length > 0 && (
     <script type="module">
-      const root = document.getElementById("toc-list");
-      if (!root) {
+      const links = [...document.querySelectorAll(".toc-list a")].filter((item) => item instanceof HTMLAnchorElement);
+      if (!links.length) {
         // no-op
       } else {
-        const links = new Map();
-        root.querySelectorAll("a").forEach((a) => {
-          const id = a.getAttribute("href")?.replace(/^#/, "");
+        const records = [];
+        links.forEach((anchor) => {
+          const id = anchor.getAttribute("href")?.replace(/^#/, "");
           if (!id) return;
-          links.set(id, a);
+          const heading = document.getElementById(id);
+          if (!heading) return;
+          records.push({ id, anchor, heading });
         });
 
-        const setActive = (id) => {
-          links.forEach((anchor, key) => {
-            anchor.classList.toggle("active", key === id);
+        const toggleBtn = document.getElementById("toc-mobile-toggle");
+        const closeBtn = document.getElementById("toc-mobile-close");
+        const overlay = document.getElementById("toc-mobile-overlay");
+        const panel = document.getElementById("toc-mobile-panel");
+        const desktopList = document.querySelector(".toc-list-desktop");
+        const body = document.body;
+
+        const openMobileToc = () => {
+          if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+          panel.hidden = false;
+          overlay.hidden = false;
+          body.classList.add("toc-drawer-open");
+          requestAnimationFrame(() => {
+            panel.classList.add("open");
+            overlay.classList.add("open");
           });
         };
 
-        const observer = new IntersectionObserver(
-          (entries) => {
-            const visible = entries
-              .filter((item) => item.isIntersecting)
-              .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-            if (!visible.length) return;
-            setActive(visible[0].target.id);
-          },
-          {
-            rootMargin: "-20% 0px -65% 0px",
-            threshold: [0.1, 0.35, 0.7]
-          }
-        );
+        const closeMobileToc = () => {
+          if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+          panel.classList.remove("open");
+          overlay.classList.remove("open");
+          body.classList.remove("toc-drawer-open");
+          window.setTimeout(() => {
+            panel.hidden = true;
+            overlay.hidden = true;
+          }, 180);
+        };
 
-        links.forEach((_, id) => {
-          const heading = document.getElementById(id);
-          if (heading) observer.observe(heading);
+        toggleBtn?.addEventListener("click", openMobileToc);
+        closeBtn?.addEventListener("click", closeMobileToc);
+        overlay?.addEventListener("click", closeMobileToc);
+
+        window.addEventListener("resize", () => {
+          if (window.innerWidth > 1024) {
+            closeMobileToc();
+          }
+        });
+
+        if (!records.length) {
+          // no-op
+        } else {
+          let activeId = "";
+          let ticking = false;
+
+          const syncActive = (id) => {
+            if (!id || id === activeId) return;
+            activeId = id;
+            records.forEach((record) => {
+              const isActive = record.id === id;
+              record.anchor.classList.toggle("active", isActive);
+            });
+            if (desktopList instanceof HTMLElement) {
+              const active = desktopList.querySelector("a.active");
+              if (active instanceof HTMLElement) {
+                active.scrollIntoView({ block: "nearest" });
+              }
+            }
+          };
+
+          const updateByScroll = () => {
+            const offset = 132;
+            let current = records[0];
+            for (const record of records) {
+              const top = record.heading.getBoundingClientRect().top;
+              if (top - offset <= 0) {
+                current = record;
+                continue;
+              }
+              break;
+            }
+            syncActive(current.id);
+            ticking = false;
+          };
+
+          const onScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(updateByScroll);
+          };
+
+          window.addEventListener("scroll", onScroll, { passive: true });
+          window.addEventListener("resize", onScroll);
+          window.addEventListener("hashchange", onScroll);
+          onScroll();
+        }
+
+        document.querySelectorAll(".toc-list-mobile a").forEach((anchor) => {
+          anchor.addEventListener("click", () => {
+            closeMobileToc();
+          });
         });
       }
     </script>
@@ -79,12 +175,10 @@ const list = headings.filter(
 
 <style>
   .toc {
-    padding: 1rem 0;
-    position: sticky;
-    top: 84px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
+    padding: 0.85rem 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    box-shadow: var(--card-shadow);
   }
   .toc h3 {
     margin: 0 0 0.75rem 1rem;
@@ -92,7 +186,7 @@ const list = headings.filter(
     font-weight: 600;
     color: var(--text);
   }
-  .toc ol {
+  .toc-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -100,31 +194,128 @@ const list = headings.filter(
     flex-direction: column;
     border-left: 1px solid var(--line);
     margin-left: 1rem;
+    max-height: inherit;
   }
-  .toc li {
+  .toc-list li {
     margin: 0;
   }
-  .toc li[data-depth="3"] a {
+  .toc-list li[data-depth="3"] a {
     padding-left: 1.5rem;
   }
-  .toc a {
+  .toc-list a {
     display: block;
-    padding: 0.25rem 0 0.25rem 1rem;
+    padding: 0.28rem 0 0.28rem 1rem;
     color: var(--text-soft);
     font-size: 0.875rem;
     text-decoration: none;
     transition: color 0.2s ease;
-    line-height: 1.5;
+    line-height: 1.45;
     position: relative;
     left: -1px;
     border-left: 1px solid transparent;
   }
-  .toc a:hover {
+  .toc-list a:hover {
     color: var(--text);
   }
-  .toc a.active {
+  .toc-list a.active {
     color: var(--brand);
     border-left-color: var(--brand);
     font-weight: 500;
+  }
+
+  .toc-desktop-wrap {
+    display: none;
+  }
+
+  .toc-mobile-toggle {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+    z-index: 81;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.72rem;
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--text) 12%, transparent 88%);
+  }
+
+  .toc-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 18, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+  .toc-mobile-overlay.open {
+    opacity: 1;
+  }
+
+  .toc-mobile-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(88vw, 360px);
+    height: 100vh;
+    z-index: 91;
+    transform: translateX(100%);
+    transition: transform 180ms ease;
+    padding: 0.65rem 0.65rem 0.75rem;
+  }
+  .toc-mobile-panel.open {
+    transform: translateX(0);
+  }
+  .toc-mobile {
+    height: 100%;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .toc-mobile .toc-list {
+    overflow: auto;
+    max-height: none;
+    padding-bottom: 0.5rem;
+  }
+  .toc-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0.75rem;
+  }
+  .toc-mobile-close {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--bg) 88%, transparent 12%);
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    padding: 0.2rem 0.56rem;
+  }
+
+  :global(body.toc-drawer-open) {
+    overflow: hidden;
+  }
+
+  @media (min-width: 1025px) {
+    .toc-mobile-toggle,
+    .toc-mobile-overlay,
+    .toc-mobile-panel {
+      display: none;
+    }
+    .toc-desktop-wrap {
+      display: block;
+      position: fixed;
+      top: 84px;
+      right: max(16px, calc((100vw - min(1152px, calc(100vw - 48px))) / 2));
+      width: 280px;
+      z-index: 45;
+    }
+    .toc-desktop {
+      max-height: calc(100vh - 112px);
+      overflow: auto;
+    }
   }
 </style>

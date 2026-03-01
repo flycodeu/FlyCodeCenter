@@ -1,7 +1,9 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import matter from "gray-matter";
+import { slug as githubSlug } from "github-slugger";
+import { normalizeTag } from "../src/config/tag-normalize.config.ts";
 
 const root = process.cwd();
 const articlePrefix = "article";
@@ -54,18 +56,32 @@ function createGeneratedCode(collection, entryId, createTime) {
   return /^\d/.test(value) ? `r${value.slice(1)}` : value;
 }
 
-function normalizeEntryId(collection, relativeFile) {
-  const normalized = relativeFile
+function normalizeEntryId(relativeFile) {
+  return relativeFile
     .replace(/\\/g, "/")
     .replace(/^\/+/, "")
-    .replace(/\.(md|mdx)$/i, "");
-  return collection === "projects" ? normalized.toLowerCase() : normalized;
+    .replace(/\.(md|mdx)$/i, "")
+    .toLowerCase();
+}
+
+function getAstroGeneratedContentId(relativeFile) {
+  const withoutExt = relativeFile.replace(/\.(md|mdx)$/i, "");
+  const rawSegments = withoutExt.split(/[\\/]/).filter(Boolean);
+  return rawSegments.map((segment) => githubSlug(segment)).join("/").replace(/\/index$/, "");
+}
+
+function getAstroLoaderId(relativeFile, data) {
+  if (typeof data?.slug === "string" && data.slug.length > 0) {
+    return data.slug;
+  }
+  return getAstroGeneratedContentId(relativeFile);
 }
 
 function normalizePermalink(input, code) {
   const fallback = `/${articlePrefix}/${code}/`;
   const raw = String(input || "").trim();
   if (!raw) return fallback;
+
   const value = /^https?:\/\//i.test(raw)
     ? (() => {
         try {
@@ -88,8 +104,23 @@ function isValidArticlePermalink(permalink) {
   return parts.length === 2 && parts[0] === articlePrefix;
 }
 
+function normalizeTags(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const item of input) {
+    const value = normalizeTag(String(item || "").trim());
+    if (!value) continue;
+    if (seen.has(value)) continue;
+    seen.add(value);
+    normalized.push(value);
+  }
+  return normalized;
+}
+
 async function main() {
   const errors = [];
+  const idMap = new Map();
   const codeMap = new Map();
   const permalinkMap = new Map();
 
@@ -112,24 +143,40 @@ async function main() {
         continue;
       }
 
-      if (typeof data.title !== "string" || !data.title.trim()) {
-        errors.push(`${rel}: missing required field "title"`);
-      }
-
-      if (typeof data.createTime !== "string" || !CREATE_TIME_RE.test(data.createTime.trim())) {
+      if (typeof data.createTime === "string" && data.createTime.trim() && !CREATE_TIME_RE.test(data.createTime.trim())) {
         errors.push(`${rel}: "createTime" must match YYYY/MM/DD HH:mm:ss`);
       }
 
-      const entryId = normalizeEntryId(target.collection, path.relative(target.dir, file));
+      if (Array.isArray(data.tags) && data.tags.length) {
+        const source = data.tags.map((tag) => String(tag || "").trim()).filter(Boolean);
+        const normalized = normalizeTags(source);
+        const changed = source.length !== normalized.length || source.some((value, idx) => value !== normalized[idx]);
+        if (changed) {
+          errors.push(`${rel}: tags should be normalized -> [${normalized.join(", ")}]`);
+        }
+      }
+
+      const relativeInCollection = path.relative(target.dir, file);
+      const entryId = normalizeEntryId(relativeInCollection);
+      const loaderId = getAstroLoaderId(relativeInCollection, data);
+      const idKey = `${target.collection}:${loaderId}`;
+      const idOwner = idMap.get(idKey);
+      if (idOwner && idOwner !== rel) {
+        errors.push(`${rel}: duplicate content id "${loaderId}" (already used in ${idOwner})`);
+      } else {
+        idMap.set(idKey, rel);
+      }
+
       const manualCode = sanitizeManualCode(data.code);
       const code = manualCode || createGeneratedCode(target.collection, entryId, data.createTime);
       if (!code) {
         errors.push(`${rel}: invalid "code"`);
+        continue;
       }
 
       const permalink = normalizePermalink(data.permalink, code);
       if (!isValidArticlePermalink(permalink)) {
-        errors.push(`${rel}: invalid "permalink" (${permalink}), expected /article/{slug}/`);
+        errors.push(`${rel}: invalid permalink "${permalink}", expected /article/{slug}/`);
       }
 
       const codeOwner = codeMap.get(code);

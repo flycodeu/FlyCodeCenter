@@ -34,7 +34,7 @@ const siteConfig = defineSiteConfig({
   shouldPrefetch: false,
   ui: {
     date: {
-      format: "YYYY/MM/DD HH:mm:ss",
+      format: "YYYY-MM-DD",
       icon: "calendar"
     },
     list: {
@@ -78,7 +78,7 @@ const siteConfig = defineSiteConfig({
     },
     pagination: {
       mode: "page" as PaginationMode,
-      pageSize: 6,
+      pageSize: 10,
       maxPageNumbers: 7
     },
     listCard: {
@@ -134,6 +134,7 @@ const siteConfig = defineSiteConfig({
   theme: {
     defaultTheme: "plume" as ThemeId,
     themes: ["plume", "tech", "night", "ocean", "sunset"] as ThemeId[],
+    switchableThemes: ["plume", "night"] as ThemeId[],
     appearance: true,
     logo: {
       text: "FlyCodeCenter",
@@ -188,7 +189,7 @@ const siteConfig = defineSiteConfig({
     contentType: "markdown" as const,
     title: "站点公告",
     content:
-      "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 优秀文章\n- 命令中心支持 Ctrl + K，搜索支持高亮与模糊匹配"
+      "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 优秀文章\n- 搜索支持高亮与模糊匹配"
   },
   themeConfig: {
     nav: [
@@ -287,13 +288,13 @@ const siteConfig = defineSiteConfig({
   codeHighlight: {
     provider: "shiki",
     theme: "vitesse-light",
-    languages: ["ts", "js", "bash", "json", "md", "yaml", "rust", "cpp", "mermaid"],
+    languages: ["ts", "js", "javascript", "java", "sql", "bash", "json", "md", "yaml", "rust", "cpp", "mermaid", "txt"],
     lineNumbers: true,
     showWhitespace: false,
     twoslash: false
   },
   search: {
-    provider: "minisearch" as SearchProvider,
+    provider: "pagefind" as SearchProvider,
     topK: 8,
     fuzzy: 0.22,
     ui: {

@@ -96,8 +96,14 @@
     if (key === "tutorial") return "教程";
     if (key === "projects") return "项目";
     if (key === "sites") return "收藏";
-    if (key === "reading") return "阅读";
-    return "内容";
+    if (key === "reading") return "优秀文章";
+    return "页面";
+  }
+
+  function toReadablePath(url) {
+    const value = normalizeUrl(String(url || "/"));
+    if (value.startsWith("http://") || value.startsWith("https://")) return value;
+    return value.replace(/\/{2,}/g, "/");
   }
 
   function createEngine(indexPath, topK) {
@@ -217,11 +223,19 @@
 
     const renderItem = (item, idx) => {
       const cls = idx === focusedIndex ? "result-item active" : "result-item";
+      const pathText = toReadablePath(item.url);
       return `<li class="${cls}" data-url="${item.url}" data-index="${idx}">
         <a href="${item.url}">
-          <span class="result-meta"><span class="result-domain">${domainLabel(item.domain)}</span></span>
-          <h4>${highlightText(item.title, activeTerms)}</h4>
-          <p>${item.snippet}</p>
+          <div class="result-title-row">
+            <h4>${highlightText(item.title, activeTerms)}</h4>
+            <span class="result-rank">#${idx + 1}</span>
+          </div>
+          <div class="result-meta">
+            <span class="result-domain">${domainLabel(item.domain)}</span>
+            <span class="result-path">${escapeHtml(pathText)}</span>
+          </div>
+          <div class="result-divider"></div>
+          <p class="result-snippet">${item.snippet}</p>
         </a>
       </li>`;
     };

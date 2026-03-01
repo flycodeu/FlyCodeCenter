@@ -24,6 +24,24 @@ function normalizeUrl(url: string): string {
   return "/";
 }
 
+function inferDomainLabel(url: string): string {
+  const value = normalizeUrl(url);
+  if (value.startsWith("/article/")) return "文章";
+  if (value.startsWith("/blog")) return "博客";
+  if (value.startsWith("/tutorial")) return "教程";
+  if (value.startsWith("/projects")) return "项目";
+  if (value.startsWith("/sites")) return "收藏";
+  if (value.startsWith("/reading")) return "优秀文章";
+  if (value.startsWith("/tags")) return "标签";
+  return "页面";
+}
+
+function toReadablePath(url: string): string {
+  const normalized = normalizeUrl(url);
+  if (normalized.startsWith("http://") || normalized.startsWith("https://")) return normalized;
+  return normalized.replace(/\/{2,}/g, "/");
+}
+
 function isTypingContext(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true;
@@ -101,10 +119,20 @@ function setupSearchModal() {
       .map((item, idx) => {
         const cls = idx === focusedIndex ? "result-item active" : "result-item";
         const safeUrl = normalizeUrl(String(item.url || "/"));
+        const domain = inferDomainLabel(safeUrl);
+        const pathText = toReadablePath(safeUrl);
         return `<li class="${cls}" data-url="${safeUrl}" data-index="${idx}">
             <a href="${safeUrl}">
-              <h4>${escapeHtml(String(item.title || "Untitled"))}</h4>
-              <p>${item.snippet || ""}</p>
+              <div class="result-title-row">
+                <h4>${escapeHtml(String(item.title || "Untitled"))}</h4>
+                <span class="result-rank">#${idx + 1}</span>
+              </div>
+              <div class="result-meta">
+                <span class="result-domain">${escapeHtml(domain)}</span>
+                <span class="result-path">${escapeHtml(pathText)}</span>
+              </div>
+              <div class="result-divider"></div>
+              <p class="result-snippet">${item.snippet || ""}</p>
             </a>
           </li>`;
       })
