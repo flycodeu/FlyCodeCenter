@@ -1,5 +1,5 @@
-:root[data-theme="plume"] {
-  --font-sans: "Inter", "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+﻿:root[data-theme="plume"] {
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-serif: "Noto Serif SC", "Songti SC", serif;
   --bg: #ffffff;
   --bg-elev: #f6f6f7;
@@ -15,3 +15,4 @@
   --radius: 8px;
   --header-blur: 12px;
 }
+

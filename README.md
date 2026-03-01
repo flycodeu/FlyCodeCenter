@@ -78,16 +78,44 @@ ENCRYPT_PASSWORD=
 - 分页策略（`page` / `loadMore`）
 - 搜索 provider（`minisearch` / `pagefind` / `algolia`）
 - 评论 provider（`giscus` / `waline` / `twikoo`）
-- AI 看板连接策略（代理优先）
+- AI 看板连接策略（默认 `openaiCompatible`，支持前端自定义 API Base / Model / Key）
 - Mermaid / Draw.io / ECharts 图形能力开关
 - 看板娘开关与行为参数
+- 网站收藏中心分类与卡片排序（`src/content/sites/*.md` + `site.config.ts`）
 - 资源页与收藏页开关
 
 ## 新增页面
 
-- `/types` 与 `/types/[domain]`：类型总览与域详情（blog/tutorial/sites/reading）
-- `/sites`：聚合网站
+- `/tags`：标签统计中心（`/types` 与 `/types/[domain]` 保留兼容跳转）
+- `/sites`：网站收藏中心（多分类 + 主题化展示）
 - `/reading`：优秀文章收集
+
+## 文章 Frontmatter 最简模式
+
+仅 `title` 必填，其它字段均可选。示例：
+
+```md
+---
+title: "我的新文章"
+---
+```
+
+## 文章内插入卡片
+
+在 `.mdx` 中可使用 `MediaCard`，支持图片位置、宽高与卡片尺寸：
+
+```mdx
+import MediaCard from "@/components/mdx/MediaCard.astro";
+
+<MediaCard
+  title="示例卡片"
+  desc="支持图片在 left/right/top/background。"
+  image="/demo.png"
+  imagePosition="right"
+  imageWidth={240}
+  imageHeight={140}
+/>
+```
 
 ## Markdown 图形语法
 
@@ -114,3 +142,4 @@ https://your-drawio-file-url
 
 这是静态站前端解密方案（AES-GCM + PBKDF2），适合降低明文暴露风险，不等同于后端鉴权。  
 拥有构建产物和足够分析能力的攻击者仍可尝试离线破解，因此不适合高敏感数据。
+

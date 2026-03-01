@@ -1,15 +1,14 @@
 ---
 title: "ArrayList 入门：动态数组的扩容策略"
-description: "理解容量、扩容倍数与摊还复杂度。"
+createTime: "2026/02/10 00:00:00"
+code: "r2a1d7kq"
+permalink: "/article/r2a1d7kq/"
 summary: "从结构特性到复杂度分析，快速建立动态数组的实战认知。"
-pubDate: 2026-02-10
-updatedDate: 2026-02-12
-tags: ["tutorial", "datastruct", "array"]
+tags:
+  - "tutorial"
+  - "datastruct"
+  - "array"
 cover: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80"
-draft: false
-series: "datastruct"
-order: 1
-encrypted: false
 ---
 
 ## 动态数组是什么

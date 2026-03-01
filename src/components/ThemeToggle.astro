@@ -3,6 +3,7 @@ import siteConfig from "@/site.config";
 
 const themes = siteConfig.theme.themes;
 const storageKey = "flycode-theme";
+const explicitKey = "flycode-theme-explicit";
 const enableTransition = siteConfig.theme.transitions.theme;
 ---
 
@@ -10,13 +11,24 @@ const enableTransition = siteConfig.theme.transitions.theme;
   <span class="theme-icon" aria-hidden="true">☼</span>
 </button>
 
-<script type="module" define:vars={{ storageKey, enableTransition }}>
+<script type="module" define:vars={{ storageKey, explicitKey, enableTransition }}>
   const button = document.getElementById("theme-toggle");
   const root = document.documentElement;
 
-  const themes = JSON.parse(button?.dataset.themes ?? "[]");
-  const current = root.dataset.theme ?? themes[0];
+  const parsed = JSON.parse(button?.dataset.themes ?? "[]");
+  const themes = Array.isArray(parsed)
+    ? parsed.filter((item) => typeof item === "string" && item.trim())
+    : [];
+  const fallback = root.dataset.defaultTheme ?? themes[0] ?? "plume";
+  const normalizeTheme = (value) => {
+    const next = String(value ?? "").trim();
+    if (themes.includes(next)) return next;
+    return themes.includes(fallback) ? fallback : themes[0] ?? "plume";
+  };
+
+  const current = normalizeTheme(root.dataset.theme);
   if (current) {
+    root.dataset.theme = current;
     localStorage.setItem(storageKey, current);
   }
 
@@ -26,12 +38,14 @@ const enableTransition = siteConfig.theme.transitions.theme;
       root.classList.add("theme-anim");
       window.setTimeout(() => root.classList.remove("theme-anim"), 280);
     }
-    const now = root.dataset.theme ?? themes[0];
+    const now = normalizeTheme(root.dataset.theme);
     const idx = themes.indexOf(now);
     const next = themes[(idx + 1) % themes.length];
-    root.dataset.theme = next;
-    localStorage.setItem(storageKey, next);
-    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: next }));
+    const safeNext = normalizeTheme(next);
+    root.dataset.theme = safeNext;
+    localStorage.setItem(storageKey, safeNext);
+    localStorage.setItem(explicitKey, "1");
+    window.dispatchEvent(new CustomEvent("site:theme-change", { detail: safeNext }));
   });
 </script>
 

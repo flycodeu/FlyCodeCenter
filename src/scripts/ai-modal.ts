@@ -3,18 +3,18 @@ import type { AiRuntime } from "../providers/ai/types";
 
 declare global {
   interface Window {
-    __flyAiModalInited?: boolean;
+    __flyAiModalCleanup?: () => void;
   }
 }
 
 const STORAGE_KEY = "site-ai-connection";
 
-function initAiModal() {
-  if (window.__flyAiModalInited) return;
-  window.__flyAiModalInited = true;
-
+function setupAiModal() {
   const dialog = document.getElementById("ai-modal");
-  if (!(dialog instanceof HTMLDialogElement)) return;
+  if (!(dialog instanceof HTMLDialogElement)) return () => {};
+
+  const controller = new AbortController();
+  const { signal } = controller;
 
   const close = document.getElementById("ai-close");
   const summarizeBtn = document.getElementById("ai-summarize");
@@ -29,8 +29,11 @@ function initAiModal() {
   const modelInput = document.getElementById("ai-model");
   const keyInput = document.getElementById("ai-key");
   const keyWrap = document.getElementById("ai-key-wrap");
+  const tabs = Array.from(dialog.querySelectorAll<HTMLElement>(".ai-tab"));
+  const contents = Array.from(dialog.querySelectorAll<HTMLElement>(".ai-tab-content"));
 
   let runtime: AiRuntime | null = null;
+  let destroyed = false;
 
   const isEncryptedLocked = () => document.documentElement.dataset.encryptedLocked === "1";
 
@@ -104,9 +107,29 @@ function initAiModal() {
     return runtime;
   };
 
+  const safeRun = async (action: () => Promise<string>, loadingText: string) => {
+    if (!(output instanceof HTMLElement)) return;
+    output.textContent = loadingText;
+    try {
+      const result = await action();
+      output.textContent = result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "未知错误";
+      output.textContent = `请求失败：${message}\n\n请先检查 API Base / Model / API Key。`;
+    }
+  };
+
   const open = async () => {
+    if (destroyed) return;
+    if (!dialog.isConnected) return;
+
     if (!dialog.open) {
-      dialog.showModal();
+      try {
+        dialog.showModal();
+      } catch (error) {
+        console.warn("AI modal showModal failed", error);
+        return;
+      }
     }
 
     if (isEncryptedLocked()) {
@@ -119,68 +142,156 @@ function initAiModal() {
     await ensureRuntime();
   };
 
-  window.addEventListener("site:open-ai", () => {
-    open().catch(console.error);
-  });
-
-  window.addEventListener("keydown", (event) => {
-    if (!(event.ctrlKey || event.metaKey) || !event.shiftKey) return;
-    if (event.key.toLowerCase() !== defaults.shortcut) return;
-    event.preventDefault();
-    open().catch(console.error);
-  });
-
-  dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
-  });
-
-  close?.addEventListener("click", () => dialog.close());
-
-  saveConn?.addEventListener("click", async () => {
-    await ensureRuntime();
-    applyConnection();
-    if (output instanceof HTMLElement) {
-      output.textContent = "连接配置已保存。";
+  const closeDialog = () => {
+    if (dialog.isConnected && dialog.open) {
+      dialog.close();
     }
+  };
+
+  const switchTab = (name: string) => {
+    tabs.forEach((tab) => {
+      const active = tab.dataset.tab === name;
+      tab.classList.toggle("active", active);
+    });
+    contents.forEach((content) => {
+      const active = content.id === `tab-${name}`;
+      content.classList.toggle("active", active);
+    });
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener(
+      "click",
+      () => {
+        const tabName = tab.dataset.tab || "chat";
+        switchTab(tabName);
+      },
+      { signal }
+    );
   });
 
-  summarizeBtn?.addEventListener("click", async () => {
-    if (isEncryptedLocked()) return;
-    const rt = await ensureRuntime();
-    if (!rt || !(output instanceof HTMLElement)) return;
-    output.textContent = "正在生成摘要...";
-    output.textContent = await rt.summarizeCurrentArticle();
-  });
+  window.addEventListener(
+    "site:open-ai",
+    () => {
+      open().catch(console.error);
+    },
+    { signal }
+  );
 
-  askBtn?.addEventListener("click", async () => {
-    if (isEncryptedLocked()) return;
-    const rt = await ensureRuntime();
-    const question = questionInput instanceof HTMLInputElement ? questionInput.value.trim() : "";
-    if (!rt || !question || !(output instanceof HTMLElement)) return;
-    output.textContent = "正在生成回答...";
-    output.textContent = await rt.askSite(question);
-  });
-
-  chatBtn?.addEventListener("click", async () => {
-    if (isEncryptedLocked()) return;
-    const rt = await ensureRuntime();
-    const prompt = chatInput instanceof HTMLInputElement ? chatInput.value.trim() : "";
-    if (!rt || !prompt || !(output instanceof HTMLElement)) return;
-    if (chatInput instanceof HTMLInputElement) chatInput.value = "";
-    output.textContent = "正在请求模型...\n\n";
-    output.textContent += await rt.chat(prompt);
-  });
-
-  chatInput?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
+  document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const trigger = target.closest('[data-action="open-ai"]');
+      if (!(trigger instanceof HTMLElement)) return;
       event.preventDefault();
-      chatBtn?.click();
-    }
-  });
+      open().catch(console.error);
+    },
+    { signal }
+  );
+
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey) return;
+      if (event.key.toLowerCase() !== defaults.shortcut) return;
+      event.preventDefault();
+      open().catch(console.error);
+    },
+    { signal }
+  );
+
+  dialog.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === dialog) closeDialog();
+    },
+    { signal }
+  );
+
+  close?.addEventListener("click", closeDialog, { signal });
+
+  saveConn?.addEventListener(
+    "click",
+    async () => {
+      await ensureRuntime();
+      applyConnection();
+      if (output instanceof HTMLElement) {
+        output.textContent = "连接配置已保存。";
+      }
+    },
+    { signal }
+  );
+
+  summarizeBtn?.addEventListener(
+    "click",
+    async () => {
+      if (isEncryptedLocked()) return;
+      const rt = await ensureRuntime();
+      if (!rt) return;
+      await safeRun(() => rt.summarizeCurrentArticle(), "正在生成摘要...");
+    },
+    { signal }
+  );
+
+  askBtn?.addEventListener(
+    "click",
+    async () => {
+      if (isEncryptedLocked()) return;
+      const rt = await ensureRuntime();
+      const question = questionInput instanceof HTMLInputElement ? questionInput.value.trim() : "";
+      if (!rt || !question) return;
+      await safeRun(() => rt.askSite(question), "正在生成回答...");
+    },
+    { signal }
+  );
+
+  chatBtn?.addEventListener(
+    "click",
+    async () => {
+      if (isEncryptedLocked()) return;
+      const rt = await ensureRuntime();
+      const prompt = chatInput instanceof HTMLInputElement ? chatInput.value.trim() : "";
+      if (!rt || !prompt) return;
+      if (chatInput instanceof HTMLInputElement) chatInput.value = "";
+      await safeRun(() => rt.chat(prompt), "正在请求模型...");
+    },
+    { signal }
+  );
+
+  chatInput?.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        chatBtn?.dispatchEvent(new Event("click"));
+      }
+    },
+    { signal }
+  );
+
+  switchTab("chat");
+  syncConnUi();
+
+  return () => {
+    destroyed = true;
+    controller.abort();
+    closeDialog();
+  };
+}
+
+export function bootAiModal() {
+  if (window.__flyAiModalCleanup) {
+    window.__flyAiModalCleanup();
+  }
+  window.__flyAiModalCleanup = setupAiModal();
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initAiModal, { once: true });
+  document.addEventListener("DOMContentLoaded", bootAiModal, { once: true });
 } else {
-  initAiModal();
+  bootAiModal();
 }
+
+document.addEventListener("astro:page-load", bootAiModal);

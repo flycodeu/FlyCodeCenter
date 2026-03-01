@@ -6,10 +6,10 @@ export interface Props {
   icon?: string;
 }
 
-const { title, desc, url, icon } = Astro.props;
+const { title, desc, url, icon = "↗" } = Astro.props;
 ---
 <a href={url || "#"} target={url ? "_blank" : "_self"} class="custom-link-card">
-  <div class="card-icon">{icon || "🔗"}</div>
+  <div class="card-icon">{icon}</div>
   <div class="card-content">
     <div class="card-title">{title}</div>
     {desc && <div class="card-desc">{desc}</div>}

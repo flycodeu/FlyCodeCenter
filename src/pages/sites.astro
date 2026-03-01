@@ -1,136 +1,464 @@
-Ôªø---
+---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchSitesEntries } from "@/utils/query";
+import { getTagColorVars } from "@/utils/tag-color";
 import { render } from "astro:content";
 
-const entries = await fetchSitesEntries();
+const sourceEntries = await fetchSitesEntries();
+
+const entries = await Promise.all(
+  sourceEntries.map(async (entry) => {
+    const { Content } = await render(entry);
+    const cards = [...(entry.data.cards ?? [])].sort((a, b) => {
+      if (Number(b.pinned) !== Number(a.pinned)) return Number(b.pinned) - Number(a.pinned);
+      if ((a.order ?? 999) !== (b.order ?? 999)) return (a.order ?? 999) - (b.order ?? 999);
+      return a.title.localeCompare(b.title, "zh-CN");
+    });
+
+    return {
+      entry,
+      Content,
+      category: (entry.data.category || entry.data.title || "Œ¥∑÷¿‡").trim(),
+      cards
+    };
+  })
+);
+
+const groups = [...entries].sort((a, b) => (a.entry.data.order ?? 999) - (b.entry.data.order ?? 999));
+const defaultCategory = siteConfig.pages.sites.filter.defaultCategory;
+const showFilter = siteConfig.pages.sites.filter.enable;
+const totalItems = groups.reduce((sum, group) => sum + group.cards.length, 0);
+
+const resolveIcon = (url: string, icon: string) => {
+  if (icon?.trim()) return icon.trim();
+  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=64`;
+};
 ---
 
-<BaseLayout title={siteConfig.pages.sites.title} description="Êï¥Âêà‰ºòË¥®ÁΩëÁ´ôËµÑÊ∫ê‰∏éÂ∑•ÂÖ∑ÊúçÂä°">
-  <div class="sites-header surface fade-up">
-    <h1>‰ºòË¥®ÁΩëÁ´ôÂØºËà™</h1>
-    <p>ÂèëÁé∞„ÄÅÊï¥ÁêÜÂπ∂ÂàÜ‰∫´Êó•Â∏∏‰ΩøÁî®ÁöÑÈ´òÊïàÂ∑•ÂÖ∑‰∏éÂ≠¶‰π†ËµÑÊ∫ê</p>
-  </div>
+<BaseLayout title={siteConfig.pages.sites.title} description={siteConfig.pages.sites.description}>
+  <section class="collection-head surface">
+    <div>
+      <h1>{siteConfig.pages.sites.title}</h1>
+      <p>{siteConfig.pages.sites.description}</p>
+    </div>
+    <div class="head-stats">
+      <span class="stat-item">{groups.length} ∏ˆ¿‡±</span>
+      <span class="stat-item">{totalItems} ∏ˆ’æµ„</span>
+    </div>
+  </section>
 
-  <div class="sites-container">
-    {entries.map(async (entry) => {
-      const { Content } = await render(entry);
-      return (
-        <section class="site-group surface fade-up">
-          <h2 class="group-title">
-            <span class="icon">#</span> {entry.data.title}
-          </h2>
-          <div class="site-content custom-list-cards prose">
-            <Content />
+  {
+    showFilter && (
+      <section class="collection-filter" id="collection-filter">
+        <button type="button" class="filter-btn active" data-filter="all" style="--tag-hue: 216">
+          <span class="label">»´≤ø</span>
+          <span class="count">{totalItems}</span>
+        </button>
+        {
+          groups.map((group) => (
+            <button
+              type="button"
+              class="filter-btn"
+              data-filter={group.category}
+              style={getTagColorVars(group.category)}
+            >
+              <span class="label">{group.category}</span>
+              <span class="count">{group.cards.length}</span>
+            </button>
+          ))
+        }
+      </section>
+    )
+  }
+
+  <section class="collection-sections" id="collection-sections" data-default={defaultCategory}>
+    {
+      groups.map((group) => (
+        <section class="collection-group surface" data-group={group.category}>
+          <header class="group-head">
+            <div class="group-title-wrap">
+              <h2>{group.entry.data.title}</h2>
+              <p>{group.entry.data.description || "∏√∑÷¿‡œ¬µƒÕ¯’æø®∆¨¡–±Ì°£"}</p>
+            </div>
+            <small>{group.cards.length} ∏ˆ’æµ„</small>
+          </header>
+
+          <div class="group-body prose">
+            <group.Content />
+          </div>
+
+          <div class="group-grid">
+            {
+              group.cards.map((card) => (
+                <article class="site-card">
+                  <header class="site-head">
+                    <img src={resolveIcon(card.url, card.icon)} alt="" loading="lazy" decoding="async" />
+                    <div class="site-title-wrap">
+                      <h3 title={card.title}>{card.title}</h3>
+                      {card.badge && <span class="site-badge">{card.badge}</span>}
+                    </div>
+                  </header>
+
+                  {card.desc && <p class="desc">{card.desc}</p>}
+
+                  <div class="meta-row">
+                    {card.category && (
+                      <span class="meta-tag meta-tag-strong tag-badge" style={getTagColorVars(card.category)}>{card.category}</span>
+                    )}
+                    {card.tags.slice(0, 3).map((tag) => (
+                      <span class="meta-tag tag-badge" style={getTagColorVars(tag)}>{tag}</span>
+                    ))}
+                  </div>
+
+                  <a class="visit-link" href={card.url} target="_blank" rel="noreferrer">∑√Œ ’æµ„</a>
+                </article>
+              ))
+            }
           </div>
         </section>
-      );
-    })}
-  </div>
+      ))
+    }
+  </section>
 </BaseLayout>
 
+<script is:inline>
+  const initCollectionFilter = () => {
+    const root = document.getElementById('collection-sections');
+    const filter = document.getElementById('collection-filter');
+    if (!root || !filter) return;
+
+    if (window.__flySitesFilterCleanup) {
+      window.__flySitesFilterCleanup();
+    }
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const buttons = Array.from(filter.querySelectorAll('.filter-btn'));
+    const groups = Array.from(root.querySelectorAll('.collection-group'));
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+
+    const setFilter = (value, syncQuery = true) => {
+      const normalized = normalize(value || 'all');
+
+      buttons.forEach((btn) => {
+        btn.classList.toggle('active', normalize(btn.dataset.filter) === normalized);
+      });
+
+      groups.forEach((group) => {
+        const category = normalize(group.getAttribute('data-group'));
+        const visible = normalized === 'all' || normalized === category;
+        group.toggleAttribute('hidden', !visible);
+      });
+
+      if (syncQuery) {
+        const url = new URL(window.location.href);
+        if (normalized === 'all') {
+          url.searchParams.delete('category');
+        } else {
+          const activeBtn = buttons.find((btn) => normalize(btn.dataset.filter) === normalized);
+          if (activeBtn?.dataset.filter) {
+            url.searchParams.set('category', activeBtn.dataset.filter);
+          }
+        }
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setFilter(btn.dataset.filter || 'all');
+      }, { signal });
+    });
+
+    const queryCategory = new URLSearchParams(window.location.search).get('category');
+    if (queryCategory) {
+      const hit = buttons.find((btn) => normalize(btn.dataset.filter) === normalize(queryCategory));
+      setFilter(hit?.dataset.filter || 'all', false);
+    } else {
+      const defaultFilter = root.getAttribute('data-default') || 'all';
+      const hit = buttons.find((btn) => normalize(btn.dataset.filter) === normalize(defaultFilter));
+      setFilter(hit?.dataset.filter || 'all', false);
+    }
+
+    window.__flySitesFilterCleanup = () => {
+      controller.abort();
+    };
+  };
+
+  document.addEventListener('astro:page-load', initCollectionFilter);
+  initCollectionFilter();
+</script>
+
 <style is:global>
-  .sites-header {
-    padding: 3rem 2rem;
-    text-align: center;
-    border-radius: 16px;
-    margin-bottom: 2rem;
-    background: linear-gradient(135deg, var(--bg-elev), var(--brand-soft));
+  .collection-head {
+    margin-bottom: 0.8rem;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.8rem;
   }
-  .sites-header h1 {
-    margin: 0 0 1rem 0;
-    font-size: 2.5rem;
-    font-family: var(--font-sans);
-    color: var(--text);
-  }
-  .sites-header p {
+
+  .collection-head h1 {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: clamp(1.35rem, 1vw + 1rem, 1.68rem);
+  }
+
+  .collection-head p {
+    margin: 0.18rem 0 0;
     color: var(--text-soft);
+    font-size: 0.88rem;
   }
-  .sites-container {
+
+  .head-stats {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
+    flex-wrap: wrap;
+    gap: 0.44rem;
   }
-  .site-group {
-    padding: 1.5rem;
-    border-radius: 12px;
+
+  .stat-item {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.16rem 0.46rem;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    white-space: nowrap;
   }
-  .group-title {
-    margin: 0 0 1rem 0;
+
+  .collection-filter {
+    position: sticky;
+    top: 74px;
+    z-index: 5;
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.5rem;
-    font-family: var(--font-sans);
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.75rem;
+    gap: 0.42rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.76rem;
+    padding: 0.62rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--bg-elev) 94%, transparent 6%);
+    backdrop-filter: blur(10px);
   }
-  .group-title .icon {
-    color: var(--brand);
-    opacity: 0.5;
-  }
-  
-  /* Convert Markdown lists to Cards */
-  .custom-list-cards ul {
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 1.5rem 0 0 0 !important;
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
-    gap: 1.25rem !important;
-  }
-  .custom-list-cards li {
-    margin: 0 !important;
-    padding: 1.25rem !important;
-    background: var(--bg) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 12px !important;
-    transition: all 0.2s ease !important;
-    display: flex !important;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .custom-list-cards li::before {
-    display: none !important;
-  }
-  .custom-list-cards li:hover {
-    border-color: var(--brand) !important;
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1) !important;
-  }
-  .custom-list-cards li a {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text) !important;
-    text-decoration: none !important;
+
+  .collection-filter .filter-btn {
+    --tag-border: color-mix(in oklab, var(--line) 84%, transparent 16%);
+    --tag-bg: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    --tag-text: var(--text-soft);
+    --tag-count-bg: color-mix(in oklab, var(--bg) 88%, transparent 12%);
+
+    border: 1px solid var(--tag-border);
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border-radius: 999px;
+    padding: 0.24rem 0.56rem;
+    cursor: pointer;
+    font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    border-bottom: none !important;
+    gap: 0.34rem;
+    transition: all 150ms ease;
   }
-  .custom-list-cards li a::before {
-    content: "";
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background-color: var(--brand);
-    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
-    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71m-5.4 6.1a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>') no-repeat center / contain;
+
+  .collection-filter .filter-btn .count {
+    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
+    border-radius: 999px;
+    padding: 0.02rem 0.3rem;
+    font-size: 0.68rem;
+    background: var(--tag-count-bg);
+    color: inherit;
   }
-  .custom-list-cards li a:hover {
-    color: var(--brand) !important;
+
+  .collection-filter .filter-btn.active {
+    color: var(--tag-text);
+    border-color: color-mix(in oklab, var(--tag-border) 78%, var(--brand) 22%);
+    box-shadow: 0 8px 16px -14px color-mix(in oklab, var(--brand) 22%, transparent 78%);
   }
-  .custom-list-cards li p {
-    margin: 0 !important;
-    font-size: 0.9rem;
+
+  .collection-sections {
+    display: grid;
+    gap: 0.78rem;
+  }
+
+  .collection-group {
+    border-radius: 12px;
+    padding: 0.82rem;
+    display: grid;
+    gap: 0.66rem;
+  }
+
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.72rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.46rem;
+  }
+
+  .group-title-wrap {
+    min-width: 0;
+  }
+
+  .group-head h2 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+
+  .group-head p {
+    margin: 0.18rem 0 0;
     color: var(--text-soft);
-    line-height: 1.5;
+    font-size: 0.8rem;
+  }
+
+  .group-head small {
+    font-size: 0.72rem;
+    color: var(--text-soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.08rem 0.36rem;
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    white-space: nowrap;
+  }
+
+  .group-body {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+  }
+
+  .group-body p {
+    margin: 0.28rem 0;
+  }
+
+  .group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.62rem;
+  }
+
+  .site-card {
+    border: 1px solid color-mix(in oklab, var(--line) 88%, var(--brand) 12%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--bg-elev) 96%, transparent 4%);
+    padding: 0.68rem;
+    display: grid;
+    gap: 0.42rem;
+    min-height: 184px;
+    transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
+  }
+
+  .site-card:hover {
+    border-color: color-mix(in oklab, var(--line) 68%, var(--brand) 32%);
+    box-shadow: 0 12px 22px -16px color-mix(in oklab, var(--brand) 18%, transparent 82%);
+    transform: translateY(-1px);
+  }
+
+  .site-head {
+    display: flex;
+    align-items: center;
+    gap: 0.54rem;
+  }
+
+  .site-head img {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    padding: 2px;
+    object-fit: contain;
+    flex: 0 0 auto;
+  }
+
+  .site-title-wrap {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+
+  .site-title-wrap h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.36;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-badge {
+    border: 1px solid color-mix(in oklab, var(--brand) 26%, var(--line) 74%);
+    border-radius: 999px;
+    padding: 0.03rem 0.35rem;
+    font-size: 0.65rem;
+    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
+    background: color-mix(in oklab, var(--brand-soft) 45%, var(--bg-elev) 55%);
+  }
+
+  .site-card .desc {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.79rem;
+    line-height: 1.44;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.26rem;
+    align-content: start;
+  }
+
+  .meta-tag {
+    font-size: 0.67rem;
+    padding: 0.04rem 0.36rem;
+    border-radius: 7px;
+    line-height: 1.35;
+  }
+
+  .meta-tag-strong {
+    font-weight: 600;
+  }
+
+  .visit-link {
+    margin-top: auto;
+    border: 1px solid color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
+    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
+    text-align: center;
+    padding: 0.34rem 0.58rem;
+    font-size: 0.76rem;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .visit-link:hover {
+    background: color-mix(in oklab, var(--brand-soft) 54%, var(--bg-elev) 46%);
+    color: color-mix(in oklab, var(--text) 62%, var(--brand) 38%);
+  }
+
+  @media (max-width: 900px) {
+    .collection-filter {
+      position: static;
+      top: auto;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .collection-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .group-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

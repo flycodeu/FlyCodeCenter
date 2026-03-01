@@ -3,6 +3,7 @@ import ListLayout from "@/layouts/ListLayout.astro";
 import { fetchAllContentEntries, fetchAllEntries, makeTagItems } from "@/utils/query";
 import { buildArchiveBuckets, getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { formatDate } from "@/utils/date";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const entries = await fetchAllEntries();
 const allContent = await fetchAllContentEntries();
@@ -12,7 +13,7 @@ const months = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
 
 const stats = [
   { title: "总文章数", value: entries.length, href: "/archives" },
-  { title: "标签总数", value: tags.length, href: "/types" }
+  { title: "标签总数", value: tags.length, href: "/tags" }
 ];
 ---
 
@@ -32,7 +33,7 @@ const stats = [
                 const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
                 return (
                   <a class="timeline-item" href={url}>
-                    <div class="date">{formatDate(entry.data.pubDate, "MM-DD")}</div>
+                    <div class="date">{formatDate(resolveArticleMeta(entry).createTime, "MM-DD")}</div>
                     <div class="title">{entry.data.title}</div>
                   </a>
                 );
@@ -141,3 +142,4 @@ const stats = [
     }
   }
 </style>
+

@@ -1,5 +1,5 @@
-:root[data-theme="sunset"] {
-  --font-sans: "Inter", "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+﻿:root[data-theme="sunset"] {
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-serif: "Noto Serif SC", "Songti SC", serif;
   --bg: #fffcf0;
   --bg-elev: #ffffff;

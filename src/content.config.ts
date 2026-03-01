@@ -1,54 +1,38 @@
 ﻿import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
-const baseSchema = z.object({
-  code: z.string().optional(),
+const articleSchema = z.object({
   title: z.string(),
-  description: z.string().default(""),
-  summary: z.string().default(""),
-  pubDate: z.coerce.date().default(() => new Date()),
-  updatedDate: z.coerce.date().optional(),
-  tags: z.array(z.string()).default([]),
-  cover: z.string().default(""),
-  showCover: z.boolean().default(false),
-  draft: z.boolean().default(false),
-  encrypted: z.boolean().default(false),
-  encryptedFile: z.string().optional(),
-  passwordHint: z.string().optional()
+  createTime: z
+    .string()
+    .regex(/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/, "createTime must be YYYY/MM/DD HH:mm:ss"),
+  code: z.string().optional(),
+  permalink: z.string().optional(),
+  summary: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  cover: z.string().optional()
 });
 
 const blog = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
-  schema: baseSchema.extend({
-    pinned: z.boolean().default(false),
-    pinOrder: z.number().int().nonnegative().default(999)
-  })
+  schema: articleSchema
 });
 
 const tutorial = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/tutorial" }),
-  schema: baseSchema.extend({
-    series: z.string().default("未分类"),
-    order: z.number().int().default(1)
-  })
+  schema: articleSchema
 });
 
 const projects = defineCollection({
   loader: glob({ pattern: "**/README.{md,mdx}", base: "./src/content/projects" }),
-  schema: baseSchema.extend({
-    projectType: z.string().default("general"),
-    repoUrl: z.string().url().optional(),
-    docUrl: z.string().url().optional(),
-    demoUrl: z.string().url().optional(),
-    featured: z.boolean().default(false),
-    weight: z.number().int().default(0)
-  })
+  schema: articleSchema
 });
 
 const sites = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/sites" }),
   schema: z.object({
     title: z.string(),
+    slug: z.string().optional(),
     description: z.string().default(""),
     url: z.string().url().optional(),
     pubDate: z.coerce.date().default(() => new Date()),
@@ -57,7 +41,53 @@ const sites = defineCollection({
     cover: z.string().default(""),
     featured: z.boolean().default(false),
     weight: z.number().int().default(0),
+    order: z.number().int().default(999),
+    category: z.string().default("general"),
+    type: z.string().default("site"),
+    layout: z.enum(["compact", "cards", "plain"]).default("compact"),
+    logo: z.string().optional(),
     status: z.enum(["active", "beta", "archived"]).default("active"),
+    cards: z
+      .array(
+        z.object({
+          title: z.string(),
+          url: z.string().url(),
+          desc: z.string().default(""),
+          tags: z.array(z.string()).default([]),
+          badge: z.string().default(""),
+          cover: z.string().default(""),
+          icon: z.string().default(""),
+          category: z.string().default(""),
+          order: z.number().int().default(999),
+          pinned: z.boolean().default(false)
+        })
+      )
+      .default([]),
+    draft: z.boolean().default(false)
+  })
+});
+
+const gallery = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/gallery" }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().default(""),
+    pubDate: z.coerce.date().default(() => new Date()),
+    photos: z
+      .array(
+        z.object({
+          title: z.string(),
+          desc: z.string().default(""),
+          src: z.string().url(),
+          location: z.string().default(""),
+          order: z.number().int().default(999),
+          featured: z.boolean().default(false),
+          width: z.number().int().positive().optional(),
+          height: z.number().int().positive().optional(),
+          position: z.string().default("center")
+        })
+      )
+      .default([]),
     draft: z.boolean().default(false)
   })
 });
@@ -84,5 +114,6 @@ export const collections = {
   tutorial,
   projects,
   sites,
-  reading
+  reading,
+  gallery
 };

@@ -1,76 +1,232 @@
 ﻿---
+import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
+import PostCard from "@/components/PostCard.astro";
 import { fetchAllEntries, makeTagItems } from "@/utils/query";
+import { getTagHue } from "@/utils/tag-color";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const entries = await fetchAllEntries();
 const tags = makeTagItems(entries);
+const totalTagRefs = tags.reduce((sum, item) => sum + item.count, 0);
+const topTags = tags.slice(0, siteConfig.taxonomy.showTopN);
+const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
+
 ---
 
 <ListLayout
-  title="标签"
-  description="浏览所有文章标签，快速定位你的兴趣点。"
+  title="标签中心"
+  description="点击标签后在当前页面筛选文章，使用多彩 Tag 样式提升可读性。"
   stats={[
-    { title: "标签数量", value: tags.length },
-    { title: "文章总数", value: entries.length, href: "/archives" }
+    { title: "标签总数", value: tags.length },
+    { title: "文章总数", value: entries.length, href: "/archives" },
+    { title: "标签引用", value: totalTagRefs }
   ]}
   tags={tags}
 >
-  <section class="tag-badge-container surface">
-    {
-      tags.map((item) => (
-        <a class="tag-badge" href={item.href}>
-          <span class="name">{item.name}</span>
-          <span class="count">{item.count}</span>
-        </a>
-      ))
-    }
+  <section class="surface tag-filter" id="tag-filter-root">
+    <header class="tag-filter-head">
+      <h2>标签筛选</h2>
+      <p id="tag-filter-status">全部标签 · {entries.length} 篇文章</p>
+    </header>
+
+    <div class="tag-filter-grid" role="listbox" aria-label="标签筛选">
+      <button type="button" class="tag-pill active" data-tag="all" style="--tag-hue: 220">
+        <span class="label">全部</span>
+        <span class="count">{entries.length}</span>
+      </button>
+      {
+        topTags.map((item) => (
+          <button type="button" class="tag-pill" data-tag={item.name} style={`--tag-hue: ${getTagHue(item.name)}`} title={item.name}>
+            <span class="label">{item.name}</span>
+            <span class="count">{item.count}</span>
+          </button>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="tag-result-section">
+    <div class="result-list" id="tag-result-list">
+      {
+        entries.map((entry) => (
+          <div data-entry-item data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}>
+            <PostCard entry={entry} kind={entry.collection === "blog" ? "blog" : "tutorial"} coverMode={tagCoverMode} />
+          </div>
+        ))
+      }
+    </div>
   </section>
 </ListLayout>
 
+<script is:inline>
+  const initTagFilter = () => {
+    const root = document.getElementById('tag-filter-root');
+    const list = document.getElementById('tag-result-list');
+    const status = document.getElementById('tag-filter-status');
+    if (!root || !list || !status) return;
+
+    if (window.__flyTagFilterCleanup) {
+      window.__flyTagFilterCleanup();
+    }
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const buttons = Array.from(root.querySelectorAll('.tag-pill'));
+    const items = Array.from(list.querySelectorAll('[data-entry-item]'));
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+
+    const applyFilter = (rawTag, syncQuery = true) => {
+      const activeTag = normalize(rawTag) === 'all' ? 'all' : normalize(rawTag);
+
+      buttons.forEach((button) => {
+        const isActive = normalize(button.getAttribute('data-tag')) === activeTag;
+        button.classList.toggle('active', isActive);
+      });
+
+      let visibleCount = 0;
+      for (const item of items) {
+        const tagsText = item.getAttribute('data-tags') || '';
+        const tagSet = tagsText ? tagsText.split('||').map(normalize) : [];
+        const visible = activeTag === 'all' || tagSet.includes(activeTag);
+        item.toggleAttribute('hidden', !visible);
+        if (visible) visibleCount += 1;
+      }
+
+      const activeButton = buttons.find((button) => normalize(button.getAttribute('data-tag')) === activeTag);
+      const label = activeTag === 'all'
+        ? '全部标签'
+        : (activeButton?.querySelector('.label')?.textContent?.trim() || rawTag);
+      status.textContent = `${label} · ${visibleCount} 篇文章`;
+
+      if (syncQuery) {
+        const url = new URL(window.location.href);
+        if (activeTag === 'all') {
+          url.searchParams.delete('tag');
+        } else {
+          url.searchParams.set('tag', label);
+        }
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        applyFilter(button.getAttribute('data-tag') || 'all');
+      }, { signal });
+    });
+
+    const queryTag = new URLSearchParams(window.location.search).get('tag');
+    if (queryTag) {
+      const target = buttons.find((button) => normalize(button.getAttribute('data-tag')) === normalize(queryTag));
+      applyFilter(target?.getAttribute('data-tag') || 'all', false);
+    } else {
+      applyFilter('all', false);
+    }
+
+    window.__flyTagFilterCleanup = () => {
+      controller.abort();
+    };
+  };
+
+  document.addEventListener('astro:page-load', initTagFilter);
+  initTagFilter();
+</script>
+
 <style>
-  .tag-badge-container {
-    padding: 2rem;
+  .tag-filter {
+    padding: 0.95rem;
     border-radius: 12px;
+    display: grid;
+    gap: 0.74rem;
+  }
+
+  .tag-filter-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .tag-filter-head h2 {
+    margin: 0;
+    font-size: 1.02rem;
+    font-family: var(--font-sans);
+  }
+
+  .tag-filter-head p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+  }
+
+  .tag-filter-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.46rem;
   }
-  .tag-badge {
+
+  .tag-pill {
+    --tag-border: hsl(var(--tag-hue) 56% 54% / 0.34);
+    --tag-bg: hsl(var(--tag-hue) 72% 97%);
+    --tag-text: hsl(var(--tag-hue) 52% 34%);
+    --tag-count-bg: hsl(var(--tag-hue) 42% 92%);
+
+    border: 1px solid var(--tag-border);
+    border-radius: 999px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 0.26rem 0.44rem 0.26rem 0.58rem;
+    max-width: min(240px, 42vw);
     display: inline-flex;
-    align-items: stretch;
-    border-radius: 6px;
+    align-items: center;
+    gap: 0.42rem;
+    cursor: pointer;
+    transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+  }
+
+  .tag-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px -10px color-mix(in oklab, var(--tag-text) 35%, transparent 65%);
+  }
+
+  .tag-pill .label {
+    min-width: 0;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    white-space: nowrap;
     overflow: hidden;
-    text-decoration: none;
-    border: 1px solid var(--line);
-    transition: all 0.2s ease;
-    background: var(--bg-elev);
+    text-overflow: ellipsis;
   }
-  .tag-badge:hover {
-    border-color: var(--brand);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px -2px color-mix(in oklab, var(--brand) 20%, transparent 80%);
+
+  .tag-pill .count {
+    flex: 0 0 auto;
+    min-width: 1.65rem;
+    height: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    background: var(--tag-count-bg);
+    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
+    color: var(--tag-text);
+    padding: 0 0.34rem;
   }
-  .tag-badge .name {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--text);
+
+  .tag-pill.active {
+    border-color: hsl(var(--tag-hue) 64% 45% / 0.62);
+    box-shadow: inset 0 0 0 1px hsl(var(--tag-hue) 68% 52% / 0.24), 0 8px 18px -12px hsl(var(--tag-hue) 65% 38% / 0.45);
   }
-  .tag-badge:hover .name {
-    color: var(--brand);
-    background: var(--brand-soft);
+
+  .tag-result-section {
+    margin-top: 0.18rem;
   }
-  .tag-badge .count {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    font-family: monospace;
-    background: var(--line);
-    color: var(--text-soft);
-    border-left: 1px solid var(--line);
-  }
-  .tag-badge:hover .count {
-    background: var(--brand);
-    color: #fff;
-    border-color: var(--brand);
+
+  .result-list {
+    display: grid;
+    gap: 0.72rem;
   }
 </style>

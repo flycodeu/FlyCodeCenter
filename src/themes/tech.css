@@ -1,0 +1,17 @@
+:root[data-theme="tech"] {
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --bg: #060d18;
+  --bg-elev: #0d1626;
+  --bg-mesh-a: color-mix(in oklab, #38bdf8 26%, transparent 74%);
+  --bg-mesh-b: color-mix(in oklab, #22d3ee 20%, transparent 80%);
+  --text: #dbe8ff;
+  --text-soft: color-mix(in oklab, #b8cbef 72%, #5f6f8f 28%);
+  --line: color-mix(in oklab, #1f3557 74%, #475569 26%);
+  --brand: #38bdf8;
+  --brand-soft: color-mix(in oklab, #08253f 82%, #38bdf8 18%);
+  --accent: #22d3ee;
+  --card-shadow: 0 10px 26px rgba(2, 8, 23, 0.35);
+  --radius: 10px;
+  --header-blur: 15px;
+}

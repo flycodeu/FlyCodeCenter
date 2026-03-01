@@ -1,0 +1,189 @@
+﻿---
+import siteConfig from "@/site.config";
+
+const themes = siteConfig.theme.themes;
+---
+
+<div id="command-root" data-themes={JSON.stringify(themes)}>
+  <dialog id="command-palette" class="command-palette">
+    <section class="command-panel surface" role="dialog" aria-modal="true" aria-label="命令中心">
+      <header class="command-head">
+        <h2>命令中心</h2>
+        <p>快速跳转页面、切换主题、打开搜索或 AI。</p>
+      </header>
+
+      <label class="command-input-wrap" for="command-input">
+        <span class="command-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m0 0a8 8 0 1 0-11.31-11.31a8 8 0 0 0 11.31 11.31Z" />
+          </svg>
+        </span>
+        <input id="command-input" type="search" placeholder="输入命令或关键词..." autocomplete="off" />
+      </label>
+
+      <ul id="command-results" class="command-results"></ul>
+
+      <div class="command-foot">
+        <span class="hint"><span class="kbd-key">↑</span><span class="kbd-key">↓</span> 选择</span>
+        <span class="hint"><span class="kbd-key">ENTER</span> 执行</span>
+        <span class="hint"><span class="kbd-key">ESC</span> 关闭</span>
+      </div>
+    </section>
+  </dialog>
+</div>
+
+<script type="module" src="/scripts/command-palette.js"></script>
+
+<style>
+  .command-palette {
+    width: min(860px, calc(100vw - 24px));
+    border: 0;
+    background: transparent;
+    padding: 0;
+  }
+  .command-palette::backdrop {
+    background: rgba(8, 10, 18, 0.62);
+    backdrop-filter: blur(8px);
+  }
+  .command-panel {
+    border-radius: 16px;
+    padding: 0.88rem;
+    border: 1px solid var(--line);
+    display: grid;
+    gap: 0.66rem;
+    background:
+      radial-gradient(680px 220px at -8% -20%, color-mix(in oklab, var(--brand-soft) 66%, transparent 34%), transparent 72%),
+      radial-gradient(460px 180px at 108% 0%, color-mix(in oklab, var(--accent) 20%, transparent 80%), transparent 74%),
+      var(--bg-elev);
+  }
+  .command-head {
+    display: grid;
+    gap: 0.18rem;
+  }
+  .command-head h2 {
+    margin: 0;
+    font-size: 1.02rem;
+  }
+  .command-head p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.79rem;
+  }
+  .command-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 0.36rem 0.52rem 0.36rem 0.66rem;
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .command-input-wrap:focus-within {
+    border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-soft) 50%, transparent 50%);
+  }
+  .command-icon {
+    color: var(--text-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .command-input-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.98rem;
+    padding: 0.42rem 0.52rem;
+  }
+  .command-results {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: min(58vh, 500px);
+    overflow: auto;
+    display: grid;
+    gap: 0.3rem;
+  }
+  .command-group {
+    font-size: 0.72rem;
+    color: var(--text-soft);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-top: 1px dashed var(--line);
+    padding: 0.38rem 0.42rem 0.12rem;
+  }
+  .command-item {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transition: border-color 140ms ease, background-color 140ms ease;
+  }
+  .command-item button,
+  .command-item a {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    display: grid;
+    gap: 0.16rem;
+    text-align: left;
+    padding: 0.6rem 0.74rem;
+    cursor: pointer;
+  }
+  .command-item h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+  .command-item p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+  .command-item.active {
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+    border-color: color-mix(in oklab, var(--brand) 46%, transparent 54%);
+  }
+  .command-empty {
+    text-align: center;
+    color: var(--text-soft);
+    padding: 1.8rem 0.7rem;
+    font-size: 0.86rem;
+  }
+  .command-foot {
+    border-top: 1px solid var(--line);
+    padding-top: 0.64rem;
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.72rem;
+  }
+  .hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+  }
+  .kbd-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--bg) 88%, transparent 12%);
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 0.68rem;
+    padding: 0 0.28rem;
+  }
+  @media (max-width: 760px) {
+    .command-panel {
+      padding: 0.74rem;
+    }
+  }
+</style>

@@ -4,6 +4,7 @@ import siteConfig from "@/site.config";
 import PostCard from "@/components/PostCard.astro";
 import { fetchBlogEntries, fetchTutorialEntries } from "@/utils/query";
 import { getTutorialEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const [blogs, tutorials] = await Promise.all([fetchBlogEntries(), fetchTutorialEntries()]);
 const latestBlogs = blogs.slice(0, 6);
@@ -60,7 +61,7 @@ const hero = siteConfig.home.hero;
             latestTutorials.map((entry) => (
               <li>
                 <a href={getTutorialEntryUrl(entry)}>{entry.data.title}</a>
-                <small>{entry.data.series}</small>
+                <small>{resolveArticleMeta(entry).series}</small>
               </li>
             ))
           }

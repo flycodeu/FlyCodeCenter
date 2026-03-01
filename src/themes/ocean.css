@@ -1,5 +1,5 @@
-:root[data-theme="ocean"] {
-  --font-sans: "Inter", "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+﻿:root[data-theme="ocean"] {
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
   --font-serif: "Noto Serif SC", "Songti SC", serif;
   --bg: #f0f7ff;
   --bg-elev: #ffffff;

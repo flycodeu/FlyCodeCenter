@@ -4,12 +4,13 @@ import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
 import Pagination from "@/components/Pagination.astro";
 import { fetchAllEntries, makeTagItems } from "@/utils/query";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 export async function getStaticPaths() {
   const entries = await fetchAllEntries();
   const tags = new Set<string>();
   for (const entry of entries) {
-    for (const tag of entry.data.tags) tags.add(tag);
+    for (const tag of resolveArticleMeta(entry).tags) tags.add(tag);
   }
   return [...tags].map((tag) => ({
     params: { tag: encodeURIComponent(tag) },
@@ -19,7 +20,7 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.props;
 const allEntries = await fetchAllEntries();
-const matched = allEntries.filter((entry) => entry.data.tags.includes(tag));
+const matched = allEntries.filter((entry) => resolveArticleMeta(entry).tags.includes(tag));
 const tags = makeTagItems(allEntries);
 const mode = siteConfig.blog.pagination.mode;
 const pageSize = siteConfig.blog.pagination.pageSize;

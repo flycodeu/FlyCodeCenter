@@ -3,6 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchAllEntries } from "@/utils/query";
 import { buildYearBuckets, getBlogEntryUrl, getTutorialEntryUrl, sortByDateDesc } from "@/utils/content";
 import { formatDate } from "@/utils/date";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const entries = await fetchAllEntries();
 const map = buildYearBuckets(entries);
@@ -21,7 +22,7 @@ const years = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
               const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
               return (
                 <li>
-                  <time>{formatDate(entry.data.pubDate)}</time>
+                  <time>{formatDate(resolveArticleMeta(entry).createTime)}</time>
                   <a href={url}>{entry.data.title}</a>
                 </li>
               );

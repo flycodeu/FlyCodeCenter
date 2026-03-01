@@ -1,86 +1,28 @@
 ﻿---
-import siteConfig from "@/site.config";
-import ListLayout from "@/layouts/ListLayout.astro";
-import { fetchAllEntries, makeTagItems } from "@/utils/query";
-
-const entries = await fetchAllEntries();
-const tags = makeTagItems(entries);
-const topTags = tags.slice(0, siteConfig.taxonomy.showTopN);
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<ListLayout
-  title={siteConfig.pages.types.title}
-  description="按标签统计所有文章，点击标签查看对应内容。"
-  stats={[
-    { title: "文章总数", value: entries.length },
-    { title: "标签数量", value: tags.length },
-    { title: "完整标签页", value: "打开", href: "/tags" }
-  ]}
-  tags={tags}
->
-  <section class="surface section-card">
-    <header class="section-head">
-      <h2>标签统计</h2>
-      <a href="/tags">查看全部标签</a>
-    </header>
-    <div class="overview-grid">
-      {
-        topTags.map((item) => (
-          <a class="type-card" href={`/types/${encodeURIComponent(item.name)}`}>
-            <strong>{item.name}</strong>
-            <span>{item.count} 篇文章</span>
-          </a>
-        ))
-      }
-    </div>
+<BaseLayout title="标签中心" description="标签中心已迁移到 /tags。">
+  <section class="surface redirect-card">
+    <h1>标签中心已迁移</h1>
+    <p>新的入口为 <a href="/tags">/tags</a>，该页面将自动跳转。</p>
   </section>
-</ListLayout>
+
+  <meta http-equiv="refresh" content="0; url=/tags" />
+</BaseLayout>
 
 <style>
-  .section-card {
-    padding: 0.82rem;
-    display: grid;
-    gap: 0.64rem;
+  .redirect-card {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: 12px;
   }
-  .section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
+  .redirect-card h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
   }
-  .section-head h2 {
+  .redirect-card p {
     margin: 0;
-    font-family: var(--font-serif);
-    font-size: 1.08rem;
-  }
-  .section-head a {
-    color: var(--brand);
-    font-size: 0.86rem;
-  }
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 0.56rem;
-  }
-  .type-card {
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 0.64rem;
-    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
-    display: grid;
-    gap: 0.25rem;
-    transition: transform 160ms ease, border-color 160ms ease;
-  }
-  .type-card:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--brand) 44%, var(--line) 56%);
-  }
-  .type-card strong {
-    font-family: var(--font-serif);
-    font-size: 0.96rem;
-  }
-  .type-card span {
     color: var(--text-soft);
-    font-size: 0.82rem;
   }
 </style>

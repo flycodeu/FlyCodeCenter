@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "lint:frontmatter": "node ./scripts/lint-frontmatter-tags.mjs",
+    "build": "npm run lint:frontmatter && astro build",
     "preview": "astro preview",
     "postbuild": "tsx ./scripts/build-minisearch.mjs && node ./scripts/pagefind-index.mjs",
     "build:minisearch": "tsx ./scripts/build-minisearch.mjs",

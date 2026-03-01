@@ -1,19 +1,14 @@
 ---
 title: "Astro 模块化博客内核"
-description: "统一配置驱动、可插拔 provider、静态优先的博客底座。"
+createTime: "2026/02/12 00:00:00"
+code: "astro-mod-blog"
+permalink: "/article/astro-mod-blog/"
 summary: "适合沉淀工程化内容站能力的可复用项目基线。"
-pubDate: 2026-02-12
-updatedDate: 2026-02-26
-tags: ["astro", "architecture", "dx"]
+tags:
+  - "astro"
+  - "architecture"
+  - "dx"
 cover: "/covers/astro-core.svg"
-draft: false
-encrypted: false
-projectType: "blog-platform"
-repoUrl: "https://github.com/flycodecenter/astro-modular-blog"
-docUrl: "https://flycodecenter.vercel.app/projects/astro-modular-blog"
-demoUrl: "https://flycodecenter.vercel.app"
-featured: true
-weight: 100
 ---
 
 ## 项目定位

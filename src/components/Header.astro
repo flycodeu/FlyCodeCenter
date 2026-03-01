@@ -12,6 +12,10 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
     </a>
     <Nav />
     <div class="actions">
+      <button type="button" data-action="open-command" class="icon-btn command-btn" aria-label="打开命令中心">
+        <span class="command-k">⌘K</span>
+        <span class="command-text">命令</span>
+      </button>
       {
         siteConfig.search.provider !== "off" && (
           <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索">
@@ -42,7 +46,7 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
     top: 0;
     z-index: 40;
     backdrop-filter: blur(var(--header-blur));
-    background: rgba(var(--bg-elev), 0.7);
+    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
     border-bottom: 1px solid var(--line);
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
@@ -99,6 +103,19 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
   .icon-btn svg {
     display: block;
   }
+  .command-btn {
+    min-width: 56px;
+    gap: 0.28rem;
+  }
+  .command-k {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 0.76rem;
+    opacity: 0.84;
+  }
+  .command-text {
+    display: inline;
+    font-size: 0.79rem;
+  }
   .search-text {
     display: none;
   }
@@ -128,7 +145,11 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
     .search-hotkey {
       display: none;
     }
-    .search-text {
+    .search-text,
+    .command-k {
+      display: none;
+    }
+    .command-text {
       display: inline;
       font-size: 0.875rem;
       font-weight: 500;

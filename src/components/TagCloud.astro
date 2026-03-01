@@ -1,4 +1,6 @@
-﻿---
+---
+import { getTagColorVars } from "@/utils/tag-color";
+
 interface Item {
   name: string;
   count: number;
@@ -18,7 +20,7 @@ const { title, items } = Astro.props;
   <div class="tags">
     {
       items.map((item) => (
-        <a class="chip" href={item.href}>
+        <a class="chip tag-badge cloud-chip" href={item.href} style={getTagColorVars(item.name)}>
           {item.name}
           <span>{item.count}</span>
         </a>
@@ -45,10 +47,22 @@ const { title, items } = Astro.props;
     transition: color 180ms ease, border-color 180ms ease;
   }
   .tags .chip:hover {
-    color: var(--brand);
-    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+    color: color-mix(in oklab, var(--text) 74%, var(--brand) 26%);
+    border-color: color-mix(in oklab, var(--line) 72%, var(--brand) 28%);
+  }
+  .cloud-chip {
+    border-radius: 8px;
+    font-size: 0.79rem;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .tags .chip span {
-    opacity: 0.75;
+    opacity: 0.84;
+    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
+    background: var(--tag-count-bg);
+    border-radius: 999px;
+    padding: 0 0.3rem;
   }
 </style>

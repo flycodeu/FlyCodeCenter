@@ -1,86 +1,71 @@
 ---
-title: "Markdown 组件与进阶语法测试"
-description: "测试在 Astro MDX 中使用自定义组件构建卡片布局、插入动态图、流程图等效果"
-tags: 
-  - mdx
-  - components
-  - test
+title: "MDX 组件能力演示"
+createTime: "2026/03/01 09:00:00"
+code: "r4c8n1xy"
+permalink: "/article/r4c8n1xy/"
+summary: "MDX component showcase for cards, mermaid, math, and code rendering."
+tags:
+  - "mdx"
+  - "card"
 ---
 
-import CardGrid from '@/components/mdx/CardGrid.astro';
-import LinkCard from '@/components/mdx/LinkCard.astro';
+import CardGrid from "@/components/mdx/CardGrid.astro";
+import LinkCard from "@/components/mdx/LinkCard.astro";
+import MediaCard from "@/components/mdx/MediaCard.astro";
 
-这是一篇测试 MDX 功能与进阶语法的文章，你可以在其中混合使用标准 Markdown 语法和我们刚刚封装的 React/Astro UI 组件。由于我们修改了前置配置（Frontmatter），现在不需要再手动填写 `pubDate`、`draft`、`encrypted` 等无聊的默认属性了！
+这篇文章用于演示：卡片组件、Mermaid、公式复制和代码复制。
 
-## 1. 自由分组卡片测试 (AI Hub 示例)
-
-你可以通过自定义组件 `<CardGrid>` 来控制网格显示的列数，在里面嵌套普通的列表即可实现卡片组效果。
+## 卡片网格
 
 <CardGrid columns={2}>
 
-- [OpenAI (ChatGPT)](https://openai.com)
-  全球领先的 AI 研发机构，ChatGPT 创造者。
-  
-- [Anthropic (Claude)](https://anthropic.com)
-  以安全性为核心的下一代长文本 AI 模型。
-  
-- [Midjourney](https://midjourney.com)
-  当前最强大的 AI 绘图与创意生成工具。
-  
-- [Google DeepMind](https://deepmind.google)
-  Gemini 模型的诞生地，致力于解决最艰难的智能问题。
+- [OpenAI](https://openai.com)
+  通用模型能力与产品生态。
+- [Anthropic](https://anthropic.com)
+  长文本与安全性表现突出。
+- [Google AI](https://ai.google)
+  多模态模型与工具链。
+- [Perplexity](https://www.perplexity.ai)
+  联网研究与问答体验。
 
 </CardGrid>
 
-如果需要更个性化的带 Icon 的单独卡片，可以使用 `<LinkCard>`：
-
-<LinkCard 
-  title="VitePress 官方文档" 
-  desc="Vue 驱动的极简静态网站生成器，本项目设计的灵感来源之一。"
+<LinkCard
+  title="VitePress 文档"
+  desc="静态文档站的优秀体验参考。"
   url="https://vitepress.dev"
-  icon="⚡"
+  icon="📘"
 />
 
----
+<MediaCard
+  title="可自定义图片位置与尺寸"
+  desc="支持 left/right/top/background 布局，支持自定义图片宽高与卡片宽高。"
+  url="https://astro.build"
+  image="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80"
+  imagePosition="right"
+  imageWidth={240}
+  imageHeight={140}
+/>
 
-## 2. 动图与视频测试
-
-直接插入动图与常规图片完全一样，Astro 会自动优化并支持懒加载。
-
-*(这里放置一张测试 GIF)*
-![测试GIF](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjQzYjYyODQxMzQxZGI4MWQ1ZTBiMmE3ZTc4MDFjMjMzMTAyYWMwYyZlcD12MV9pbnRlcm5hbF9naWZzX3NlYXJjaCZjdD1n/LmNwrBhejkK9EFP504/giphy.gif)
-
-## 3. 流程图渲染测试 (Mermaid)
-
-我们的博客内置了 Mermaid 渲染器，只需编写代码块，前端便会生成矢量图：
+## Mermaid
 
 ```mermaid
-graph TD
-    A[用户请求] --> B{路由判断}
-    B -- 静态页面 --> C[返回 HTML]
-    B -- 动态接口 --> D[请求数据库]
-    D --> E[组装 JSON]
-    E --> C
+flowchart LR
+  A[开始] --> B{选择模型}
+  B -->|Chat| C[会话类]
+  B -->|Code| D[编程类]
+  C --> E[完成]
+  D --> E
 ```
 
-## 4. 数学公式 (KaTeX)
-
-无论是行内公式还是块级公式，都能完美呈现。著名的质能方程：$E = mc^2$。
-
-复杂的积分公式：
+## 数学
 
 $$
-\int_{-\infty}^\infty e^{-x^2} dx = \sqrt{\pi}
+\int_0^1 x^2 dx = \frac{1}{3}
 $$
 
-## 5. 代码块高亮
+## 代码
 
-支持极其丰富的语言高亮：
-
-```rust
-fn main() {
-    let mut numbers = vec![3, 1, 4, 1, 5, 9, 2, 6];
-    numbers.sort();
-    println!("Sorted: {:?}", numbers);
-}
+```ts
+export const hello = (name: string) => `hello ${name}`;
 ```

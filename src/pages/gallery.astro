@@ -1,211 +1,282 @@
----
+﻿---
+import { getCollection } from "astro:content";
 import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
-import { fetchReadingEntries } from "@/utils/query";
 
-const entries = await fetchReadingEntries();
+const entries = await getCollection("gallery", (entry) => !entry.data.draft);
+
+const photos = entries
+  .flatMap((entry) => entry.data.photos)
+  .sort((a, b) => {
+    if (Number(b.featured) !== Number(a.featured)) return Number(b.featured) - Number(a.featured);
+    return (a.order ?? 999) - (b.order ?? 999);
+  });
+
+const pageSize = siteConfig.gallery.pageSize;
+const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
 ---
 
-<ListLayout title="照片墙" description="记录生活中的精彩瞬间。" tags={[]}>
-  <div class="masonry-gallery" oncontextmenu="return false;">
-    {entries.map(async (entry) => {
-      if (!entry.data.cover) return null;
-      return (
-        <figure class="gallery-item surface fade-up">
-          <div class="image-wrapper">
-            <img src={entry.data.cover} alt={entry.data.title} loading="lazy" class="protected-img" />
-            <div class="glass-overlay"></div>
-          </div>
-          <figcaption>
-            <div class="fig-content">
-              <h4>{entry.data.title}</h4>
-              <p>{entry.data.description || "记录美好瞬间"}</p>
-            </div>
-            <a href={entry.data.cover} download class="download-btn" title="保存图片" rel="noreferrer">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+<ListLayout title="摄影" description="紧凑展示与丝滑交互，按需加载更多图片。" tags={[]} hideSidebar>
+  <section class="photo-grid" id="photo-grid" oncontextmenu="return false;" data-batch={lazyBatchSize}>
+    {
+      photos.map((photo, index) => {
+        const visible = index < pageSize;
+        return (
+          <figure class="photo-item surface fade-up" data-photo-item hidden={!visible ? true : undefined} style={`--object-position:${photo.position || "center"};`}>
+            <a href={photo.src} target="_blank" rel="noreferrer" class="image-link" draggable="false">
+              <img
+                src={visible ? photo.src : undefined}
+                data-src={!visible ? photo.src : undefined}
+                alt={photo.title}
+                loading="lazy"
+                decoding="async"
+                referrerpolicy="no-referrer"
+                class="protected-img"
+                draggable="false"
+              />
             </a>
-          </figcaption>
-        </figure>
-      );
-    })}
-    
-    <figure class="gallery-item surface fade-up">
-      <div class="image-wrapper">
-        <img src="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=800&q=80" alt="Nature" loading="lazy" class="protected-img" />
-        <div class="glass-overlay"></div>
-      </div>
-      <figcaption>
-        <div class="fig-content">
-          <h4>山川湖海</h4>
-          <p>冰岛的极致自然风光，令人心生敬畏。</p>
-        </div>
-        <a href="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?auto=format&fit=crop&w=2400&q=100" download class="download-btn" title="保存图片" rel="noreferrer">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </a>
-      </figcaption>
-    </figure>
-    
-    <figure class="gallery-item surface fade-up">
-      <div class="image-wrapper">
-        <img src="https://images.unsplash.com/photo-1707343843437-caacff5cfa74?auto=format&fit=crop&w=600&q=80" alt="Architecture" loading="lazy" class="protected-img" />
-        <div class="glass-overlay"></div>
-      </div>
-      <figcaption>
-        <div class="fig-content">
-          <h4>现代建筑</h4>
-          <p>城市里的几何美学。</p>
-        </div>
-        <a href="#" download class="download-btn" title="保存图片">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </a>
-      </figcaption>
-    </figure>
+            <figcaption>
+              <h3>{photo.title}</h3>
+              <p>{photo.desc}</p>
+              {photo.location && <span>{photo.location}</span>}
+            </figcaption>
+          </figure>
+        );
+      })
+    }
+  </section>
+
+  <div class="load-wrap">
+    <button id="load-more-photos" type="button" class="load-btn">加载更多</button>
   </div>
 </ListLayout>
 
 <script is:inline>
-  document.addEventListener('dragstart', (e) => {
-    if (e.target.classList.contains('protected-img')) {
-      e.preventDefault();
+  const initGallery = () => {
+    const grid = document.getElementById('photo-grid');
+    const loadBtn = document.getElementById('load-more-photos');
+    if (!grid || !loadBtn) return;
+
+    if (window.__flyGalleryCleanup) {
+      window.__flyGalleryCleanup();
     }
-  });
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    const batchSize = Number(grid.getAttribute('data-batch') || '8');
+
+    const bindMotionEffects = (items) => {
+      items.forEach((item) => {
+        if (!(item instanceof HTMLElement)) return;
+        if (item.dataset.motionBound === '1') return;
+        item.dataset.motionBound = '1';
+
+        let frame = 0;
+        let targetX = 0;
+        let targetY = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let active = false;
+
+        const render = () => {
+          currentX += (targetX - currentX) * 0.14;
+          currentY += (targetY - currentY) * 0.14;
+          item.style.setProperty('--tilt-x', `${currentY.toFixed(2)}deg`);
+          item.style.setProperty('--tilt-y', `${currentX.toFixed(2)}deg`);
+          item.style.setProperty('--zoom', active ? '1.06' : '1');
+          if (Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05 || active) {
+            frame = window.requestAnimationFrame(render);
+          } else {
+            frame = 0;
+          }
+        };
+
+        const start = () => {
+          if (frame) return;
+          frame = window.requestAnimationFrame(render);
+        };
+
+        item.addEventListener('pointerenter', () => {
+          active = true;
+          start();
+        }, { signal });
+
+        item.addEventListener('pointermove', (event) => {
+          const rect = item.getBoundingClientRect();
+          const px = (event.clientX - rect.left) / rect.width - 0.5;
+          const py = (event.clientY - rect.top) / rect.height - 0.5;
+          targetX = px * 8;
+          targetY = -py * 8;
+          start();
+        }, { signal });
+
+        item.addEventListener('pointerleave', () => {
+          active = false;
+          targetX = 0;
+          targetY = 0;
+          start();
+        }, { signal });
+      });
+    };
+
+    const revealNextBatch = () => {
+      const hiddenItems = Array.from(grid.querySelectorAll('[data-photo-item][hidden]')).slice(0, batchSize);
+      hiddenItems.forEach((item) => {
+        item.removeAttribute('hidden');
+        const img = item.querySelector('img[data-src]');
+        if (img && img instanceof HTMLImageElement) {
+          const src = img.getAttribute('data-src');
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+        }
+      });
+      bindMotionEffects(hiddenItems);
+
+      if (grid.querySelectorAll('[data-photo-item][hidden]').length === 0) {
+        loadBtn.setAttribute('hidden', 'true');
+      }
+    };
+
+    loadBtn.addEventListener('click', revealNextBatch, { signal });
+
+    document.addEventListener('dragstart', (e) => {
+      const target = e.target;
+      if (target instanceof HTMLElement && target.classList.contains('protected-img')) {
+        e.preventDefault();
+      }
+    }, { signal });
+
+    document.addEventListener('copy', (e) => {
+      const target = document.activeElement;
+      if (target && target.closest && target.closest('.photo-grid')) {
+        e.preventDefault();
+      }
+    }, { signal });
+
+    bindMotionEffects(Array.from(grid.querySelectorAll('[data-photo-item]:not([hidden])')));
+
+    if (grid.querySelectorAll('[data-photo-item][hidden]').length === 0) {
+      loadBtn.setAttribute('hidden', 'true');
+    }
+
+    window.__flyGalleryCleanup = () => {
+      controller.abort();
+    };
+  };
+
+  document.addEventListener('astro:page-load', initGallery);
+  initGallery();
 </script>
 
 <style>
-  .masonry-gallery {
-    column-count: 3;
-    column-gap: 1.5rem;
-    padding-bottom: 2rem;
-  }
-  @media (max-width: 1024px) {
-    .masonry-gallery {
-      column-count: 2;
-    }
-  }
-  @media (max-width: 640px) {
-    .masonry-gallery {
-      column-count: 1;
-    }
-  }
-  
-  .gallery-item {
-    break-inside: avoid;
-    margin: 0 0 1.5rem;
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    background: var(--bg-elev);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--line);
-    transform: translateZ(0);
-    will-change: transform;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  .photo-grid {
+    columns: 4 220px;
+    column-gap: 0.62rem;
   }
 
-  .gallery-item:hover {
-    transform: translateY(-6px) scale(1.01);
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
-    z-index: 2;
-  }
-  
-  .image-wrapper {
-    position: relative;
-    width: 100%;
+  .photo-item {
+    break-inside: avoid;
+    margin: 0 0 0.62rem;
+    border-radius: 14px;
     overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--zoom, 1));
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 180ms ease, border-color 220ms ease, box-shadow 220ms ease;
   }
-  
-  .gallery-item img {
+
+  .photo-item:hover {
+    border-color: color-mix(in oklab, var(--brand) 48%, var(--line) 52%);
+    box-shadow: 0 18px 32px color-mix(in oklab, var(--brand) 14%, transparent 86%);
+  }
+
+  .image-link {
+    display: block;
+    min-height: 180px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--bg) 88%, var(--line) 12%);
+  }
+
+  .image-link img {
     width: 100%;
     display: block;
     object-fit: cover;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+    object-position: var(--object-position, center);
+    transition: transform 320ms ease;
     user-select: none;
     -webkit-user-drag: none;
   }
 
-  .glass-overlay {
-    position: absolute;
-    inset: 0;
-    background: transparent;
-    z-index: 1;
+  .photo-item:hover img {
+    transform: scale(1.05);
   }
-  
-  .gallery-item:hover img {
-    transform: scale(1.08);
-    filter: brightness(0.9);
+
+  figcaption {
+    padding: 0.52rem 0.62rem 0.62rem;
+    display: grid;
+    gap: 0.16rem;
   }
-  
-  .gallery-item figcaption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 2rem 1.25rem 1.25rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
-    color: #fff;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    z-index: 2;
-    pointer-events: none;
-  }
-  
-  .gallery-item:hover figcaption {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  
-  .fig-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    flex: 1;
-    padding-right: 1rem;
-  }
-  
-  .gallery-item h4 {
+
+  figcaption h3 {
     margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    font-size: 0.88rem;
+    line-height: 1.38;
   }
-  
-  .gallery-item p {
+
+  figcaption p {
     margin: 0;
-    font-size: 0.875rem;
-    color: rgba(255,255,255,0.85);
+    font-size: 0.76rem;
+    color: var(--text-soft);
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.4;
   }
-  
-  .download-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #fff;
+
+  figcaption span {
+    width: fit-content;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.05rem 0.38rem;
+    font-size: 0.69rem;
+    color: var(--text-soft);
+  }
+
+  .load-wrap {
+    margin-top: 0.85rem;
     display: flex;
-    align-items: center;
     justify-content: center;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    text-decoration: none;
-    flex-shrink: 0;
-    border: 1px solid rgba(255,255,255,0.1);
   }
-  
-  .download-btn:hover {
-    background: #fff;
-    color: #000;
-    transform: scale(1.1);
+
+  .load-btn {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.4rem 0.95rem;
+    background: var(--bg-elev);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.86rem;
+  }
+
+  .load-btn:hover {
+    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+    color: var(--brand);
+  }
+
+  @media (max-width: 900px) {
+    .photo-grid {
+      columns: 2 170px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .photo-grid {
+      columns: 1;
+    }
   }
 </style>

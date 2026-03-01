@@ -1,15 +1,25 @@
 ﻿---
 import ListLayout from "@/layouts/ListLayout.astro";
-import PostCard from "@/components/PostCard.astro";
 import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
 import { getTutorialEntryUrl } from "@/utils/content";
+import { formatDate } from "@/utils/date";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import { getTagColorVars } from "@/utils/tag-color";
 
 const [tutorials, allEntries] = await Promise.all([fetchTutorialEntries(), fetchAllEntries()]);
 const tags = makeTagItems(allEntries);
+const metaCache = new Map<string, ReturnType<typeof resolveArticleMeta>>();
+const getMeta = (entry: (typeof tutorials)[number]) => {
+  const cache = metaCache.get(entry.id);
+  if (cache) return cache;
+  const meta = resolveArticleMeta(entry);
+  metaCache.set(entry.id, meta);
+  return meta;
+};
 
 const seriesMap = new Map<string, typeof tutorials>();
 for (const item of tutorials) {
-  const series = item.data.series || "其他教程";
+  const series = getMeta(item).series || "其他教程";
   if (!seriesMap.has(series)) seriesMap.set(series, []);
   seriesMap.get(series)!.push(item);
 }
@@ -23,7 +33,7 @@ const seriesGroups = [...seriesMap.entries()].sort((a, b) => b[1].length - a[1].
   stats={[
     { title: "教程总数", value: tutorials.length },
     { title: "系列数量", value: seriesGroups.length },
-    { title: "标签分布", value: tags.length, href: "/types" }
+    { title: "标签分布", value: tags.length, href: "/tags" }
   ]}
   tags={tags}
 >
@@ -32,20 +42,38 @@ const seriesGroups = [...seriesMap.entries()].sort((a, b) => b[1].length - a[1].
       <section class="tutorial-series surface">
         <div class="series-header">
           <h2>
-            <span class="icon">📚</span> {name}
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </span>
+            {name}
             <span class="count">{items.length} 篇</span>
           </h2>
         </div>
         <div class="series-list">
-          {items.map((entry, idx) => (
+          {items.map((entry, idx) => {
+            const meta = getMeta(entry);
+            return (
             <a href={getTutorialEntryUrl(entry)} class="tutorial-item">
               <span class="idx">{String(idx + 1).padStart(2, "0")}</span>
               <div class="info">
                 <h3>{entry.data.title}</h3>
-                {entry.data.description && <p>{entry.data.description}</p>}
+                {meta.description && <p>{meta.description}</p>}
+                <div class="meta-row">
+                  <span class="meta-date">
+                    <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
+                    </svg>
+                    {formatDate(meta.createTime)}
+                  </span>
+                  <div class="meta-tags">
+                    {meta.tags.slice(0, 3).map((tag) => <span class="tag-badge tutorial-tag" style={getTagColorVars(tag)}>{tag}</span>)}
+                  </div>
+                </div>
               </div>
             </a>
-          ))}
+          )})}
         </div>
       </section>
     ))}
@@ -56,24 +84,29 @@ const seriesGroups = [...seriesMap.entries()].sort((a, b) => b[1].length - a[1].
   .tutorial-container {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 0.8rem;
   }
   .tutorial-series {
-    padding: 1.5rem;
+    padding: 0.8rem;
     border-radius: 12px;
   }
   .series-header {
     border-bottom: 1px solid var(--line);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
   }
   .series-header h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.28rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-family: var(--font-sans);
+  }
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand);
   }
   .series-header .count {
     font-size: 0.875rem;
@@ -90,17 +123,19 @@ const seriesGroups = [...seriesMap.entries()].sort((a, b) => b[1].length - a[1].
   }
   .tutorial-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
     padding: 0.75rem;
-    border-radius: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
     text-decoration: none;
     color: var(--text);
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   }
   .tutorial-item:hover {
-    background: var(--bg-elev);
-    transform: translateX(4px);
+    border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
+    background: color-mix(in oklab, var(--bg-elev) 72%, var(--brand-soft) 28%);
+    transform: translateX(3px);
   }
   .idx {
     font-family: "JetBrains Mono", monospace;
@@ -127,4 +162,31 @@ const seriesGroups = [...seriesMap.entries()].sort((a, b) => b[1].length - a[1].
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-top: 0.36rem;
+    flex-wrap: wrap;
+  }
+  .meta-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.24rem;
+    color: var(--text-soft);
+    font-size: 0.74rem;
+  }
+  .meta-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.28rem;
+  }
+  .tutorial-tag {
+    border-radius: 7px;
+    font-size: 0.66rem;
+    padding: 0.04rem 0.34rem;
+    line-height: 1.35;
+  }
 </style>
+

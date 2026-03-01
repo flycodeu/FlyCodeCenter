@@ -3,6 +3,8 @@ import type { CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
 import { formatDate } from "@/utils/date";
 import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import { getTagColorVars } from "@/utils/tag-color";
 
 type PostKind = "blog" | "tutorial";
 
@@ -22,12 +24,13 @@ const height = coverHeight ?? siteConfig.blog.listCard.coverHeight;
 const styleVariant = cardStyle ?? siteConfig.blog.listCard.cardStyle;
 
 const link = kind === "blog" ? getBlogEntryUrl(entry as CollectionEntry<"blog">) : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
-const cover = entry.data.cover || "";
+const meta = resolveArticleMeta(entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial">);
+const cover = meta.cover || "";
 const hasCover = mode !== "none" && Boolean(cover);
 const width = siteConfig.blog.listCard.coverWidth;
 const ratio = siteConfig.blog.listCard.coverRatio;
-const pinned = kind === "blog" && Boolean((entry as CollectionEntry<"blog">).data.pinned);
-const summary = (entry.data.summary || entry.data.description || "").trim();
+const pinned = kind === "blog" && meta.pinned;
+const summary = (meta.summary || meta.description || "").trim();
 const compactMetaClass = summary ? "meta" : "meta no-summary";
 ---
 
@@ -39,9 +42,14 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
     </div>
     {summary && <p class="summary">{summary}</p>}
     <div class="card-foot">
-      <span class="date">{formatDate(entry.data.pubDate)}</span>
+      <span class="date">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
+        </svg>
+        {formatDate(meta.createTime)}
+      </span>
       <div class="tags">
-        {entry.data.tags.slice(0, 4).map((item) => <span class="chip tag-chip">{item}</span>)}
+        {meta.tags.slice(0, 4).map((item) => <span class="tag-chip tag-badge" style={getTagColorVars(item)}>{item}</span>)}
       </div>
     </div>
   </div>
@@ -80,8 +88,8 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
   }
   .post-card:hover {
     transform: translateY(-2px);
-    border-color: var(--brand);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    border-color: color-mix(in oklab, var(--line) 76%, var(--brand) 24%);
+    box-shadow: 0 10px 18px -14px rgba(15, 23, 42, 0.24);
   }
   .post-card.style-square {
     border-radius: 8px;
@@ -111,12 +119,12 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
   .pin {
     display: inline-flex;
     align-items: center;
-    border: 1px solid var(--brand-soft);
-    color: var(--brand);
+    border: 1px solid color-mix(in oklab, var(--line) 68%, var(--brand) 32%);
+    color: color-mix(in oklab, var(--text) 65%, var(--brand) 35%);
     font-size: 0.75rem;
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
-    background: var(--brand-soft);
+    background: color-mix(in oklab, var(--brand-soft) 52%, var(--bg-elev) 48%);
     font-weight: 500;
   }
   .title {
@@ -128,7 +136,7 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
     letter-spacing: -0.01em;
   }
   .title:hover {
-    color: var(--brand);
+    color: color-mix(in oklab, var(--text) 68%, var(--brand) 32%);
   }
   .summary {
     margin: 0;
@@ -155,6 +163,9 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
     align-self: end;
   }
   .date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     white-space: nowrap;
   }
   .tags {
@@ -166,9 +177,11 @@ const compactMetaClass = summary ? "meta" : "meta no-summary";
   }
   .tag-chip {
     font-size: 0.75rem;
-    padding: 0.125rem 0.5rem;
-    color: var(--text-soft);
-    border-radius: 4px;
+    padding: 0.14rem 0.46rem;
+    max-width: min(132px, 42vw);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .cover-wrap {
     width: var(--cover-width);

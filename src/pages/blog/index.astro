@@ -5,13 +5,14 @@ import PostCard from "@/components/PostCard.astro";
 import Pagination from "@/components/Pagination.astro";
 import { fetchAllEntries, fetchBlogEntries, makeTagItems } from "@/utils/query";
 import { paginatePageMode } from "@/utils/pagination";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const [entries, allEntries] = await Promise.all([fetchBlogEntries(), fetchAllEntries()]);
 const pageSize = siteConfig.blog.pagination.pageSize;
 const pageData = paginatePageMode(entries, 1, pageSize);
 const tags = makeTagItems(allEntries);
 const mode = siteConfig.blog.pagination.mode;
-const pinnedCount = entries.filter((entry) => entry.data.pinned).length;
+const pinnedCount = entries.filter((entry) => resolveArticleMeta(entry).pinned).length;
 ---
 
 <ListLayout

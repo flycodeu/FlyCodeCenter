@@ -9,6 +9,7 @@ interface Props {
 const { deferUntilEvent } = Astro.props;
 const provider = siteConfig.comment.provider;
 const giscus = siteConfig.comment.giscus;
+const walineServer = siteConfig.comment.waline.serverUrl;
 const giscusReady =
   Boolean(giscus.repo && giscus.repo !== "owner/repo") &&
   Boolean(giscus.repoId) &&
@@ -21,7 +22,14 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
     <section class="surface comment-section">
       <h3>评论</h3>
       {activeProvider === "giscus" && <Giscus deferUntilEvent={deferUntilEvent} />}
-      {activeProvider === "waline" && <div id="waline-root" data-defer={deferUntilEvent ?? ""}></div>}
+      {
+        activeProvider === "waline" && (
+          <>
+            <div id="waline-root" data-defer={deferUntilEvent ?? ""}></div>
+            {!walineServer && <p class="comment-hint">Waline 尚未配置 `PUBLIC_WALINE_SERVER`，请先配置服务地址。</p>}
+          </>
+        )
+      }
       {activeProvider === "twikoo" && <div id="twikoo-root" data-defer={deferUntilEvent ?? ""}></div>}
     </section>
   )
@@ -29,7 +37,7 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
 
 {
   activeProvider === "waline" && (
-    <script type="module" define:vars={{ deferUntilEvent, serverUrl: siteConfig.comment.waline.serverUrl }}>
+    <script type="module" define:vars={{ deferUntilEvent, serverUrl: walineServer }}>
       const mount = async () => {
         const root = document.getElementById("waline-root");
         if (!root || !serverUrl) return;
@@ -77,5 +85,10 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
   }
   .comment-section h3 {
     margin: 0 0 0.8rem;
+  }
+  .comment-hint {
+    margin: 0.65rem 0 0;
+    color: var(--text-soft);
+    font-size: 0.82rem;
   }
 </style>

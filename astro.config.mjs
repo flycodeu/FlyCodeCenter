@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import mdx from "@astrojs/mdx";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { transformerRenderWhitespace } from "@shikijs/transformers";
@@ -10,7 +11,7 @@ import siteConfig from "./src/site.config.ts";
 import { remarkMarkdownInclude } from "./src/utils/markdown/remark-include.ts";
 import { rehypeImageEnhance } from "./src/utils/markdown/rehype-image-enhance.ts";
 
-const integrations = [vercel(), mdx()];
+const integrations = [mdx()];
 if (siteConfig.seo.sitemap.enable) {
   integrations.push(sitemap());
 }
@@ -24,6 +25,9 @@ if (siteConfig.codeHighlight.twoslash) {
 }
 
 const remarkPlugins = [];
+if (siteConfig.markdown.gfm.enable) {
+  remarkPlugins.push(remarkGfm);
+}
 if (siteConfig.markdown.math.enable) {
   remarkPlugins.push(remarkMath);
 }
@@ -59,6 +63,7 @@ if (
 }
 
 export default defineConfig({
+  adapter: vercel(),
   output: "static",
   site: siteConfig.site.hostname,
   base: siteConfig.site.base,

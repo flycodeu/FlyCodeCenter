@@ -1,73 +1,44 @@
----
-import siteConfig from "@/site.config";
-import ListLayout from "@/layouts/ListLayout.astro";
-import PostCard from "@/components/PostCard.astro";
-import Pagination from "@/components/Pagination.astro";
-import { fetchAllEntries, makeTagItems } from "@/utils/query";
+﻿---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchAllEntries } from "@/utils/query";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 export async function getStaticPaths() {
   const entries = await fetchAllEntries();
   const tags = new Set<string>();
   for (const entry of entries) {
-    for (const tag of entry.data.tags) tags.add(tag);
+    for (const tag of resolveArticleMeta(entry).tags) tags.add(tag);
   }
   return [...tags].map((tag) => ({
-    params: { domain: encodeURIComponent(tag) },
-    props: { tag }
+    params: { domain: encodeURIComponent(tag) }
   }));
 }
 
-const { tag } = Astro.props as { tag: string };
-const allEntries = await fetchAllEntries();
-const matched = allEntries.filter((entry) => entry.data.tags.includes(tag));
-const tags = makeTagItems(allEntries);
-const mode = siteConfig.blog.pagination.mode;
-const pageSize = siteConfig.blog.pagination.pageSize;
-const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
+const domain = Astro.params.domain ?? "";
+const target = `/tags/${domain}`;
 ---
 
-<ListLayout
-  title={`标签：${tag}`}
-  description="该标签下的全部文章。"
-  stats={[
-    { title: "命中结果", value: matched.length },
-    { title: "返回标签统计", value: "打开", href: "/types" },
-    { title: "全部标签", value: tags.length, href: "/tags" }
-  ]}
-  tags={tags}
->
-  {
-    matched.length > 0 ? (
-      <>
-        <div class="list" id="type-post-list">
-          {
-            matched.map((entry, idx) => (
-              <div data-page-item hidden={mode === "loadMore" && idx >= pageSize ? true : undefined}>
-                <PostCard
-                  entry={entry}
-                  kind={entry.collection === "blog" ? "blog" : "tutorial"}
-                  coverMode={tagCoverMode}
-                />
-              </div>
-            ))
-          }
-        </div>
+<BaseLayout title="标签详情" description="标签详情页已迁移到 /tags/:tag。">
+  <section class="surface redirect-card">
+    <h1>标签详情已迁移</h1>
+    <p>新的地址为 <a href={target}>{target}</a>，该页面将自动跳转。</p>
+  </section>
 
-        {mode === "loadMore" && <Pagination mode="loadMore" targetSelector="#type-post-list" batchSize={pageSize} />}
-      </>
-    ) : (
-      <div class="surface empty">该标签暂无文章。</div>
-    )
-  }
-</ListLayout>
+  <meta http-equiv="refresh" content={`0; url=${target}`} />
+</BaseLayout>
 
 <style>
-  .list {
-    display: grid;
-    gap: 0.8rem;
+  .redirect-card {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: 12px;
   }
-  .empty {
-    padding: 0.9rem;
+  .redirect-card h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+  }
+  .redirect-card p {
+    margin: 0;
     color: var(--text-soft);
   }
 </style>

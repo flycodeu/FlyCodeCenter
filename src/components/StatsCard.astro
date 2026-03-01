@@ -25,8 +25,8 @@ const { title, value, href } = Astro.props;
     background:
       linear-gradient(
         165deg,
-        color-mix(in oklab, var(--bg-elev) 90%, transparent 10%),
-        color-mix(in oklab, var(--brand-soft) 34%, transparent 66%)
+        color-mix(in oklab, var(--bg-elev) 94%, transparent 6%),
+        color-mix(in oklab, var(--brand-soft) 12%, var(--bg-elev) 88%)
       );
   }
   .stats-card small {
@@ -40,6 +40,6 @@ const { title, value, href } = Astro.props;
     color: var(--text);
   }
   a.value:hover {
-    color: var(--brand);
+    color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
   }
 </style>

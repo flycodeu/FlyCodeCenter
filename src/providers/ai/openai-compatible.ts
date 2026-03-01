@@ -34,10 +34,13 @@ export function createOpenAiCompatibleRuntime(): AiRuntime {
   };
 
   const callOpenAiCompatible = async (messages: ChatMessage[]): Promise<string> => {
-    const target = connection.apiBaseUrl || siteConfig.ai.openaiCompatible.apiBaseUrl;
-    if (!target) {
+    const apiBaseUrl = connection.apiBaseUrl || siteConfig.ai.openaiCompatible.apiBaseUrl;
+    if (!apiBaseUrl) {
       throw new Error("AI apiBaseUrl 未配置，无法调用 openaiCompatible provider。");
     }
+    const target = /\/chat\/completions\/?$/.test(apiBaseUrl)
+      ? apiBaseUrl
+      : `${apiBaseUrl.replace(/\/$/, "")}/chat/completions`;
 
     const response = await fetch(target, {
       method: "POST",

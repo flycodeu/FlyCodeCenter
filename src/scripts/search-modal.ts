@@ -3,7 +3,7 @@ import type { SearchEngine, SearchResult } from "../providers/search/types";
 
 declare global {
   interface Window {
-    __flySearchInited?: boolean;
+    __flySearchCleanup?: () => void;
   }
 }
 
@@ -31,17 +31,16 @@ function isTypingContext(target: EventTarget | null): boolean {
   return Boolean(target.closest("[contenteditable='true'], input, textarea"));
 }
 
-function initSearchModal() {
-  if (window.__flySearchInited) return;
-  window.__flySearchInited = true;
-
+function setupSearchModal() {
   const root = document.getElementById("search-root");
-  if (!(root instanceof HTMLElement)) return;
+  if (!(root instanceof HTMLElement)) return () => {};
 
   const nativePreferred = root.getAttribute("data-native") === "1";
   const shortcut = (root.getAttribute("data-shortcut") || "k").toLowerCase();
   const dialog = document.getElementById("search-modal");
   const fallback = document.getElementById("search-fallback");
+  const controller = new AbortController();
+  const { signal } = controller;
 
   const useDialog =
     nativePreferred &&
@@ -51,13 +50,14 @@ function initSearchModal() {
   const input = document.getElementById(useDialog ? "search-input" : "search-input-fallback");
   const resultsEl = document.getElementById(useDialog ? "search-results" : "search-results-fallback");
 
-  if (!(input instanceof HTMLInputElement) || !(resultsEl instanceof HTMLElement)) return;
+  if (!(input instanceof HTMLInputElement) || !(resultsEl instanceof HTMLElement)) return () => {};
 
   let engine: SearchEngine | null = null;
   let focusedIndex = -1;
   let currentResults: SearchResult[] = [];
   let sequence = 0;
   let debounceTimer = 0;
+  let destroyed = false;
 
   const mountFallback = () => {
     if (!(fallback instanceof HTMLElement)) return;
@@ -134,8 +134,21 @@ function initSearchModal() {
   };
 
   const openSearch = async () => {
-    if (useDialog && dialog instanceof HTMLDialogElement) {
-      if (!dialog.open) dialog.showModal();
+    if (destroyed) return;
+
+    const canUseDialog =
+      useDialog &&
+      dialog instanceof HTMLDialogElement &&
+      dialog.isConnected &&
+      typeof dialog.showModal === "function";
+
+    if (canUseDialog) {
+      try {
+        if (!dialog.open) dialog.showModal();
+      } catch (error) {
+        console.warn("search modal showModal failed, fallback to panel", error);
+        mountFallback();
+      }
     } else {
       mountFallback();
     }
@@ -155,7 +168,12 @@ function initSearchModal() {
   };
 
   const closeSearch = () => {
-    if (useDialog && dialog instanceof HTMLDialogElement && dialog.open) {
+    if (
+      useDialog &&
+      dialog instanceof HTMLDialogElement &&
+      dialog.isConnected &&
+      dialog.open
+    ) {
       dialog.close();
     }
     unmountFallback();
@@ -168,117 +186,159 @@ function initSearchModal() {
     }, 100);
   };
 
-  input.addEventListener("input", handleInput);
+  input.addEventListener("input", handleInput, { signal });
 
   if (dialog instanceof HTMLDialogElement) {
-    dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) {
-        closeSearch();
-      }
-    });
+    dialog.addEventListener(
+      "click",
+      (event) => {
+        if (event.target === dialog) {
+          closeSearch();
+        }
+      },
+      { signal }
+    );
   }
 
-  fallback?.addEventListener("click", (event) => {
-    if (event.target === fallback) {
-      closeSearch();
-    }
-  });
+  fallback?.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === fallback) {
+        closeSearch();
+      }
+    },
+    { signal }
+  );
 
-  resultsEl.addEventListener("mousemove", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const item = target.closest(".result-item");
-    if (!(item instanceof HTMLElement)) return;
-    focusedIndex = Number(item.dataset.index ?? -1);
-    renderResults(input.value.trim());
-  });
+  resultsEl.addEventListener(
+    "mousemove",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const item = target.closest(".result-item");
+      if (!(item instanceof HTMLElement)) return;
+      focusedIndex = Number(item.dataset.index ?? -1);
+      renderResults(input.value.trim());
+    },
+    { signal }
+  );
 
-  resultsEl.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const item = target.closest(".result-item");
-    if (!(item instanceof HTMLElement)) return;
-    const url = item.dataset.url;
-    if (!url) return;
-    event.preventDefault();
-    closeSearch();
-    window.location.href = normalizeUrl(url);
-  });
-
-  document.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const trigger = target.closest('[data-action="open-search"]');
-    if (!(trigger instanceof HTMLElement)) return;
-    event.preventDefault();
-    openSearch().catch(console.error);
-  });
-
-  window.addEventListener("site:open-search", () => {
-    openSearch().catch(console.error);
-  });
-
-  window.addEventListener("site:close-search", () => {
-    closeSearch();
-  });
-
-  window.addEventListener("keydown", (event) => {
-    const key = event.key.toLowerCase();
-    if ((event.ctrlKey || event.metaKey) && key === "k") {
-      event.preventDefault();
-      openSearch().catch(console.error);
-      return;
-    }
-
-    const slashShortcut = shortcut === "/" && key === "/";
-    const customShortcut = shortcut !== "/" && (event.ctrlKey || event.metaKey) && key === shortcut;
-    if ((slashShortcut || customShortcut) && !isTypingContext(event.target)) {
-      event.preventDefault();
-      openSearch().catch(console.error);
-      return;
-    }
-
-    const opened = useDialog
-      ? dialog instanceof HTMLDialogElement && dialog.open
-      : fallback instanceof HTMLElement && fallback.classList.contains("open");
-
-    if (!opened) return;
-
-    if (event.key === "Escape") {
+  resultsEl.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const item = target.closest(".result-item");
+      if (!(item instanceof HTMLElement)) return;
+      const url = item.dataset.url;
+      if (!url) return;
       event.preventDefault();
       closeSearch();
-      return;
-    }
+      window.location.href = normalizeUrl(url);
+    },
+    { signal }
+  );
 
-    if (event.key === "ArrowDown") {
+  document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const trigger = target.closest('[data-action="open-search"]');
+      if (!(trigger instanceof HTMLElement)) return;
       event.preventDefault();
-      if (!currentResults.length) return;
-      focusedIndex = (focusedIndex + 1 + currentResults.length) % currentResults.length;
-      renderResults(input.value.trim());
-      return;
-    }
+      openSearch().catch(console.error);
+    },
+    { signal }
+  );
 
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      if (!currentResults.length) return;
-      focusedIndex = (focusedIndex - 1 + currentResults.length) % currentResults.length;
-      renderResults(input.value.trim());
-      return;
-    }
+  window.addEventListener(
+    "site:open-search",
+    () => {
+      openSearch().catch(console.error);
+    },
+    { signal }
+  );
 
-    if (event.key === "Enter") {
-      const result = currentResults[focusedIndex];
-      if (!result) return;
-      event.preventDefault();
-      window.location.href = normalizeUrl(result.url);
-    }
-  });
+  window.addEventListener(
+    "site:close-search",
+    () => {
+      closeSearch();
+    },
+    { signal }
+  );
+
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      const key = event.key.toLowerCase();
+      const slashShortcut = shortcut === "/" && key === "/";
+      const customShortcut = shortcut !== "/" && (event.ctrlKey || event.metaKey) && key === shortcut;
+      if ((slashShortcut || customShortcut) && !isTypingContext(event.target)) {
+        event.preventDefault();
+        openSearch().catch(console.error);
+        return;
+      }
+
+      const opened = useDialog
+        ? dialog instanceof HTMLDialogElement && dialog.isConnected && dialog.open
+        : fallback instanceof HTMLElement && fallback.classList.contains("open");
+
+      if (!opened) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSearch();
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (!currentResults.length) return;
+        focusedIndex = (focusedIndex + 1 + currentResults.length) % currentResults.length;
+        renderResults(input.value.trim());
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!currentResults.length) return;
+        focusedIndex = (focusedIndex - 1 + currentResults.length) % currentResults.length;
+        renderResults(input.value.trim());
+        return;
+      }
+
+      if (event.key === "Enter") {
+        const result = currentResults[focusedIndex];
+        if (!result) return;
+        event.preventDefault();
+        window.location.href = normalizeUrl(result.url);
+      }
+    },
+    { signal }
+  );
 
   renderResults("");
+
+  return () => {
+    destroyed = true;
+    closeSearch();
+    window.clearTimeout(debounceTimer);
+    controller.abort();
+  };
+}
+
+export function bootSearchModal() {
+  if (window.__flySearchCleanup) {
+    window.__flySearchCleanup();
+  }
+  window.__flySearchCleanup = setupSearchModal();
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initSearchModal, { once: true });
+  document.addEventListener("DOMContentLoaded", bootSearchModal, { once: true });
 } else {
-  initSearchModal();
+  bootSearchModal();
 }
+
+document.addEventListener("astro:page-load", bootSearchModal);

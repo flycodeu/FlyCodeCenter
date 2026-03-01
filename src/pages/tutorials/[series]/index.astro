@@ -2,10 +2,11 @@
 import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
 import { fetchAllEntries, fetchTutorialEntries, fetchTutorialSeries, makeTagItems } from "@/utils/query";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 export async function getStaticPaths() {
   const tutorials = await fetchTutorialEntries();
-  const series = [...new Set(tutorials.map((item) => item.data.series))];
+  const series = [...new Set(tutorials.map((item) => resolveArticleMeta(item).series))];
   return series.map((key) => ({
     params: { series: key },
     props: { series: key }
@@ -31,7 +32,7 @@ const tags = makeTagItems(allEntries);
     {
       entries.map((entry) => (
         <div class="order-wrap">
-          <span class="chip">第 {entry.data.order} 章</span>
+          <span class="chip">第 {resolveArticleMeta(entry).order} 章</span>
           <PostCard entry={entry} kind="tutorial" />
         </div>
       ))

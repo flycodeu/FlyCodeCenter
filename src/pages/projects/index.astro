@@ -4,9 +4,18 @@ import ListLayout from "@/layouts/ListLayout.astro";
 import { fetchAllContentEntries, fetchProjectEntries, makeTagItems } from "@/utils/query";
 import { formatDate } from "@/utils/date";
 import { getProjectEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
 
 const [entries, allEntries] = await Promise.all([fetchProjectEntries(), fetchAllContentEntries()]);
 const tags = makeTagItems(allEntries);
+const metaCache = new Map<string, ReturnType<typeof resolveArticleMeta>>();
+const getMeta = (entry: (typeof entries)[number]) => {
+  const cache = metaCache.get(entry.id);
+  if (cache) return cache;
+  const meta = resolveArticleMeta(entry);
+  metaCache.set(entry.id, meta);
+  return meta;
+};
 ---
 
 <ListLayout
@@ -21,32 +30,35 @@ const tags = makeTagItems(allEntries);
 >
   <section class="project-grid">
     {
-      entries.map((entry) => (
-        <article class="surface project-card">
-          <header>
-            <a href={getProjectEntryUrl(entry)} class="title-link">{entry.data.title}</a>
-            {entry.data.featured && <span class="chip featured">重点</span>}
-          </header>
-          <p>{entry.data.description}</p>
+      entries.map((entry) => {
+        const meta = getMeta(entry);
+        return (
+          <article class="surface project-card">
+            <header>
+              <a href={getProjectEntryUrl(entry)} class="title-link">{entry.data.title}</a>
+              {meta.featured && <span class="chip featured">重点</span>}
+            </header>
+            <p>{meta.description || meta.summary || "暂无描述"}</p>
 
-          <div class="meta-row">
-            <span>发布时间：{formatDate(entry.data.pubDate)}</span>
-            <span>标签：{entry.data.tags.slice(0, 2).join(" / ") || "未设置"}</span>
-          </div>
+            <div class="meta-row">
+              <span>发布时间：{formatDate(meta.createTime)}</span>
+              <span>标签：{meta.tags.slice(0, 2).join(" / ") || "未设置"}</span>
+            </div>
 
-          <div class="meta-row links">
-            {entry.data.repoUrl && (
-              <a class="chip" href={entry.data.repoUrl} target="_blank" rel="noreferrer">仓库</a>
-            )}
-            {entry.data.docUrl && (
-              <a class="chip" href={entry.data.docUrl} target="_blank" rel="noreferrer">文档</a>
-            )}
-            {entry.data.demoUrl && (
-              <a class="chip" href={entry.data.demoUrl} target="_blank" rel="noreferrer">演示</a>
-            )}
-          </div>
-        </article>
-      ))
+            <div class="meta-row links">
+              {meta.repoUrl && (
+                <a class="chip" href={meta.repoUrl} target="_blank" rel="noreferrer">仓库</a>
+              )}
+              {meta.docUrl && (
+                <a class="chip" href={meta.docUrl} target="_blank" rel="noreferrer">文档</a>
+              )}
+              {meta.demoUrl && (
+                <a class="chip" href={meta.demoUrl} target="_blank" rel="noreferrer">演示</a>
+              )}
+            </div>
+          </article>
+        );
+      })
     }
   </section>
 </ListLayout>

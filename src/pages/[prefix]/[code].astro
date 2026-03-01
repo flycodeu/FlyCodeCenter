@@ -5,7 +5,7 @@ import PostLayout from "@/layouts/PostLayout.astro";
 import { fetchBlogEntries, fetchProjectEntries, fetchTutorialEntries } from "@/utils/query";
 import { getBlogEntryUrl, getProjectEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { summarizeReading } from "@/utils/reading-time";
-import { resolveEntryCode } from "@/utils/content-code";
+import { resolveArticleMeta } from "@/utils/article-meta";
 import { stripSlashes } from "@/utils/url";
 
 interface Neighbor {
@@ -29,6 +29,18 @@ export async function getStaticPaths() {
 
   const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
   const codeMap = new Map<string, string>();
+  const slugMap = new Map<string, string>();
+  const permalinkMap = new Map<string, string>();
+  const parsePermalinkSlug = (permalink: string, identity: string) => {
+    const normalized = stripSlashes(permalink);
+    const parts = normalized.split("/").filter(Boolean);
+    if (parts.length !== 2 || parts[0] !== prefix) {
+      throw new Error(
+        `Invalid permalink "${permalink}" for "${identity}". Expected format: /${prefix}/{slug}/`
+      );
+    }
+    return parts[1];
+  };
   const ensureUniqueCode = (code: string, identity: string) => {
     const existing = codeMap.get(code);
     if (!existing) {
@@ -37,15 +49,34 @@ export async function getStaticPaths() {
     }
     throw new Error(`Duplicate article code "${code}" for "${identity}" and "${existing}"`);
   };
+  const ensureUniqueSlug = (slug: string, identity: string) => {
+    const existing = slugMap.get(slug);
+    if (!existing) {
+      slugMap.set(slug, identity);
+      return;
+    }
+    throw new Error(`Duplicate article slug "${slug}" for "${identity}" and "${existing}"`);
+  };
+  const ensureUniquePermalink = (permalink: string, identity: string) => {
+    const existing = permalinkMap.get(permalink);
+    if (!existing) {
+      permalinkMap.set(permalink, identity);
+      return;
+    }
+    throw new Error(`Duplicate article permalink "${permalink}" for "${identity}" and "${existing}"`);
+  };
   const paths: Array<{ params: { prefix: string; code: string }; props: RouteProps }> = [];
 
   for (const [index, entry] of blogEntries.entries()) {
-    const code = resolveEntryCode(entry);
-    ensureUniqueCode(code, `blog:${entry.id}`);
+    const meta = resolveArticleMeta(entry);
+    const slug = parsePermalinkSlug(meta.permalink, `blog:${entry.id}`);
+    ensureUniqueCode(meta.code, `blog:${entry.id}`);
+    ensureUniqueSlug(slug, `blog:${entry.id}`);
+    ensureUniquePermalink(meta.permalink, `blog:${entry.id}`);
     const prev = blogEntries[index - 1];
     const next = blogEntries[index + 1];
     paths.push({
-      params: { prefix, code },
+      params: { prefix, code: slug },
       props: {
         collection: "blog",
         entryId: entry.id,
@@ -56,24 +87,38 @@ export async function getStaticPaths() {
   }
 
   const tutorialSeries = new Map<string, CollectionEntry<"tutorial">[]>();
+  const tutorialMeta = new Map<string, ReturnType<typeof resolveArticleMeta>>();
+  const getTutorialMeta = (entry: CollectionEntry<"tutorial">) => {
+    const cache = tutorialMeta.get(entry.id);
+    if (cache) return cache;
+    const meta = resolveArticleMeta(entry);
+    tutorialMeta.set(entry.id, meta);
+    return meta;
+  };
+
   for (const entry of tutorialEntries) {
-    const list = tutorialSeries.get(entry.data.series) ?? [];
+    const list = tutorialSeries.get(getTutorialMeta(entry).series) ?? [];
     list.push(entry);
-    tutorialSeries.set(entry.data.series, list);
+    tutorialSeries.set(getTutorialMeta(entry).series, list);
   }
 
   for (const seriesEntries of tutorialSeries.values()) {
     const sorted = [...seriesEntries].sort((a, b) => {
-      if (a.data.order === b.data.order) return a.data.pubDate.getTime() - b.data.pubDate.getTime();
-      return a.data.order - b.data.order;
+      const metaA = getTutorialMeta(a);
+      const metaB = getTutorialMeta(b);
+      if (metaA.order === metaB.order) return metaA.createTime.getTime() - metaB.createTime.getTime();
+      return metaA.order - metaB.order;
     });
     for (const [index, entry] of sorted.entries()) {
-      const code = resolveEntryCode(entry);
-      ensureUniqueCode(code, `tutorial:${entry.id}`);
+      const meta = getTutorialMeta(entry);
+      const slug = parsePermalinkSlug(meta.permalink, `tutorial:${entry.id}`);
+      ensureUniqueCode(meta.code, `tutorial:${entry.id}`);
+      ensureUniqueSlug(slug, `tutorial:${entry.id}`);
+      ensureUniquePermalink(meta.permalink, `tutorial:${entry.id}`);
       const prev = sorted[index - 1];
       const next = sorted[index + 1];
       paths.push({
-        params: { prefix, code },
+        params: { prefix, code: slug },
         props: {
           collection: "tutorial",
           entryId: entry.id,
@@ -85,12 +130,15 @@ export async function getStaticPaths() {
   }
 
   for (const [index, entry] of projectEntries.entries()) {
-    const code = resolveEntryCode(entry);
-    ensureUniqueCode(code, `projects:${entry.id}`);
+    const meta = resolveArticleMeta(entry);
+    const slug = parsePermalinkSlug(meta.permalink, `projects:${entry.id}`);
+    ensureUniqueCode(meta.code, `projects:${entry.id}`);
+    ensureUniqueSlug(slug, `projects:${entry.id}`);
+    ensureUniquePermalink(meta.permalink, `projects:${entry.id}`);
     const prev = projectEntries[index - 1];
     const next = projectEntries[index + 1];
     paths.push({
-      params: { prefix, code },
+      params: { prefix, code: slug },
       props: {
         collection: "projects",
         entryId: entry.id,
@@ -117,7 +165,10 @@ if (!entry) {
   throw new Error(`Entry not found: ${collection}:${entryId}`);
 }
 
-const encrypted = entry.data.encrypted && siteConfig.encrypt.enable;
+const entryMeta = resolveArticleMeta(
+  entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">
+);
+const encrypted = entryMeta.encrypted && siteConfig.encrypt.enable;
 let Content: any = null;
 let headings: any[] = [];
 if (!encrypted) {
@@ -133,31 +184,35 @@ const articleUrl =
     : collection === "tutorial"
       ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
       : getProjectEntryUrl(entry as CollectionEntry<"projects">);
-const articleCode = resolveEntryCode(entry);
-const summary = entry.data.summary || entry.data.description;
+const summary = entryMeta.summary;
+const description = entryMeta.description || entry.data.title;
+const tags = entryMeta.tags;
+const createTime = entryMeta.createTime;
+const updatedTime = entryMeta.updatedTime;
+const hideCover = !entryMeta.showCover;
 const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, '')}/blob/main/src/content/${collection}/${entry.id}`;
 ---
 
 <PostLayout
   title={entry.data.title}
   summary={summary}
-  description={entry.data.description}
-  code={articleCode}
-  tags={entry.data.tags}
-  pubDate={entry.data.pubDate}
-  updatedDate={entry.data.updatedDate}
+  description={description}
+  tags={tags}
+  pubDate={createTime}
+  updatedDate={updatedTime}
   headings={headings}
   wordCount={reading.wordCount}
   readingMinutes={reading.minutes}
   articleUrl={articleUrl}
+  code={entryMeta.code}
   githubEditUrl={githubEditUrl}
   encrypted={encrypted}
-  encryptedFile={entry.data.encryptedFile ?? ""}
-  passwordHint={entry.data.passwordHint ?? ""}
+  encryptedFile={entryMeta.encryptedFile}
+  passwordHint={entryMeta.passwordHint}
   prev={prev}
   next={next}
-  cover={entry.data.cover}
-  hideCover={!entry.data.showCover}
+  cover={entryMeta.cover}
+  hideCover={hideCover}
 >
   {Content && <Content />}
 </PostLayout>

@@ -3,17 +3,12 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import matter from "gray-matter";
 import siteConfig from "../src/site.config.ts";
+import articleMetaConfig from "../src/config/article-meta.config.ts";
 
 const root = process.cwd();
 const articlePrefix = siteConfig.articlePrefix.replace(/^\/+|\/+$/g, "");
 const outputPublic = path.join(root, "public", "search", "minisearch.json");
 const outputDist = path.join(root, "dist", "search", "minisearch.json");
-
-const codePrefixMap = {
-  blog: "B",
-  tutorial: "T",
-  projects: "P"
-};
 
 async function walk(dir) {
   const items = await fs.readdir(dir, { withFileTypes: true });
@@ -53,34 +48,84 @@ function ensureWithBase(url) {
   return `${base}${url}`.replace(/\/{2,}/g, "/");
 }
 
+function pickText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function pickBoolean(...values) {
+  for (const value of values) {
+    if (typeof value === "boolean") return value;
+  }
+  return false;
+}
+
+function normalizeTags(...values) {
+  for (const value of values) {
+    if (!Array.isArray(value)) continue;
+    const tags = value
+      .map((tag) => String(tag || "").trim())
+      .filter(Boolean);
+    if (tags.length) return [...new Set(tags)];
+  }
+  return [];
+}
+
 function normalizeManualCode(input) {
   if (typeof input !== "string") return "";
   return input
     .trim()
-    .toUpperCase()
+    .toLowerCase()
     .replace(/\s+/g, "-")
-    .replace(/[^A-Z0-9-_]/g, "");
+    .replace(/[^a-z0-9-_]/g, "");
+}
+
+function createGeneratedCode(domain, entryId, createTime) {
+  const seed = `${domain}:${entryId}:${String(createTime || "").trim()}`;
+  const hex = createHash("sha256").update(seed).digest("hex").slice(0, 16);
+  const value = BigInt(`0x${hex}`).toString(36).slice(0, 8).padStart(8, "0");
+  return /^\d/.test(value) ? `r${value.slice(1)}` : value;
 }
 
 function resolveCode(domain, relativeFile, data) {
   const manualCode = normalizeManualCode(data.code);
   if (manualCode) return manualCode;
 
-  const prefix = codePrefixMap[domain];
-  const normalized = relativeFile.replace(/\\/g, "/").replace(/^\/+/, "");
-  const seed = `${domain}:${normalized}`;
-  const digest = createHash("sha256").update(seed).digest("hex").slice(0, 8).toUpperCase();
-  return `${prefix}-${digest}`;
+  const normalized = relativeFile
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\.(md|mdx)$/i, "");
+  const entryId = domain === "projects" ? normalized.toLowerCase() : normalized;
+  return createGeneratedCode(domain, entryId, data.createTime);
 }
 
-function getBlogUrl(relativeFile, data) {
-  const code = resolveCode("blog", relativeFile, data);
-  return ensureWithBase(`/${articlePrefix}/${code}`);
+function normalizePermalink(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return "";
+  const value = /^https?:\/\//i.test(raw)
+    ? (() => {
+        try {
+          return new URL(raw).pathname;
+        } catch {
+          return raw;
+        }
+      })()
+    : raw;
+  let pathname = value.startsWith("/") ? value : `/${value}`;
+  pathname = pathname.replace(/\/{2,}/g, "/");
+  if (!pathname.endsWith("/")) pathname += "/";
+  return pathname;
 }
 
-function getTutorialUrl(relativeFile, data) {
-  const code = resolveCode("tutorial", relativeFile, data);
-  return ensureWithBase(`/${articlePrefix}/${code}`);
+function resolvePermalink(domain, relativeFile, data) {
+  const defaults = articleMetaConfig.defaults ?? {};
+  const code = resolveCode(domain, relativeFile, data);
+  const override = articleMetaConfig.overridesByCode?.[code] ?? {};
+  const configured = pickText(override.permalink, data.permalink, defaults.permalink);
+  const fallback = `/${articlePrefix}/${code}/`;
+  return ensureWithBase(normalizePermalink(configured || fallback));
 }
 
 function getCollectionBases() {
@@ -93,51 +138,63 @@ function getCollectionBases() {
   };
 }
 
-function getProjectUrl(relativeFile, data) {
-  const code = resolveCode("projects", relativeFile, data);
-  return ensureWithBase(`/${articlePrefix}/${code}`);
+function resolveUnifiedMeta(domain, relativeFile, data) {
+  const defaults = articleMetaConfig.defaults ?? {};
+  const code = resolveCode(domain, relativeFile, data);
+  const override = articleMetaConfig.overridesByCode?.[code] ?? {};
+  const summary = pickText(override.summary, data.summary, defaults.summary);
+
+  return {
+    code,
+    url: resolvePermalink(domain, relativeFile, data),
+    title: pickText(data.title, "Untitled"),
+    description: pickText(override.description, summary, defaults.description),
+    tags: normalizeTags(override.tags, data.tags, defaults.tags),
+    draft: pickBoolean(override.draft, defaults.draft),
+    encrypted: pickBoolean(override.encrypted, defaults.encrypted)
+  };
 }
 
 async function build() {
   const docs = [];
   const bases = getCollectionBases();
 
-  const pushMarkdownDoc = (domain, relative, data, content, url) => {
+  const pushMarkdownDoc = (domain, relative, data, content) => {
+    const meta = resolveUnifiedMeta(domain, relative, data);
+    if (meta.draft || meta.encrypted) return;
+
     docs.push({
       id: `${domain}:${relative}`,
-      code: resolveCode(domain, relative, data),
+      code: meta.code,
       domain,
-      title: data.title ?? "Untitled",
-      description: data.description ?? "",
+      title: meta.title,
+      description: meta.description,
       content: stripMarkdown(content),
       headings: getHeadingText(content),
-      tags: (data.tags ?? []).join(" "),
-      url
+      tags: meta.tags.join(" "),
+      url: meta.url
     });
   };
 
   for (const file of await walk(bases.blog)) {
     const raw = await fs.readFile(file, "utf8");
     const { data, content } = matter(raw);
-    if (data.draft || data.encrypted) continue;
     const relative = path.relative(bases.blog, file);
-    pushMarkdownDoc("blog", relative, data, content, getBlogUrl(relative, data));
+    pushMarkdownDoc("blog", relative, data, content);
   }
 
   for (const file of await walk(bases.tutorial)) {
     const raw = await fs.readFile(file, "utf8");
     const { data, content } = matter(raw);
-    if (data.draft || data.encrypted) continue;
     const relative = path.relative(bases.tutorial, file);
-    pushMarkdownDoc("tutorial", relative, data, content, getTutorialUrl(relative, data));
+    pushMarkdownDoc("tutorial", relative, data, content);
   }
 
   for (const file of await walk(bases.projects)) {
     const raw = await fs.readFile(file, "utf8");
     const { data, content } = matter(raw);
-    if (data.draft || data.encrypted) continue;
     const relative = path.relative(bases.projects, file);
-    pushMarkdownDoc("projects", relative, data, content, getProjectUrl(relative, data));
+    pushMarkdownDoc("projects", relative, data, content);
   }
 
   for (const file of await walk(bases.sites)) {
@@ -145,12 +202,15 @@ async function build() {
     const { data, content } = matter(raw);
     if (data.draft) continue;
     const relative = path.relative(bases.sites, file);
+    const cardsText = (data.cards ?? [])
+      .map((card) => [card.title, card.desc, (card.tags ?? []).join(" "), card.category].filter(Boolean).join(" "))
+      .join(" ");
     docs.push({
       id: `sites:${relative}`,
       domain: "sites",
       title: data.title ?? "Untitled",
       description: data.description ?? "",
-      content: stripMarkdown(content),
+      content: stripMarkdown(`${content}\n${cardsText}`),
       headings: "",
       tags: (data.tags ?? []).join(" "),
       url: data.url ?? "/sites"
