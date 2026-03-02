@@ -29,7 +29,7 @@ const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(gi
 
   const themeOfSite = () => {
     const theme = document.documentElement.dataset.theme;
-    return theme === "night" ? "dark" : "light";
+    return theme === "aurora-dark" ? "dark" : "light";
   };
 
   const syncTheme = () => {

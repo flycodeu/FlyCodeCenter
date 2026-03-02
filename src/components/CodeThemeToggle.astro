@@ -1,0 +1,132 @@
+﻿---
+import siteConfig from "@/site.config";
+
+const themes = [...siteConfig.codeTheme.themes];
+const storageKey = siteConfig.codeTheme.storageKey;
+const defaultTheme = siteConfig.codeTheme.defaultTheme;
+const explicitStorageKey = `${storageKey}-explicit`;
+---
+
+<button class="code-theme-toggle" id="code-theme-toggle" aria-label="切换代码主题" data-themes={JSON.stringify(themes)}>
+  <span class="code-theme-icon" id="code-theme-icon" aria-hidden="true">ML</span>
+</button>
+
+<script is:inline define:vars={{ storageKey, defaultTheme, explicitStorageKey }}>
+  (() => {
+    if (window.__flyCodeThemeToggleBound) return;
+    window.__flyCodeThemeToggleBound = true;
+
+    const root = document.documentElement;
+    const icon = document.getElementById("code-theme-icon");
+    const button = document.getElementById("code-theme-toggle");
+
+    const labelMap = {
+      "mac-light": "Mac Light",
+      "mac-dark": "Mac Dark",
+      "github-light": "GitHub Light",
+      "github-dark": "GitHub Dark",
+      "idea-dark": "IDEA Dark",
+      "one-light": "One Light",
+      "one-dark": "One Dark"
+    };
+
+    const iconMap = {
+      "mac-light": "ML",
+      "mac-dark": "CM",
+      "github-light": "GH",
+      "github-dark": "GD",
+      "idea-dark": "ID",
+      "one-light": "OL",
+      "one-dark": "OD"
+    };
+
+    const readThemes = () => {
+      try {
+        const parsed = JSON.parse(button?.dataset.themes ?? "[]");
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item) => typeof item === "string" && item.trim());
+        }
+      } catch {}
+      return [];
+    };
+
+    const normalize = (themes, input) => {
+      const value = String(input || "").trim();
+      if (themes.includes(value)) return value;
+      if (themes.includes(defaultTheme)) return defaultTheme;
+      return themes[0] || defaultTheme;
+    };
+
+    const syncUi = (theme) => {
+      const label = labelMap[theme] || theme;
+      if (icon instanceof HTMLElement) {
+        icon.textContent = iconMap[theme] || "CD";
+      }
+      if (button instanceof HTMLElement) {
+        button.title = `Code theme: ${label}`;
+        button.setAttribute("aria-label", `切换代码主题，当前 ${label}`);
+      }
+    };
+
+    const applyTheme = (theme) => {
+      root.dataset.codeTheme = theme;
+      localStorage.setItem(storageKey, theme);
+      localStorage.setItem(explicitStorageKey, "1");
+      syncUi(theme);
+      window.dispatchEvent(new CustomEvent("site:code-theme-change", { detail: theme }));
+    };
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const trigger = target.closest("#code-theme-toggle");
+      if (!(trigger instanceof HTMLElement)) return;
+
+      const themes = readThemes();
+      if (!themes.length) return;
+      const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
+      const idx = themes.indexOf(current);
+      const next = normalize(themes, themes[(idx + 1) % themes.length]);
+      applyTheme(next);
+    });
+
+    const init = () => {
+      const themes = readThemes();
+      if (!themes.length) return;
+      const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
+      applyTheme(current);
+    };
+
+    document.addEventListener("astro:page-load", init);
+    init();
+  })();
+</script>
+
+<style>
+  .code-theme-toggle {
+    border: 1px solid var(--line);
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .code-theme-toggle:hover {
+    border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
+    color: var(--brand);
+  }
+
+  .code-theme-icon {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+</style>
+
+

@@ -45,7 +45,7 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
         init({
           el: "#waline-root",
           serverURL: serverUrl,
-          dark: document.documentElement.dataset.theme === "night"
+          dark: document.documentElement.dataset.theme === "aurora-dark"
         });
       };
       if (deferUntilEvent) {
@@ -80,8 +80,9 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
 
 <style>
   .comment-section {
-    margin-top: 1.8rem;
-    padding: 0.95rem;
+    margin-top: 0;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
   }
   .comment-section h3 {
     margin: 0 0 0.8rem;

@@ -1,10 +1,10 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
 import { fetchAllEntries, makeTagItems } from "@/utils/query";
-import { getTagHue } from "@/utils/tag-color";
 import { resolveArticleMeta } from "@/utils/article-meta";
+import { buildTagGraphItems } from "@/utils/tag-graph";
 
 const entries = await fetchAllEntries();
 const tags = makeTagItems(entries);
@@ -12,11 +12,31 @@ const totalTagRefs = tags.reduce((sum, item) => sum + item.count, 0);
 const topTags = tags.slice(0, siteConfig.taxonomy.showTopN);
 const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
 
+const graphConfig = siteConfig.taxonomy.tagGraph;
+const graphItems = buildTagGraphItems(topTags, {
+  minFontSize: graphConfig.minFontSize,
+  maxFontSize: graphConfig.maxFontSize,
+  minWeight: graphConfig.minWeight,
+  maxWeight: graphConfig.maxWeight,
+  alphaMin: graphConfig.alphaMin,
+  alphaMax: graphConfig.alphaMax
+});
+
+const tagsPageConfig = (siteConfig.pages as {
+  tags?: {
+    list?: { mode?: "page" | "infinite"; pageSize?: number };
+    antiCrawl?: { enable?: boolean; lockOnSuspicious?: boolean; maxActions?: number; timeWindowMs?: number };
+  };
+}).tags ?? { list: { mode: "page", pageSize: 10 }, antiCrawl: { enable: true, lockOnSuspicious: true, maxActions: 10, timeWindowMs: 20000 } };
+
+const listMode = tagsPageConfig.list?.mode ?? "page";
+const pageSize = tagsPageConfig.list?.pageSize ?? 10;
+const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
 ---
 
 <ListLayout
   title="标签中心"
-  description="点击标签后在当前页面筛选文章，使用多彩 Tag 样式提升可读性。"
+  description="按热度图谱筛选标签，支持分页与无限滚动两种浏览模式。"
   stats={[
     { title: "标签总数", value: tags.length },
     { title: "文章总数", value: entries.length, href: "/archives" },
@@ -24,47 +44,68 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
   ]}
   tags={tags}
 >
-  <section class="surface tag-filter" id="tag-filter-root">
+  <section class="tag-filter" id="tag-filter-root">
     <header class="tag-filter-head">
-      <h2>标签筛选</h2>
-      <p id="tag-filter-status">全部标签 · {entries.length} 篇文章</p>
+      <h2>标签图谱</h2>
+      <p id="tag-filter-status">全部标签 {entries.length} 篇文章</p>
     </header>
 
-    <div class="tag-filter-grid" role="listbox" aria-label="标签筛选">
-      <button type="button" class="tag-pill active" data-tag="all" style="--tag-hue: 220">
-        <span class="label">全部</span>
-        <span class="count">{entries.length}</span>
+    <div class={`tag-graph layout-${graphConfig.layout}`} role="listbox" aria-label="标签筛选">
+      <button type="button" class="tag-node is-all active" data-tag="all" style="--node-size:1.06rem;--node-weight:680;--node-hue:214;--node-alpha:0.99;--node-accent:98%;">
+        <span>全部 {entries.length}</span>
       </button>
       {
-        topTags.map((item) => (
-          <button type="button" class="tag-pill" data-tag={item.name} style={`--tag-hue: ${getTagHue(item.name)}`} title={item.name}>
-            <span class="label">{item.name}</span>
-            <span class="count">{item.count}</span>
+        graphItems.map((item) => (
+          <button type="button" class="tag-node" data-tag={item.name} title={item.name} style={item.style}>
+            <span>{item.name} {item.count}</span>
           </button>
         ))
       }
     </div>
   </section>
 
-  <section class="tag-result-section">
-    <div class="result-list" id="tag-result-list">
+  <section class="tag-result-section" id="tag-result-section">
+    <div class="result-list" id="tag-result-list" data-list-mode={listMode} data-page-size={String(pageSize)}>
       {
-        entries.map((entry) => (
-          <div data-entry-item data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}>
+        entries.map((entry, idx) => (
+          <div
+            data-entry-item
+            data-entry-index={String(idx)}
+            data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}
+          >
             <PostCard entry={entry} kind={entry.collection === "blog" ? "blog" : "tutorial"} coverMode={tagCoverMode} />
           </div>
         ))
       }
     </div>
+    <nav class="surface pager-shell tag-pager" id="tag-result-pager" hidden></nav>
+    <div id="tag-result-sentinel" aria-hidden="true"></div>
+    <section class="tag-lock" id="tag-lock" hidden>
+      <h2>访问已受限</h2>
+      <p>检测到异常访问行为，标签列表已临时受限。</p>
+      <p class="tag-lock-reason" id="tag-lock-reason">原因: suspicious</p>
+    </section>
   </section>
 </ListLayout>
 
-<script is:inline>
+<script
+  is:inline
+  define:vars={{
+    antiCrawlEnabled: antiCrawlConfig.enable ?? true,
+    antiCrawlLockOnSuspicious: antiCrawlConfig.lockOnSuspicious ?? true,
+    antiCrawlMaxActions: antiCrawlConfig.maxActions ?? 10,
+    antiCrawlTimeWindowMs: antiCrawlConfig.timeWindowMs ?? 20000
+  }}
+>
   const initTagFilter = () => {
-    const root = document.getElementById('tag-filter-root');
-    const list = document.getElementById('tag-result-list');
-    const status = document.getElementById('tag-filter-status');
-    if (!root || !list || !status) return;
+    const root = document.getElementById("tag-filter-root");
+    const list = document.getElementById("tag-result-list");
+    const status = document.getElementById("tag-filter-status");
+    const pager = document.getElementById("tag-result-pager");
+    const sentinel = document.getElementById("tag-result-sentinel");
+    const lockPanel = document.getElementById("tag-lock");
+    const lockReason = document.getElementById("tag-lock-reason");
+    if (!(root instanceof HTMLElement) || !(list instanceof HTMLElement) || !(status instanceof HTMLElement) || !(sentinel instanceof HTMLElement)) return;
 
     if (window.__flyTagFilterCleanup) {
       window.__flyTagFilterCleanup();
@@ -72,74 +113,213 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
 
     const controller = new AbortController();
     const { signal } = controller;
+    const buttons = Array.from(root.querySelectorAll(".tag-node"));
+    const items = Array.from(list.querySelectorAll("[data-entry-item]"));
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    const listMode = list.dataset.listMode === "infinite" ? "infinite" : "page";
+    const pageSize = Math.max(1, Number.parseInt(list.dataset.pageSize || "10", 10));
 
-    const buttons = Array.from(root.querySelectorAll('.tag-pill'));
-    const items = Array.from(list.querySelectorAll('[data-entry-item]'));
-    const normalize = (value) => String(value || '').trim().toLowerCase();
+    let currentTag = "all";
+    let filteredItems = [];
+    let currentPage = 1;
+    let observer = null;
+    let locked = false;
+    const records = [];
+    const botUa = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
+
+    const lock = (reason) => {
+      if (locked) return;
+      locked = true;
+      list.classList.add("is-locked");
+      if (lockPanel instanceof HTMLElement) lockPanel.hidden = false;
+      if (lockReason instanceof HTMLElement) lockReason.textContent = `原因: ${reason}`;
+    };
+
+    const mark = (name) => {
+      if (!antiCrawlEnabled || !antiCrawlLockOnSuspicious || listMode !== "infinite" || locked) return;
+      const now = Date.now();
+      records.push(now);
+      while (records.length && now - records[0] > antiCrawlTimeWindowMs) {
+        records.shift();
+      }
+      if (records.length >= antiCrawlMaxActions) {
+        lock(`high-frequency-${name}`);
+      }
+    };
+
+    if (antiCrawlEnabled && antiCrawlLockOnSuspicious && listMode === "infinite") {
+      const ua = navigator.userAgent || "";
+      const suspiciousUa = botUa.test(ua);
+      const webdriver = Boolean(navigator.webdriver);
+      if (webdriver || suspiciousUa) {
+        lock(webdriver ? "webdriver" : "suspicious-ua");
+      }
+    }
+
+    const updateStatus = () => {
+      const activeButton = buttons.find((button) => normalize(button.getAttribute("data-tag")) === currentTag);
+      const label = currentTag === "all" ? "全部标签" : activeButton?.getAttribute("data-tag") || currentTag;
+      status.textContent = `${label} ${filteredItems.length} 篇文章`;
+    };
+
+    const renderPager = () => {
+      if (!(pager instanceof HTMLElement)) return;
+      if (listMode !== "page") {
+        pager.hidden = true;
+        return;
+      }
+      const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+      if (totalPages <= 1) {
+        pager.hidden = true;
+        return;
+      }
+      const pageButtons = Array.from({ length: totalPages }, (_, idx) => idx + 1)
+        .map((pageNo) => `<button type="button" class="pager-btn pager-btn-num ${pageNo === currentPage ? "is-active" : ""}" data-page="${pageNo}">${pageNo}</button>`)
+        .join("");
+      pager.innerHTML = `
+        <button type="button" class="pager-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? "disabled" : ""}>上一页</button>
+        <div class="pager-pages">${pageButtons}</div>
+        <button type="button" class="pager-btn" data-page="${currentPage + 1}" ${currentPage >= totalPages ? "disabled" : ""}>下一页</button>
+      `;
+      pager.hidden = false;
+    };
+
+    const setVisibilityPage = () => {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      filteredItems.forEach((item, idx) => item.toggleAttribute("hidden", idx < start || idx >= end));
+      renderPager();
+      sentinel.hidden = true;
+    };
+
+    const revealNextBatch = () => {
+      let revealed = 0;
+      for (const item of filteredItems) {
+        if (!item.hasAttribute("hidden")) continue;
+        item.removeAttribute("hidden");
+        revealed += 1;
+        if (revealed >= pageSize) break;
+      }
+      const hasHidden = filteredItems.some((item) => item.hasAttribute("hidden"));
+      sentinel.hidden = !hasHidden;
+      return hasHidden;
+    };
+
+    const setVisibilityInfinite = () => {
+      filteredItems.forEach((item, idx) => item.toggleAttribute("hidden", idx >= pageSize));
+      sentinel.hidden = filteredItems.length <= pageSize;
+      if (observer) observer.disconnect();
+      if (filteredItems.length <= pageSize) return;
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting || locked) continue;
+            const hasMore = revealNextBatch();
+            if (!hasMore && observer) observer.disconnect();
+          }
+        },
+        { rootMargin: "220px 0px 320px 0px", threshold: 0.01 }
+      );
+      observer.observe(sentinel);
+    };
 
     const applyFilter = (rawTag, syncQuery = true) => {
-      const activeTag = normalize(rawTag) === 'all' ? 'all' : normalize(rawTag);
-
+      currentTag = normalize(rawTag) === "all" ? "all" : normalize(rawTag);
       buttons.forEach((button) => {
-        const isActive = normalize(button.getAttribute('data-tag')) === activeTag;
-        button.classList.toggle('active', isActive);
+        const isActive = normalize(button.getAttribute("data-tag")) === currentTag;
+        button.classList.toggle("active", isActive);
       });
 
-      let visibleCount = 0;
+      filteredItems = [];
       for (const item of items) {
-        const tagsText = item.getAttribute('data-tags') || '';
-        const tagSet = tagsText ? tagsText.split('||').map(normalize) : [];
-        const visible = activeTag === 'all' || tagSet.includes(activeTag);
-        item.toggleAttribute('hidden', !visible);
-        if (visible) visibleCount += 1;
+        const tagsText = item.getAttribute("data-tags") || "";
+        const tagSet = tagsText ? tagsText.split("||").map(normalize) : [];
+        const visible = currentTag === "all" || tagSet.includes(currentTag);
+        item.toggleAttribute("hidden", !visible);
+        if (visible) filteredItems.push(item);
       }
 
-      const activeButton = buttons.find((button) => normalize(button.getAttribute('data-tag')) === activeTag);
-      const label = activeTag === 'all'
-        ? '全部标签'
-        : (activeButton?.querySelector('.label')?.textContent?.trim() || rawTag);
-      status.textContent = `${label} · ${visibleCount} 篇文章`;
+      currentPage = 1;
+      if (listMode === "page") {
+        setVisibilityPage();
+      } else {
+        if (pager instanceof HTMLElement) pager.hidden = true;
+        setVisibilityInfinite();
+      }
+      updateStatus();
 
       if (syncQuery) {
         const url = new URL(window.location.href);
-        if (activeTag === 'all') {
-          url.searchParams.delete('tag');
-        } else {
-          url.searchParams.set('tag', label);
-        }
-        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        if (currentTag === "all") url.searchParams.delete("tag");
+        else url.searchParams.set("tag", currentTag);
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
       }
     };
 
     buttons.forEach((button) => {
-      button.addEventListener('click', () => {
-        applyFilter(button.getAttribute('data-tag') || 'all');
-      }, { signal });
+      button.addEventListener(
+        "click",
+        () => {
+          if (locked) return;
+          applyFilter(button.getAttribute("data-tag") || "all");
+        },
+        { signal }
+      );
     });
 
-    const queryTag = new URLSearchParams(window.location.search).get('tag');
+    if (pager instanceof HTMLElement) {
+      pager.addEventListener(
+        "click",
+        (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLElement)) return;
+          const btn = target.closest("button[data-page]");
+          if (!(btn instanceof HTMLButtonElement) || btn.disabled) return;
+          const next = Number.parseInt(btn.dataset.page || "1", 10);
+          if (!Number.isFinite(next)) return;
+          currentPage = next;
+          setVisibilityPage();
+        },
+        { signal }
+      );
+    }
+
+    document.addEventListener("copy", (event) => mark("copy"), { capture: true, signal });
+    document.addEventListener("contextmenu", () => mark("contextmenu"), { capture: true, signal });
+    document.addEventListener("selectstart", () => mark("selectstart"), { capture: true, signal });
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        const key = event.key.toLowerCase();
+        if (key === "c" || key === "s" || key === "u") mark(`hotkey-${key}`);
+      },
+      { capture: true, signal }
+    );
+
+    const queryTag = new URLSearchParams(window.location.search).get("tag");
     if (queryTag) {
-      const target = buttons.find((button) => normalize(button.getAttribute('data-tag')) === normalize(queryTag));
-      applyFilter(target?.getAttribute('data-tag') || 'all', false);
+      const target = buttons.find((button) => normalize(button.getAttribute("data-tag")) === normalize(queryTag));
+      applyFilter(target?.getAttribute("data-tag") || "all", false);
     } else {
-      applyFilter('all', false);
+      applyFilter("all", false);
     }
 
     window.__flyTagFilterCleanup = () => {
       controller.abort();
+      if (observer) observer.disconnect();
     };
   };
 
-  document.addEventListener('astro:page-load', initTagFilter);
+  document.addEventListener("astro:page-load", initTagFilter);
   initTagFilter();
 </script>
 
 <style>
   .tag-filter {
-    padding: 0.95rem;
-    border-radius: 12px;
+    padding: 0.2rem 0 0.8rem;
     display: grid;
-    gap: 0.74rem;
+    gap: 0.78rem;
   }
 
   .tag-filter-head {
@@ -152,7 +332,7 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
 
   .tag-filter-head h2 {
     margin: 0;
-    font-size: 1.02rem;
+    font-size: 1.03rem;
     font-family: var(--font-sans);
   }
 
@@ -162,71 +342,111 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
     font-size: 0.86rem;
   }
 
-  .tag-filter-grid {
+  .tag-graph {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.46rem;
+    align-items: baseline;
+    gap: 0.48rem 0.76rem;
   }
 
-  .tag-pill {
-    --tag-border: hsl(var(--tag-hue) 56% 54% / 0.34);
-    --tag-bg: hsl(var(--tag-hue) 72% 97%);
-    --tag-text: hsl(var(--tag-hue) 52% 34%);
-    --tag-count-bg: hsl(var(--tag-hue) 42% 92%);
-
-    border: 1px solid var(--tag-border);
-    border-radius: 999px;
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    padding: 0.26rem 0.44rem 0.26rem 0.58rem;
-    max-width: min(240px, 42vw);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.42rem;
+  .tag-node {
+    border: 0;
+    background: transparent;
+    padding: 0.08rem 0.12rem;
     cursor: pointer;
-    transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+    font-size: var(--node-size, 0.96rem);
+    font-weight: var(--node-weight, 500);
+    opacity: var(--node-alpha, 0.88);
+    color: color-mix(
+      in oklab,
+      hsl(var(--node-hue, 212) 84% 56%) var(--node-accent, 56%),
+      var(--text-soft) calc(100% - var(--node-accent, 56%))
+    );
+    transition: color 160ms ease, opacity 160ms ease, transform 160ms ease;
+    text-align: left;
   }
 
-  .tag-pill:hover {
+  .tag-node:hover {
+    opacity: 1;
     transform: translateY(-1px);
-    box-shadow: 0 8px 16px -10px color-mix(in oklab, var(--tag-text) 35%, transparent 65%);
+    color: color-mix(in oklab, hsl(var(--node-hue, 212) 88% 52%) 84%, var(--text) 16%);
   }
 
-  .tag-pill .label {
-    min-width: 0;
-    font-size: 0.82rem;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .tag-node span {
+    display: inline;
+    border-bottom: 1px solid transparent;
   }
 
-  .tag-pill .count {
-    flex: 0 0 auto;
-    min-width: 1.65rem;
-    height: 1.2rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    background: var(--tag-count-bg);
-    border: 1px solid color-mix(in oklab, var(--tag-border) 80%, transparent 20%);
-    color: var(--tag-text);
-    padding: 0 0.34rem;
+  .tag-node.active {
+    opacity: 1;
+    color: color-mix(in oklab, var(--brand) 72%, var(--text) 28%);
   }
 
-  .tag-pill.active {
-    border-color: hsl(var(--tag-hue) 64% 45% / 0.62);
-    box-shadow: inset 0 0 0 1px hsl(var(--tag-hue) 68% 52% / 0.24), 0 8px 18px -12px hsl(var(--tag-hue) 65% 38% / 0.45);
+  .tag-node.active span {
+    border-bottom-color: color-mix(in oklab, var(--brand) 74%, transparent 26%);
+  }
+
+  .tag-node.is-all {
+    letter-spacing: 0.02em;
   }
 
   .tag-result-section {
-    margin-top: 0.18rem;
+    margin-top: 0.26rem;
+    display: grid;
+    gap: 0.9rem;
   }
 
   .result-list {
     display: grid;
-    gap: 0.72rem;
+    gap: var(--space-4);
+  }
+
+  .tag-pager {
+    margin-top: 0.1rem;
+  }
+
+  #tag-result-sentinel {
+    width: 100%;
+    height: 2px;
+  }
+
+  .tag-lock {
+    border: 1px solid color-mix(in oklab, var(--brand) 35%, var(--line) 65%);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--surface-1) 92%, var(--brand-soft) 8%);
+    padding: 1rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .tag-lock h2 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+
+  .tag-lock p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+  }
+
+  .tag-lock-reason {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .result-list.is-locked {
+    opacity: 0.26;
+    pointer-events: none;
+    filter: blur(1px);
+  }
+
+  @media (max-width: 760px) {
+    .tag-graph {
+      gap: 0.4rem 0.56rem;
+    }
   }
 </style>

@@ -42,8 +42,8 @@ const LANG_ALIASES: Record<string, string> = {
   ps1: "powershell",
   ps: "powershell",
   pwsh: "powershell",
-  bat: "bat",
-  cmd: "bat",
+  bat: "powershell",
+  cmd: "powershell",
   curl: "bash",
   console: "bash",
   http: "http",
@@ -57,8 +57,8 @@ const LANG_ALIASES: Record<string, string> = {
   htm: "html",
   md: "markdown",
   markdown: "markdown",
-  vue: "vue",
-  vue3: "vue",
+  vue: "html",
+  vue3: "html",
   gitignore: "txt",
   conf: "txt",
   config: "txt",
@@ -71,6 +71,44 @@ const LANG_ALIASES: Record<string, string> = {
   text: "txt"
 };
 
+const SUPPORTED_LANGS = new Set([
+  "ts",
+  "tsx",
+  "jsx",
+  "javascript",
+  "c",
+  "cpp",
+  "csharp",
+  "java",
+  "kotlin",
+  "groovy",
+  "python",
+  "go",
+  "sql",
+  "json",
+  "json5",
+  "jsonc",
+  "yaml",
+  "toml",
+  "ini",
+  "properties",
+  "dotenv",
+  "bash",
+  "powershell",
+  "http",
+  "diff",
+  "dockerfile",
+  "nginx",
+  "makefile",
+  "html",
+  "xml",
+  "markdown",
+  "mermaid",
+  "txt",
+  "plaintext",
+  "log"
+]);
+
 function normalizeLang(rawLang: string): string {
   const token = rawLang.trim().split(/\s+/)[0] ?? "";
   const primary = token
@@ -79,7 +117,9 @@ function normalizeLang(rawLang: string): string {
     .replace(/[;:,.`"')\]}>]+$/, "")
     .trim();
   if (!primary) return "txt";
-  return LANG_ALIASES[primary] ?? primary;
+  const normalized = LANG_ALIASES[primary] ?? primary;
+  if (SUPPORTED_LANGS.has(normalized)) return normalized;
+  return "txt";
 }
 
 export function remarkNormalizeCodeLang() {

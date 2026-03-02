@@ -1,0 +1,29 @@
+:root[data-theme="aurora-light"] {
+  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --bg: #f6f8fc;
+  --bg-elev: #ffffff;
+  --bg-mesh-a: color-mix(in oklab, #3b82f6 14%, transparent 86%);
+  --bg-mesh-b: color-mix(in oklab, #06b6d4 10%, transparent 90%);
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --line: #d7deea;
+  --line-soft: #e5ebf4;
+  --line-strong: #c3cede;
+  --surface-1: #ffffff;
+  --surface-2: #f8fbff;
+  --brand: #3b82f6;
+  --brand-soft: #eaf2ff;
+  --accent: #06b6d4;
+  --code-bg: #f7faff;
+  --code-border: #d4deed;
+  --card-shadow: 0 8px 24px -18px rgb(15 23 42 / 0.22);
+  --card-shadow-strong: 0 20px 48px -26px rgb(15 23 42 / 0.28);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --radius: var(--radius-md);
+  --header-blur: 12px;
+}

@@ -1,6 +1,11 @@
 ﻿---
 import siteConfig from "@/site.config";
 
+interface Props {
+  scope?: "global" | "hero";
+}
+
+const { scope = "global" } = Astro.props;
 const enabled = siteConfig.watermark.enable;
 const marks = ["tl", "tr", "bl", "br"] as const;
 ---
@@ -8,7 +13,7 @@ const marks = ["tl", "tr", "bl", "br"] as const;
 {
   enabled && (
     <div
-      class="watermark"
+      class={`watermark watermark-${scope}`}
       style={`--wm-opacity:${siteConfig.watermark.opacity};--wm-rotate:${siteConfig.watermark.rotate}deg;--wm-gap:${siteConfig.watermark.gap}px;--wm-font-size:${siteConfig.watermark.fontSize};`}
       data-center-readable={siteConfig.watermark.keepCenterReadable ? "1" : "0"}
       aria-hidden="true"
@@ -20,35 +25,34 @@ const marks = ["tl", "tr", "bl", "br"] as const;
 
 <style>
   .watermark {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-    opacity: var(--wm-opacity);
-  }
-
-  .watermark::before {
-    content: "";
     position: absolute;
     inset: 0;
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent 0 calc(var(--wm-gap) - 1px),
-      color-mix(in oklab, var(--text-soft) 18%, transparent 82%) calc(var(--wm-gap) - 1px) var(--wm-gap)
-    );
+    pointer-events: none;
+    z-index: 1;
+    opacity: var(--wm-opacity);
+    overflow: hidden;
   }
 
-  .watermark[data-center-readable="1"]::before {
-    mask-image: radial-gradient(circle at center, transparent 0 36%, black 56% 100%);
+  .watermark-global {
+    position: fixed;
+    z-index: 5;
+  }
+
+  .watermark-hero {
+    border-radius: inherit;
+  }
+
+  .watermark[data-center-readable="1"] {
+    mask-image: radial-gradient(circle at center, transparent 0 42%, black 70% 100%);
   }
 
   .mark {
     position: absolute;
     transform: rotate(var(--wm-rotate));
     font-size: var(--wm-font-size);
-    color: color-mix(in oklab, var(--text-soft) 55%, transparent 45%);
-    letter-spacing: 0.26rem;
-    font-weight: 700;
+    color: color-mix(in oklab, var(--text-soft) 36%, transparent 64%);
+    letter-spacing: 0.22rem;
+    font-weight: 620;
     user-select: none;
     white-space: nowrap;
   }

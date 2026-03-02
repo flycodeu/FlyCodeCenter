@@ -10,9 +10,13 @@ const articleSchema = z.object({
   code: z.string().optional(),
   permalink: z.string().optional(),
   summary: z.string().optional(),
+  outline: z.string().optional(),
+  series: z.string().optional(),
+  order: z.number().int().optional(),
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
-  coverMode: z.enum(["left", "right", "none"]).optional()
+  coverMode: z.enum(["left", "right", "top", "none"]).optional(),
+  coverPosition: z.enum(["left", "right", "top", "none"]).optional()
 });
 
 const blog = defineCollection({

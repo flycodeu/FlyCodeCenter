@@ -45,7 +45,8 @@ export async function fetchReadingEntries(): Promise<CollectionEntry<"reading">[
 
 export async function fetchTutorialSeries(series: string): Promise<CollectionEntry<"tutorial">[]> {
   const all = await fetchTutorialEntries();
-  const target = all.filter((entry) => resolveArticleMeta(entry).series === series);
+  const normalized = String(series || "").trim().toLowerCase();
+  const target = all.filter((entry) => resolveArticleMeta(entry).series.trim().toLowerCase() === normalized);
   return sortTutorialByOrder(target);
 }
 

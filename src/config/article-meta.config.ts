@@ -1,5 +1,6 @@
 ﻿export interface ArticleMetaDefaults {
   summary: string;
+  outline: string;
   description: string;
   tags: string[];
   createTime: string;
@@ -26,6 +27,7 @@ export type ArticleMetaOverride = Partial<ArticleMetaDefaults>;
 
 const defaults: ArticleMetaDefaults = {
   summary: "",
+  outline: "",
   description: "",
   tags: [],
   createTime: "2026/01/01 00:00:00",

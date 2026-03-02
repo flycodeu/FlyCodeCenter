@@ -1,8 +1,8 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo";
-export type ThemeId = "plume" | "night" | "ocean" | "sunset" | "tech";
+export type ThemeId = "aurora-light" | "aurora-dark";
 export type PaginationMode = "page" | "loadMore";
-export type CoverMode = "right" | "left" | "none";
+export type CoverMode = "right" | "left" | "top" | "none";
 export type CardStyle = "rounded" | "square" | "glass";
 import { defineSiteConfig } from "./config/define-site-config";
 import articleMetaConfig from "./config/article-meta.config";
@@ -63,6 +63,12 @@ const siteConfig = defineSiteConfig({
         h3Top: "1.2rem",
         h3Bottom: "0.6rem"
       }
+    },
+    antiCrawl: {
+      enable: true,
+      lockOnSuspicious: true,
+      maxCopyActions: 8,
+      timeWindowMs: 20000
     }
   },
   articleMeta: articleMetaConfig,
@@ -80,10 +86,18 @@ const siteConfig = defineSiteConfig({
     },
     listCard: {
       defaultCoverMode: "right" as CoverMode,
-      coverWidth: 232,
-      coverHeight: 136,
+      coverInlineSize: 224,
+      coverTopMaxHeight: 154,
+      coverAspectRatio: "16 / 9",
+      mobileCollapseToTop: true,
+      coverWidth: 224,
+      coverHeight: 154,
       coverRatio: "16 / 9",
       cardStyle: "rounded" as CardStyle,
+      titleLines: 2,
+      outlineLines: 2,
+      summaryLines: 3,
+      tagsMax: 3,
       fallbackWhenNoCover: "none" as "none" | "gradient" | "pattern"
     },
     pageCardOverrides: {
@@ -94,7 +108,7 @@ const siteConfig = defineSiteConfig({
         coverMode: "right" as CoverMode
       },
       tags: {
-        coverMode: "none" as CoverMode
+        coverMode: "right" as CoverMode
       }
     }
   },
@@ -108,9 +122,30 @@ const siteConfig = defineSiteConfig({
     enableTypeOverview: true,
     mode: "tagStats" as "tagStats",
     sources: ["blog", "tutorial"] as const,
-    showTopN: 30
+    showTopN: 30,
+    tagGraph: {
+      enable: true,
+      minFontSize: 0.88,
+      maxFontSize: 1.48,
+      minWeight: 430,
+      maxWeight: 680,
+      alphaMin: 0.58,
+      alphaMax: 0.96,
+      layout: "cloud" as "cloud"
+    }
   },
   home: {
+    feed: {
+      mode: "page" as "page" | "infinite",
+      pageSize: 10,
+      mixCollections: ["blog", "tutorial"] as const
+    },
+    featured: {
+      enable: true,
+      source: "pinnedFirst" as "pinnedFirst",
+      fallbackToLatest: true,
+      maxRecent: 6
+    },
     hero: {
       enable: true,
       title: "飞云的编程宝典",
@@ -129,9 +164,9 @@ const siteConfig = defineSiteConfig({
     }
   },
   theme: {
-    defaultTheme: "plume" as ThemeId,
-    themes: ["plume", "ocean", "sunset", "night", "tech"] as ThemeId[],
-    switchableThemes: ["plume", "ocean", "sunset", "night", "tech"] as ThemeId[],
+    defaultTheme: "aurora-light" as ThemeId,
+    themes: ["aurora-light", "aurora-dark"] as ThemeId[],
+    switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
     appearance: true,
     logo: {
       text: "FlyCodeCenter",
@@ -167,9 +202,10 @@ const siteConfig = defineSiteConfig({
       { text: "首页", link: "/" },
       { text: "博客", link: "/blog" },
       { text: "教程", link: "/tutorials" },
+      { text: "归档", link: "/archives" },
       { text: "收藏", link: "/sites" },
       { text: "摄影", link: "/gallery" },
-      { text: "优秀文章", link: "/reading" },
+      { text: "推荐", link: "/reading" },
       { text: "项目", link: "/projects" },
       { text: "Jarvis", link: "/jarvis" },
       { text: "标签", link: "/tags" },
@@ -187,16 +223,17 @@ const siteConfig = defineSiteConfig({
     contentType: "markdown" as const,
     title: "站点公告",
     content:
-      "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 优秀文章\n- 搜索支持高亮与模糊匹配"
+      "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 推荐\n- 搜索支持高亮与模糊匹配"
   },
   themeConfig: {
     nav: [
       { text: "首页", link: "/" },
       { text: "博客", link: "/blog" },
       { text: "教程", link: "/tutorials" },
+      { text: "归档", link: "/archives" },
       { text: "收藏", link: "/sites" },
       { text: "摄影", link: "/gallery" },
-      { text: "优秀文章", link: "/reading" },
+      { text: "推荐", link: "/reading" },
       { text: "项目", link: "/projects" },
       { text: "Jarvis", link: "/jarvis" },
       { text: "标签", link: "/tags" },
@@ -281,11 +318,7 @@ const siteConfig = defineSiteConfig({
     }
   },
   codeHighlight: {
-    provider: "shiki",
-    theme: {
-      light: "vitesse-light",
-      dark: "vitesse-dark"
-    },
+    provider: "prism",
     languages: [
       "ts",
       "tsx",
@@ -339,12 +372,36 @@ const siteConfig = defineSiteConfig({
       "txt",
       "plaintext"
     ],
-    lineNumbers: true,
+    lineNumbers: false,
     showWhitespace: false,
     twoslash: false
   },
+  codeTheme: {
+    defaultTheme:
+      "mac-light" as "mac-light" | "mac-dark" | "github-light" | "github-dark" | "idea-dark" | "one-light" | "one-dark",
+    themes: [
+      "mac-light",
+      "mac-dark",
+      "github-light",
+      "github-dark",
+      "idea-dark",
+      "one-light",
+      "one-dark"
+    ] as const,
+    storageKey: "flycode-code-theme",
+    panelColors: {
+      "mac-light": { panel: "#f7f9fd", border: "#d7dfec", header: "#eef3fb" },
+      "mac-dark": { panel: "#242c3a", border: "#3a475c", header: "#2e3748" },
+      "github-light": { panel: "#f6f8fa", border: "#d0d7de", header: "#eef2f7" },
+      "github-dark": { panel: "#1b2230", border: "#324056", header: "#242d3d" },
+      "idea-dark": { panel: "#2f333b", border: "#444b57", header: "#3a404d" },
+      "one-light": { panel: "#f8fafc", border: "#d9e1ee", header: "#eef2fb" },
+      "one-dark": { panel: "#2a303b", border: "#404958", header: "#353d4c" }
+    } as const
+  },
   search: {
     provider: "pagefind" as SearchProvider,
+    runtimeFallback: "minisearch" as "off" | "minisearch",
     topK: 8,
     fuzzy: 0.22,
     ui: {
@@ -357,7 +414,8 @@ const siteConfig = defineSiteConfig({
       enableInlinePanel: true
     },
     pagefind: {
-      bundlePath: "/pagefind/pagefind.js"
+      bundlePath: "/pagefind/pagefind.js",
+      enableInDev: false
     },
     minisearch: {
       indexPath: "/search/minisearch.json",
@@ -379,7 +437,8 @@ const siteConfig = defineSiteConfig({
   watermark: {
     enable: true,
     text: "FlyCodeCenter",
-    opacity: 0.05,
+    scope: "hero" as "hero" | "global",
+    opacity: 0.04,
     rotate: -20,
     gap: 200,
     fontSize: "clamp(1.8rem, 4vw, 3.1rem)",
@@ -423,10 +482,45 @@ const siteConfig = defineSiteConfig({
   jarvis: {
     enable: true,
     route: "/jarvis",
+    interaction: {
+      eventNamespace: "jarvis",
+      defaultState: "idle" as "idle" | "active",
+      clickState: "active" as "idle" | "active",
+      hoverState: "active" as "idle" | "active"
+    },
     floatingOrb: {
       enable: true,
-      label: "JARVIS"
+      label: "JARVIS",
+      position: "left" as "left" | "right",
+      offsetX: 16,
+      offsetY: 16,
+      defaultState: "idle" as "idle" | "active",
+      clickState: "active" as "idle" | "active",
+      defaultText: "已待命",
+      activeText: "连接中",
+      modelPresetKey: "gpt-4o-mini",
+      actionId: "open-settings"
     },
+    personaPresets: [
+      {
+        id: "jarvis-classic",
+        name: "Jarvis 经典",
+        avatarType: "orb" as "orb" | "live2d" | "custom",
+        defaultText: "已待命",
+        activeText: "连接中",
+        greeting: "系统已上线。请先在左下角设置模型，然后开始对话。",
+        actions: ["open-settings", "toggle-voice"]
+      },
+      {
+        id: "virtual-host",
+        name: "虚拟主持人",
+        avatarType: "custom" as "orb" | "live2d" | "custom",
+        defaultText: "准备互动",
+        activeText: "正在回应",
+        greeting: "虚拟角色已激活，可在设置面板继续配置形象与动作。",
+        actions: ["open-settings", "wave", "greet"]
+      }
+    ],
     defaultModels: [
       { id: "gpt-4o-mini", name: "GPT-4o mini", apiBase: "https://api.openai.com/v1" },
       { id: "gpt-4o", name: "GPT-4o", apiBase: "https://api.openai.com/v1" },
@@ -460,16 +554,64 @@ const siteConfig = defineSiteConfig({
     },
     reading: {
       enable: true,
-      title: "优秀文章"
+      title: "推荐"
     },
     projects: {
       enable: true,
       title: "项目实践",
       showFeaturedFirst: true
     },
+    tutorials: {
+      enable: true,
+      title: "教程总览",
+      seriesLabels: {
+        rust: "Rust 教程",
+        godot: "Godot 教程",
+        redis: "Redis 教程",
+        datastruct: "数据结构教程",
+        uncategorized: "未分类教程"
+      }
+    },
     archives: {
       enable: true,
-      title: "归档"
+      title: "归档",
+      timeline: {
+        layoutMode: "both" as "both" | "left" | "right",
+        showMonthCount: true,
+        stickyYearLabel: false,
+        itemMaxWidth: 420,
+        lineWidth: 2,
+        dotSize: 10
+      },
+      showCover: true,
+      coverAspectRatio: "16 / 9",
+      cardMinHeight: 252,
+      card: {
+        thumbWidth: 132,
+        thumbAspectRatio: "16 / 9",
+        titleLines: 2,
+        tagsMax: 3
+      },
+      antiCrawl: {
+        enable: true,
+        lockOnSuspicious: true,
+        maxActions: 10,
+        timeWindowMs: 20000
+      }
+    },
+    tags: {
+      enable: true,
+      title: "标签中心",
+      list: {
+        mode: "page" as "page" | "infinite",
+        pageSize: 10
+      },
+      antiCrawl: {
+        enable: true,
+        lockOnSuspicious: true,
+        maxActions: 10,
+        timeWindowMs: 20000
+      }
     }
   }
 } as const);

@@ -8,7 +8,6 @@ import Copyright from "@/components/Copyright.astro";
 import EncryptGate from "@/components/EncryptGate.astro";
 import { formatDate } from "@/utils/date";
 import { absoluteUrl } from "@/utils/url";
-import { getTagColorVars } from "@/utils/tag-color";
 import { buildArticleJsonLd } from "@/utils/seo";
 
 interface Heading {
@@ -86,67 +85,70 @@ const jsonLd = buildArticleJsonLd({
     style={`--post-top-gap:${spacing.topBarBottom};--post-hero-gap:${spacing.heroBottom};--post-head-pt:${spacing.headPaddingTop};--post-head-pb:${spacing.headPaddingBottom};--post-head-gap:${spacing.headGap};--post-head-mb:${spacing.headBottom};--post-article-pb:${spacing.articleBottom};--post-summary-size:${spacing.summarySize};--post-p-margin:${spacing.paragraphMargin};--post-h2-top:${spacing.h2Top};--post-h2-bottom:${spacing.h2Bottom};--post-h3-top:${spacing.h3Top};--post-h3-bottom:${spacing.h3Bottom};`}
   >
     <section class="post-main">
-      <div class="post-top-bar">
-        <a href="javascript:history.back()" class="back-link">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          返回上一级
-        </a>
-      </div>
-
-      {!hideCover && cover && (
-        <div class="post-hero-image">
-          <img src={cover} alt={title} loading="eager" fetchpriority="high" />
+      <section class="surface post-card-shell post-info-card">
+        <div class="post-top-bar">
+          <a href="javascript:history.back()" class="back-link">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            返回上一级
+          </a>
         </div>
-      )}
 
-      <header class="post-head">
-        <h1>{title}</h1>
-        {summary && <p class="summary">{summary}</p>}
-        <div class="meta-row">
-          <span class="chip">{wordCount} 字</span>
-          {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
-          {siteConfig.stats.enable && <span class="chip" id="post-view-count" data-view-slug={articleUrl}>阅读 --</span>}
-          <span class="chip date-chip">
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
-            创建于 {formatDate(pubDate, "YYYY/MM/DD HH:mm:ss")}
-          </span>
-          {updatedDate && <span class="chip date-chip"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2v4m8-4v4M3 10h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>更新于 {formatDate(updatedDate, "YYYY/MM/DD HH:mm:ss")}</span>}
-        </div>
-        {
-          tags.length > 0 && (
-            <div class="tag-row-badge">
-              {tags.map((tag) => <a class="tag-badge tag-link" style={getTagColorVars(tag)} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>)}
+        {!hideCover && cover && (
+          <div class="post-hero-image">
+            <img src={cover} alt={title} loading="eager" fetchpriority="high" />
+          </div>
+        )}
+
+        <header class="post-head">
+          <h1>{title}</h1>
+          {summary && <p class="summary">{summary}</p>}
+          <div class="meta-strip">
+            <div class="meta-row">
+              <span class="chip">{wordCount} 字</span>
+              {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
+              {siteConfig.stats.enable && <span class="chip" id="post-view-count" data-view-slug={articleUrl}>阅读 --</span>}
+              <span class="chip date-chip">发布 {formatDate(pubDate, "YYYY-MM-DD")}</span>
+              {updatedDate && <span class="chip date-chip">更新 {formatDate(updatedDate, "YYYY-MM-DD")}</span>}
             </div>
-          )
-        }
-      </header>
+          </div>
+          {
+            tags.length > 0 && (
+              <div class="tag-row-badge">
+                {tags.map((tag) => <a class="tag-badge tag-link" href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>)}
+              </div>
+            )
+          }
+        </header>
+      </section>
 
-      <hr class="post-divider" />
+      <section class="surface post-card-shell post-body-card">
+        <article class="prose article-body" data-article-encrypted={encrypted ? "1" : "0"}>
+          {
+            encrypted && siteConfig.encrypt.enable ? (
+              <EncryptGate encryptedFile={encryptedFile} passwordHint={passwordHint} />
+            ) : (
+              <slot />
+            )
+          }
+        </article>
+      </section>
 
-      <article class="prose article-body" data-article-encrypted={encrypted ? "1" : "0"}>
+      <section class="surface post-card-shell post-meta-card">
+        <Copyright title={title} url={absoluteUrl(articleUrl)} editUrl={githubEditUrl} />
+
         {
-          encrypted && siteConfig.encrypt.enable ? (
-            <EncryptGate encryptedFile={encryptedFile} passwordHint={passwordHint} />
-          ) : (
-            <slot />
+          siteConfig.prevNext.enable && (prev || next) && (
+            <nav class="prev-next">
+              {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
+              {next ? <a href={next.url}>{next.title} →</a> : <span />}
+            </nav>
           )
         }
-      </article>
+      </section>
 
-      <hr class="post-divider" />
-
-      <Copyright title={title} url={absoluteUrl(articleUrl)} editUrl={githubEditUrl} />
-
-      {
-        siteConfig.prevNext.enable && (prev || next) && (
-          <nav class="prev-next">
-            {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
-            {next ? <a href={next.url}>{next.title} →</a> : <span />}
-          </nav>
-        )
-      }
-
-      <Comments deferUntilEvent={deferUntilEvent} />
+      <section class="surface post-card-shell post-comment-card">
+        <Comments deferUntilEvent={deferUntilEvent} />
+      </section>
     </section>
 
     {!encrypted && <aside class="post-toc-rail"><TOC headings={headings} /></aside>}
@@ -170,11 +172,97 @@ const jsonLd = buildArticleJsonLd({
       articleTitle: title,
       articleTags: tags,
       viewStatsEnabled: siteConfig.stats.enable,
-      viewStatsEndpoint: siteConfig.stats.endpoint
+      viewStatsEndpoint: siteConfig.stats.endpoint,
+      antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
+      antiCrawlLockOnSuspicious: Boolean(
+        (siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true
+      ),
+      antiCrawlMaxCopyActions: Number(
+        (siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8
+      ),
+      antiCrawlTimeWindowMs: Number(
+        (siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000
+      )
     }}
   >
     const root = document.documentElement;
     root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
+    root.dataset.antiCrawlLocked = "0";
+
+    const BOT_UA_PATTERN = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
+    const antiCrawlEvents = [];
+    let antiCrawlLocked = false;
+
+    const lockByAntiCrawl = (reason) => {
+      if (!antiCrawlEnabled || antiCrawlLocked) return;
+      antiCrawlLocked = true;
+      root.dataset.antiCrawlLocked = "1";
+      document.body.classList.add("anti-crawl-locked");
+
+      const article = document.querySelector(".article-body");
+      if (article instanceof HTMLElement) {
+        article.innerHTML = `
+          <section class="anti-crawl-lock" role="alert">
+            <h2>访问已受限</h2>
+            <p>检测到异常抓取行为，本文已临时禁止访问。</p>
+            <p class="anti-crawl-reason">原因: ${reason}</p>
+          </section>
+        `;
+      }
+    };
+
+    const markAntiCrawlAction = (name) => {
+      if (!antiCrawlEnabled || !antiCrawlLockOnSuspicious || antiCrawlLocked) return;
+      const now = Date.now();
+      antiCrawlEvents.push(now);
+      while (antiCrawlEvents.length && now - antiCrawlEvents[0] > antiCrawlTimeWindowMs) {
+        antiCrawlEvents.shift();
+      }
+      if (antiCrawlEvents.length >= antiCrawlMaxCopyActions) {
+        lockByAntiCrawl(`high-frequency-${name}`);
+      }
+    };
+
+    if (antiCrawlEnabled) {
+      const ua = navigator.userAgent || "";
+      const isWebdriver = Boolean(navigator.webdriver);
+      const isSuspiciousUa = BOT_UA_PATTERN.test(ua);
+
+      if (antiCrawlLockOnSuspicious && (isWebdriver || isSuspiciousUa)) {
+        lockByAntiCrawl(isWebdriver ? "webdriver" : "suspicious-ua");
+      }
+
+      const trackSensitiveAction = (event, action) => {
+        if (antiCrawlLocked) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        markAntiCrawlAction(action);
+      };
+
+      document.addEventListener("copy", (event) => trackSensitiveAction(event, "copy"), { capture: true });
+      document.addEventListener("cut", (event) => trackSensitiveAction(event, "cut"), { capture: true });
+      document.addEventListener("contextmenu", (event) => trackSensitiveAction(event, "contextmenu"), { capture: true });
+      document.addEventListener("selectstart", (event) => trackSensitiveAction(event, "selectstart"), { capture: true });
+
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (antiCrawlLocked) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          if (!event.ctrlKey && !event.metaKey) return;
+          const hotkey = event.key.toLowerCase();
+          if (hotkey === "c" || hotkey === "s" || hotkey === "u" || hotkey === "p") {
+            markAntiCrawlAction(`hotkey-${hotkey}`);
+          }
+        },
+        { capture: true }
+      );
+    }
 
     if (isEncrypted) {
       window.addEventListener("site:decrypted", () => {
@@ -497,6 +585,7 @@ const jsonLd = buildArticleJsonLd({
 
     const initArticleEnhancements = async () => {
       if (root.dataset.encryptedLocked === "1") return;
+      if (root.dataset.antiCrawlLocked === "1") return;
       const article = document.querySelector(".article-body");
       if (!article) return;
       if (article.dataset.enhanced === "1") return;
@@ -630,11 +719,22 @@ const jsonLd = buildArticleJsonLd({
   .post-layout > aside {
     align-self: start;
   }
+  .post-main {
+    display: grid;
+    gap: 1rem;
+  }
   .post-main > * {
     width: 100%;
     max-width: 860px;
     margin-left: auto;
     margin-right: auto;
+  }
+  .post-card-shell {
+    padding: 1.1rem 1.15rem;
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--card-shadow);
   }
   .post-layout > aside.post-toc-rail {
     position: sticky;
@@ -650,9 +750,12 @@ const jsonLd = buildArticleJsonLd({
       position: static;
       height: auto;
     }
+    .post-card-shell {
+      padding: 1rem;
+    }
   }
   .post-top-bar {
-    margin-bottom: var(--post-top-gap, 1.5rem);
+    margin-bottom: var(--post-top-gap, 0.8rem);
   }
   .back-link {
     display: inline-flex;
@@ -684,22 +787,17 @@ const jsonLd = buildArticleJsonLd({
     display: block;
   }
   .post-head {
-    padding: var(--post-head-pt, 1.4rem) 0 var(--post-head-pb, 0.9rem);
-    margin-bottom: 0.3rem;
+    padding: var(--post-head-pt, 0.35rem) 0 var(--post-head-pb, 0.2rem);
     display: grid;
-    gap: var(--post-head-gap, 1rem);
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
+    gap: var(--post-head-gap, 0.72rem);
   }
   .post-head h1 {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: clamp(2rem, 3vw + 1rem, 2.75rem);
+    font-size: clamp(1.76rem, 2.4vw + 1rem, 2.5rem);
     font-weight: 700;
     letter-spacing: -0.02em;
-    line-height: 1.3;
+    line-height: 1.28;
     color: var(--text);
   }
   .summary {
@@ -708,41 +806,48 @@ const jsonLd = buildArticleJsonLd({
     line-height: 1.6;
     font-size: var(--post-summary-size, 1.125rem);
   }
+  .meta-strip {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--surface-1) 82%, transparent 18%);
+    padding: 0.65rem;
+  }
   .meta-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+    gap: 0.5rem;
+    margin-top: 0;
     align-items: center;
   }
   .tag-row-badge {
-    margin-top: 0.45rem;
+    margin-top: 0.3rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.5rem;
   }
   .tag-link {
     text-decoration: none;
-    transition: transform 120ms ease, filter 120ms ease;
+    transition: border-color 120ms ease, color 120ms ease;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.58rem;
   }
   .tag-link:hover {
-    transform: translateY(-1px);
-    filter: saturate(1.06);
+    border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+    color: var(--brand);
   }
   .date-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.28rem;
+    gap: 0.2rem;
   }
-  .post-divider {
-    border: 0;
-    border-top: 1px solid var(--line);
-    margin: 0.8rem 0 1rem;
+  .post-body-card {
+    padding: 1.05rem 1.1rem;
   }
   .article-body {
-    padding: 0 0 var(--post-article-pb, 1.2rem) 0;
+    padding: 0.08rem 0 calc(var(--post-article-pb, 1.2rem) + 0.2rem);
     background: transparent;
-    border: none;
+    border: 0;
+    border-radius: 0;
     box-shadow: none;
     font-size: clamp(1rem, 0.2vw + 0.98rem, 1.08rem);
   }
@@ -767,8 +872,8 @@ const jsonLd = buildArticleJsonLd({
     contain-intrinsic-size: auto 320px;
   }
   .prev-next {
-    margin-top: 2rem;
-    padding: 1rem 0 0;
+    margin-top: 0.95rem;
+    padding: 0.9rem 0 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
@@ -798,5 +903,31 @@ const jsonLd = buildArticleJsonLd({
     font-size: 0.875rem;
     margin-top: 0.75rem;
     text-align: center;
+  }
+  :global(body.anti-crawl-locked) .article-body {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  :global(.anti-crawl-lock) {
+    border: 1px solid color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    border-radius: 12px;
+    padding: 1rem;
+    background: color-mix(in oklab, var(--surface-1) 92%, var(--brand-soft) 8%);
+    display: grid;
+    gap: 0.55rem;
+  }
+  :global(.anti-crawl-lock h2) {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  :global(.anti-crawl-lock p) {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+  }
+  :global(.anti-crawl-lock .anti-crawl-reason) {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
 </style>

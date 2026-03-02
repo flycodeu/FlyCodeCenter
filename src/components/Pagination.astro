@@ -30,20 +30,32 @@ function pageUrl(page: number) {
 
 {
   mode === "page" && lastPage > 1 && (
-    <nav class="surface pager" aria-label="分页导航">
-      <a class={currentPage <= 1 ? "disabled" : ""} href={currentPage <= 1 ? "#" : pageUrl(currentPage - 1)}>
+    <nav class="surface pager-shell pager-nav" aria-label="分页导航">
+      <a
+        class={`pager-btn ${currentPage <= 1 ? "is-disabled" : ""}`}
+        href={currentPage <= 1 ? "#" : pageUrl(currentPage - 1)}
+        aria-disabled={currentPage <= 1 ? "true" : "false"}
+      >
         上一页
       </a>
-      <div class="nums">
+      <div class="pager-pages">
         {
           pageWindow.map((page) => (
-            <a href={pageUrl(page)} class={page === currentPage ? "active" : ""} aria-current={page === currentPage ? "page" : undefined}>
+            <a
+              href={pageUrl(page)}
+              class={`pager-btn pager-btn-num ${page === currentPage ? "is-active" : ""}`}
+              aria-current={page === currentPage ? "page" : undefined}
+            >
               {page}
             </a>
           ))
         }
       </div>
-      <a class={currentPage >= lastPage ? "disabled" : ""} href={currentPage >= lastPage ? "#" : pageUrl(currentPage + 1)}>
+      <a
+        class={`pager-btn ${currentPage >= lastPage ? "is-disabled" : ""}`}
+        href={currentPage >= lastPage ? "#" : pageUrl(currentPage + 1)}
+        aria-disabled={currentPage >= lastPage ? "true" : "false"}
+      >
         下一页
       </a>
     </nav>
@@ -96,53 +108,32 @@ function pageUrl(page: number) {
 }
 
 <style>
-  .pager {
-    margin-top: 0.95rem;
-    padding: 0.85rem;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 0.75rem;
+  .pager-nav {
+    margin-top: 1rem;
   }
-  .pager a {
-    color: var(--brand);
-  }
-  .pager a.disabled {
-    pointer-events: none;
-    color: var(--text-soft);
-  }
-  .nums {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-  .nums a {
-    min-width: 2rem;
-    height: 2rem;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--bg-elev);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-soft);
-  }
-  .nums a.active {
-    color: var(--brand);
-    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
-    background: color-mix(in oklab, var(--brand-soft) 78%, transparent 22%);
-  }
+
   .load-more-wrap {
-    margin-top: 0.95rem;
+    margin-top: 1rem;
     display: flex;
     justify-content: center;
   }
+
   .load-more {
     cursor: pointer;
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 88%, transparent 12%);
     border-radius: 12px;
-    padding: 0.65rem 1.15rem;
-    color: var(--text);
+    padding: 0.64rem 1.08rem;
+    color: var(--text-soft);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--surface-1) 96%, transparent 4%),
+        color-mix(in oklab, var(--surface-2) 94%, transparent 6%)
+      );
+  }
+
+  .load-more:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
   }
 </style>

@@ -6,8 +6,7 @@ tags:
   - Astro
   - performance
   - dx
-cover: >-
-  https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80
+cover: https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=1200&q=80
 ---
 
 ## 为什么静态优先

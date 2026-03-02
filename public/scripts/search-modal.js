@@ -32,7 +32,7 @@
     if (value.startsWith("/tutorial")) return "教程";
     if (value.startsWith("/projects")) return "项目";
     if (value.startsWith("/sites")) return "收藏";
-    if (value.startsWith("/reading")) return "优秀文章";
+    if (value.startsWith("/reading")) return "推荐";
     if (value.startsWith("/tags")) return "标签";
     return "页面";
   }
@@ -92,39 +92,64 @@
     return Boolean(target.closest("[contenteditable='true'], input, textarea"));
   }
 
-  function createPagefindEngine(bundlePath, topK) {
+  function createPagefindEngine(bundlePath, topK, fallbackFactory) {
     let pagefindPromise = null;
+    let fallbackEngine = null;
+    const resolvedBundlePath = typeof bundlePath === "string" ? bundlePath.trim() : "";
+
+    const ensureFallback = () => {
+      if (!fallbackFactory) return null;
+      if (fallbackEngine) return fallbackEngine;
+      fallbackEngine = fallbackFactory();
+      fallbackEngine?.warmup?.();
+      return fallbackEngine;
+    };
 
     const load = async () => {
+      if (!resolvedBundlePath) {
+        ensureFallback();
+        throw new Error("Pagefind bundle path is empty");
+      }
       if (!pagefindPromise) {
-        pagefindPromise = import(/* @vite-ignore */ bundlePath).then((mod) => mod.default ?? mod);
+        pagefindPromise = import(/* @vite-ignore */ resolvedBundlePath)
+          .then((mod) => mod.default ?? mod)
+          .catch((error) => {
+            ensureFallback();
+            throw error;
+          });
       }
       return pagefindPromise;
     };
 
     return {
       warmup() {
-        load().catch(() => {});
+        load().catch(() => ensureFallback());
       },
       async search(query) {
-        const api = await load();
-        const terms = tokenize(query);
-        const raw = await api.search(query, { limit: topK });
-        const list = await Promise.all(
-          (raw?.results || []).map(async (item) => {
-            const data = await item.data();
-            const url = normalizeUrl(String(data?.url || "/"));
-            const excerpt = String(data?.excerpt || "");
-            return {
-              title: String(data?.meta?.title || "Untitled"),
-              url,
-              domain: inferDomain(url),
-              snippet: makeSnippet(excerpt, terms),
-              score: 1
-            };
-          })
-        );
-        return list;
+        try {
+          const api = await load();
+          const terms = tokenize(query);
+          const raw = await api.search(query, { limit: topK });
+          const list = await Promise.all(
+            (raw?.results || []).map(async (item) => {
+              const data = await item.data();
+              const url = normalizeUrl(String(data?.url || "/"));
+              const excerpt = String(data?.excerpt || "");
+              return {
+                title: String(data?.meta?.title || "Untitled"),
+                url,
+                domain: inferDomain(url),
+                snippet: makeSnippet(excerpt, terms),
+                score: 1
+              };
+            })
+          );
+          return list;
+        } catch (error) {
+          const fallback = ensureFallback();
+          if (fallback) return fallback.search(query);
+          throw error;
+        }
       }
     };
   }
@@ -214,8 +239,10 @@
     const nativePreferred = root.getAttribute("data-native") === "1";
     const shortcut = (root.getAttribute("data-shortcut") || "/").toLowerCase();
     const provider = root.getAttribute("data-provider") || "minisearch";
+    const runtimeFallback = root.getAttribute("data-runtime-fallback") || "off";
     const indexPath = root.getAttribute("data-index-path") || "/search/minisearch.json";
     const pagefindPath = root.getAttribute("data-pagefind-path") || "/pagefind/pagefind.js";
+    const pagefindEnabled = root.getAttribute("data-pagefind-enabled") === "1";
     const topK = Number(root.getAttribute("data-top-k") || "8");
     const groupByDomain = root.getAttribute("data-group-by-domain") === "1";
 
@@ -229,7 +256,11 @@
 
     if (!(input instanceof HTMLInputElement) || !(resultsEl instanceof HTMLElement)) return () => {};
 
-    const engine = provider === "pagefind" ? createPagefindEngine(pagefindPath, topK) : createMiniEngine(indexPath, topK);
+    const fallbackFactory = runtimeFallback === "minisearch" ? () => createMiniEngine(indexPath, topK) : null;
+    const engine =
+      provider === "pagefind" && pagefindEnabled
+        ? createPagefindEngine(pagefindPath, topK, fallbackFactory)
+        : createMiniEngine(indexPath, topK);
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -319,7 +350,7 @@
         groups.set(key, list);
       }
 
-      const order = ["博客", "教程", "项目", "收藏", "优秀文章", "标签", "页面"];
+      const order = ["博客", "教程", "项目", "收藏", "推荐", "标签", "页面"];
       const keys = [...groups.keys()].sort((a, b) => {
         const aIdx = order.indexOf(a);
         const bIdx = order.indexOf(b);

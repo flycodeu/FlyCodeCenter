@@ -7,7 +7,74 @@ interface Props {
   lang?: string;
 }
 
+const SUPPORTED_LANGS = new Set([
+  "ts",
+  "tsx",
+  "jsx",
+  "javascript",
+  "c",
+  "cpp",
+  "csharp",
+  "java",
+  "kotlin",
+  "groovy",
+  "python",
+  "go",
+  "sql",
+  "json",
+  "json5",
+  "jsonc",
+  "yaml",
+  "toml",
+  "ini",
+  "properties",
+  "dotenv",
+  "bash",
+  "powershell",
+  "http",
+  "diff",
+  "dockerfile",
+  "nginx",
+  "makefile",
+  "html",
+  "xml",
+  "markdown",
+  "mermaid",
+  "txt",
+  "plaintext",
+  "log"
+]);
+
+const ALIASES: Record<string, string> = {
+  js: "javascript",
+  ts: "ts",
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  ps1: "powershell",
+  ps: "powershell",
+  bat: "powershell",
+  cmd: "powershell",
+  yml: "yaml",
+  md: "markdown",
+  vue: "html",
+  vue3: "html",
+  plain: "txt",
+  text: "txt"
+};
+
+const normalizeLang = (value: string) => {
+  const token = String(value || "")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)[0];
+  if (!token) return "txt";
+  const normalized = ALIASES[token] ?? token;
+  return SUPPORTED_LANGS.has(normalized) ? normalized : "txt";
+};
+
 const { file, lang = "text" } = Astro.props;
+const normalizedLang = normalizeLang(lang);
 const absolute = path.resolve(process.cwd(), file);
 let content = "";
 try {
@@ -17,7 +84,7 @@ try {
 }
 ---
 
-<pre class="code-include"><code class={`language-${lang}`}>{content}</code></pre>
+<pre class="code-include"><code class={`language-${normalizedLang}`}>{content}</code></pre>
 
 <style>
   .code-include {

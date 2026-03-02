@@ -8,8 +8,7 @@ tags:
   - Astro
   - architecture
   - provider
-cover: >-
-  https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80
+cover: https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80
 ---
 
 ## 统一配置的价值

@@ -1,146 +1,294 @@
-﻿---
+---
+import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
+import ArchiveTimelineCard from "@/components/ArchiveTimelineCard.astro";
 import { fetchAllContentEntries, fetchAllEntries, makeTagItems } from "@/utils/query";
-import { buildArchiveBuckets, getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
-import { formatDate } from "@/utils/date";
-import { resolveArticleMeta } from "@/utils/article-meta";
+import { buildArchiveTimeline } from "@/utils/archive";
 
 const entries = await fetchAllEntries();
 const allContent = await fetchAllContentEntries();
 const tags = makeTagItems(allContent);
-const map = buildArchiveBuckets(entries);
-const months = [...map.keys()].sort((a, b) => (a > b ? -1 : 1));
+const years = buildArchiveTimeline(entries);
+
+const archivePageConfig = siteConfig.pages.archives as {
+  showCover?: boolean;
+  timeline?: { layoutMode?: "both" | "left" | "right" };
+  antiCrawl?: {
+    enable?: boolean;
+    lockOnSuspicious?: boolean;
+    maxActions?: number;
+    timeWindowMs?: number;
+  };
+};
+
+const showCover = archivePageConfig.showCover ?? true;
+const timelineLayout = archivePageConfig.timeline?.layoutMode ?? "both";
+const antiCrawlConfig = archivePageConfig.antiCrawl ?? {};
+const archiveCoverMode = showCover ? undefined : "none";
+
+const timelineItems = years.flatMap((yearBucket) =>
+  yearBucket.months.flatMap((monthBucket) =>
+    monthBucket.days.flatMap((dayBucket) =>
+      dayBucket.entries.map((entry, entryIdx) => ({
+        entry,
+        dateLabel: `${dayBucket.year}-${dayBucket.month}-${dayBucket.day}`,
+        showDate: entryIdx === 0,
+        dayKey: dayBucket.key
+      }))
+    )
+  )
+);
 
 const stats = [
   { title: "总文章数", value: entries.length, href: "/archives" },
-  { title: "标签总数", value: tags.length, href: "/tags" }
+  { title: "日期节点", value: years.reduce((sum, year) => sum + year.months.reduce((m, month) => m + month.days.length, 0), 0) },
+  { title: "博客数量", value: entries.filter((entry) => entry.collection === "blog").length, href: "/blog" },
+  { title: "教程数量", value: entries.filter((entry) => entry.collection === "tutorial").length, href: "/tutorials" }
 ];
 ---
 
-<ListLayout title="归档" description="时光的足迹，按月份记录的全部文章。" stats={stats} tags={tags}>
-  <section class="surface timeline-wrap">
+<ListLayout title="归档" description="博客与教程统一归档，按日期倒序时间轴展示。" stats={stats} tags={tags}>
+  <section class="archive-timeline" id="archive-timeline">
+    <span class="timeline-line" aria-hidden="true"></span>
     {
-      months.map((month) => {
-        const [y, m] = month.split("-");
+      timelineItems.map((item, idx) => {
+        const side = timelineLayout === "left" ? "left" : timelineLayout === "right" ? "right" : idx % 2 === 0 ? "left" : "right";
         return (
-          <div class="timeline-month">
-            <h2 class="month-title">
-              <span class="year">{y}</span>年<span class="month">{m}</span>月
-              <span class="count">{map.get(month)?.length || 0} 篇</span>
-            </h2>
-            <div class="timeline-list">
-              {(map.get(month) ?? []).map((entry) => {
-                const url = entry.collection === "blog" ? getBlogEntryUrl(entry) : getTutorialEntryUrl(entry);
-                const meta = resolveArticleMeta(entry);
-                return (
-                  <a class="timeline-item" href={url}>
-                    <div class="date">{formatDate(meta.createTime, "MM-DD")}</div>
-                    <div class="title">{meta.title}</div>
-                  </a>
-                );
-              })}
+          <article class={`timeline-item side-${side}`} data-day={item.dayKey}>
+            <div class="timeline-column timeline-col-left">
+              {side === "left" && <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />}
             </div>
-          </div>
+            <div class="timeline-axis">
+              {item.showDate && <span class="timeline-date">{item.dateLabel}</span>}
+              <span class="timeline-dot" aria-hidden="true"></span>
+            </div>
+            <div class="timeline-column timeline-col-right">
+              {side === "right" && <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />}
+            </div>
+          </article>
         );
       })
     }
+    <section class="archive-lock" id="archive-lock" hidden>
+      <h2>访问已受限</h2>
+      <p>检测到异常访问行为，归档内容已临时受限。</p>
+      <p class="archive-lock-reason" id="archive-lock-reason">原因: suspicious</p>
+    </section>
   </section>
 </ListLayout>
 
+<script
+  is:inline
+  define:vars={{
+    antiCrawlEnabled: antiCrawlConfig.enable ?? true,
+    antiCrawlLockOnSuspicious: antiCrawlConfig.lockOnSuspicious ?? true,
+    antiCrawlMaxActions: antiCrawlConfig.maxActions ?? 10,
+    antiCrawlTimeWindowMs: antiCrawlConfig.timeWindowMs ?? 20000
+  }}
+>
+  (() => {
+    const timeline = document.getElementById("archive-timeline");
+    const lockPanel = document.getElementById("archive-lock");
+    const lockReason = document.getElementById("archive-lock-reason");
+    if (!(timeline instanceof HTMLElement) || !antiCrawlEnabled) return;
+
+    const botUa = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
+    const records = [];
+    let locked = false;
+
+    const lock = (reason) => {
+      if (locked) return;
+      locked = true;
+      timeline.classList.add("is-locked");
+      document.documentElement.dataset.archivesLocked = "1";
+      if (lockPanel instanceof HTMLElement) lockPanel.hidden = false;
+      if (lockReason instanceof HTMLElement) lockReason.textContent = `原因: ${reason}`;
+    };
+
+    const mark = (name) => {
+      if (!antiCrawlLockOnSuspicious || locked) return;
+      const now = Date.now();
+      records.push(now);
+      while (records.length && now - records[0] > antiCrawlTimeWindowMs) {
+        records.shift();
+      }
+      if (records.length >= antiCrawlMaxActions) {
+        lock(`high-frequency-${name}`);
+      }
+    };
+
+    const ua = navigator.userAgent || "";
+    const suspiciousUa = botUa.test(ua);
+    const webdriver = Boolean(navigator.webdriver);
+    if (antiCrawlLockOnSuspicious && (webdriver || suspiciousUa)) {
+      lock(webdriver ? "webdriver" : "suspicious-ua");
+    }
+
+    const onSensitive = (event, name) => {
+      if (locked) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      mark(name);
+    };
+
+    document.addEventListener("copy", (event) => onSensitive(event, "copy"), { capture: true });
+    document.addEventListener("cut", (event) => onSensitive(event, "cut"), { capture: true });
+    document.addEventListener("contextmenu", (event) => onSensitive(event, "contextmenu"), { capture: true });
+    document.addEventListener("selectstart", (event) => onSensitive(event, "selectstart"), { capture: true });
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        const key = event.key.toLowerCase();
+        if (key === "c" || key === "s" || key === "u") {
+          onSensitive(event, `hotkey-${key}`);
+        }
+      },
+      { capture: true }
+    );
+  })();
+</script>
+
 <style>
-  .timeline-wrap {
-    padding: 2rem;
-    border-radius: 12px;
-  }
-  .timeline-month {
+  .archive-timeline {
     position: relative;
-    padding-left: 2rem;
-    border-left: 2px solid var(--line);
-    margin-bottom: 2rem;
-  }
-  .timeline-month:last-child {
-    margin-bottom: 0;
-  }
-  .timeline-month::before {
-    content: "";
-    position: absolute;
-    left: -7px;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--bg-elev);
-    border: 3px solid var(--brand);
-  }
-  .month-title {
-    margin: 0 0 1rem 0;
-    font-family: var(--font-sans);
-    font-size: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text);
-  }
-  .month-title .year {
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-  .month-title .month {
-    font-weight: 600;
-  }
-  .month-title .count {
-    font-size: 0.875rem;
-    color: var(--brand);
-    background: var(--brand-soft);
-    padding: 0.25rem 0.5rem;
-    border-radius: 999px;
-    font-weight: 500;
-    margin-left: 0.5rem;
-  }
-  .timeline-list {
     display: grid;
-    gap: 1rem;
+    gap: var(--space-3);
+    padding: 0.2rem 0;
   }
+
+  .timeline-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: color-mix(in oklab, var(--line) 75%, transparent 25%);
+    pointer-events: none;
+  }
+
   .timeline-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    background: var(--bg-elev);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .timeline-column {
+    min-width: 0;
+  }
+
+  .timeline-axis {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 0.32rem;
+    padding-top: 0.34rem;
+  }
+
+  .timeline-date {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    background: color-mix(in oklab, var(--surface-1) 94%, transparent 6%);
     border: 1px solid var(--line);
-    transition: all 0.2s ease;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .timeline-item:hover {
-    border-color: var(--brand);
-    transform: translateX(4px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  }
-  .timeline-item .date {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.875rem;
-    color: var(--text-soft);
+    border-radius: var(--radius-pill);
+    padding: 0.12rem 0.48rem;
     white-space: nowrap;
   }
-  .timeline-item .title {
-    font-weight: 500;
-    font-size: 1.0625rem;
-    line-height: 1.4;
+
+  .timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
+    background: color-mix(in oklab, var(--surface-1) 96%, transparent 4%);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand-soft) 55%, transparent 45%);
   }
-  @media (max-width: 768px) {
-    .timeline-wrap {
-      padding: 1.5rem 1rem;
+
+  .timeline-col-left {
+    grid-column: 1;
+  }
+
+  .timeline-col-right {
+    grid-column: 3;
+  }
+
+  .side-left .timeline-col-right,
+  .side-right .timeline-col-left {
+    opacity: 0;
+    pointer-events: none;
+    min-height: 1px;
+  }
+
+  .archive-lock {
+    border: 1px solid color-mix(in oklab, var(--brand) 35%, var(--line) 65%);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--surface-1) 92%, var(--brand-soft) 8%);
+    padding: 1rem;
+    display: grid;
+    gap: 0.5rem;
+    z-index: 2;
+  }
+
+  .archive-lock h2 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+
+  .archive-lock p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+  }
+
+  .archive-lock-reason {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .archive-timeline.is-locked .timeline-item {
+    opacity: 0.25;
+    pointer-events: none;
+    filter: blur(1px);
+  }
+
+  @media (max-width: 980px) {
+    .timeline-line {
+      left: 14px;
+      transform: none;
     }
-    .timeline-month {
-      padding-left: 1.25rem;
-    }
+
     .timeline-item {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.25rem;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 0.62rem;
+    }
+
+    .timeline-axis {
+      grid-column: 1;
+      justify-items: start;
+      padding-top: 0.5rem;
+    }
+
+    .timeline-date {
+      margin-left: 0.8rem;
+    }
+
+    .timeline-col-left,
+    .timeline-col-right {
+      grid-column: 2;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .side-left .timeline-col-right,
+    .side-right .timeline-col-left {
+      display: none;
     }
   }
 </style>
-

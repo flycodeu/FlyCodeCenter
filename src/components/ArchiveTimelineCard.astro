@@ -1,0 +1,199 @@
+---
+import type { CollectionEntry } from "astro:content";
+import siteConfig from "@/site.config";
+import { formatDate } from "@/utils/date";
+import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
+
+type PostKind = "blog" | "tutorial";
+type CoverMode = "left" | "right" | "top" | "none";
+
+interface Props {
+  entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial">;
+  kind: PostKind;
+  coverMode?: CoverMode;
+}
+
+const { entry, kind, coverMode } = Astro.props;
+
+function normalizeCoverMode(value: unknown): CoverMode | undefined {
+  if (typeof value !== "string") return undefined;
+  const mode = value.trim().toLowerCase();
+  if (mode === "left" || mode === "right" || mode === "top" || mode === "none") return mode;
+  return undefined;
+}
+
+const meta = resolveArticleMeta(entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial">);
+const pageOverride = siteConfig.blog.pageCardOverrides[kind === "blog" ? "blog" : "tutorial"];
+const listCard = siteConfig.blog.listCard as {
+  defaultCoverMode?: CoverMode;
+  coverAspectRatio?: string;
+  coverRatio?: string;
+  tagsMax?: number;
+};
+const archiveCard = (siteConfig.pages.archives as {
+  card?: { thumbWidth?: number; thumbAspectRatio?: string; titleLines?: number; tagsMax?: number };
+}).card ?? {};
+
+const entryData = entry.data as { coverMode?: string; coverPosition?: string };
+const resolvedMode =
+  normalizeCoverMode(coverMode) ??
+  normalizeCoverMode(entryData.coverMode) ??
+  normalizeCoverMode(entryData.coverPosition) ??
+  normalizeCoverMode(meta.coverMode) ??
+  normalizeCoverMode(pageOverride.coverMode) ??
+  normalizeCoverMode(listCard.defaultCoverMode) ??
+  "right";
+
+const hasCover = Boolean(meta.cover) && resolvedMode !== "none";
+const mode: CoverMode = hasCover ? resolvedMode : "none";
+const tagsMax = archiveCard.tagsMax ?? listCard.tagsMax ?? 3;
+const shownTags = meta.tags.slice(0, tagsMax);
+const hiddenTags = Math.max(0, meta.tags.length - shownTags.length);
+const titleLines = archiveCard.titleLines ?? 2;
+const thumbWidth = archiveCard.thumbWidth ?? 132;
+const thumbAspectRatio = archiveCard.thumbAspectRatio ?? listCard.coverAspectRatio ?? listCard.coverRatio ?? "16 / 9";
+const link = kind === "blog" ? getBlogEntryUrl(entry as CollectionEntry<"blog">) : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
+---
+
+<article class={`surface archive-card mode-${mode}`} style={`--archive-title-lines:${titleLines};--archive-thumb-width:${thumbWidth}px;--archive-thumb-ratio:${thumbAspectRatio};`}>
+  <section class="archive-title-block">
+    <a class="archive-title" href={link}>{meta.title}</a>
+  </section>
+
+  <section class="archive-info-block">
+    {hasCover && (
+      <a class="archive-thumb" href={link} aria-label={meta.title}>
+        <img src={meta.cover} alt={meta.title} loading="lazy" decoding="async" />
+      </a>
+    )}
+    <div class="archive-info-meta">
+      {shownTags.length > 0 && (
+        <div class="archive-tags">
+          {shownTags.map((tag) => <span class="tag-badge archive-tag">{tag}</span>)}
+          {hiddenTags > 0 && <span class="tag-badge archive-tag">+{hiddenTags}</span>}
+        </div>
+      )}
+      <time class="archive-date" datetime={meta.createTime.toISOString()}>
+        {formatDate(meta.createTime, "YYYY-MM-DD")}
+      </time>
+    </div>
+  </section>
+</article>
+
+<style>
+  .archive-card {
+    padding: 0.88rem 0.92rem;
+    display: grid;
+    gap: 0.72rem;
+  }
+
+  .archive-title-block {
+    min-width: 0;
+  }
+
+  .archive-title {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.36;
+    letter-spacing: -0.01em;
+    font-size: 1rem;
+    font-weight: 650;
+    display: -webkit-box;
+    -webkit-line-clamp: var(--archive-title-lines);
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .archive-info-block {
+    display: grid;
+    align-items: center;
+    gap: 0.62rem;
+  }
+
+  .archive-card.mode-right .archive-info-block {
+    grid-template-columns: minmax(0, 1fr) minmax(96px, var(--archive-thumb-width));
+  }
+
+  .archive-card.mode-left .archive-info-block {
+    grid-template-columns: minmax(96px, var(--archive-thumb-width)) minmax(0, 1fr);
+  }
+
+  .archive-card.mode-left .archive-thumb {
+    order: 1;
+  }
+
+  .archive-card.mode-left .archive-info-meta {
+    order: 2;
+  }
+
+  .archive-card.mode-top .archive-info-block {
+    grid-template-columns: 1fr;
+  }
+
+  .archive-card.mode-none .archive-info-block {
+    grid-template-columns: 1fr;
+  }
+
+  .archive-card.mode-top .archive-thumb {
+    width: min(100%, 220px);
+  }
+
+  .archive-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--archive-thumb-ratio);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--surface-2) 90%, transparent 10%);
+  }
+
+  .archive-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .archive-info-meta {
+    min-width: 0;
+    display: grid;
+    gap: 0.44rem;
+    align-content: center;
+  }
+
+  .archive-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.34rem;
+    min-width: 0;
+  }
+
+  .archive-tag {
+    font-size: 0.68rem;
+    padding: 0.14rem 0.48rem;
+    max-width: 108px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .archive-date {
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 860px) {
+    .archive-card.mode-right .archive-info-block,
+    .archive-card.mode-left .archive-info-block {
+      grid-template-columns: 1fr;
+    }
+
+    .archive-card.mode-right .archive-thumb,
+    .archive-card.mode-left .archive-thumb {
+      width: min(100%, 220px);
+    }
+  }
+</style>

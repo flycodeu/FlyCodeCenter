@@ -5,8 +5,6 @@ import mdx from "@astrojs/mdx";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { transformerRenderWhitespace } from "@shikijs/transformers";
-import { transformerTwoslash } from "@shikijs/twoslash";
 import siteConfig from "./src/site.config.ts";
 import { remarkMarkdownInclude } from "./src/utils/markdown/remark-include.ts";
 import { remarkNormalizeCodeLang } from "./src/utils/markdown/remark-normalize-code-lang.ts";
@@ -15,14 +13,6 @@ import { rehypeImageEnhance } from "./src/utils/markdown/rehype-image-enhance.ts
 const integrations = [mdx()];
 if (siteConfig.seo.sitemap.enable) {
   integrations.push(sitemap());
-}
-
-const shikiTransformers = [];
-if (siteConfig.codeHighlight.showWhitespace) {
-  shikiTransformers.push(transformerRenderWhitespace());
-}
-if (siteConfig.codeHighlight.twoslash) {
-  shikiTransformers.push(transformerTwoslash());
 }
 
 const remarkPlugins = [];
@@ -71,13 +61,7 @@ export default defineConfig({
   base: siteConfig.site.base,
   integrations,
   markdown: {
-    syntaxHighlight: "shiki",
-    shikiConfig: {
-      langs: siteConfig.codeHighlight.languages,
-      theme: siteConfig.codeHighlight.theme,
-      wrap: siteConfig.codeHighlight.lineNumbers || siteConfig.codeHighlight.showWhitespace,
-      transformers: shikiTransformers
-    },
+    syntaxHighlight: "prism",
     remarkPlugins,
     rehypePlugins
   },

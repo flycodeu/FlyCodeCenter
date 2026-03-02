@@ -66,9 +66,10 @@ const { title, url, editUrl } = Astro.props;
 <style>
   .copy-box {
     margin-top: 2rem;
-    padding: 1rem 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    padding: 1.1rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--surface-1) 84%, transparent 16%);
   }
   .copy-header {
     display: flex;

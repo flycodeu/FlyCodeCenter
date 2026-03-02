@@ -13,6 +13,7 @@ type ArticleEntry =
   | CollectionEntry<"blog">
   | CollectionEntry<"tutorial">
   | CollectionEntry<"projects">;
+type CoverMode = "left" | "right" | "top" | "none";
 
 type ArticleDefaults = typeof siteConfig.articleMeta.defaults;
 type ArticleOverride = Partial<ArticleDefaults>;
@@ -22,6 +23,7 @@ export interface ResolvedArticleMeta {
   code: string;
   permalink: string;
   summary: string;
+  outline: string;
   description: string;
   tags: string[];
   createTime: Date;
@@ -29,6 +31,7 @@ export interface ResolvedArticleMeta {
   pubDate: Date;
   updatedDate?: Date;
   cover: string;
+  coverMode: CoverMode;
   showCover: boolean;
   draft: boolean;
   encrypted: boolean;
@@ -142,6 +145,32 @@ function normalizePermalink(input: string, code: string): string {
   return fallback;
 }
 
+function normalizeCoverMode(value: unknown): CoverMode | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "left" || normalized === "right" || normalized === "top" || normalized === "none") {
+    return normalized;
+  }
+  return undefined;
+}
+
+function deriveTutorialSeries(entry: ArticleEntry): string {
+  if (entry.collection !== "tutorial") return "";
+  const raw = String(entry.id || "").replace(/\\/g, "/");
+  const first = raw.split("/").find((segment) => segment && segment !== ".");
+  return first ? first.trim().toLowerCase() : "";
+}
+
+function deriveTutorialOrder(entry: ArticleEntry): number | undefined {
+  if (entry.collection !== "tutorial") return undefined;
+  const raw = String(entry.id || "").replace(/\\/g, "/");
+  const last = raw.split("/").pop() || "";
+  const matched = last.match(/^(\d{1,4})[-_]/);
+  if (!matched) return undefined;
+  const value = Number(matched[1]);
+  return Number.isFinite(value) ? value : undefined;
+}
+
 export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
   const defaults: ArticleDefaults = siteConfig.articleMeta.defaults;
   const code = resolveEntryCode(entry);
@@ -152,6 +181,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
   const derivedTags = resolveDerivedTags(entry.data.tags);
 
   const summary = pickText(override.summary, entry.data.summary, defaults.summary);
+  const outline = pickText(override.outline, (entry.data as { outline?: string }).outline, defaults.outline);
   const description = pickText(override.description, summary, defaults.description, title);
   const tags = normalizeTags(override.tags, entry.data.tags, derivedTags, defaults.tags);
 
@@ -163,6 +193,22 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
   ) ?? new Date("2026-01-01T00:00:00.000Z");
   const updatedTime = pickDate(override.updatedTime, defaults.updatedTime);
   const cover = pickText(override.cover, entry.data.cover, defaults.cover);
+  const coverMode =
+    normalizeCoverMode((entry.data as { coverMode?: string; coverPosition?: string }).coverMode) ??
+    normalizeCoverMode((entry.data as { coverMode?: string; coverPosition?: string }).coverPosition) ??
+    "right";
+  const series = pickText(
+    override.series,
+    (entry.data as { series?: string }).series,
+    deriveTutorialSeries(entry),
+    defaults.series
+  );
+  const order = pickNumber(
+    defaults.order,
+    override.order,
+    (entry.data as { order?: number }).order,
+    deriveTutorialOrder(entry)
+  );
   const permalink = normalizePermalink(
     pickText(override.permalink, entry.data.permalink, defaults.permalink),
     code
@@ -173,6 +219,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     code,
     permalink,
     summary,
+    outline,
     description,
     tags,
     createTime,
@@ -180,14 +227,15 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     pubDate: createTime,
     updatedDate: updatedTime,
     cover,
+    coverMode,
     showCover: pickBoolean(override.showCover, defaults.showCover),
     draft: pickBoolean(override.draft, defaults.draft),
     encrypted: pickBoolean(override.encrypted, defaults.encrypted),
     encryptedFile: pickText(override.encryptedFile, defaults.encryptedFile),
     passwordHint: pickText(override.passwordHint, defaults.passwordHint),
     pinned: pickBoolean(override.pinned, defaults.pinned),
-    series: pickText(override.series, defaults.series),
-    order: pickNumber(defaults.order, override.order),
+    series,
+    order,
     projectType: pickText(override.projectType, defaults.projectType),
     repoUrl: pickText(override.repoUrl, defaults.repoUrl),
     docUrl: pickText(override.docUrl, defaults.docUrl),

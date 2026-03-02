@@ -31,7 +31,7 @@ function inferDomainLabel(url: string): string {
   if (value.startsWith("/tutorial")) return "教程";
   if (value.startsWith("/projects")) return "项目";
   if (value.startsWith("/sites")) return "收藏";
-  if (value.startsWith("/reading")) return "优秀文章";
+  if (value.startsWith("/reading")) return "推荐";
   if (value.startsWith("/tags")) return "标签";
   return "页面";
 }

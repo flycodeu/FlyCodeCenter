@@ -19,21 +19,8 @@ const enableTransition = siteConfig.theme.transitions.theme;
     const root = document.documentElement;
     const icon = document.getElementById("theme-toggle-icon");
 
-    const nameMap = {
-      plume: "晨曦",
-      ocean: "海蓝",
-      sunset: "暖阳",
-      night: "夜幕",
-      tech: "未来"
-    };
-
-    const glyphMap = {
-      plume: "PL",
-      ocean: "OC",
-      sunset: "SS",
-      night: "NT",
-      tech: "TK"
-    };
+    const themeLight = "aurora-light";
+    const themeDark = "aurora-dark";
 
     const readThemes = (button) => {
       try {
@@ -46,20 +33,20 @@ const enableTransition = siteConfig.theme.transitions.theme;
     };
 
     const normalizeTheme = (themes, input) => {
-      const fallback = root.dataset.defaultTheme || themes[0] || "plume";
+      const fallback = root.dataset.defaultTheme || themes[0] || themeLight;
       const next = String(input ?? "").trim();
       if (themes.includes(next)) return next;
       if (themes.includes(fallback)) return fallback;
-      return themes[0] || "plume";
+      return themes[0] || themeLight;
     };
 
     const syncToggleUi = (theme) => {
       const button = document.getElementById("theme-toggle");
       if (!(button instanceof HTMLElement)) return;
       if (icon instanceof HTMLElement) {
-        icon.textContent = glyphMap[theme] || "TH";
+        icon.textContent = theme === themeDark ? "DK" : "LT";
       }
-      const label = nameMap[theme] || theme;
+      const label = theme === themeDark ? "深色" : "浅色";
       button.setAttribute("aria-label", `切换主题，当前 ${label}`);
       button.title = `当前主题：${label}`;
     };
@@ -87,16 +74,15 @@ const enableTransition = siteConfig.theme.transitions.theme;
       }
 
       const current = normalizeTheme(themes, root.dataset.theme);
-      const index = themes.indexOf(current);
-      const next = normalizeTheme(themes, themes[(index + 1) % themes.length]);
+      const next = current === themeDark ? themeLight : themeDark;
       applyTheme(next);
     });
 
     document.addEventListener("astro:page-load", () => {
-      syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || "plume");
+      syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || themeLight);
     });
 
-    syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || "plume");
+    syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || themeLight);
   })();
 </script>
 

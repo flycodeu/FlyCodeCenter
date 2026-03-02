@@ -15,16 +15,14 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
       {
         siteConfig.search.provider !== "off" && (
           <button type="button" data-action="open-search" class="icon-btn" aria-label="打开搜索">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-right:0.25rem">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.343-4.343m0 0A8 8 0 1 0 5.343 5.343a8 8 0 0 0 11.314 11.314Z"/>
             </svg>
-            <span class="search-hotkey">/</span>
-            <span class="search-text">搜索</span>
           </button>
         )
       }
       <ThemeToggle />
-      <a class="icon-btn" href={siteConfig.theme.social.github} target="_blank" rel="noreferrer" aria-label="GitHub">
+      <a class="icon-btn github-link" href={siteConfig.theme.social.github} target="_blank" rel="noreferrer" aria-label="GitHub">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path
             fill="currentColor"
@@ -38,23 +36,28 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
 
 <style>
   .site-header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 60;
     backdrop-filter: blur(var(--header-blur));
     background:
       linear-gradient(120deg, color-mix(in oklab, var(--brand-soft) 28%, transparent), transparent 55%),
       color-mix(in oklab, var(--bg-elev) 78%, transparent 22%);
     border-bottom: 1px solid var(--line);
-    box-shadow: 0 12px 36px -30px color-mix(in oklab, var(--brand) 40%, transparent 60%);
+    box-shadow: 0 10px 32px -30px color-mix(in oklab, var(--brand) 32%, transparent 68%);
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .header-inner {
     min-height: 68px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 1.5rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
     align-items: center;
+  }
+  :global(.nav) {
+    min-width: 0;
   }
   .logo {
     display: inline-flex;
@@ -64,7 +67,7 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
   .logo-mark {
     width: 34px;
     height: 34px;
-    border-radius: 11px;
+    border-radius: var(--radius-sm);
     background:
       linear-gradient(135deg, color-mix(in oklab, var(--brand) 90%, #ffffff 10%), color-mix(in oklab, var(--accent) 58%, var(--brand) 42%));
     color: #041322;
@@ -85,12 +88,16 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
   .actions {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.38rem;
+    position: relative;
+    z-index: 2;
+    flex-wrap: nowrap;
+    justify-self: end;
   }
   .icon-btn {
     min-width: 38px;
     height: 38px;
-    border-radius: 11px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--line);
     background: color-mix(in oklab, var(--bg-elev) 78%, transparent 22%);
     color: var(--text-soft);
@@ -105,14 +112,22 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
   .icon-btn svg {
     display: block;
   }
-  .search-text {
+  .github-link {
     display: inline-flex;
-    margin-left: 0.22rem;
   }
   .icon-btn:hover {
     color: var(--brand);
     background-color: color-mix(in oklab, var(--brand-soft) 74%, transparent 26%);
-    transform: translateY(-1px);
+  }
+  @media (max-width: 1180px) {
+    .logo-text {
+      display: none;
+    }
+  }
+  @media (max-width: 1280px) {
+    .github-link {
+      display: none;
+    }
   }
   @media (max-width: 900px) {
     .header-inner {
@@ -132,12 +147,6 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
     .actions {
       grid-area: actions;
       justify-content: flex-end;
-    }
-    .search-hotkey {
-      display: none;
-    }
-    .search-text {
-      display: none;
     }
   }
 </style>

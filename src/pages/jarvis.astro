@@ -3,6 +3,8 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import siteConfig from "@/site.config";
 
 const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
+const personaPresets = siteConfig.jarvis?.personaPresets ?? [];
+const interactionConfig = siteConfig.jarvis?.interaction ?? { eventNamespace: "jarvis" };
 ---
 
 <BaseLayout title="JARVIS 控制台" description="多模型配置与未来风对话控制台">
@@ -33,6 +35,11 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
         <h3>模型配置</h3>
         <button id="jarvis-settings-close" type="button">关闭</button>
       </header>
+
+      <label>
+        当前角色
+        <select id="jarvis-persona-select"></select>
+      </label>
 
       <label>
         当前模型
@@ -78,9 +85,12 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
     </aside>
   </section>
 
-  <script type="module" define:vars={{ defaultModels }}>
+  <script type="module" define:vars={{ defaultModels, personaPresets, interactionConfig }}>
     const STORAGE_MODELS = "jarvis-models-v1";
     const STORAGE_ACTIVE = "jarvis-model-active-v1";
+    const STORAGE_PERSONA = "jarvis-persona-active-v1";
+    const STORAGE_ORB_MODEL = "fly-jarvis-model-preset";
+    const EVENT_NS = interactionConfig?.eventNamespace || "jarvis";
 
     const fallbackModels = (defaultModels || []).map((item, idx) => ({
       uid: `default-${idx}`,
@@ -90,6 +100,16 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
       apiKey: "",
       temperature: 0.7,
       isDefault: idx === 0
+    }));
+
+    const fallbackPersonas = (personaPresets || []).map((item, idx) => ({
+      id: String(item?.id || `persona-${idx}`),
+      name: String(item?.name || `角色 ${idx + 1}`),
+      avatarType: String(item?.avatarType || "orb"),
+      defaultText: String(item?.defaultText || "已待命"),
+      activeText: String(item?.activeText || "连接中"),
+      greeting: String(item?.greeting || "角色已激活，准备对话。"),
+      actions: Array.isArray(item?.actions) ? item.actions.map((action) => String(action || "").trim()).filter(Boolean) : []
     }));
 
     const el = {
@@ -104,6 +124,7 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
       close: document.getElementById("jarvis-settings-close"),
       status: document.getElementById("jarvis-settings-status"),
 
+      persona: document.getElementById("jarvis-persona-select"),
       select: document.getElementById("jarvis-model-select"),
       name: document.getElementById("jarvis-model-name"),
       id: document.getElementById("jarvis-model-id"),
@@ -127,6 +148,7 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
       el.panel,
       el.close,
       el.status,
+      el.persona,
       el.select,
       el.name,
       el.id,
@@ -176,12 +198,29 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
 
       let activeUid = localStorage.getItem(STORAGE_ACTIVE) || models.find((m) => m.isDefault)?.uid || models[0].uid;
       if (!models.some((m) => m.uid === activeUid)) activeUid = models[0].uid;
+      let personaId =
+        localStorage.getItem(STORAGE_PERSONA) ||
+        (fallbackPersonas[0] ? fallbackPersonas[0].id : "jarvis-classic");
 
       let draftUid = activeUid;
+      const emit = (name, detail) => {
+        window.dispatchEvent(new CustomEvent(`${EVENT_NS}:${name}`, { detail }));
+      };
+      const getPersona = () =>
+        fallbackPersonas.find((item) => item.id === personaId) ||
+        fallbackPersonas[0] || {
+          id: "jarvis-classic",
+          name: "Jarvis",
+          avatarType: "orb",
+          defaultText: "已待命",
+          activeText: "连接中",
+          greeting: "系统已上线。请先在左下角设置模型，然后开始对话。",
+          actions: ["open-settings"]
+        };
       let messages = [
         {
           role: "assistant",
-          content: "系统已上线。请先在左下角设置模型，然后开始对话。"
+          content: getPersona().greeting
         }
       ];
       let sending = false;
@@ -200,6 +239,7 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
       const persist = () => {
         localStorage.setItem(STORAGE_MODELS, JSON.stringify(models));
         localStorage.setItem(STORAGE_ACTIVE, activeUid);
+        localStorage.setItem(STORAGE_PERSONA, personaId);
       };
 
       const getActiveModel = () => models.find((item) => item.uid === activeUid) || models[0];
@@ -207,7 +247,30 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
 
       const syncChip = () => {
         const model = getActiveModel();
-        el.activeChip.textContent = model ? `在线模型：${model.name} (${model.id})` : "未连接模型";
+        const persona = getPersona();
+        el.activeChip.textContent = model ? `${persona.name} · ${model.name} (${model.id})` : `${persona.name} · 未连接模型`;
+      };
+
+      const emitPersonaChange = () => {
+        const persona = getPersona();
+        emit("persona-change", {
+          personaId: persona.id,
+          personaName: persona.name,
+          avatarType: persona.avatarType,
+          defaultText: persona.defaultText,
+          activeText: persona.activeText
+        });
+      };
+
+      const emitModelChange = () => {
+        const model = getActiveModel();
+        if (!model) return;
+        localStorage.setItem(STORAGE_ORB_MODEL, model.id);
+        emit("model-change", {
+          modelId: model.id,
+          modelName: model.name,
+          source: "jarvis-page"
+        });
       };
 
       const renderMessages = () => {
@@ -237,6 +300,19 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
         el.select.value = draftUid;
       };
 
+      const renderPersonaSelect = () => {
+        const options = fallbackPersonas.length
+          ? fallbackPersonas
+          : [{ id: "jarvis-classic", name: "Jarvis", avatarType: "orb", defaultText: "已待命", activeText: "连接中", greeting: "系统已上线。", actions: ["open-settings"] }];
+        if (!options.some((item) => item.id === personaId)) {
+          personaId = options[0].id;
+        }
+        el.persona.innerHTML = options
+          .map((item) => `<option value="${item.id}">${item.name}</option>`)
+          .join("");
+        el.persona.value = personaId;
+      };
+
       const fillDraftForm = () => {
         const model = getDraftModel();
         if (!model) return;
@@ -249,6 +325,7 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
 
       const renderAll = () => {
         renderMessages();
+        renderPersonaSelect();
         renderModelSelect();
         fillDraftForm();
         syncChip();
@@ -325,6 +402,21 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
         activeUid = model.uid;
 
         setStatus(`已切换到 ${model.name}。`, "success");
+        renderAll();
+        emitModelChange();
+      };
+
+      const switchPersona = (nextId, withMessage = false) => {
+        const targetId = String(nextId || "").trim();
+        if (!targetId) return;
+        const exists = fallbackPersonas.find((item) => item.id === targetId);
+        if (!exists) return;
+        personaId = targetId;
+        const persona = getPersona();
+        if (withMessage) {
+          messages.push({ role: "assistant", content: `已切换角色：${persona.name}` });
+        }
+        emitPersonaChange();
         renderAll();
       };
 
@@ -482,6 +574,7 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
 
         sending = true;
         el.send.disabled = true;
+        emit("state-change", { state: "active", source: "jarvis-page" });
 
         messages.push({ role: "user", content: prompt });
         messages.push({ role: "assistant", content: "" });
@@ -523,13 +616,23 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
           } else {
             setStatus("流式响应完成。", "success");
           }
+
+          const responseText = String(messages[assistantIndex].content || "").trim();
+          if (responseText) {
+            emit("speak", {
+              text: responseText.slice(0, 26),
+              mood: "normal"
+            });
+          }
         } catch (error) {
           messages[assistantIndex].content = `请求失败：${error instanceof Error ? error.message : "未知错误"}`;
           renderMessages();
           setStatus("对话请求失败，请检查模型配置。", "error");
+          emit("speak", { text: "连接失败", mood: "error" });
         } finally {
           sending = false;
           el.send.disabled = false;
+          emit("state-change", { state: "idle", source: "jarvis-page" });
         }
       };
 
@@ -544,6 +647,9 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
       el.select.addEventListener("change", () => {
         draftUid = el.select.value;
         fillDraftForm();
+      });
+      el.persona.addEventListener("change", () => {
+        switchPersona(el.persona.value, true);
       });
 
       el.create.addEventListener("click", addNewModel);
@@ -566,7 +672,17 @@ const defaultModels = siteConfig.jarvis?.defaultModels ?? [];
         }
       });
 
+      window.addEventListener(`${EVENT_NS}:action`, (event) => {
+        if (!(event instanceof CustomEvent)) return;
+        const actionId = String(event.detail?.actionId || "").trim();
+        if (actionId === "open-settings") {
+          el.panel.hidden = false;
+        }
+      });
+
       renderAll();
+      emitPersonaChange();
+      emitModelChange();
       setStatus("可在此配置多个模型，默认仅启用一个。", "info");
     }
   </script>

@@ -23,6 +23,7 @@ const {
 const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
 const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarvis");
+const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
 ---
 
 <!doctype html>
@@ -31,6 +32,8 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
   data-theme={siteConfig.theme.defaultTheme}
   data-default-theme={siteConfig.theme.defaultTheme}
   data-theme-list={JSON.stringify(siteConfig.theme.switchableThemes ?? siteConfig.theme.themes)}
+  data-code-theme={siteConfig.codeTheme.defaultTheme}
+  data-code-theme-list={JSON.stringify(siteConfig.codeTheme.themes)}
 >
   <head>
     <meta charset="utf-8" />
@@ -54,12 +57,28 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
       ))
     }
     {siteConfig.theme.transitions?.page && <ViewTransitions fallback="swap" />}
-    <script is:inline>
+    <script
+      is:inline
+      define:vars={{
+        codeThemeStorageKey: siteConfig.codeTheme.storageKey,
+        codeThemePanelColorsJson: JSON.stringify(codeThemePanelColors)
+      }}
+    >
       (() => {
         const root = document.documentElement;
         const key = "flycode-theme";
         const explicitKey = "flycode-theme-explicit";
-        const fallback = root.dataset.defaultTheme || "plume";
+        const codeThemeKey = codeThemeStorageKey;
+        const codeThemeExplicitKey = `${codeThemeStorageKey}-explicit`;
+        const codeThemePanelColors = (() => {
+          try {
+            const parsed = JSON.parse(codeThemePanelColorsJson || "{}");
+            return parsed && typeof parsed === "object" ? parsed : {};
+          } catch {
+            return {};
+          }
+        })();
+        const fallback = root.dataset.defaultTheme || "aurora-light";
         let themeList = [];
         try {
           const parsed = JSON.parse(root.dataset.themeList || "[]");
@@ -71,6 +90,7 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
         if (!themeList.length) themeList = [fallback];
 
         const hasExplicitTheme = () => localStorage.getItem(explicitKey) === "1";
+        const hasExplicitCodeTheme = () => localStorage.getItem(codeThemeExplicitKey) === "1";
         const readSavedTheme = () => (hasExplicitTheme() ? localStorage.getItem(key) : null);
 
         const normalizeTheme = (input) => {
@@ -81,10 +101,41 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
 
         const saved = readSavedTheme();
         const next = normalizeTheme(saved || root.dataset.theme || fallback);
+        const codeThemeList = JSON.parse(root.dataset.codeThemeList || "[]");
+        const codeFallback = root.dataset.codeTheme || "mac-light";
+        const normalizeCodeTheme = (input) => {
+          const value = String(input || "").trim();
+          if (Array.isArray(codeThemeList) && codeThemeList.includes(value)) return value;
+          if (Array.isArray(codeThemeList) && codeThemeList.includes(codeFallback)) return codeFallback;
+          return Array.isArray(codeThemeList) && codeThemeList.length ? codeThemeList[0] : "mac-light";
+        };
+        const savedCodeTheme = hasExplicitCodeTheme() ? localStorage.getItem(codeThemeKey) : null;
+        const nextCodeTheme = normalizeCodeTheme(savedCodeTheme || root.dataset.codeTheme || codeFallback);
+        const applyCodeThemePanelColors = (theme, targetRoot = root) => {
+          const palette =
+            codeThemePanelColors?.[theme] ||
+            codeThemePanelColors?.[codeFallback] ||
+            codeThemePanelColors?.["mac-light"];
+          if (!palette || !targetRoot?.style) return;
+          if (typeof palette.panel === "string" && palette.panel.trim()) {
+            targetRoot.style.setProperty("--code-panel", palette.panel);
+          }
+          if (typeof palette.border === "string" && palette.border.trim()) {
+            targetRoot.style.setProperty("--code-border", palette.border);
+          }
+          if (typeof palette.header === "string" && palette.header.trim()) {
+            targetRoot.style.setProperty("--code-header", palette.header);
+          }
+        };
 
         root.dataset.theme = next;
+        root.dataset.codeTheme = nextCodeTheme;
+        applyCodeThemePanelColors(nextCodeTheme);
         if (saved !== next || !saved) {
           localStorage.setItem(key, next);
+        }
+        if (savedCodeTheme !== nextCodeTheme || !savedCodeTheme) {
+          localStorage.setItem(codeThemeKey, nextCodeTheme);
         }
 
         document.addEventListener("astro:before-swap", (event) => {
@@ -95,6 +146,10 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
           nextRoot.dataset.theme = current;
           nextRoot.dataset.defaultTheme = root.dataset.defaultTheme || fallback;
           nextRoot.dataset.themeList = root.dataset.themeList || "[]";
+          const nextCodeTheme = normalizeCodeTheme(localStorage.getItem(codeThemeKey) || root.dataset.codeTheme || codeFallback);
+          nextRoot.dataset.codeTheme = nextCodeTheme;
+          nextRoot.dataset.codeThemeList = root.dataset.codeThemeList || "[]";
+          applyCodeThemePanelColors(nextCodeTheme, nextRoot);
           if (hasExplicitTheme()) {
             localStorage.setItem(key, current);
           }
@@ -102,7 +157,19 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
 
         document.addEventListener("astro:page-load", () => {
           const current = normalizeTheme(readSavedTheme() || root.dataset.theme || fallback);
+          const codeSaved = hasExplicitCodeTheme() ? localStorage.getItem(codeThemeKey) : null;
+          const codeCurrent = normalizeCodeTheme(codeSaved || root.dataset.codeTheme || codeFallback);
           root.dataset.theme = current;
+          root.dataset.codeTheme = codeCurrent;
+          applyCodeThemePanelColors(codeCurrent);
+        });
+
+        const observer = new MutationObserver(() => {
+          applyCodeThemePanelColors(normalizeCodeTheme(root.dataset.codeTheme || codeFallback));
+        });
+        observer.observe(root, {
+          attributes: true,
+          attributeFilter: ["data-code-theme"]
         });
 
         root.dataset.encryptedLocked = "0";
@@ -115,7 +182,7 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
       <span class="aurora-orb orb-b"></span>
       <span class="aurora-orb orb-c"></span>
     </div>
-    {siteConfig.watermark.enable && <Watermark />}
+    {siteConfig.watermark.enable && siteConfig.watermark.scope === "global" && <Watermark scope="global" />}
     <Header />
     <main class="container">
       <slot />
@@ -137,28 +204,20 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
             root.style.setProperty("--floating-safe-bottom", "0px");
             return;
           }
-          const rect = footer.getBoundingClientRect();
-          const overlap = Math.max(0, window.innerHeight - rect.top + 12);
-          const safe = Math.min(overlap, rect.height + 24);
+          const safe = footer.offsetHeight + 14;
           root.style.setProperty("--floating-safe-bottom", `${safe}px`);
         };
+        window.requestAnimationFrame(update);
+      };
 
-        let ticking = false;
-        const requestUpdate = () => {
-          if (ticking) return;
-          ticking = true;
-          window.requestAnimationFrame(() => {
-            update();
-            ticking = false;
-          });
-        };
-
-        if (!window.__flyFloatingSafeBound) {
-          window.__flyFloatingSafeBound = true;
-          window.addEventListener("scroll", requestUpdate, { passive: true });
-          window.addEventListener("resize", requestUpdate);
-        }
-        requestUpdate();
+      const initLayoutOffsets = () => {
+        const root = document.documentElement;
+        const header = document.querySelector(".site-header");
+        const footer = document.querySelector(".site-footer");
+        const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 68;
+        const footerHeight = footer instanceof HTMLElement ? footer.offsetHeight : 54;
+        root.style.setProperty("--layout-header-height", `${headerHeight}px`);
+        root.style.setProperty("--layout-footer-height", `${footerHeight}px`);
       };
 
       const initGlobalCodeCopy = () => {
@@ -212,9 +271,18 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
           }
         }
         initGlobalCodeCopy();
+        initLayoutOffsets();
         initFloatingSafeArea();
       });
+      if (!window.__flyLayoutOffsetBound) {
+        window.__flyLayoutOffsetBound = true;
+        window.addEventListener("resize", () => {
+          initLayoutOffsets();
+          initFloatingSafeArea();
+        });
+      }
       initGlobalCodeCopy();
+      initLayoutOffsets();
       initFloatingSafeArea();
     </script>
   </body>
@@ -225,27 +293,39 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
 </style>
 
 <style>
+  :global(html) {
+    --layout-header-height: 68px;
+    --layout-footer-height: 54px;
+  }
+
+  :global(body) {
+    min-height: 100dvh;
+  }
+
   main {
-    padding: 1rem 0 1.3rem;
+    padding: calc(var(--layout-header-height) + 1rem) 0 calc(var(--layout-footer-height) + 0.9rem);
     position: relative;
     z-index: 1;
   }
   .site-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     border-top: 1px solid var(--line);
-    margin-top: 1.1rem;
-    position: relative;
-    z-index: 1;
+    z-index: 58;
     background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
     backdrop-filter: blur(10px);
   }
   .footer-inner {
-    min-height: 64px;
+    min-height: 54px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     color: var(--text-soft);
-    font-size: 0.88rem;
+    font-size: 0.82rem;
+    line-height: 1.25;
   }
   .footer-inner p,
   .footer-inner small {
@@ -258,14 +338,14 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
-    filter: blur(54px);
+    filter: blur(56px);
   }
 
   .aurora-orb {
     position: absolute;
     border-radius: 999px;
-    opacity: 0.34;
-    animation: aurora-float 16s ease-in-out infinite;
+    opacity: 0.12;
+    animation: aurora-float 18s ease-in-out infinite;
   }
 
   .orb-a {
@@ -275,7 +355,7 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
     min-height: 320px;
     left: 0;
     top: 8%;
-    background: color-mix(in oklab, var(--brand) 68%, transparent 32%);
+    background: color-mix(in oklab, var(--brand) 52%, transparent 48%);
   }
 
   .orb-b {
@@ -285,7 +365,7 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
     min-height: 260px;
     right: 6%;
     top: 3%;
-    background: color-mix(in oklab, var(--accent) 60%, transparent 40%);
+    background: color-mix(in oklab, var(--accent) 48%, transparent 52%);
     animation-delay: -6s;
   }
 
@@ -296,7 +376,7 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
     min-height: 220px;
     left: 28%;
     bottom: 10%;
-    background: color-mix(in oklab, #0ea5e9 62%, transparent 38%);
+    background: color-mix(in oklab, var(--brand) 40%, transparent 60%);
     animation-delay: -11s;
   }
 
@@ -315,7 +395,8 @@ const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarv
     .footer-inner {
       flex-direction: column;
       align-items: flex-start;
-      padding: 0.65rem 0;
+      gap: 0.35rem;
+      padding: 0.35rem 0;
     }
   }
 </style>

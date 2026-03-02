@@ -36,7 +36,8 @@ const getIcon = (name: string) => iconMap[name.toLowerCase()] || iconMap.default
 
 <style>
   .profile-card {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1.2rem;
+    border-radius: var(--radius-md);
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -81,13 +82,13 @@ const getIcon = (name: string) => iconMap[name.toLowerCase()] || iconMap.default
   }
   .quote {
     margin: 1rem 0 0;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
     font-style: italic;
     color: var(--brand);
     font-size: 0.875rem;
     background: var(--brand-soft);
     border-radius: 8px;
-    border-left: 3px solid var(--brand);
+    border-left: 2px solid var(--brand);
     text-align: left;
     width: 100%;
   }
@@ -121,7 +122,6 @@ const getIcon = (name: string) => iconMap[name.toLowerCase()] || iconMap.default
   .social-icon:hover {
     color: var(--brand);
     border-color: var(--brand);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
   }
 </style>

@@ -1,14 +1,42 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 
 const enabled = siteConfig.jarvis?.enable && siteConfig.jarvis?.floatingOrb?.enable;
 const target = siteConfig.jarvis?.route ?? "/jarvis";
-const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
+const orbConfig = siteConfig.jarvis?.floatingOrb;
+const interaction = siteConfig.jarvis?.interaction;
+const label = orbConfig?.label ?? "JARVIS";
+const position = orbConfig?.position ?? "left";
+const offsetX = orbConfig?.offsetX ?? 16;
+const offsetY = orbConfig?.offsetY ?? 16;
+const eventNamespace = interaction?.eventNamespace ?? "jarvis";
+const defaultState = orbConfig?.defaultState ?? interaction?.defaultState ?? "idle";
+const clickState = orbConfig?.clickState ?? interaction?.clickState ?? "active";
+const hoverState = interaction?.hoverState ?? "active";
+const defaultText = orbConfig?.defaultText ?? "已待命";
+const activeText = orbConfig?.activeText ?? "连接中";
+const modelPresetKey = orbConfig?.modelPresetKey ?? "";
+const actionId = orbConfig?.actionId ?? "open-settings";
 ---
 
 {
   enabled && (
-    <a id="jarvis-orb" class="jarvis-orb" href={target} aria-label="打开 Jarvis 控制台" title="进入 Jarvis 控制台">
+    <a
+      id="jarvis-orb"
+      class={`jarvis-orb ${position === "left" ? "is-left" : "is-right"}`}
+      href={target}
+      aria-label="打开 Jarvis 控制台"
+      title="进入 Jarvis 控制台"
+      data-event-namespace={eventNamespace}
+      data-default-state={defaultState}
+      data-click-state={clickState}
+      data-hover-state={hoverState}
+      data-default-text={defaultText}
+      data-active-text={activeText}
+      data-model-preset={modelPresetKey}
+      data-action-id={actionId}
+      style={`--orb-offset-x:${offsetX}px;--orb-offset-y:${offsetY}px;`}
+    >
       <span class="orb-shell" aria-hidden="true">
         <span class="orb-ring ring-1"></span>
         <span class="orb-ring ring-2"></span>
@@ -19,6 +47,7 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
         </span>
       </span>
       <span class="orb-label">{label}</span>
+      <span class="orb-state" id="jarvis-orb-state">{defaultText}</span>
     </a>
   )
 }
@@ -30,7 +59,39 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
       if (!(node instanceof HTMLElement)) {
         // no-op
       } else {
+        const stateText = document.getElementById("jarvis-orb-state");
         const eyes = [...node.querySelectorAll(".orb-eye i")].filter((item) => item instanceof HTMLElement);
+        const eventNamespace = node.dataset.eventNamespace || "jarvis";
+        const defaultState = node.dataset.defaultState || "idle";
+        const clickState = node.dataset.clickState || "active";
+        const hoverState = node.dataset.hoverState || "active";
+        let defaultText = node.dataset.defaultText || "已待命";
+        let activeText = node.dataset.activeText || "连接中";
+        const modelPreset = node.dataset.modelPreset || "";
+        const actionId = node.dataset.actionId || "open-settings";
+        const modelKey = "fly-jarvis-model-preset";
+
+        const emit = (name, detail) => {
+          window.dispatchEvent(new CustomEvent(`${eventNamespace}:${name}`, { detail }));
+        };
+
+        const setState = (state, notify = true, source = "orb") => {
+          node.dataset.state = state;
+          node.classList.toggle("is-active", state === "active");
+          if (stateText instanceof HTMLElement) {
+            stateText.textContent = state === "active" ? activeText : defaultText;
+          }
+          if (notify) {
+            emit("state-change", { state, source });
+          }
+        };
+
+        if (modelPreset && !localStorage.getItem(modelKey)) {
+          localStorage.setItem(modelKey, modelPreset);
+          emit("model-change", { modelId: modelPreset, source: "orb-init" });
+        }
+
+        setState(defaultState, true, "orb-init");
 
         const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -67,11 +128,52 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
           window.setTimeout(() => ripple.remove(), 520);
         };
 
+        window.addEventListener(`${eventNamespace}:state-change`, (event) => {
+          if (!(event instanceof CustomEvent)) return;
+          const state = String(event.detail?.state || "").trim();
+          if (!state || state === node.dataset.state) return;
+          setState(state, false, "external");
+        });
+
+        window.addEventListener(`${eventNamespace}:persona-change`, (event) => {
+          if (!(event instanceof CustomEvent)) return;
+          const nextDefault = String(event.detail?.defaultText || "").trim();
+          const nextActive = String(event.detail?.activeText || "").trim();
+          if (nextDefault) defaultText = nextDefault;
+          if (nextActive) activeText = nextActive;
+          const currentState = node.dataset.state || defaultState;
+          setState(currentState, false, "external");
+        });
+
+        let speakTimer = 0;
+        window.addEventListener(`${eventNamespace}:speak`, (event) => {
+          if (!(event instanceof CustomEvent)) return;
+          const text = String(event.detail?.text || "").trim();
+          if (!(stateText instanceof HTMLElement) || !text) return;
+          window.clearTimeout(speakTimer);
+          stateText.textContent = text;
+          node.classList.add("is-active");
+          speakTimer = window.setTimeout(() => {
+            node.classList.toggle("is-active", (node.dataset.state || defaultState) === "active");
+            stateText.textContent = (node.dataset.state || defaultState) === "active" ? activeText : defaultText;
+          }, 2200);
+        });
+
         node.addEventListener("pointermove", onMove, { passive: true });
         window.addEventListener("pointermove", onMove, { passive: true });
 
+        node.addEventListener("pointerenter", () => {
+          setState(hoverState, true, "orb-hover");
+        });
+
         node.addEventListener("pointerdown", (event) => {
+          setState(clickState, true, "orb-click");
+          emit("action", { actionId, source: "orb" });
           spawnRipple(event.clientX, event.clientY);
+        });
+
+        node.addEventListener("pointerleave", () => {
+          setState(defaultState, true, "orb-leave");
         });
       }
     </script>
@@ -85,8 +187,7 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
     --tilt-x: 0deg;
     --tilt-y: 0deg;
     position: fixed;
-    right: 1rem;
-    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    bottom: calc(var(--orb-offset-y) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     width: 74px;
     height: 74px;
     z-index: 79;
@@ -99,6 +200,14 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
     transform: perspective(220px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
     transition: transform 120ms ease, filter 180ms ease;
     isolation: isolate;
+  }
+
+  .jarvis-orb.is-left {
+    left: var(--orb-offset-x);
+  }
+
+  .jarvis-orb.is-right {
+    right: var(--orb-offset-x);
   }
 
   .jarvis-orb:hover {
@@ -173,17 +282,32 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
     transition: transform 100ms linear;
   }
 
-  .orb-label {
+  .orb-label,
+  .orb-state {
     position: absolute;
-    bottom: -1.35rem;
     left: 50%;
     transform: translateX(-50%);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .orb-label {
+    bottom: -1.35rem;
     font-size: 0.62rem;
     letter-spacing: 0.16em;
     font-weight: 700;
     color: color-mix(in oklab, var(--text-soft) 74%, var(--brand) 26%);
-    white-space: nowrap;
-    pointer-events: none;
+  }
+
+  .orb-state {
+    bottom: -2.2rem;
+    font-size: 0.56rem;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+  }
+
+  .jarvis-orb.is-active .orb-state {
+    color: var(--brand);
   }
 
   .orb-ripple {
@@ -234,14 +358,15 @@ const label = siteConfig.jarvis?.floatingOrb?.label ?? "JARVIS";
     .jarvis-orb {
       width: 64px;
       height: 64px;
-      right: 0.85rem;
-      bottom: calc(0.85rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     }
 
     .orb-label {
       font-size: 0.56rem;
       bottom: -1.1rem;
     }
+
+    .orb-state {
+      bottom: -1.85rem;
+    }
   }
 </style>
-

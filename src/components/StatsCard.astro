@@ -21,13 +21,9 @@ const { title, value, href } = Astro.props;
 
 <style>
   .stats-card {
-    padding: 0.66rem 0.72rem;
-    background:
-      linear-gradient(
-        165deg,
-        color-mix(in oklab, var(--bg-elev) 94%, transparent 6%),
-        color-mix(in oklab, var(--brand-soft) 12%, var(--bg-elev) 88%)
-      );
+    padding: 0.76rem 0.82rem;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
   }
   .stats-card small {
     color: var(--text-soft);

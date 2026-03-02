@@ -163,8 +163,6 @@ public abstract class BaseAgent {
      */
     private Integer currentStep = 0;
     private Integer maxSteps = 10;
-
-
     public String run(String userPrompt) {
         // 判断状态是否为空闲状态
         if (this.state != AgentState.IDLE) {

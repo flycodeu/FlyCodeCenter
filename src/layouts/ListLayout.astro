@@ -2,7 +2,6 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
 import StatsCard from "@/components/StatsCard.astro";
-import TagCloud from "@/components/TagCloud.astro";
 
 interface TaxItem {
   name: string;
@@ -29,12 +28,11 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 
     {
       !hideSidebar && (
-        <aside class="list-side">
+        <aside class="list-side" data-tag-count={String(tags.length)}>
           <SidebarProfile />
           <div class="stats-grid">
             {stats.map((item) => <StatsCard title={item.title} value={item.value} href={item.href} />)}
           </div>
-          {tags.length > 0 && <TagCloud title="热门标签" items={tags.slice(0, 20)} />}
         </aside>
       )
     }
@@ -48,11 +46,11 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 
   .list-main {
     display: grid;
-    gap: 0.82rem;
+    gap: var(--space-4);
   }
   .list-side {
     display: grid;
-    gap: 1rem;
+    gap: var(--space-4);
     align-content: start;
     position: sticky;
     top: 84px;
@@ -60,7 +58,7 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
   }
   .stats-grid {
     display: grid;
-    gap: 0.75rem;
+    gap: var(--space-2);
   }
   .no-side {
     grid-template-columns: minmax(0, 1fr);
