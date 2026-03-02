@@ -46,6 +46,8 @@ export interface ResolvedArticleMeta {
   demoUrl: string;
   featured: boolean;
   weight: number;
+  projectStage: "completed" | "in-progress" | "planned";
+  priority: number;
 }
 
 function pickText(...values: Array<unknown>): string {
@@ -192,7 +194,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     defaults.createTime
   ) ?? new Date("2026-01-01T00:00:00.000Z");
   const updatedTime = pickDate(override.updatedTime, defaults.updatedTime);
-  const cover = pickText(override.cover, entry.data.cover, defaults.cover);
+  const rawCover = pickText(override.cover, entry.data.cover, defaults.cover);
   const coverMode =
     normalizeCoverMode((entry.data as { coverMode?: string; coverPosition?: string }).coverMode) ??
     normalizeCoverMode((entry.data as { coverMode?: string; coverPosition?: string }).coverPosition) ??
@@ -213,6 +215,18 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     pickText(override.permalink, entry.data.permalink, defaults.permalink),
     code
   );
+  const projectStage = pickText(override.projectStage, defaults.projectStage) as "completed" | "in-progress" | "planned";
+  const stageFallbackCover =
+    entry.collection === "projects"
+      ? pickText(
+          siteConfig.articleMeta.projectCoverFallbackByStage?.[projectStage as keyof typeof siteConfig.articleMeta.projectCoverFallbackByStage]
+        )
+      : "";
+  const cover = rawCover || stageFallbackCover;
+  const showCover =
+    entry.collection === "projects"
+      ? pickBoolean(override.showCover, Boolean(cover), defaults.showCover)
+      : pickBoolean(override.showCover, defaults.showCover);
 
   return {
     title,
@@ -228,7 +242,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     updatedDate: updatedTime,
     cover,
     coverMode,
-    showCover: pickBoolean(override.showCover, defaults.showCover),
+    showCover,
     draft: pickBoolean(override.draft, defaults.draft),
     encrypted: pickBoolean(override.encrypted, defaults.encrypted),
     encryptedFile: pickText(override.encryptedFile, defaults.encryptedFile),
@@ -241,6 +255,8 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     docUrl: pickText(override.docUrl, defaults.docUrl),
     demoUrl: pickText(override.demoUrl, defaults.demoUrl),
     featured: pickBoolean(override.featured, defaults.featured),
-    weight: pickNumber(defaults.weight, override.weight)
+    weight: pickNumber(defaults.weight, override.weight),
+    projectStage,
+    priority: pickNumber(defaults.priority, override.priority)
   };
 }

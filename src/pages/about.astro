@@ -1,21 +1,316 @@
 ﻿---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchProjectEntries } from "@/utils/query";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import { getProjectEntryUrl } from "@/utils/content";
+import { getRenderedPageByCode } from "@/utils/page-content";
+
+const [aboutPage, projectEntries] = await Promise.all([
+  getRenderedPageByCode("about-page"),
+  fetchProjectEntries()
+]);
+
+if (!aboutPage) {
+  throw new Error("Page config not found: about-page");
+}
+
+const aboutConfig = aboutPage.entry.data.about;
+if (!aboutConfig) {
+  throw new Error("About config not found: about-page.about");
+}
+
+const hero = aboutConfig.hero;
+const showcase = aboutConfig.showcase;
+const gaming = aboutConfig.gaming;
+const linkLabels = showcase.labels;
+
+const projectMap = new Map(
+  projectEntries.map((entry) => {
+    const meta = resolveArticleMeta(entry);
+    return [meta.code, { entry, meta }] as const;
+  })
+);
+
+const selectedCards = showcase.projectCodes
+  .map((code) => projectMap.get(code))
+  .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+const fallbackCards = [...projectMap.values()]
+  .filter((item) => item.meta.projectStage === "completed" && item.meta.featured)
+  .sort((a, b) => b.meta.priority - a.meta.priority)
+  .slice(0, 3);
+
+const cards = selectedCards.length > 0 ? selectedCards : fallbackCards;
+const aboutContent = aboutPage.Content;
+
+const allProjectMetas = [...projectMap.values()].map((item) => item.meta);
+const completedCount = allProjectMetas.filter((meta) => meta.projectStage === "completed").length;
+const plannedCount = allProjectMetas.filter((meta) => meta.projectStage === "planned").length;
+const topPriority = [...allProjectMetas].sort((a, b) => b.priority - a.priority)[0];
 ---
 
-<BaseLayout title="关于" description="关于飞云与内容方向。">
-  <section class="surface page">
-    <h1>关于我</h1>
-    <p>我是飞云，长期关注前端架构、性能优化与开发体验（DX）。</p>
-    <p>这个站点专注发布可复用的工程实践、教程路径和资料沉淀，内容以真实项目问题为核心。</p>
+<BaseLayout title={aboutPage.entry.data.title} description={aboutPage.entry.data.description}>
+  <section class="profile-console surface">
+    <header class="hero-panel">
+      {hero.badge && <p class="hero-badge">{hero.badge}</p>}
+      <h1>{hero.title || aboutPage.entry.data.title}</h1>
+      {hero.subtitle && <p class="hero-subtitle">{hero.subtitle}</p>}
+
+      {hero.chips.length > 0 && (
+        <div class="tech-chips">
+          {hero.chips.map((chip) => (
+            <span class="chip tech-chip">{chip}</span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <section class="status-grid" aria-label="profile-status">
+      <article class="surface status-card">
+        <p class="label">{hero.statLabels.completed}</p>
+        <p class="value">{completedCount}</p>
+      </article>
+      <article class="surface status-card">
+        <p class="label">{hero.statLabels.planned}</p>
+        <p class="value">{plannedCount}</p>
+      </article>
+      <article class="surface status-card priority">
+        <p class="label">{hero.statLabels.topPriority}</p>
+        <p class="value small">{topPriority?.title || "暂无"}</p>
+      </article>
+    </section>
+
+    <section class="showcase-panel">
+      <div class="section-head">
+        <h2>{showcase.title}</h2>
+        {showcase.description && <p>{showcase.description}</p>}
+      </div>
+
+      {cards.length === 0 ? (
+        <p class="empty-note">{showcase.emptyText}</p>
+      ) : (
+        <div class="showcase-grid">
+          {cards.map(({ entry, meta }) => (
+            <article class="surface showcase-card">
+              {meta.cover && <img class="cover" src={meta.cover} alt={meta.title} loading="lazy" decoding="async" />}
+              <div class="card-head">
+                <h3>{meta.title}</h3>
+                <span class="chip priority-chip">P{meta.priority}</span>
+              </div>
+              <p>{meta.description || meta.summary || linkLabels.noDescription}</p>
+              <div class="links">
+                {meta.repoUrl && <a href={meta.repoUrl} target="_blank" rel="noreferrer">{linkLabels.repo}</a>}
+                {meta.docUrl && <a href={meta.docUrl} target="_blank" rel="noreferrer">{linkLabels.doc}</a>}
+                {meta.demoUrl && <a href={meta.demoUrl} target="_blank" rel="noreferrer">{linkLabels.demo}</a>}
+                <a href={getProjectEntryUrl(entry)}>{linkLabels.detail}</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section class="gaming-panel">
+      <div class="section-head">
+        <h2>{gaming.title}</h2>
+        {gaming.description && <p>{gaming.description}</p>}
+      </div>
+      <div class="gaming-grid">
+        {gaming.groups.map((group) => (
+          <article class="surface game-group">
+            <h3>{group.name}</h3>
+            <div class="game-tags">
+              {group.games.map((game) => (
+                <span class="chip game-chip">{game}</span>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="surface prose narrative-panel">
+      <aboutContent />
+    </section>
   </section>
 </BaseLayout>
 
 <style>
-  .page {
-    padding: 0.86rem;
+  .profile-console {
+    padding: 1rem;
+    display: grid;
+    gap: 1rem;
+    background:
+      radial-gradient(95% 120% at 8% -20%, color-mix(in oklab, var(--brand) 14%, transparent), transparent 70%),
+      radial-gradient(90% 110% at 102% 0%, color-mix(in oklab, var(--brand-soft) 28%, transparent), transparent 74%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 94%, transparent 6%), color-mix(in oklab, var(--surface-2) 96%, transparent 4%));
   }
-  h1 {
-    margin: 0 0 0.7rem;
+
+  .hero-panel {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .hero-badge {
+    margin: 0;
+    width: fit-content;
+    padding: 0.22rem 0.58rem;
+    border: 1px solid color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
+    border-radius: 999px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.74rem;
+    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
     font-family: var(--font-serif);
+  }
+
+  .hero-panel h1 {
+    font-size: clamp(1.4rem, 2.8vw, 2rem);
+    line-height: 1.35;
+  }
+
+  .hero-subtitle {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.65;
+  }
+
+  .tech-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+  }
+
+  .tech-chip {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.74rem;
+  }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.62rem;
+  }
+
+  .status-card {
+    padding: 0.78rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .status-card .label {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+  }
+
+  .status-card .value {
+    margin: 0;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 1.42rem;
+    font-weight: 700;
+  }
+
+  .status-card .value.small {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .status-card.priority {
+    border-color: color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
+  }
+
+  .showcase-panel,
+  .gaming-panel {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .section-head {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .section-head p,
+  .empty-note {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+  }
+
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+    gap: 0.72rem;
+  }
+
+  .showcase-card {
+    padding: 0.72rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .showcase-card .cover {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .showcase-card p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .priority-chip {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.44rem;
+    font-size: 0.87rem;
+  }
+
+  .gaming-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.65rem;
+  }
+
+  .game-group {
+    padding: 0.72rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .game-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .game-chip {
+    font-size: 0.76rem;
+  }
+
+  .narrative-panel {
+    padding: 0.85rem;
+    margin-top: 0.15rem;
   }
 </style>

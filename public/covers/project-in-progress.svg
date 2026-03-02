@@ -1,0 +1,23 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="In Progress Project Cover">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fdba74" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect x="56" y="56" width="1088" height="563" rx="26" fill="url(#panel)" stroke="#fbbf24" stroke-opacity="0.42"/>
+  <g fill="none" stroke="#f59e0b" stroke-opacity="0.4">
+    <path d="M92 174H1110"/>
+    <path d="M92 490H1110"/>
+    <path d="M330 92V583"/>
+    <path d="M870 92V583"/>
+  </g>
+  <text x="96" y="148" fill="#fde68a" font-family="'JetBrains Mono', monospace" font-size="26">PROJECT STAGE</text>
+  <text x="96" y="382" fill="#ffedd5" font-family="'Noto Sans SC', sans-serif" font-size="78" font-weight="700">进行中 · IN PROGRESS</text>
+  <text x="96" y="440" fill="#ffedd5" font-family="'Noto Sans SC', sans-serif" font-size="30">持续开发中，按里程碑推进核心能力</text>
+</svg>

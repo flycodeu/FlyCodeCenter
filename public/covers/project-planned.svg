@@ -1,0 +1,23 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planned Project Cover">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect x="56" y="56" width="1088" height="563" rx="26" fill="url(#panel)" stroke="#a78bfa" stroke-opacity="0.5"/>
+  <g fill="none" stroke="#a78bfa" stroke-opacity="0.45">
+    <path d="M92 174H1110"/>
+    <path d="M92 490H1110"/>
+    <path d="M330 92V583"/>
+    <path d="M870 92V583"/>
+  </g>
+  <text x="96" y="148" fill="#ddd6fe" font-family="'JetBrains Mono', monospace" font-size="26">PROJECT STAGE</text>
+  <text x="96" y="382" fill="#ede9fe" font-family="'Noto Sans SC', sans-serif" font-size="78" font-weight="700">规划中 · PLANNED</text>
+  <text x="96" y="440" fill="#e0e7ff" font-family="'Noto Sans SC', sans-serif" font-size="30">已确定方向，按优先级逐步启动</text>
+</svg>

@@ -17,9 +17,9 @@ const siteConfig = defineSiteConfig({
   site: {
     base: "/",
     lang: "zh-CN",
-    title: "飞云的编程宝典",
-    description: "一份静态优先、性能导向、可插拔的 Astro 博客工程。",
-    hostname: "https://flycodecenter.vercel.app",
+    title: "程序员飞云 | Flycode",
+    description: "后端开发程序员 (Flycode) 的技术博客与项目实践记录。",
+    hostname: "https://www.flycode.icu/",
     icon: "/favicon.svg",
     head: {
       meta: [
@@ -148,9 +148,10 @@ const siteConfig = defineSiteConfig({
     },
     hero: {
       enable: true,
-      title: "飞云的编程宝典",
-      tagline: "持续探索前端与架构设计",
-      description: "在这里分享技术、生活与思考。致力于构建高性能、优美体验的现代 Web 应用。",
+      title: "程序员飞云 · Flycode",
+      tagline: "后端开发程序员，持续学习并持续交付",
+      description:
+        "熟悉 Java、Spring Boot、Python、Rust、MySQL、Redis、React、AI 等核心技术，专注做出真正可落地的软件产品。",
       actions: [
         { text: "浏览博客", link: "/blog", type: "primary" },
         { text: "查看教程", link: "/tutorials", type: "secondary" },
@@ -169,11 +170,11 @@ const siteConfig = defineSiteConfig({
     switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
     appearance: true,
     logo: {
-      text: "FlyCodeCenter",
-      mark: "FC"
+      text: "FlyCode",
+      mark: "Fly"
     },
     social: {
-      github: "https://github.com/flycodecenter",
+      github: "https://github.com/flycodeu",
       wechat: "https://mp.weixin.qq.com"
     },
     footer: {
@@ -181,14 +182,14 @@ const siteConfig = defineSiteConfig({
       copyright: "Copyright (c) 2026 飞云"
     },
     profile: {
-      avatar: "https://avatars.githubusercontent.com/u/1?v=4",
+      avatar: "https://avatars.githubusercontent.com/flycodeu",
       shape: "rectangle" as "circle" | "rectangle",
-      name: "飞云",
-      desc: "资深前端 / Astro 架构实践",
+      name: "程序员飞云（Flycode）",
+      desc: "后端开发程序员｜Java · Spring Boot · Python · Rust · MySQL · Redis · React · AI",
       location: "Shenzhen, China",
-      quote: "Stay hungry, stay foolish.",
+      quote: "以日拱一卒的坚持，打磨真正能落地的软件。",
       socials: [
-        { name: "GitHub", icon: "github", link: "https://github.com/flycodecenter" },
+        { name: "GitHub", icon: "github", link: "https://github.com/flycodeu" },
         { name: "WeChat", icon: "wechat", link: "#" },
         { name: "Discord", icon: "discord", link: "#" }
       ]
@@ -242,7 +243,7 @@ const siteConfig = defineSiteConfig({
   },
   copyright: {
     enable: true,
-    author: "飞云",
+    author: "程序员飞云",
     license: "CC-BY-4.0",
     showLink: true
   },
