@@ -257,12 +257,12 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-list a {
     display: block;
-    padding: 0.3rem 0.4rem 0.3rem calc(0.9rem + (var(--toc-level, 1) - 1) * 0.85rem);
+    padding: 0.28rem 0.4rem 0.28rem calc(0.86rem + (var(--toc-level, 1) - 1) * 0.62rem);
     color: var(--text-muted);
-    font-size: 0.875rem;
+    font-size: 0.84rem;
     text-decoration: none;
     transition: color 0.2s ease, background-color 0.2s ease, border-left-color 0.2s ease;
-    line-height: 1.45;
+    line-height: 1.38;
     position: relative;
     left: -1px;
     border-left: 2px solid transparent;
@@ -271,8 +271,11 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-text {
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    word-break: break-word;
   }
 
   .toc-list a:hover {

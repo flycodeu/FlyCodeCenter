@@ -707,9 +707,13 @@ const jsonLd = buildArticleJsonLd({
 </BaseLayout>
 
 <style>
+  :global(main.container) {
+    width: min(1280px, calc(100vw - var(--space-6)));
+  }
+
   .post-layout {
     padding-bottom: 1.2rem;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
     gap: 2rem;
   }
   .post-layout > section,
@@ -725,7 +729,7 @@ const jsonLd = buildArticleJsonLd({
   }
   .post-main > * {
     width: 100%;
-    max-width: 860px;
+    max-width: 980px;
     margin-left: auto;
     margin-right: auto;
   }

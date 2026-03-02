@@ -68,10 +68,12 @@ const explicitStorageKey = `${storageKey}-explicit`;
       }
     };
 
-    const applyTheme = (theme) => {
+    const applyTheme = (theme, markExplicit = true) => {
       root.dataset.codeTheme = theme;
       localStorage.setItem(storageKey, theme);
-      localStorage.setItem(explicitStorageKey, "1");
+      if (markExplicit) {
+        localStorage.setItem(explicitStorageKey, "1");
+      }
       syncUi(theme);
       window.dispatchEvent(new CustomEvent("site:code-theme-change", { detail: theme }));
     };
@@ -87,14 +89,14 @@ const explicitStorageKey = `${storageKey}-explicit`;
       const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
       const idx = themes.indexOf(current);
       const next = normalize(themes, themes[(idx + 1) % themes.length]);
-      applyTheme(next);
+      applyTheme(next, true);
     });
 
     const init = () => {
       const themes = readThemes();
       if (!themes.length) return;
       const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
-      applyTheme(current);
+      applyTheme(current, false);
     };
 
     document.addEventListener("astro:page-load", init);

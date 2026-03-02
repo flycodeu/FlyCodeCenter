@@ -196,7 +196,7 @@ const siteConfig = defineSiteConfig({
     toc: {
       enable: true,
       minDepth: 1,
-      maxDepth: 3
+      maxDepth: 6
     },
     navbar: [
       { text: "首页", link: "/" },
@@ -391,7 +391,7 @@ const siteConfig = defineSiteConfig({
     storageKey: "flycode-code-theme",
     panelColors: {
       "mac-light": { panel: "#f7f9fd", border: "#d7dfec", header: "#eef3fb" },
-      "mac-dark": { panel: "#242c3a", border: "#3a475c", header: "#2e3748" },
+      "mac-dark": { panel: "#2b313d", border: "#47566d", header: "#353f50" },
       "github-light": { panel: "#f6f8fa", border: "#d0d7de", header: "#eef2f7" },
       "github-dark": { panel: "#1b2230", border: "#324056", header: "#242d3d" },
       "idea-dark": { panel: "#2f333b", border: "#444b57", header: "#3a404d" },
