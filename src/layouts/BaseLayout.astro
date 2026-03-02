@@ -108,17 +108,17 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
             codeThemeList = parsed.filter((item) => typeof item === "string" && item.trim());
           }
         } catch {}
-        const codeFallback = root.dataset.codeTheme || "mac-light";
+        const codeFallback = root.dataset.codeTheme || "github-light";
         const normalizeCodeTheme = (input) => {
           const value = String(input || "").trim();
           if (codeThemeList.includes(value)) return value;
           if (codeThemeList.includes(codeFallback)) return codeFallback;
-          return codeThemeList.length ? codeThemeList[0] : "mac-light";
+          return codeThemeList.length ? codeThemeList[0] : "github-light";
         };
         const mapCodeThemeFromSiteTheme = (theme) => {
           const normalized = String(theme || "").trim().toLowerCase();
-          if (normalized.includes("dark")) return "mac-dark";
-          return "mac-light";
+          if (normalized.includes("dark")) return "github-dark";
+          return "github-light";
         };
         const resolveCodeTheme = (themeForAuto) => {
           if (hasExplicitCodeTheme()) {
@@ -134,7 +134,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           const palette =
             codeThemePanelColors?.[theme] ||
             codeThemePanelColors?.[codeFallback] ||
-            codeThemePanelColors?.["mac-light"];
+            codeThemePanelColors?.["github-light"];
           if (!palette || !targetRoot?.style) return;
           if (typeof palette.panel === "string" && palette.panel.trim()) {
             targetRoot.style.setProperty("--code-panel", palette.panel);

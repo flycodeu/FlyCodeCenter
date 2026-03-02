@@ -169,6 +169,19 @@ const siteConfig = defineSiteConfig({
     themes: ["aurora-light", "aurora-dark"] as ThemeId[],
     switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
     appearance: true,
+    toggle: {
+      mode: "segmented" as "segmented",
+      animationMs: 220,
+      icons: {
+        light: "sun",
+        dark: "moon"
+      },
+      colors: {
+        light: "#f59e0b",
+        dark: "#60a5fa",
+        thumb: "color-mix(in oklab, var(--brand-soft) 76%, transparent)"
+      }
+    },
     logo: {
       text: "FlyCode",
       mark: "Fly"
@@ -197,7 +210,9 @@ const siteConfig = defineSiteConfig({
     toc: {
       enable: true,
       minDepth: 1,
-      maxDepth: 6
+      maxDepth: 6,
+      position: "right" as "left" | "right",
+      width: 332
     },
     navbar: [
       { text: "首页", link: "/" },
@@ -292,6 +307,30 @@ const siteConfig = defineSiteConfig({
     chart: {
       enable: true
     },
+    extended: {
+      enable: true,
+      parserMode: "build-time" as "build-time" | "runtime",
+      chartjs: {
+        enable: true,
+        bundleUrl: "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+        defaultHeight: 320
+      },
+      tabs: {
+        enable: true
+      },
+      steps: {
+        enable: true
+      },
+      mark: {
+        enable: true,
+        variants: ["tip", "warning", "danger", "important"] as const
+      },
+      icon: {
+        enable: true,
+        provider: "iconify" as const,
+        bundleUrl: "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"
+      }
+    },
     copy: {
       code: true,
       math: true,
@@ -379,7 +418,7 @@ const siteConfig = defineSiteConfig({
   },
   codeTheme: {
     defaultTheme:
-      "mac-light" as "mac-light" | "mac-dark" | "github-light" | "github-dark" | "idea-dark" | "one-light" | "one-dark",
+      "github-light" as "mac-light" | "mac-dark" | "github-light" | "github-dark" | "idea-dark" | "one-light" | "one-dark",
     themes: [
       "mac-light",
       "mac-dark",
@@ -394,7 +433,7 @@ const siteConfig = defineSiteConfig({
       "mac-light": { panel: "#f7f9fd", border: "#d7dfec", header: "#eef3fb" },
       "mac-dark": { panel: "#2b313d", border: "#47566d", header: "#353f50" },
       "github-light": { panel: "#f6f8fa", border: "#d0d7de", header: "#eef2f7" },
-      "github-dark": { panel: "#1b2230", border: "#324056", header: "#242d3d" },
+      "github-dark": { panel: "#222b36", border: "#3b4b61", header: "#2a3445" },
       "idea-dark": { panel: "#2f333b", border: "#444b57", header: "#3a404d" },
       "one-light": { panel: "#f8fafc", border: "#d9e1ee", header: "#eef2fb" },
       "one-dark": { panel: "#2a303b", border: "#404958", header: "#353d4c" }

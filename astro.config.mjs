@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import siteConfig from "./src/site.config.ts";
 import { remarkMarkdownInclude } from "./src/utils/markdown/remark-include.ts";
 import { remarkNormalizeCodeLang } from "./src/utils/markdown/remark-normalize-code-lang.ts";
+import { remarkExtendedBuild } from "./src/utils/markdown/remark-extended-build.mjs";
 import { rehypeImageEnhance } from "./src/utils/markdown/rehype-image-enhance.ts";
 
 const integrations = [mdx()];
@@ -29,6 +30,22 @@ if (siteConfig.markdown.include.enable) {
     {
       enabled: siteConfig.markdown.include.enable,
       root: "./src/content"
+    }
+  ]);
+}
+if (
+  siteConfig.markdown.extended?.enable &&
+  (siteConfig.markdown.extended?.parserMode ?? "build-time") === "build-time"
+) {
+  remarkPlugins.push([
+    remarkExtendedBuild,
+    {
+      enableChartJs: siteConfig.markdown.extended.chartjs?.enable,
+      enableTabs: siteConfig.markdown.extended.tabs?.enable,
+      enableSteps: siteConfig.markdown.extended.steps?.enable,
+      enableMark: siteConfig.markdown.extended.mark?.enable,
+      enableIcon: siteConfig.markdown.extended.icon?.enable,
+      chartHeight: siteConfig.markdown.extended.chartjs?.defaultHeight
     }
   ]);
 }

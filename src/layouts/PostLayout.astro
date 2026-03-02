@@ -67,6 +67,8 @@ const {
 
 const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
 const spacing = siteConfig.article.ui.spacing;
+const tocPosition = siteConfig.theme.toc.position === "left" ? "left" : "right";
+const tocWidth = Number(siteConfig.theme.toc.width ?? 332);
 const jsonLd = buildArticleJsonLd({
   title,
   description,
@@ -81,8 +83,8 @@ const jsonLd = buildArticleJsonLd({
 <BaseLayout title={title} description={description} canonicalPath={articleUrl} image={cover}>
   <ReadingProgress />
   <div
-    class="grid-main post-layout"
-    style={`--post-top-gap:${spacing.topBarBottom};--post-hero-gap:${spacing.heroBottom};--post-head-pt:${spacing.headPaddingTop};--post-head-pb:${spacing.headPaddingBottom};--post-head-gap:${spacing.headGap};--post-head-mb:${spacing.headBottom};--post-article-pb:${spacing.articleBottom};--post-summary-size:${spacing.summarySize};--post-p-margin:${spacing.paragraphMargin};--post-h2-top:${spacing.h2Top};--post-h2-bottom:${spacing.h2Bottom};--post-h3-top:${spacing.h3Top};--post-h3-bottom:${spacing.h3Bottom};`}
+    class={`grid-main post-layout post-layout-${tocPosition}`}
+    style={`--toc-width:${tocWidth}px;--post-top-gap:${spacing.topBarBottom};--post-hero-gap:${spacing.heroBottom};--post-head-pt:${spacing.headPaddingTop};--post-head-pb:${spacing.headPaddingBottom};--post-head-gap:${spacing.headGap};--post-head-mb:${spacing.headBottom};--post-article-pb:${spacing.articleBottom};--post-summary-size:${spacing.summarySize};--post-p-margin:${spacing.paragraphMargin};--post-h2-top:${spacing.h2Top};--post-h2-bottom:${spacing.h2Bottom};--post-h3-top:${spacing.h3Top};--post-h3-bottom:${spacing.h3Bottom};`}
   >
     <section class="post-main">
       <section class="surface post-card-shell post-info-card">
@@ -169,6 +171,39 @@ const jsonLd = buildArticleJsonLd({
       enableCodeCopy: siteConfig.markdown.copy.code,
       enableMathCopy: siteConfig.markdown.copy.math,
       enableMermaidCopy: siteConfig.markdown.copy.mermaid,
+      enableExtendedMarkdown: Boolean(
+        (
+          siteConfig.markdown as {
+            extended?: { enable?: boolean };
+          }
+        ).extended?.enable ?? false
+      ),
+      enableChartJs: Boolean(
+        (
+          siteConfig.markdown as {
+            extended?: { chartjs?: { enable?: boolean } };
+          }
+        ).extended?.chartjs?.enable ?? false
+      ),
+      chartJsBundle:
+        (
+          siteConfig.markdown as {
+            extended?: { chartjs?: { bundleUrl?: string } };
+          }
+        ).extended?.chartjs?.bundleUrl ?? "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+      enableInlineIcon: Boolean(
+        (
+          siteConfig.markdown as {
+            extended?: { icon?: { enable?: boolean } };
+          }
+        ).extended?.icon?.enable ?? false
+      ),
+      iconifyBundle:
+        (
+          siteConfig.markdown as {
+            extended?: { icon?: { bundleUrl?: string } };
+          }
+        ).extended?.icon?.bundleUrl ?? "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
       articleTitle: title,
       articleTags: tags,
       viewStatsEnabled: siteConfig.stats.enable,
@@ -355,6 +390,8 @@ const jsonLd = buildArticleJsonLd({
     let echartsApiPromise = null;
     const chartInstances = [];
     let chartResizeBound = false;
+    let chartJsApiPromise = null;
+    const chartJsInstances = [];
     const getEchartsApi = async () => {
       if (!echartsApiPromise) {
         echartsApiPromise = import(/* @vite-ignore */ echartsBundle).then((mod) => mod.default ?? mod);
@@ -362,11 +399,38 @@ const jsonLd = buildArticleJsonLd({
       return echartsApiPromise;
     };
 
+    const getChartJsApi = async () => {
+      if (chartJsApiPromise) return chartJsApiPromise;
+      chartJsApiPromise = new Promise((resolve, reject) => {
+        if (window.Chart) {
+          resolve(window.Chart);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = chartJsBundle;
+        script.async = true;
+        script.onload = () => {
+          if (window.Chart) resolve(window.Chart);
+          else reject(new Error("Chart.js global missing"));
+        };
+        script.onerror = () => reject(new Error("Chart.js load failed"));
+        document.head.appendChild(script);
+      });
+      return chartJsApiPromise;
+    };
+
     const bindChartResize = () => {
       if (chartResizeBound) return;
       chartResizeBound = true;
       window.addEventListener("resize", () => {
         chartInstances.forEach((chart) => {
+          try {
+            chart.resize();
+          } catch {
+            // no-op
+          }
+        });
+        chartJsInstances.forEach((chart) => {
           try {
             chart.resize();
           } catch {
@@ -583,6 +647,115 @@ const jsonLd = buildArticleJsonLd({
       targets.forEach((code) => observer.observe(code));
     };
 
+    let iconifyApiPromise = null;
+    const ensureIconifyLoaded = async () => {
+      if (iconifyApiPromise) return iconifyApiPromise;
+      iconifyApiPromise = new Promise((resolve, reject) => {
+        if (window.customElements?.get("iconify-icon")) {
+          resolve(true);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = iconifyBundle;
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error("iconify load failed"));
+        document.head.appendChild(script);
+      });
+      return iconifyApiPromise;
+    };
+
+    const bindTabsSwitch = (article) => {
+      article.querySelectorAll(".md-tabs").forEach((tabsRoot) => {
+        if (!(tabsRoot instanceof HTMLElement)) return;
+        if (tabsRoot.dataset.bound === "1") return;
+        tabsRoot.dataset.bound = "1";
+        tabsRoot.addEventListener("click", (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return;
+          const trigger = target.closest(".md-tabs-tab");
+          if (!(trigger instanceof HTMLButtonElement)) return;
+          const tabId = trigger.dataset.tabId;
+          if (!tabId) return;
+          tabsRoot.querySelectorAll(".md-tabs-tab").forEach((tabButton) => {
+            if (!(tabButton instanceof HTMLButtonElement)) return;
+            const active = tabButton.dataset.tabId === tabId;
+            tabButton.dataset.active = active ? "1" : "0";
+            tabButton.setAttribute("aria-selected", active ? "true" : "false");
+          });
+          tabsRoot.querySelectorAll(".md-tabs-panel").forEach((panel) => {
+            if (!(panel instanceof HTMLElement)) return;
+            const active = panel.getAttribute("aria-labelledby") === tabId;
+            panel.dataset.active = active ? "1" : "0";
+            panel.hidden = !active;
+          });
+        });
+      });
+    };
+    const initInlineIcons = async (article) => {
+      if (!enableInlineIcon) return;
+      if (!article.querySelector("iconify-icon")) return;
+      await ensureIconifyLoaded();
+    };
+
+    const renderChartJsCards = async (article) => {
+      if (!enableExtendedMarkdown || !enableChartJs) return;
+      const cards = [...article.querySelectorAll(".md-chartjs")];
+      if (!cards.length) return;
+
+      const runForCard = async (card) => {
+        if (!(card instanceof HTMLElement)) return;
+        if (card.dataset.chartjsRendered === "1") return;
+        const raw = card.dataset.chartjsConfig || "";
+        const canvas = card.querySelector("canvas");
+        if (!(canvas instanceof HTMLCanvasElement)) return;
+
+        try {
+          const Chart = await getChartJsApi();
+          const config = JSON.parse(raw);
+          if (!config?.type) throw new Error("chart type missing");
+          config.options = config.options || {};
+          if (typeof config.options.responsive === "undefined") {
+            config.options.responsive = true;
+          }
+          if (typeof config.options.maintainAspectRatio === "undefined") {
+            config.options.maintainAspectRatio = false;
+          }
+
+          const instance = new Chart(canvas, config);
+          chartJsInstances.push(instance);
+          bindChartResize();
+          card.dataset.chartjsRendered = "1";
+        } catch (error) {
+          card.dataset.chartjsRendered = "error";
+          const fallback = document.createElement("p");
+          fallback.className = "md-chartjs-error";
+          fallback.textContent = "Chart.js 配置解析失败，请检查 JSON。";
+          card.appendChild(fallback);
+          console.error(error);
+        }
+      };
+
+      if (!("IntersectionObserver" in window)) {
+        for (const card of cards) {
+          await runForCard(card);
+        }
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+            runForCard(entry.target).catch(console.error);
+          });
+        },
+        { rootMargin: "220px 0px" }
+      );
+      cards.forEach((card) => observer.observe(card));
+    };
+
     const initArticleEnhancements = async () => {
       if (root.dataset.encryptedLocked === "1") return;
       if (root.dataset.antiCrawlLocked === "1") return;
@@ -591,6 +764,9 @@ const jsonLd = buildArticleJsonLd({
       if (article.dataset.enhanced === "1") return;
       article.dataset.enhanced = "1";
 
+      bindTabsSwitch(article);
+      await initInlineIcons(article);
+      await renderChartJsCards(article);
       addMathCopy(article);
       observeAndRenderDiagrams(article);
       enhanceCodeBlocksInBatches(article);
@@ -708,30 +884,47 @@ const jsonLd = buildArticleJsonLd({
 
 <style>
   :global(main.container) {
-    width: min(1280px, calc(100vw - var(--space-6)));
+    width: min(1280px, calc(100% - var(--space-6)));
   }
 
   .post-layout {
+    --post-main-width: 860px;
+    --toc-width: 332px;
     padding-bottom: 1.2rem;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
-    gap: 2rem;
+    column-gap: 1.7rem;
+    row-gap: 1rem;
+    align-items: start;
+  }
+  .post-layout.post-layout-right {
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--post-main-width)) minmax(260px, var(--toc-width));
+  }
+  .post-layout.post-layout-left {
+    grid-template-columns: minmax(260px, var(--toc-width)) minmax(0, var(--post-main-width)) minmax(0, 1fr);
   }
   .post-layout > section,
   .post-layout > aside {
     min-width: 0;
-  }
-  .post-layout > aside {
     align-self: start;
+  }
+  .post-layout > section.post-main {
+    width: 100%;
+    grid-column: 2;
+  }
+  .post-layout.post-layout-right > aside.post-toc-rail {
+    grid-column: 3;
+  }
+  .post-layout.post-layout-left > aside.post-toc-rail {
+    grid-column: 1;
   }
   .post-main {
     display: grid;
     gap: 1rem;
+    min-width: 0;
   }
   .post-main > * {
     width: 100%;
-    max-width: 980px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: none;
+    margin: 0;
   }
   .post-card-shell {
     padding: 1.1rem 1.15rem;
@@ -745,6 +938,9 @@ const jsonLd = buildArticleJsonLd({
     top: 84px;
     height: calc(100vh - 100px - var(--floating-safe-bottom, 0px));
   }
+  .post-layout.post-layout-left > aside.post-toc-rail {
+    order: -1;
+  }
   @media (max-width: 1024px) {
     .post-layout {
       grid-template-columns: minmax(0, 1fr);
@@ -753,6 +949,8 @@ const jsonLd = buildArticleJsonLd({
     .post-layout > aside.post-toc-rail {
       position: static;
       height: auto;
+      order: initial;
+      grid-column: auto;
     }
     .post-card-shell {
       padding: 1rem;
@@ -846,6 +1044,7 @@ const jsonLd = buildArticleJsonLd({
   }
   .post-body-card {
     padding: 1.05rem 1.1rem;
+    min-width: 0;
   }
   .article-body {
     padding: 0.08rem 0 calc(var(--post-article-pb, 1.2rem) + 0.2rem);
@@ -854,6 +1053,8 @@ const jsonLd = buildArticleJsonLd({
     border-radius: 0;
     box-shadow: none;
     font-size: clamp(1rem, 0.2vw + 0.98rem, 1.08rem);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .article-body :global(h2) {
     margin-top: var(--post-h2-top, 2.1rem);
@@ -871,9 +1072,152 @@ const jsonLd = buildArticleJsonLd({
     border: 1px solid var(--line-soft);
   }
   .article-body :global(pre),
-  .article-body :global(.diagram-wrapper) {
+  .article-body :global(.diagram-wrapper),
+  .article-body :global(.md-chartjs) {
     content-visibility: auto;
     contain-intrinsic-size: auto 320px;
+  }
+  .article-body :global(.md-inline-icon) {
+    display: inline-flex;
+    width: 1.1em;
+    height: 1.1em;
+    margin: 0 0.08em;
+    vertical-align: -0.12em;
+  }
+  .article-body :global(.md-mark) {
+    border-radius: 0.35rem;
+    padding: 0.08em 0.42em;
+    border: 1px solid transparent;
+    color: inherit;
+    font-weight: 600;
+  }
+  .article-body :global(.md-mark-tip) {
+    background: color-mix(in oklab, #2f80ed 18%, transparent);
+    border-color: color-mix(in oklab, #2f80ed 34%, transparent);
+  }
+  .article-body :global(.md-mark-warning) {
+    background: color-mix(in oklab, #f59e0b 18%, transparent);
+    border-color: color-mix(in oklab, #f59e0b 34%, transparent);
+  }
+  .article-body :global(.md-mark-danger) {
+    background: color-mix(in oklab, #ef4444 17%, transparent);
+    border-color: color-mix(in oklab, #ef4444 33%, transparent);
+  }
+  .article-body :global(.md-mark-important) {
+    background: color-mix(in oklab, var(--brand) 20%, transparent);
+    border-color: color-mix(in oklab, var(--brand) 36%, transparent);
+  }
+  .article-body :global(.md-steps) {
+    list-style: none;
+    margin: 1.1rem 0;
+    padding: 0.2rem 0 0.2rem 0.2rem;
+    counter-reset: md-steps;
+    display: grid;
+    gap: 0.9rem;
+  }
+  .article-body :global(.md-step-item) {
+    counter-increment: md-steps;
+    position: relative;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 0.75rem 0.8rem 0.75rem 3rem;
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+  }
+  .article-body :global(.md-step-item)::before {
+    content: counter(md-steps);
+    position: absolute;
+    left: 0.8rem;
+    top: 0.72rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--brand);
+    border: 1px solid color-mix(in oklab, var(--brand) 36%, transparent);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent);
+  }
+  .article-body :global(.md-tabs) {
+    margin: 1.15rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+  .article-body :global(.md-tabs-nav) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.48rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+  }
+  .article-body :global(.md-tabs-tab) {
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0 0.7rem;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  }
+  .article-body :global(.md-tabs-tab:hover) {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    background: color-mix(in oklab, var(--brand-soft) 60%, transparent 40%);
+  }
+  .article-body :global(.md-tabs-tab[data-active="1"]) {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 44%, var(--line) 56%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+  }
+  .article-body :global(.md-tabs-panel) {
+    padding: 0.9rem 0.95rem;
+  }
+  .article-body :global(.md-chartjs) {
+    margin: 1.25rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+  .article-body :global(.md-chartjs-head) {
+    padding: 0.62rem 0.82rem;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.86rem;
+    color: var(--text-soft);
+    font-weight: 600;
+    background: color-mix(in oklab, var(--surface-2) 82%, transparent 18%);
+  }
+  .article-body :global(.md-chartjs-host) {
+    min-height: 220px;
+    height: auto;
+    padding: 0.8rem;
+  }
+  .article-body :global(.md-chartjs-canvas) {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 220px;
+    display: block;
+  }
+  .article-body :global(.md-chartjs-note) {
+    padding: 0.1rem 0.85rem 0.8rem;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+  }
+  .article-body :global(.md-chartjs-error) {
+    margin: 0.2rem 0.82rem 0.82rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, #ef4444 38%, transparent);
+    color: color-mix(in oklab, #ef4444 82%, var(--text) 18%);
+    background: color-mix(in oklab, #ef4444 10%, transparent);
+    font-size: 0.85rem;
   }
   .prev-next {
     margin-top: 0.95rem;

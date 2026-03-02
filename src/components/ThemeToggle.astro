@@ -5,26 +5,53 @@ const themes = siteConfig.theme.switchableThemes ?? siteConfig.theme.themes;
 const storageKey = "flycode-theme";
 const explicitKey = "flycode-theme-explicit";
 const enableTransition = siteConfig.theme.transitions.theme;
+const darkTheme =
+  themes.find((theme) => theme.toLowerCase().includes("dark")) ?? themes[1] ?? themes[0] ?? "aurora-dark";
+const lightTheme = themes.find((theme) => theme !== darkTheme) ?? themes[0] ?? "aurora-light";
+const toggleLabels = siteConfig.theme.toggle?.labels ?? { light: "浅色", dark: "深色" };
+const toggleColors = siteConfig.theme.toggle?.colors ?? {
+  light: "#f59e0b",
+  dark: "#60a5fa",
+  thumb: "color-mix(in oklab, var(--brand-soft) 74%, transparent)"
+};
+const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
 ---
 
-<button class="theme-toggle" id="theme-toggle" aria-label="切换主题" data-themes={JSON.stringify(themes)}>
-  <span class="theme-icon" id="theme-toggle-icon" aria-hidden="true">TH</span>
-</button>
+<div
+  class="theme-switcher"
+  id="theme-switcher"
+  data-themes={JSON.stringify(themes)}
+  data-light-theme={lightTheme}
+  data-dark-theme={darkTheme}
+  role="group"
+  aria-label="主题切换"
+>
+  <span class="theme-thumb" aria-hidden="true"></span>
+  <button type="button" class="theme-option theme-option-light" data-theme-option={lightTheme} aria-label={toggleLabels.light}>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2"></circle>
+      <path d="M12 2.5v2.3M12 19.2v2.3M4.85 4.85l1.62 1.62M17.53 17.53l1.62 1.62M2.5 12h2.3M19.2 12h2.3M4.85 19.15l1.62-1.62M17.53 6.47l1.62-1.62"></path>
+    </svg>
+  </button>
+  <button type="button" class="theme-option theme-option-dark" data-theme-option={darkTheme} aria-label={toggleLabels.dark}>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 1 0 11.5 11.5z"></path>
+    </svg>
+  </button>
+</div>
 
-<script is:inline define:vars={{ storageKey, explicitKey, enableTransition }}>
+<script is:inline define:vars={{ storageKey, explicitKey, enableTransition, lightTheme, darkTheme, animationMs }}>
   (() => {
     if (window.__flyThemeToggleBound) return;
     window.__flyThemeToggleBound = true;
 
     const root = document.documentElement;
-    const icon = document.getElementById("theme-toggle-icon");
+    const switcher = document.getElementById("theme-switcher");
+    if (!(switcher instanceof HTMLElement)) return;
 
-    const themeLight = "aurora-light";
-    const themeDark = "aurora-dark";
-
-    const readThemes = (button) => {
+    const readThemes = () => {
       try {
-        const parsed = JSON.parse(button?.dataset.themes ?? "[]");
+        const parsed = JSON.parse(switcher?.dataset.themes ?? "[]");
         if (Array.isArray(parsed)) {
           return parsed.filter((item) => typeof item === "string" && item.trim());
         }
@@ -32,23 +59,25 @@ const enableTransition = siteConfig.theme.transitions.theme;
       return [];
     };
 
+    const isDark = (theme) => String(theme || "").trim() === darkTheme || String(theme || "").toLowerCase().includes("dark");
+
     const normalizeTheme = (themes, input) => {
-      const fallback = root.dataset.defaultTheme || themes[0] || themeLight;
+      const fallback = root.dataset.defaultTheme || themes[0] || lightTheme;
       const next = String(input ?? "").trim();
       if (themes.includes(next)) return next;
       if (themes.includes(fallback)) return fallback;
-      return themes[0] || themeLight;
+      return themes[0] || lightTheme;
     };
 
     const syncToggleUi = (theme) => {
-      const button = document.getElementById("theme-toggle");
-      if (!(button instanceof HTMLElement)) return;
-      if (icon instanceof HTMLElement) {
-        icon.textContent = theme === themeDark ? "DK" : "LT";
-      }
-      const label = theme === themeDark ? "深色" : "浅色";
-      button.setAttribute("aria-label", `切换主题，当前 ${label}`);
-      button.title = `当前主题：${label}`;
+      const activeKey = isDark(theme) ? "dark" : "light";
+      switcher.dataset.active = activeKey;
+      switcher.querySelectorAll("[data-theme-option]").forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        const active = node.dataset.themeOption === theme;
+        node.dataset.active = active ? "1" : "0";
+        node.setAttribute("aria-pressed", active ? "true" : "false");
+      });
     };
 
     const applyTheme = (theme) => {
@@ -59,57 +88,132 @@ const enableTransition = siteConfig.theme.transitions.theme;
       window.dispatchEvent(new CustomEvent("site:theme-change", { detail: theme }));
     };
 
-    document.addEventListener("click", (event) => {
+    const onClick = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const button = target.closest("#theme-toggle");
-      if (!(button instanceof HTMLElement)) return;
-
-      const themes = readThemes(button);
-      if (!themes.length) return;
-
+      const option = target.closest("[data-theme-option]");
+      if (!(option instanceof HTMLButtonElement)) return;
+      const themes = readThemes();
+      const picked = normalizeTheme(themes, option.dataset.themeOption || "");
       if (enableTransition) {
         root.classList.add("theme-anim");
-        window.setTimeout(() => root.classList.remove("theme-anim"), 280);
+        window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
       }
+      applyTheme(picked);
+    };
 
-      const current = normalizeTheme(themes, root.dataset.theme);
-      const next = current === themeDark ? themeLight : themeDark;
-      applyTheme(next);
+    const onKeyDown = (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const themes = readThemes();
+      const current = normalizeTheme(themes, root.dataset.theme || lightTheme);
+      const next = event.key === "ArrowLeft" ? lightTheme : darkTheme;
+      if (normalizeTheme(themes, next) === current) return;
+      if (enableTransition) {
+        root.classList.add("theme-anim");
+        window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
+      }
+      applyTheme(normalizeTheme(themes, next));
+    };
+
+    switcher.addEventListener("click", onClick);
+    switcher.addEventListener("keydown", onKeyDown);
+
+    window.addEventListener("site:theme-change", (event) => {
+      const themes = readThemes();
+      const next = normalizeTheme(themes, event?.detail || root.dataset.theme || lightTheme);
+      syncToggleUi(next);
     });
 
     document.addEventListener("astro:page-load", () => {
-      syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || themeLight);
+      const themes = readThemes();
+      syncToggleUi(normalizeTheme(themes, root.dataset.theme || root.dataset.defaultTheme || lightTheme));
     });
 
-    syncToggleUi(root.dataset.theme || root.dataset.defaultTheme || themeLight);
+    const themesNow = readThemes();
+    syncToggleUi(normalizeTheme(themesNow, root.dataset.theme || root.dataset.defaultTheme || lightTheme));
   })();
 </script>
 
-<style>
-  .theme-toggle {
-    border: 1px solid var(--line);
-    color: var(--text);
-    width: 36px;
+<style define:vars={{ toggleLightColor: toggleColors.light, toggleDarkColor: toggleColors.dark, toggleThumbColor: toggleColors.thumb, animationMs }}>
+  .theme-switcher {
+    position: relative;
+    width: 72px;
     height: 36px;
-    border-radius: 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
     background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
-    cursor: pointer;
-    display: inline-grid;
-    place-items: center;
-    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: center;
+    padding: 2px;
+    isolation: isolate;
+    transition: border-color 0.2s ease;
   }
 
-  .theme-toggle:hover {
+  .theme-switcher:hover {
     border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
-    color: var(--brand);
+  }
+
+  .theme-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(50% - 2px);
+    height: calc(100% - 4px);
+    border-radius: 999px;
+    background: toggleThumbColor;
+    border: 1px solid color-mix(in oklab, var(--brand) 20%, var(--line) 80%);
+    transition: transform calc((animationMs * 1ms)) ease;
+    z-index: 0;
+  }
+
+  .theme-switcher[data-active="dark"] .theme-thumb {
+    transform: translateX(100%);
+  }
+
+  .theme-option {
+    width: 100%;
+    height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .theme-option:hover {
     transform: translateY(-1px);
   }
 
-  .theme-icon {
-    font-size: 0.92rem;
-    line-height: 1;
-    font-weight: 700;
+  .theme-option[data-active="1"] {
+    color: var(--text);
+  }
+
+  .theme-option-light {
+    color: toggleLightColor;
+  }
+
+  .theme-option-dark {
+    color: toggleDarkColor;
+  }
+
+  .theme-switcher:focus-within {
+    outline: 2px solid color-mix(in oklab, var(--brand) 52%, transparent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-thumb,
+    .theme-option {
+      transition: none;
+    }
   }
 </style>
-

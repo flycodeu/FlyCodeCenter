@@ -90,20 +90,20 @@ html[data-code-theme="github-light"] {
 }
 
 html[data-code-theme="github-dark"] {
-  --code-panel: #1b2230;
-  --code-border: #324056;
-  --code-header: #242d3d;
-  --code-text: #c9d1d9;
-  --code-muted: #8b949e;
-  --code-comment: #8b949e;
+  --code-panel: #222b36;
+  --code-border: #3b4b61;
+  --code-header: #2a3445;
+  --code-text: #d6dee8;
+  --code-muted: #9aa5b4;
+  --code-comment: #8d99a9;
   --code-keyword: #ff7b72;
   --code-string: #a5d6ff;
   --code-number: #79c0ff;
   --code-function: #d2a8ff;
-  --code-operator: #c9d1d9;
+  --code-operator: #d6dee8;
   --code-class: #ffa657;
   --code-variable: #ffa657;
-  --code-punctuation: #8b949e;
+  --code-punctuation: #a6b0bc;
 }
 
 html[data-code-theme="idea-dark"] {
@@ -169,6 +169,16 @@ body {
   padding: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
+}
+
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
@@ -224,7 +234,7 @@ img {
 }
 
 .container {
-  width: min(1160px, calc(100vw - var(--space-6)));
+  width: min(1160px, calc(100% - var(--space-6)));
   margin: 0 auto;
 }
 
@@ -503,11 +513,17 @@ img {
   border: 1px solid var(--code-border);
   padding: 0.64rem 0.78rem;
   overflow: auto;
-  background-color: var(--code-panel) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--code-panel) 94%, #ffffff 6%),
+      var(--code-panel)
+    ) !important;
   color: var(--code-text) !important;
   font-size: 0.8rem;
   line-height: 1.34;
   margin: 0.88rem 0;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, #ffffff 18%, transparent);
 }
 
 .prose pre code {
@@ -634,8 +650,14 @@ main pre.has-global-copy {
   margin: 1rem 0;
   border-radius: 10px;
   border: 1px solid var(--code-border);
-  background-color: var(--code-panel) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--code-panel) 94%, #ffffff 6%),
+      var(--code-panel)
+    ) !important;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, #ffffff 15%, transparent);
 }
 
 .code-block-wrapper pre {
