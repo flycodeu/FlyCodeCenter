@@ -367,9 +367,17 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
     left: 0;
     right: 0;
     bottom: 0;
-    border-top: 1px solid var(--line);
+    border-top: 2px solid color-mix(in oklab, var(--line) 72%, var(--brand) 28%);
     z-index: 58;
-    background: color-mix(in oklab, var(--bg-elev) 84%, transparent 16%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--bg-elev) 88%, transparent 12%), color-mix(in oklab, var(--surface-2) 90%, transparent 10%)),
+      repeating-linear-gradient(
+        90deg,
+        color-mix(in oklab, var(--brand) 7%, transparent 93%) 0,
+        color-mix(in oklab, var(--brand) 7%, transparent 93%) 1px,
+        transparent 1px,
+        transparent 12px
+      );
     backdrop-filter: blur(10px);
   }
   .footer-inner {
@@ -379,7 +387,8 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
     justify-content: space-between;
     gap: 1rem;
     color: var(--text-soft);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+    font-family: var(--font-tech);
     line-height: 1.25;
   }
   .footer-inner p,
@@ -393,13 +402,13 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
-    filter: blur(56px);
+    filter: blur(44px);
   }
 
   .aurora-orb {
     position: absolute;
     border-radius: 999px;
-    opacity: 0.12;
+    opacity: 0.16;
     animation: aurora-float 18s ease-in-out infinite;
   }
 

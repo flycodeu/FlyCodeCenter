@@ -696,7 +696,7 @@ const siteConfig = defineSiteConfig({
         pageSize: 10
       },
       antiCrawl: {
-        enable: true,
+        enable: false,
         lockOnSuspicious: true,
         maxActions: 10,
         timeWindowMs: 20000

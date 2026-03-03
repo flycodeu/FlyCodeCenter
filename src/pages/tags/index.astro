@@ -1,4 +1,4 @@
----
+﻿---
 import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
@@ -31,7 +31,6 @@ const tagsPageConfig = (siteConfig.pages as {
 
 const listMode = tagsPageConfig.list?.mode ?? "page";
 const pageSize = tagsPageConfig.list?.pageSize ?? 10;
-const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
 ---
 
 <ListLayout
@@ -46,7 +45,7 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
 >
   <section class="tag-filter" id="tag-filter-root">
     <header class="tag-filter-head">
-      <h2>标签图谱</h2>
+      <h2>标签</h2>
       <p id="tag-filter-status">全部标签 {entries.length} 篇文章</p>
     </header>
 
@@ -80,31 +79,16 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
     </div>
     <nav class="surface pager-shell tag-pager" id="tag-result-pager" hidden></nav>
     <div id="tag-result-sentinel" aria-hidden="true"></div>
-    <section class="tag-lock" id="tag-lock" hidden>
-      <h2>访问已受限</h2>
-      <p>检测到异常访问行为，标签列表已临时受限。</p>
-      <p class="tag-lock-reason" id="tag-lock-reason">原因: suspicious</p>
-    </section>
   </section>
 </ListLayout>
 
-<script
-  is:inline
-  define:vars={{
-    antiCrawlEnabled: antiCrawlConfig.enable ?? true,
-    antiCrawlLockOnSuspicious: antiCrawlConfig.lockOnSuspicious ?? true,
-    antiCrawlMaxActions: antiCrawlConfig.maxActions ?? 10,
-    antiCrawlTimeWindowMs: antiCrawlConfig.timeWindowMs ?? 20000
-  }}
->
+<script is:inline>
   const initTagFilter = () => {
     const root = document.getElementById("tag-filter-root");
     const list = document.getElementById("tag-result-list");
     const status = document.getElementById("tag-filter-status");
     const pager = document.getElementById("tag-result-pager");
     const sentinel = document.getElementById("tag-result-sentinel");
-    const lockPanel = document.getElementById("tag-lock");
-    const lockReason = document.getElementById("tag-lock-reason");
     if (!(root instanceof HTMLElement) || !(list instanceof HTMLElement) || !(status instanceof HTMLElement) || !(sentinel instanceof HTMLElement)) return;
 
     if (window.__flyTagFilterCleanup) {
@@ -123,38 +107,19 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
     let filteredItems = [];
     let currentPage = 1;
     let observer = null;
-    let locked = false;
-    const records = [];
-    const botUa = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
 
-    const lock = (reason) => {
-      if (locked) return;
-      locked = true;
-      list.classList.add("is-locked");
-      if (lockPanel instanceof HTMLElement) lockPanel.hidden = false;
-      if (lockReason instanceof HTMLElement) lockReason.textContent = `原因: ${reason}`;
+    const revealNextBatch = () => {
+      let revealed = 0;
+      for (const item of filteredItems) {
+        if (!item.hasAttribute("hidden")) continue;
+        item.removeAttribute("hidden");
+        revealed += 1;
+        if (revealed >= pageSize) break;
+      }
+      const hasHidden = filteredItems.some((item) => item.hasAttribute("hidden"));
+      sentinel.hidden = !hasHidden;
+      return hasHidden;
     };
-
-    const mark = (name) => {
-      if (!antiCrawlEnabled || !antiCrawlLockOnSuspicious || listMode !== "infinite" || locked) return;
-      const now = Date.now();
-      records.push(now);
-      while (records.length && now - records[0] > antiCrawlTimeWindowMs) {
-        records.shift();
-      }
-      if (records.length >= antiCrawlMaxActions) {
-        lock(`high-frequency-${name}`);
-      }
-    };
-
-    if (antiCrawlEnabled && antiCrawlLockOnSuspicious && listMode === "infinite") {
-      const ua = navigator.userAgent || "";
-      const suspiciousUa = botUa.test(ua);
-      const webdriver = Boolean(navigator.webdriver);
-      if (webdriver || suspiciousUa) {
-        lock(webdriver ? "webdriver" : "suspicious-ua");
-      }
-    }
 
     const updateStatus = () => {
       const activeButton = buttons.find((button) => normalize(button.getAttribute("data-tag")) === currentTag);
@@ -192,30 +157,19 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
       sentinel.hidden = true;
     };
 
-    const revealNextBatch = () => {
-      let revealed = 0;
-      for (const item of filteredItems) {
-        if (!item.hasAttribute("hidden")) continue;
-        item.removeAttribute("hidden");
-        revealed += 1;
-        if (revealed >= pageSize) break;
-      }
-      const hasHidden = filteredItems.some((item) => item.hasAttribute("hidden"));
-      sentinel.hidden = !hasHidden;
-      return hasHidden;
-    };
-
     const setVisibilityInfinite = () => {
       filteredItems.forEach((item, idx) => item.toggleAttribute("hidden", idx >= pageSize));
-      sentinel.hidden = filteredItems.length <= pageSize;
+      const hasMore = filteredItems.length > pageSize;
       if (observer) observer.disconnect();
-      if (filteredItems.length <= pageSize) return;
+      sentinel.hidden = !hasMore;
+      if (!hasMore) return;
+
       observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (!entry.isIntersecting || locked) continue;
-            const hasMore = revealNextBatch();
-            if (!hasMore && observer) observer.disconnect();
+            if (!entry.isIntersecting) continue;
+            const hasMoreNext = revealNextBatch();
+            if (!hasMoreNext && observer) observer.disconnect();
           }
         },
         { rootMargin: "220px 0px 320px 0px", threshold: 0.01 }
@@ -260,7 +214,6 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
       button.addEventListener(
         "click",
         () => {
-          if (locked) return;
           applyFilter(button.getAttribute("data-tag") || "all");
         },
         { signal }
@@ -283,19 +236,6 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
         { signal }
       );
     }
-
-    document.addEventListener("copy", (event) => mark("copy"), { capture: true, signal });
-    document.addEventListener("contextmenu", () => mark("contextmenu"), { capture: true, signal });
-    document.addEventListener("selectstart", () => mark("selectstart"), { capture: true, signal });
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (!event.ctrlKey && !event.metaKey) return;
-        const key = event.key.toLowerCase();
-        if (key === "c" || key === "s" || key === "u") mark(`hotkey-${key}`);
-      },
-      { capture: true, signal }
-    );
 
     const queryTag = new URLSearchParams(window.location.search).get("tag");
     if (queryTag) {
@@ -410,38 +350,6 @@ const antiCrawlConfig = tagsPageConfig.antiCrawl ?? {};
   #tag-result-sentinel {
     width: 100%;
     height: 2px;
-  }
-
-  .tag-lock {
-    border: 1px solid color-mix(in oklab, var(--brand) 35%, var(--line) 65%);
-    border-radius: 12px;
-    background: color-mix(in oklab, var(--surface-1) 92%, var(--brand-soft) 8%);
-    padding: 1rem;
-    display: grid;
-    gap: 0.5rem;
-  }
-
-  .tag-lock h2 {
-    margin: 0;
-    font-size: 1.08rem;
-  }
-
-  .tag-lock p {
-    margin: 0;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-  }
-
-  .tag-lock-reason {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-  }
-
-  .result-list.is-locked {
-    opacity: 0.26;
-    pointer-events: none;
-    filter: blur(1px);
   }
 
   @media (max-width: 760px) {

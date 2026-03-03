@@ -39,13 +39,15 @@ const pathname = Astro.url.pathname;
     justify-content: center;
     min-height: 36px;
     padding: 0.42rem 0.66rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--line) 70%, transparent 30%);
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in oklab, var(--line) 66%, var(--brand) 34%);
     background: color-mix(in oklab, var(--bg-elev) 76%, transparent 24%);
     color: var(--text-soft);
     white-space: nowrap;
-    font-size: 0.82rem;
-    letter-spacing: 0.01em;
+    font-size: 0.74rem;
+    font-family: var(--font-tech);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease;
     flex: 0 0 auto;
     scroll-snap-align: start;
@@ -62,7 +64,9 @@ const pathname = Astro.url.pathname;
       linear-gradient(120deg, color-mix(in oklab, var(--brand) 22%, transparent 78%), transparent),
       color-mix(in oklab, var(--brand-soft) 82%, transparent 18%);
     border-color: color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
-    box-shadow: 0 12px 28px -22px color-mix(in oklab, var(--brand) 62%, transparent 38%);
+    box-shadow:
+      0 12px 28px -22px color-mix(in oklab, var(--brand) 62%, transparent 38%),
+      inset 0 0 0 1px color-mix(in oklab, var(--brand) 24%, transparent 76%);
   }
   @media (max-width: 900px) {
     .nav {
