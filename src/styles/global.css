@@ -28,6 +28,7 @@
   --pager-height: 36px;
   --pager-radius: 11px;
   --pager-gap: 0.42rem;
+  --line-number-digits: 2;
 }
 
 :root[data-theme="aurora-light"] {
@@ -741,6 +742,7 @@ main pre.has-global-copy {
   margin: 0;
   border: none;
   border-radius: 0;
+  --line-number-digits: 2;
   padding: 0.75rem 0.92rem 0.82rem;
   overflow-x: auto;
   background: var(--code-panel) !important;
@@ -749,7 +751,8 @@ main pre.has-global-copy {
 }
 
 .code-block-wrapper pre[data-line-numbers="1"] {
-  padding-left: calc(1rem + (var(--line-number-digits, 2) * 0.72ch) + 0.95rem);
+  --line-number-gutter: calc(var(--line-number-digits) * 0.72ch);
+  padding-left: calc(1rem + var(--line-number-gutter) + 0.95rem);
 }
 
 .code-block-wrapper pre[data-line-numbers="1"] code {
@@ -766,8 +769,8 @@ main pre.has-global-copy {
   counter-increment: code-line;
   content: counter(code-line);
   position: absolute;
-  left: calc(-1rem - (var(--line-number-digits, 2) * 0.72ch));
-  width: calc(var(--line-number-digits, 2) * 0.72ch);
+  left: calc(-1rem - var(--line-number-gutter));
+  width: var(--line-number-gutter);
   text-align: right;
   color: color-mix(in oklab, var(--code-muted) 88%, transparent 12%);
   font-variant-numeric: tabular-nums;
@@ -779,8 +782,8 @@ main pre.has-global-copy {
   display: flex;
   align-items: center;
   position: relative;
-  min-height: 1.5rem;
-  padding: 0.18rem 0.62rem 0.18rem 2.96rem;
+  min-height: 1.9rem;
+  padding: 0.36rem 0.72rem 0.36rem 0.9rem;
   background: var(--code-header, color-mix(in oklab, var(--surface-2) 80%, transparent 20%));
   border-bottom: 1px solid var(--code-border);
   font-family: var(--font-mono);
@@ -796,39 +799,26 @@ main pre.has-global-copy {
   justify-content: flex-end;
   flex-wrap: nowrap;
   gap: 0.28rem;
+  padding-left: 0.3rem;
   min-width: 0;
   position: relative;
   z-index: 2;
 }
 
-.code-block-wrapper[data-window="mac"] .code-block-header::before {
-  content: "";
-  position: absolute;
-  left: 0.76rem;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #ff5f57;
-  box-shadow:
-    14px 0 0 #febc2e,
-    28px 0 0 #28c840;
-  transform: translateY(-50%);
-  z-index: 1;
-  pointer-events: none;
-}
-
 .code-block-lang {
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 560;
+  letter-spacing: 0.02em;
   color: var(--code-muted);
   font-size: 0.68rem;
   white-space: nowrap;
-  line-height: 1;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.46rem !important;
+  border: 1px solid color-mix(in oklab, var(--code-border) 76%, transparent 24%) !important;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--code-header) 70%, var(--code-panel) 30%) !important;
   box-shadow: none !important;
   order: 1;
 }
@@ -899,8 +889,8 @@ main pre.has-global-copy {
   justify-content: flex-start;
   gap: 0.28rem;
   margin: 0 !important;
-  min-height: 1.5rem;
-  padding: 0.18rem 0.62rem 0.18rem 2.96rem !important;
+  min-height: 1.9rem;
+  padding: 0.36rem 0.72rem 0.36rem 0.9rem !important;
   border-bottom: 1px solid var(--code-border) !important;
   background: var(--code-header, color-mix(in oklab, var(--surface-2) 80%, transparent 20%)) !important;
   font-family: var(--font-mono);
@@ -911,33 +901,19 @@ main pre.has-global-copy {
 .prose .expressive-code .frame > figcaption.header .title {
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   font-size: 0.68rem;
   white-space: nowrap;
   color: var(--code-muted) !important;
-  font-weight: 600;
-  line-height: 1;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
+  font-weight: 560;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.46rem !important;
+  border: 1px solid color-mix(in oklab, var(--code-border) 76%, transparent 24%) !important;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--code-header) 70%, var(--code-panel) 30%) !important;
   box-shadow: none !important;
-}
-
-.prose .expressive-code .frame > figcaption.header::before {
-  content: "";
-  position: absolute;
-  left: 0.76rem;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #ff5f57;
-  box-shadow:
-    14px 0 0 #febc2e,
-    28px 0 0 #28c840;
-  transform: translateY(-50%);
-  z-index: 1;
-  pointer-events: none;
 }
 
 .prose .expressive-code .frame > figcaption.header > .code-block-meta {
@@ -947,6 +923,7 @@ main pre.has-global-copy {
   justify-content: flex-end;
   flex-wrap: nowrap;
   gap: 0.28rem;
+  padding-left: 0.3rem;
   min-width: 0;
   position: relative;
   z-index: 2;
