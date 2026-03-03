@@ -42,14 +42,17 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
 
 <script is:inline define:vars={{ storageKey, explicitKey, enableTransition, lightTheme, darkTheme, animationMs }}>
   (() => {
-    if (window.__flyThemeToggleBound) return;
-    window.__flyThemeToggleBound = true;
-
     const root = document.documentElement;
-    const switcher = document.getElementById("theme-switcher");
-    if (!(switcher instanceof HTMLElement)) return;
+    const state = window.__flyThemeToggleState ?? { bound: false };
+    window.__flyThemeToggleState = state;
 
-    const readThemes = () => {
+    const getSwitcher = () => {
+      const node = document.getElementById("theme-switcher");
+      return node instanceof HTMLElement ? node : null;
+    };
+
+    const readThemes = (switcher) => {
+      if (!(switcher instanceof HTMLElement)) return [];
       try {
         const parsed = JSON.parse(switcher?.dataset.themes ?? "[]");
         if (Array.isArray(parsed)) {
@@ -70,6 +73,8 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
     };
 
     const syncToggleUi = (theme) => {
+      const switcher = getSwitcher();
+      if (!(switcher instanceof HTMLElement)) return;
       const activeKey = isDark(theme) ? "dark" : "light";
       switcher.dataset.active = activeKey;
       switcher.querySelectorAll("[data-theme-option]").forEach((node) => {
@@ -88,51 +93,63 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
       window.dispatchEvent(new CustomEvent("site:theme-change", { detail: theme }));
     };
 
+    const animateToggle = () => {
+      if (!enableTransition) return;
+      root.classList.add("theme-anim");
+      window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
+    };
+
     const onClick = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const option = target.closest("[data-theme-option]");
+      const option = target.closest("#theme-switcher [data-theme-option]");
       if (!(option instanceof HTMLButtonElement)) return;
-      const themes = readThemes();
+      const switcher = option.closest("#theme-switcher");
+      const themes = readThemes(switcher);
+      if (!themes.length) return;
       const picked = normalizeTheme(themes, option.dataset.themeOption || "");
-      if (enableTransition) {
-        root.classList.add("theme-anim");
-        window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
-      }
+      animateToggle();
       applyTheme(picked);
     };
 
     const onKeyDown = (event) => {
       if (!(event instanceof KeyboardEvent)) return;
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const switcher = target.closest("#theme-switcher");
+      if (!(switcher instanceof HTMLElement)) return;
       event.preventDefault();
-      const themes = readThemes();
+      const themes = readThemes(switcher);
+      if (!themes.length) return;
       const current = normalizeTheme(themes, root.dataset.theme || lightTheme);
       const next = event.key === "ArrowLeft" ? lightTheme : darkTheme;
       if (normalizeTheme(themes, next) === current) return;
-      if (enableTransition) {
-        root.classList.add("theme-anim");
-        window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
-      }
+      animateToggle();
       applyTheme(normalizeTheme(themes, next));
     };
 
-    switcher.addEventListener("click", onClick);
-    switcher.addEventListener("keydown", onKeyDown);
-
-    window.addEventListener("site:theme-change", (event) => {
-      const themes = readThemes();
-      const next = normalizeTheme(themes, event?.detail || root.dataset.theme || lightTheme);
+    const syncFromCurrentTheme = (candidateTheme) => {
+      const switcher = getSwitcher();
+      const themes = readThemes(switcher);
+      if (!themes.length) return;
+      const next = normalizeTheme(themes, candidateTheme || root.dataset.theme || root.dataset.defaultTheme || lightTheme);
       syncToggleUi(next);
-    });
+    };
 
-    document.addEventListener("astro:page-load", () => {
-      const themes = readThemes();
-      syncToggleUi(normalizeTheme(themes, root.dataset.theme || root.dataset.defaultTheme || lightTheme));
-    });
+    if (!state.bound) {
+      state.bound = true;
+      document.addEventListener("click", onClick);
+      document.addEventListener("keydown", onKeyDown);
+      window.addEventListener("site:theme-change", (event) => {
+        syncFromCurrentTheme(event?.detail);
+      });
+      document.addEventListener("astro:page-load", () => {
+        syncFromCurrentTheme(root.dataset.theme || root.dataset.defaultTheme || lightTheme);
+      });
+    }
 
-    const themesNow = readThemes();
-    syncToggleUi(normalizeTheme(themesNow, root.dataset.theme || root.dataset.defaultTheme || lightTheme));
+    syncFromCurrentTheme(root.dataset.theme || root.dataset.defaultTheme || lightTheme);
   })();
 </script>
 

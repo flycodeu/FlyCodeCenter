@@ -13,12 +13,19 @@ const explicitStorageKey = `${storageKey}-explicit`;
 
 <script is:inline define:vars={{ storageKey, defaultTheme, explicitStorageKey }}>
   (() => {
-    if (window.__flyCodeThemeToggleBound) return;
-    window.__flyCodeThemeToggleBound = true;
-
     const root = document.documentElement;
-    const icon = document.getElementById("code-theme-icon");
-    const button = document.getElementById("code-theme-toggle");
+    const state = window.__flyCodeThemeToggleState ?? { bound: false };
+    window.__flyCodeThemeToggleState = state;
+
+    const getButton = () => {
+      const node = document.getElementById("code-theme-toggle");
+      return node instanceof HTMLElement ? node : null;
+    };
+
+    const getIcon = () => {
+      const node = document.getElementById("code-theme-icon");
+      return node instanceof HTMLElement ? node : null;
+    };
 
     const labelMap = {
       "mac-light": "Mac Light",
@@ -40,7 +47,8 @@ const explicitStorageKey = `${storageKey}-explicit`;
       "one-dark": "OD"
     };
 
-    const readThemes = () => {
+    const readThemes = (button) => {
+      if (!(button instanceof HTMLElement)) return [];
       try {
         const parsed = JSON.parse(button?.dataset.themes ?? "[]");
         if (Array.isArray(parsed)) {
@@ -59,6 +67,8 @@ const explicitStorageKey = `${storageKey}-explicit`;
 
     const syncUi = (theme) => {
       const label = labelMap[theme] || theme;
+      const icon = getIcon();
+      const button = getButton();
       if (icon instanceof HTMLElement) {
         icon.textContent = iconMap[theme] || "CD";
       }
@@ -78,28 +88,34 @@ const explicitStorageKey = `${storageKey}-explicit`;
       window.dispatchEvent(new CustomEvent("site:code-theme-change", { detail: theme }));
     };
 
-    document.addEventListener("click", (event) => {
+    const onClick = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
       const trigger = target.closest("#code-theme-toggle");
       if (!(trigger instanceof HTMLElement)) return;
 
-      const themes = readThemes();
+      const themes = readThemes(trigger);
       if (!themes.length) return;
       const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
       const idx = themes.indexOf(current);
       const next = normalize(themes, themes[(idx + 1) % themes.length]);
       applyTheme(next, true);
-    });
+    };
 
     const init = () => {
-      const themes = readThemes();
+      const button = getButton();
+      const themes = readThemes(button);
       if (!themes.length) return;
       const current = normalize(themes, root.dataset.codeTheme || localStorage.getItem(storageKey));
       applyTheme(current, false);
     };
 
-    document.addEventListener("astro:page-load", init);
+    if (!state.bound) {
+      state.bound = true;
+      document.addEventListener("click", onClick);
+      document.addEventListener("astro:page-load", init);
+    }
+
     init();
   })();
 </script>

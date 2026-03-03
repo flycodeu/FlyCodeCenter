@@ -90,7 +90,6 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         if (!themeList.length) themeList = [fallback];
 
         const hasExplicitTheme = () => localStorage.getItem(explicitKey) === "1";
-        const hasExplicitCodeTheme = () => localStorage.getItem(codeThemeExplicitKey) === "1";
         const readSavedTheme = () => (hasExplicitTheme() ? localStorage.getItem(key) : null);
 
         const normalizeTheme = (input) => {
@@ -121,15 +120,15 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           return "github-light";
         };
         const resolveCodeTheme = (themeForAuto) => {
-          if (hasExplicitCodeTheme()) {
-            const explicitValue = localStorage.getItem(codeThemeKey);
-            return normalizeCodeTheme(explicitValue || root.dataset.codeTheme || codeFallback);
-          }
           const mapped = mapCodeThemeFromSiteTheme(themeForAuto || root.dataset.theme || fallback);
           return normalizeCodeTheme(mapped);
         };
-        const savedCodeTheme = hasExplicitCodeTheme() ? localStorage.getItem(codeThemeKey) : null;
+        const savedCodeTheme = localStorage.getItem(codeThemeKey);
         const nextCodeTheme = resolveCodeTheme(next);
+        // Migrate historical manual code-theme lock so code blocks follow site theme consistently.
+        if (localStorage.getItem(codeThemeExplicitKey) === "1") {
+          localStorage.removeItem(codeThemeExplicitKey);
+        }
         const applyCodeThemePanelColors = (theme, targetRoot = root) => {
           const palette =
             codeThemePanelColors?.[theme] ||
@@ -161,7 +160,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         if (saved !== next || !saved) {
           localStorage.setItem(key, next);
         }
-        if (savedCodeTheme !== nextCodeTheme || !savedCodeTheme || !hasExplicitCodeTheme()) {
+        if (savedCodeTheme !== nextCodeTheme || !savedCodeTheme) {
           localStorage.setItem(codeThemeKey, nextCodeTheme);
         }
 
@@ -173,9 +172,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           nextRoot.dataset.theme = current;
           nextRoot.dataset.defaultTheme = root.dataset.defaultTheme || fallback;
           nextRoot.dataset.themeList = root.dataset.themeList || "[]";
-          const nextCodeTheme = hasExplicitCodeTheme()
-            ? normalizeCodeTheme(localStorage.getItem(codeThemeKey) || root.dataset.codeTheme || codeFallback)
-            : normalizeCodeTheme(mapCodeThemeFromSiteTheme(current));
+          const nextCodeTheme = resolveCodeTheme(current);
           nextRoot.dataset.codeTheme = nextCodeTheme;
           nextRoot.dataset.codeThemeList = root.dataset.codeThemeList || "[]";
           applyCodeThemePanelColors(nextCodeTheme, nextRoot);
@@ -196,19 +193,11 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           if (!hasExplicitTheme()) {
             localStorage.setItem(key, nextTheme);
           }
-          if (!hasExplicitCodeTheme()) {
-            syncCodeThemeWithSiteTheme(nextTheme);
-          } else {
-            applyCodeThemePanelColors(normalizeCodeTheme(root.dataset.codeTheme || codeFallback));
-          }
+          syncCodeThemeWithSiteTheme(nextTheme);
         });
 
         const observer = new MutationObserver(() => {
-          if (!hasExplicitCodeTheme()) {
-            syncCodeThemeWithSiteTheme(normalizeTheme(root.dataset.theme || fallback));
-            return;
-          }
-          applyCodeThemePanelColors(normalizeCodeTheme(root.dataset.codeTheme || codeFallback));
+          syncCodeThemeWithSiteTheme(normalizeTheme(root.dataset.theme || fallback));
         });
         observer.observe(root, {
           attributes: true,
