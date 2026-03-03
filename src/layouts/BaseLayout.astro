@@ -34,6 +34,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
   data-theme-list={JSON.stringify(siteConfig.theme.switchableThemes ?? siteConfig.theme.themes)}
   data-code-theme={siteConfig.codeTheme.defaultTheme}
   data-code-theme-list={JSON.stringify(siteConfig.codeTheme.themes)}
+  data-code-highlight-provider={String((siteConfig as { codeHighlight?: { provider?: string } }).codeHighlight?.provider ?? "prism")}
 >
   <head>
     <meta charset="utf-8" />
@@ -116,8 +117,26 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         };
         const mapCodeThemeFromSiteTheme = (theme) => {
           const normalized = String(theme || "").trim().toLowerCase();
-          if (normalized.includes("dark")) return "github-dark";
-          return "github-light";
+          if (normalized.includes("dark")) return "mac-dark";
+          return "mac-light";
+        };
+        const isExpressiveProvider =
+          String(root.dataset.codeHighlightProvider || "")
+            .trim()
+            .toLowerCase() === "expressive";
+        const resolveExpressiveTheme = (siteTheme) => {
+          const normalized = String(siteTheme || "").trim().toLowerCase();
+          return normalized.includes("dark") ? "github-dark" : "github-light";
+        };
+        const syncExpressiveCodeTheme = (targetDocument = document, siteThemeForSync = root.dataset.theme || fallback) => {
+          if (!isExpressiveProvider) return;
+          if (!(targetDocument instanceof Document)) return;
+          const expressiveTheme = resolveExpressiveTheme(siteThemeForSync);
+          targetDocument.querySelectorAll(".expressive-code").forEach((block) => {
+            if (block instanceof HTMLElement) {
+              block.dataset.theme = expressiveTheme;
+            }
+          });
         };
         const resolveCodeTheme = (themeForAuto) => {
           const mapped = mapCodeThemeFromSiteTheme(themeForAuto || root.dataset.theme || fallback);
@@ -157,6 +176,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         root.dataset.theme = next;
         root.dataset.codeTheme = nextCodeTheme;
         applyCodeThemePanelColors(nextCodeTheme);
+        syncExpressiveCodeTheme(document, next);
         if (saved !== next || !saved) {
           localStorage.setItem(key, next);
         }
@@ -176,6 +196,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           nextRoot.dataset.codeTheme = nextCodeTheme;
           nextRoot.dataset.codeThemeList = root.dataset.codeThemeList || "[]";
           applyCodeThemePanelColors(nextCodeTheme, nextRoot);
+          syncExpressiveCodeTheme(nextDocument, current);
           if (hasExplicitTheme()) {
             localStorage.setItem(key, current);
           }
@@ -185,6 +206,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           const current = normalizeTheme(readSavedTheme() || root.dataset.theme || fallback);
           root.dataset.theme = current;
           syncCodeThemeWithSiteTheme(current);
+          syncExpressiveCodeTheme(document, current);
         });
 
         window.addEventListener("site:theme-change", (event) => {
@@ -194,6 +216,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
             localStorage.setItem(key, nextTheme);
           }
           syncCodeThemeWithSiteTheme(nextTheme);
+          syncExpressiveCodeTheme(document, nextTheme);
         });
 
         const observer = new MutationObserver(() => {

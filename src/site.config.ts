@@ -358,7 +358,7 @@ const siteConfig = defineSiteConfig({
     }
   },
   codeHighlight: {
-    provider: "prism",
+    provider: "expressive" as "expressive" | "shiki" | "prism" | "rehype-pretty-code",
     languages: [
       "ts",
       "tsx",
@@ -412,21 +412,62 @@ const siteConfig = defineSiteConfig({
       "txt",
       "plaintext"
     ],
-    lineNumbers: false,
+    lineNumbers: true,
     showWhitespace: false,
-    twoslash: false
+    twoslash: false,
+    providers: {
+      expressive: {
+        title: "Expressive Code",
+        useFrame: true,
+        useThemedScrollbars: true
+      },
+      shiki: {
+        title: "Shiki",
+        useTransformers: true
+      },
+      prism: {
+        title: "Prism",
+        useLegacyCompat: true
+      },
+      "rehype-pretty-code": {
+        title: "rehype-pretty-code",
+        keepBackground: false
+      }
+    },
+    window: {
+      style: "mac" as "mac",
+      titleMode: "lang" as "lang" | "filename" | "none",
+      showTrafficLights: true
+    },
+    typography: {
+      codeFont:
+        "\"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", \"SFMono-Regular\", \"Consolas\", \"Liberation Mono\", monospace"
+    }
   },
   codeTheme: {
     defaultTheme:
-      "github-light" as "mac-light" | "mac-dark" | "github-light" | "github-dark" | "idea-dark" | "one-light" | "one-dark",
+      "github-light" as
+        | "mac-light"
+        | "mac-dark"
+        | "github-light"
+        | "github-dark"
+        | "idea-light"
+        | "idea-dark"
+        | "one-light"
+        | "one-dark"
+        | "nord-dark"
+        | "dracula",
     themes: [
       "mac-light",
       "mac-dark",
       "github-light",
       "github-dark",
+      "idea-light",
       "idea-dark",
       "one-light",
-      "one-dark"
+      "one-dark",
+      "nord-dark",
+      "dracula"
     ] as const,
     storageKey: "flycode-code-theme",
     panelColors: {
@@ -434,9 +475,12 @@ const siteConfig = defineSiteConfig({
       "mac-dark": { panel: "#2b313d", border: "#47566d", header: "#353f50" },
       "github-light": { panel: "#f6f8fa", border: "#d0d7de", header: "#eef2f7" },
       "github-dark": { panel: "#222b36", border: "#3b4b61", header: "#2a3445" },
+      "idea-light": { panel: "#f8f8f8", border: "#d7d7d7", header: "#efefef" },
       "idea-dark": { panel: "#2f333b", border: "#444b57", header: "#3a404d" },
       "one-light": { panel: "#f8fafc", border: "#d9e1ee", header: "#eef2fb" },
-      "one-dark": { panel: "#2a303b", border: "#404958", header: "#353d4c" }
+      "one-dark": { panel: "#2a303b", border: "#404958", header: "#353d4c" },
+      "nord-dark": { panel: "#2e3440", border: "#434c5e", header: "#3b4252" },
+      dracula: { panel: "#282a36", border: "#44475a", header: "#343746" }
     } as const
   },
   search: {
@@ -472,6 +516,11 @@ const siteConfig = defineSiteConfig({
       appId: PUBLIC_ENV.PUBLIC_ALGOLIA_APP_ID ?? "",
       apiKey: PUBLIC_ENV.PUBLIC_ALGOLIA_API_KEY ?? "",
       indexName: PUBLIC_ENV.PUBLIC_ALGOLIA_INDEX_NAME ?? ""
+    }
+  },
+  performance: {
+    partytown: {
+      enable: true
     }
   },
   watermark: {

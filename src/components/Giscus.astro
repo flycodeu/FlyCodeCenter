@@ -45,6 +45,7 @@ const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(gi
     if (!ready || !anchor || mounted || !readyToMount) return;
     mounted = true;
     const script = document.createElement("script");
+    script.type = "text/partytown";
     script.src = "https://giscus.app/client.js";
     script.async = true;
     script.crossOrigin = "anonymous";

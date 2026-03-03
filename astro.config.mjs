@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import mdx from "@astrojs/mdx";
+import partytown from "@astrojs/partytown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -10,20 +11,19 @@ import { remarkMarkdownInclude } from "./src/utils/markdown/remark-include.ts";
 import { remarkNormalizeCodeLang } from "./src/utils/markdown/remark-normalize-code-lang.ts";
 import { remarkExtendedBuild } from "./src/utils/markdown/remark-extended-build.mjs";
 import { rehypeImageEnhance } from "./src/utils/markdown/rehype-image-enhance.ts";
+import { resolveCodeHighlightConfig } from "./src/config/markdown-provider.ts";
 
-const integrations = [mdx()];
+const highlightConfig = resolveCodeHighlightConfig(siteConfig);
+const integrations = [...highlightConfig.integrations, mdx()];
+if (siteConfig.performance?.partytown?.enable !== false) {
+  integrations.push(partytown());
+}
 if (siteConfig.seo.sitemap.enable) {
   integrations.push(sitemap());
 }
 
 const remarkPlugins = [];
 remarkPlugins.push(remarkNormalizeCodeLang);
-if (siteConfig.markdown.gfm.enable) {
-  remarkPlugins.push(remarkGfm);
-}
-if (siteConfig.markdown.math.enable) {
-  remarkPlugins.push(remarkMath);
-}
 if (siteConfig.markdown.include.enable) {
   remarkPlugins.push([
     remarkMarkdownInclude,
@@ -49,6 +49,12 @@ if (
     }
   ]);
 }
+if (siteConfig.markdown.gfm.enable) {
+  remarkPlugins.push(remarkGfm);
+}
+if (siteConfig.markdown.math.enable) {
+  remarkPlugins.push(remarkMath);
+}
 
 const rehypePlugins = [];
 if (siteConfig.markdown.math.enable) {
@@ -70,6 +76,9 @@ if (
     }
   ]);
 }
+for (const plugin of highlightConfig.extraRehypePlugins) {
+  rehypePlugins.push(plugin);
+}
 
 export default defineConfig({
   adapter: vercel(),
@@ -78,7 +87,8 @@ export default defineConfig({
   base: siteConfig.site.base,
   integrations,
   markdown: {
-    syntaxHighlight: "prism",
+    syntaxHighlight: highlightConfig.syntaxHighlight,
+    ...(highlightConfig.shikiConfig ? { shikiConfig: highlightConfig.shikiConfig } : {}),
     remarkPlugins,
     rehypePlugins
   },

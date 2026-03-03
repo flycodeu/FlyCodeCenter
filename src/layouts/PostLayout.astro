@@ -204,6 +204,27 @@ const jsonLd = buildArticleJsonLd({
             extended?: { icon?: { bundleUrl?: string } };
           }
         ).extended?.icon?.bundleUrl ?? "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
+      codeHighlightProvider: String(
+        (
+          siteConfig as {
+            codeHighlight?: { provider?: string };
+          }
+        ).codeHighlight?.provider ?? "prism"
+      ),
+      enableCodeLineNumbers: Boolean(
+        (
+          siteConfig as {
+            codeHighlight?: { lineNumbers?: boolean };
+          }
+        ).codeHighlight?.lineNumbers ?? true
+      ),
+      codeWindowTitleMode: String(
+        (
+          siteConfig as {
+            codeHighlight?: { window?: { titleMode?: string } };
+          }
+        ).codeHighlight?.window?.titleMode ?? "lang"
+      ),
       articleTitle: title,
       articleTags: tags,
       viewStatsEnabled: siteConfig.stats.enable,
@@ -223,6 +244,10 @@ const jsonLd = buildArticleJsonLd({
     const root = document.documentElement;
     root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
     root.dataset.antiCrawlLocked = "0";
+    const activeHighlightProvider = String(
+      codeHighlightProvider || root.dataset.codeHighlightProvider || "prism"
+    ).toLowerCase();
+    const isExpressiveProvider = activeHighlightProvider === "expressive";
 
     const BOT_UA_PATTERN = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
     const antiCrawlEvents = [];
@@ -352,6 +377,12 @@ const jsonLd = buildArticleJsonLd({
         "";
       const match = raw.match(/language-([a-z0-9-]+)/i);
       return (match?.[1] || raw).toLowerCase();
+    };
+    const normalizeLanguageLabel = (rawLanguage) => {
+      const lang = String(rawLanguage || "").trim().toLowerCase();
+      if (!lang) return "text";
+      if (lang === "plaintext" || lang === "plain") return "text";
+      return lang;
     };
 
     const isMermaidBlock = (code) => {
@@ -543,9 +574,29 @@ const jsonLd = buildArticleJsonLd({
       }
     };
 
+    const toCodeLines = (codeNode) => {
+      if (!(codeNode instanceof HTMLElement)) return [];
+      if (codeNode.dataset.linesWrapped === "1") return [];
+      const raw = (codeNode.innerHTML || "").replace(/\n$/, "");
+      const lines = raw.split("\n");
+      if (!lines.length) return [];
+      codeNode.innerHTML = lines.map((line) => `<span class="code-line">${line || " "}</span>`).join("\n");
+      codeNode.dataset.linesWrapped = "1";
+      return lines;
+    };
+
+    const isExpressiveCodeBlock = (pre) =>
+      pre instanceof HTMLElement && (Boolean(pre.closest(".expressive-code")) || pre.classList.contains("ec-line"));
+
     const enhanceCodeBlock = (pre) => {
+      if (!(pre instanceof HTMLElement)) return;
       if (pre.dataset.codeEnhanced === "1" || pre.closest(".code-block-wrapper")) return;
+      if (isExpressiveProvider || isExpressiveCodeBlock(pre)) {
+        pre.dataset.codeEnhanced = "1";
+        return;
+      }
       const codeNode = pre.querySelector("code");
+      if (!(codeNode instanceof HTMLElement)) return;
       const language = (
         pre.getAttribute("data-language") ||
         codeNode?.getAttribute("data-language") ||
@@ -556,25 +607,51 @@ const jsonLd = buildArticleJsonLd({
 
       const wrapper = document.createElement("div");
       wrapper.className = "code-block-wrapper";
+      wrapper.dataset.window = "mac";
+      wrapper.dataset.provider = String(codeHighlightProvider || "prism").toLowerCase();
       pre.parentNode?.insertBefore(wrapper, pre);
       wrapper.appendChild(pre);
 
       const header = document.createElement("div");
       header.className = "code-block-header";
+      const headerMeta = document.createElement("div");
+      headerMeta.className = "code-block-meta";
 
       const langSpan = document.createElement("span");
       langSpan.className = "code-block-lang";
-      langSpan.textContent = language;
-      header.appendChild(langSpan);
+      if (codeWindowTitleMode === "none") {
+        langSpan.textContent = "";
+      } else {
+        langSpan.textContent = language;
+      }
+      if (langSpan.textContent) {
+        headerMeta.appendChild(langSpan);
+      }
 
-      const btn = createCopyBtn("code-block-copy", "复制代码", () => codeNode?.textContent || pre.textContent || "");
-      header.appendChild(btn);
+      const existingCopyBtn =
+        wrapper.querySelector(".code-block-copy") || pre.querySelector(".code-block-copy") || header.querySelector(".code-block-copy");
+      if (existingCopyBtn instanceof HTMLElement) {
+        headerMeta.appendChild(existingCopyBtn);
+      } else if (enableCodeCopy) {
+        const btn = createCopyBtn("code-block-copy", "复制代码", () => codeNode?.textContent || pre.textContent || "");
+        headerMeta.appendChild(btn);
+      }
 
+      header.appendChild(headerMeta);
       wrapper.insertBefore(header, pre);
+      const allowRuntimeLineNumbers = enableCodeLineNumbers && activeHighlightProvider === "prism";
+      if (allowRuntimeLineNumbers) {
+        const lines = toCodeLines(codeNode);
+        if (lines.length) {
+          pre.dataset.lineNumbers = "1";
+          pre.style.setProperty("--line-number-digits", String(Math.max(2, String(lines.length).length)));
+        }
+      }
       pre.dataset.codeEnhanced = "1";
     };
 
     const enhanceCodeBlocksInBatches = (article) => {
+      if (isExpressiveProvider) return;
       const preElements = [...article.querySelectorAll("pre")].filter((pre) => pre instanceof HTMLElement);
       let index = 0;
 
@@ -598,6 +675,120 @@ const jsonLd = buildArticleJsonLd({
       };
 
       scheduleIdle(step);
+    };
+
+    const ensureCodeBlockMeta = (header) => {
+      let meta = header.querySelector(":scope > .code-block-meta");
+      if (!(meta instanceof HTMLElement)) {
+        meta = document.createElement("div");
+        meta.className = "code-block-meta";
+        header.appendChild(meta);
+      }
+      return meta;
+    };
+
+    const enhanceExpressiveCodeHeader = (article) => {
+      if (!isExpressiveProvider) return;
+      const findDirectCopyWrap = (frame) => {
+        for (const child of Array.from(frame.children)) {
+          if (child instanceof HTMLElement && child.classList.contains("copy")) return child;
+        }
+        return null;
+      };
+      const frames = [...article.querySelectorAll(".expressive-code figure.frame")].filter(
+        (frame) => frame instanceof HTMLElement
+      );
+      for (const frame of frames) {
+        if (!(frame instanceof HTMLElement)) continue;
+        if (frame.dataset.langLabelInitialized === "1") continue;
+
+        const caption = frame.querySelector("figcaption.header");
+        const pre = frame.querySelector("pre");
+        if (!(caption instanceof HTMLElement) || !(pre instanceof HTMLElement)) {
+          frame.dataset.langLabelInitialized = "1";
+          continue;
+        }
+        const headerMeta = ensureCodeBlockMeta(caption);
+
+        const preLang =
+          pre.getAttribute("data-language") ||
+          pre.dataset.language ||
+          pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+          "";
+        const languageLabel = normalizeLanguageLabel(preLang);
+        let titleNode = headerMeta.querySelector(":scope > .title, :scope > .code-block-lang") || caption.querySelector(":scope > .title");
+
+        if (codeWindowTitleMode !== "none") {
+          if (!(titleNode instanceof HTMLElement)) {
+            titleNode = document.createElement("span");
+            titleNode.className = "title";
+            headerMeta.appendChild(titleNode);
+          }
+          const displayLabel = languageLabel || "text";
+          titleNode.textContent = displayLabel;
+          titleNode.classList.add("code-block-lang");
+          titleNode.classList.remove("sr-only");
+          titleNode.removeAttribute("hidden");
+          if (titleNode.parentElement !== headerMeta) {
+            headerMeta.appendChild(titleNode);
+          }
+          frame.classList.add("has-title");
+        } else if (titleNode instanceof HTMLElement) {
+          titleNode.textContent = "";
+          titleNode.setAttribute("hidden", "true");
+          frame.classList.remove("has-title");
+        }
+
+        const copyWrap =
+          findDirectCopyWrap(frame) || caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .copy");
+        if (copyWrap instanceof HTMLElement) {
+          copyWrap.classList.add("code-block-copy-wrap");
+          if (copyWrap.parentElement !== headerMeta) {
+            headerMeta.appendChild(copyWrap);
+          }
+          const copyButton = copyWrap.querySelector("button");
+          if (copyButton instanceof HTMLButtonElement) {
+            copyButton.classList.add("code-block-copy");
+            copyButton.title = "复制代码";
+            copyButton.setAttribute("aria-label", "复制代码");
+          }
+        }
+        if (titleNode instanceof HTMLElement && titleNode.parentElement === headerMeta) {
+          if (copyWrap instanceof HTMLElement && copyWrap.parentElement === headerMeta) {
+            if (titleNode.nextElementSibling !== copyWrap) {
+              headerMeta.insertBefore(titleNode, copyWrap);
+            }
+          } else {
+            headerMeta.prepend(titleNode);
+          }
+        }
+
+        frame.dataset.langLabelInitialized = "1";
+      }
+    };
+    const syncExpressiveCodeTheme = (article) => {
+      if (!isExpressiveProvider) return;
+      const siteTheme = String(root.dataset.theme || "").trim().toLowerCase();
+      const expressiveTheme = siteTheme.includes("dark") ? "github-dark" : "github-light";
+      article.querySelectorAll(".expressive-code").forEach((block) => {
+        if (block instanceof HTMLElement) {
+          block.dataset.theme = expressiveTheme;
+        }
+      });
+    };
+    const bindHiddenBlocks = (article) => {
+      const blocks = [...article.querySelectorAll(".mdx-hidden")];
+      for (const block of blocks) {
+        if (!(block instanceof HTMLButtonElement)) continue;
+        if (block.dataset.hiddenBound === "1") continue;
+        block.dataset.hiddenBound = "1";
+        block.addEventListener("click", () => {
+          const revealed = block.dataset.revealed === "1";
+          const nextState = revealed ? "0" : "1";
+          block.dataset.revealed = nextState;
+          block.setAttribute("aria-expanded", nextState === "1" ? "true" : "false");
+        });
+      }
     };
 
     const observeAndRenderDiagrams = (article) => {
@@ -765,12 +956,28 @@ const jsonLd = buildArticleJsonLd({
       article.dataset.enhanced = "1";
 
       bindTabsSwitch(article);
+      bindHiddenBlocks(article);
       await initInlineIcons(article);
       await renderChartJsCards(article);
       addMathCopy(article);
       observeAndRenderDiagrams(article);
+      syncExpressiveCodeTheme(article);
+      enhanceExpressiveCodeHeader(article);
       enhanceCodeBlocksInBatches(article);
     };
+    if (!window.__flyPostThemeSyncBound) {
+      window.__flyPostThemeSyncBound = true;
+      window.addEventListener("site:theme-change", () => {
+        const article = document.querySelector(".article-body");
+        if (!(article instanceof HTMLElement)) return;
+        syncExpressiveCodeTheme(article);
+      });
+      document.addEventListener("astro:page-load", () => {
+        const article = document.querySelector(".article-body");
+        if (!(article instanceof HTMLElement)) return;
+        syncExpressiveCodeTheme(article);
+      });
+    }
 
     const VIEW_CLIENT_KEY = "fly-view-client-id";
     const HISTORY_KEY = "fly-reading-history-v1";
@@ -1218,6 +1425,181 @@ const jsonLd = buildArticleJsonLd({
     color: color-mix(in oklab, #ef4444 82%, var(--text) 18%);
     background: color-mix(in oklab, #ef4444 10%, transparent);
     font-size: 0.85rem;
+  }
+  .article-body :global(.mdx-video) {
+    margin: 1.18rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+  .article-body :global(.mdx-video-player) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    background: #000;
+  }
+  .article-body :global(.mdx-video-caption) {
+    margin: 0;
+    padding: 0.62rem 0.82rem 0.72rem;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    border-top: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 76%, transparent 24%);
+  }
+  .article-body :global(.mdx-checkbox) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.58rem;
+    margin: 0.75rem 0;
+    padding: 0.58rem 0.68rem;
+    border-radius: 10px;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+  }
+  .article-body :global(.mdx-checkbox-input) {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.19rem;
+    accent-color: var(--brand);
+    flex-shrink: 0;
+  }
+  .article-body :global(.mdx-checkbox-label) {
+    line-height: 1.62;
+    color: var(--text);
+  }
+  .article-body :global(.mdx-checkbox[data-checked="1"] .mdx-checkbox-label) {
+    color: var(--text-soft);
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+  }
+  .article-body :global(.mdx-checkbox-input:checked + .mdx-checkbox-label) {
+    color: var(--text-soft);
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+  }
+  .article-body :global(.mdx-hidden) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin: 0.65rem 0;
+    padding: 0.18rem 0.48rem;
+    border-radius: 8px;
+    border: 1px dashed color-mix(in oklab, var(--line) 70%, transparent 30%);
+    background: color-mix(in oklab, var(--surface-2) 76%, transparent 24%);
+    color: transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.18s ease, color 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
+  }
+  .article-body :global(.mdx-hidden:hover) {
+    border-color: color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
+  }
+  .article-body :global(.mdx-hidden[data-revealed="1"]) {
+    color: var(--text);
+    background: color-mix(in oklab, var(--brand-soft) 46%, var(--surface-1) 54%);
+    border-style: solid;
+  }
+  .article-body :global(.mdx-hidden .mdx-hidden-text) {
+    display: inline-block;
+    line-height: 1.7;
+  }
+  .article-body :global(.mdx-hidden-background .mdx-hidden-text) {
+    background: color-mix(in oklab, var(--text) 86%, transparent 14%);
+    color: transparent;
+    border-radius: 4px;
+    padding: 0 0.2rem;
+  }
+  .article-body :global(.mdx-hidden-background[data-revealed="1"] .mdx-hidden-text) {
+    background: transparent;
+    color: inherit;
+  }
+  .article-body :global(.mdx-hidden-blur .mdx-hidden-text) {
+    color: var(--text);
+    filter: blur(0.34em);
+  }
+  .article-body :global(.mdx-hidden-blur[data-revealed="1"] .mdx-hidden-text) {
+    filter: blur(0);
+  }
+  .article-body :global(.mdx-hidden[data-tip])::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    pointer-events: none;
+    opacity: 0;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    padding: 0.26rem 0.4rem;
+    border-radius: 6px;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+    color: var(--text-soft);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .article-body :global(.mdx-hidden[data-tip]:hover)::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .article-body :global(.mdx-admonition) {
+    --admonition-accent: #6366f1;
+    margin: 1.1rem 0;
+    border: 1px solid color-mix(in oklab, var(--admonition-accent) 36%, var(--line) 64%);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--admonition-accent) 8%, var(--surface-1) 92%);
+  }
+  .article-body :global(.mdx-admonition-head) {
+    display: flex;
+    align-items: center;
+    gap: 0.46rem;
+    padding: 0.56rem 0.72rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--admonition-accent) 24%, var(--line-soft) 76%);
+    background: color-mix(in oklab, var(--admonition-accent) 16%, var(--surface-2) 84%);
+    color: color-mix(in oklab, var(--admonition-accent) 68%, var(--text) 32%);
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+  .article-body :global(.mdx-admonition-icon) {
+    display: inline-flex;
+    width: 1.2rem;
+    height: 1.2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--admonition-accent) 45%, transparent 55%);
+    font-size: 0.76rem;
+  }
+  .article-body :global(.mdx-admonition-body) {
+    padding: 0.62rem 0.76rem;
+    color: var(--text);
+  }
+  .article-body :global(.mdx-admonition-body p) {
+    margin: 0.38rem 0;
+  }
+  .article-body :global(.mdx-admonition-indigo) {
+    --admonition-accent: #6366f1;
+  }
+  .article-body :global(.mdx-admonition-green) {
+    --admonition-accent: #16a34a;
+  }
+  .article-body :global(.mdx-admonition-red) {
+    --admonition-accent: #dc2626;
+  }
+  .article-body :global(.mdx-admonition-blue) {
+    --admonition-accent: #2563eb;
+  }
+  .article-body :global(.mdx-admonition-orange) {
+    --admonition-accent: #ea580c;
+  }
+  .article-body :global(.mdx-admonition-black) {
+    --admonition-accent: #111827;
+  }
+  .article-body :global(.mdx-admonition-grey) {
+    --admonition-accent: #6b7280;
   }
   .prev-next {
     margin-top: 0.95rem;

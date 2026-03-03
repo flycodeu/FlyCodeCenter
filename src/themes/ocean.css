@@ -1,6 +1,6 @@
 :root[data-theme="ocean"] {
-  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
-  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --font-sans: "Avenir Next", "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", "STSong", serif;
   --bg: #f4f8fd;
   --bg-elev: #ffffff;
   --bg-mesh-a: color-mix(in oklab, #93c5fd 18%, transparent 82%);

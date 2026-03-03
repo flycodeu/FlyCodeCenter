@@ -1,6 +1,6 @@
 :root[data-theme="aurora-dark"] {
-  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
-  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --font-sans: "Avenir Next", "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", "STSong", serif;
   --bg: #121925;
   --bg-elev: #1a2534;
   --bg-mesh-a: color-mix(in oklab, #60a5fa 12%, transparent 88%);

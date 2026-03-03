@@ -99,15 +99,27 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
       window.setTimeout(() => root.classList.remove("theme-anim"), animationMs + 60);
     };
 
+    const getOppositeTheme = (themes, currentTheme) => {
+      const current = normalizeTheme(themes, currentTheme || root.dataset.theme || lightTheme);
+      const next = isDark(current) ? lightTheme : darkTheme;
+      return normalizeTheme(themes, next);
+    };
+
     const onClick = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const option = target.closest("#theme-switcher [data-theme-option]");
-      if (!(option instanceof HTMLButtonElement)) return;
-      const switcher = option.closest("#theme-switcher");
+      const switcher = target.closest("#theme-switcher");
+      if (!(switcher instanceof HTMLElement)) return;
       const themes = readThemes(switcher);
       if (!themes.length) return;
-      const picked = normalizeTheme(themes, option.dataset.themeOption || "");
+      const option = target.closest("#theme-switcher [data-theme-option]");
+      const current = normalizeTheme(themes, root.dataset.theme || root.dataset.defaultTheme || lightTheme);
+      let picked = getOppositeTheme(themes, current);
+      if (option instanceof HTMLButtonElement) {
+        const optionTheme = normalizeTheme(themes, option.dataset.themeOption || "");
+        picked = optionTheme === current ? getOppositeTheme(themes, current) : optionTheme;
+      }
+      if (picked === current) return;
       animateToggle();
       applyTheme(picked);
     };

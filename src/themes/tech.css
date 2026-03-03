@@ -1,6 +1,6 @@
 :root[data-theme="tech"] {
-  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
-  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --font-sans: "Avenir Next", "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", "STSong", serif;
   --bg: #060d19;
   --bg-elev: #0d1a2c;
   --bg-mesh-a: color-mix(in oklab, #22d3ee 16%, transparent 84%);

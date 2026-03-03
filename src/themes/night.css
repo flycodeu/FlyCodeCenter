@@ -1,6 +1,6 @@
 :root[data-theme="night"] {
-  --font-sans: "Manrope", "Noto Sans SC", "Segoe UI", sans-serif;
-  --font-serif: "Noto Serif SC", "Songti SC", serif;
+  --font-sans: "Avenir Next", "SF Pro Text", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", "STSong", serif;
   --bg: #0f1727;
   --bg-elev: #132238;
   --bg-mesh-a: color-mix(in oklab, #38bdf8 12%, transparent 88%);
