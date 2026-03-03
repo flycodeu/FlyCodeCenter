@@ -196,7 +196,8 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     confirmPasswordWrap: getEl<HTMLElement>("jarvis-confirm-password-wrap"),
     confirmPassword: getEl<HTMLInputElement>("jarvis-confirm-password"),
     confirmCancel: getEl<HTMLButtonElement>("jarvis-confirm-cancel"),
-    confirmOk: getEl<HTMLButtonElement>("jarvis-confirm-ok")
+    confirmOk: getEl<HTMLButtonElement>("jarvis-confirm-ok"),
+    toastRoot: getEl<HTMLElement>("jarvis-toast-root")
   };
 
   if (Object.values(nodes).some((n) => !n)) {
@@ -383,6 +384,19 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
   const setSettingsStatus = (text: string, mode: Mode = "info") => {
     el.modalStatus.textContent = text;
     el.modalStatus.dataset.mode = mode;
+  };
+  const showToast = (text: string, mode: Mode = "info", duration = 2200) => {
+    const message = String(text || "").trim();
+    if (!message) return;
+    const toast = document.createElement("div");
+    toast.className = `jarvis-toast is-${mode}`;
+    toast.setAttribute("role", mode === "error" ? "alert" : "status");
+    toast.textContent = message;
+    el.toastRoot.appendChild(toast);
+    while (el.toastRoot.children.length > 3) {
+      el.toastRoot.firstElementChild?.remove();
+    }
+    window.setTimeout(() => toast.remove(), duration);
   };
 
   const persistModels = () => {
@@ -724,6 +738,7 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     activeConversationId = conversations[0].id;
     sessionMenuId = "";
     renderAll();
+    showToast("已新建会话。", "success");
   });
 
   el.sessionList.addEventListener("click", (event) => {
@@ -745,16 +760,23 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
       item.updatedAt = Date.now();
       sessionMenuId = "";
       renderAll();
+      showToast("会话已重命名。", "success");
       return;
     }
     if (action === "delete") {
-      if (conversations.length <= 1) return setSettingsStatus("至少保留一条会话。", "error");
+      if (conversations.length <= 1) {
+        const message = "至少保留一条会话。";
+        setSettingsStatus(message, "error");
+        showToast(message, "warning");
+        return;
+      }
       const item = conversations.find((c) => c.id === sessionId);
       if (!item || !window.confirm(`确认删除会话「${item.title}」？`)) return;
       conversations = conversations.filter((c) => c.id !== sessionId);
       if (!conversations.some((c) => c.id === activeConversationId)) activeConversationId = conversations[0].id;
       sessionMenuId = "";
       renderAll();
+      showToast("会话已删除。", "success");
     }
   });
 
@@ -789,7 +811,12 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     const name = el.modelName.value.trim();
     const modelId = el.modelId.value.trim();
     const apiBase = el.modelBase.value.trim();
-    if (!name || !modelId || !apiBase) return setSettingsStatus("显示名称、模型 ID、API Base 均不能为空。", "error");
+    if (!name || !modelId || !apiBase) {
+      const message = "显示名称、模型 ID、API Base 均不能为空。";
+      setSettingsStatus(message, "error");
+      showToast(message, "error", 3000);
+      return;
+    }
     const hasKey = el.modelKey.value.trim().length > 0;
     const needPassword = hasKey && !vault.ready;
     el.confirmNote.textContent = needPassword
@@ -819,13 +846,21 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
       toggleConfirm(false);
       renderAll();
       setSettingsStatus("模型已保存。", "success");
+      showToast("模型已保存。", "success");
     } catch (error) {
-      setSettingsStatus(`保存失败：${error instanceof Error ? error.message : "未知错误"}`, "error");
+      const message = `保存失败：${error instanceof Error ? error.message : "未知错误"}`;
+      setSettingsStatus(message, "error");
+      showToast(message, "error", 3200);
     }
   });
 
   el.modelDelete.addEventListener("click", () => {
-    if (models.length <= 1) return setSettingsStatus("至少保留一个模型。", "error");
+    if (models.length <= 1) {
+      const message = "至少保留一个模型。";
+      setSettingsStatus(message, "error");
+      showToast(message, "warning");
+      return;
+    }
     const model = getDraftModel();
     if (!window.confirm(`确认删除模型「${model.name}」？`)) return;
     models = models.filter((item) => item.uid !== model.uid);
@@ -834,6 +869,8 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     if (!models.some((item) => item.uid === selectorDraftUid)) selectorDraftUid = models[0].uid;
     models = models.map((item) => ({ ...item, enabled: item.uid === activeModelUid }));
     renderAll();
+    setSettingsStatus("模型已删除。", "success");
+    showToast("模型已删除。", "success");
   });
 
   el.vaultReset.addEventListener("click", async () => {
@@ -847,8 +884,11 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
       models = models.map((item) => ({ ...item, apiKeyCipher: "", apiKeyIv: "", apiKeySalt: "", apiKeyPlain: "" }));
       renderAll();
       setSettingsStatus("保险库已重置，模型密钥已清空。", "success");
+      showToast("保险库已重置，模型密钥已清空。", "success");
     } catch (error) {
-      setSettingsStatus(`重置失败：${error instanceof Error ? error.message : "未知错误"}`, "error");
+      const message = `重置失败：${error instanceof Error ? error.message : "未知错误"}`;
+      setSettingsStatus(message, "error");
+      showToast(message, "error", 3200);
     }
   });
 
@@ -863,16 +903,27 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     const role = getDraftRole();
     const name = el.roleName.value.trim();
     const system = el.roleSystem.value.trim();
-    if (!name || !system) return setSettingsStatus("角色名和系统提示词不能为空。", "error");
+    if (!name || !system) {
+      const message = "角色名和系统提示词不能为空。";
+      setSettingsStatus(message, "error");
+      showToast(message, "error", 3000);
+      return;
+    }
     role.name = name;
     role.systemPrompt = system;
     role.personaPrompt = el.rolePersona.value.trim();
     role.greeting = el.roleGreeting.value.trim() || "角色已激活，准备对话。";
     renderAll();
     setSettingsStatus("角色已保存。", "success");
+    showToast("角色已保存。", "success");
   });
   el.roleDelete.addEventListener("click", () => {
-    if (roles.length <= 1) return setSettingsStatus("至少保留一个角色。", "error");
+    if (roles.length <= 1) {
+      const message = "至少保留一个角色。";
+      setSettingsStatus(message, "error");
+      showToast(message, "warning");
+      return;
+    }
     const role = getDraftRole();
     if (!window.confirm(`确认删除角色「${role.name}」？`)) return;
     roles = roles.filter((item) => item.id !== role.id);
@@ -880,6 +931,8 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     if (!roles.some((item) => item.id === draftRoleId)) draftRoleId = roles[0].id;
     renderAll();
     emitRoleChange();
+    setSettingsStatus("角色已删除。", "success");
+    showToast("角色已删除。", "success");
   });
   el.roleActivate.addEventListener("click", () => {
     activeRoleId = draftRoleId;
@@ -888,6 +941,8 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     conversation.updatedAt = Date.now();
     renderAll();
     emitRoleChange();
+    setSettingsStatus("角色已切换。", "success");
+    showToast("角色已切换。", "success");
   });
 
   el.activeRole.addEventListener("change", () => {
@@ -907,6 +962,8 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
     models = models.map((item) => ({ ...item, enabled: item.uid === activeModelUid }));
     renderAll();
     emitModelChange();
+    setSettingsStatus("模型已启用。", "success");
+    showToast("模型已启用。", "success");
   });
 
   el.form.addEventListener("submit", async (event) => {
