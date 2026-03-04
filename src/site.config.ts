@@ -168,6 +168,25 @@ const siteConfig = defineSiteConfig({
     defaultTheme: "aurora-light" as ThemeId,
     themes: ["aurora-light", "aurora-dark"] as ThemeId[],
     switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
+    typography: {
+      fontPresetDefault: "regular" as "regular" | "pixel",
+      fontPresets: {
+        regular: {
+          sans: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          serif: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          display: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          tech: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          mono: "\"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", \"SFMono-Regular\", \"Consolas\", \"Liberation Mono\", monospace"
+        },
+        pixel: {
+          sans: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Microsoft YaHei\", sans-serif",
+          serif: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Microsoft YaHei\", sans-serif",
+          display: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Microsoft YaHei\", sans-serif",
+          tech: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Microsoft YaHei\", sans-serif",
+          mono: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Cascadia Code\", \"JetBrains Mono\", monospace"
+        }
+      }
+    },
     appearance: true,
     toggle: {
       mode: "segmented" as "segmented",
@@ -440,8 +459,7 @@ const siteConfig = defineSiteConfig({
       showTrafficLights: true
     },
     typography: {
-      codeFont:
-        "\"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", \"SFMono-Regular\", \"Consolas\", \"Liberation Mono\", monospace"
+      codeFont: "var(--font-mono)"
     }
   },
   codeTheme: {

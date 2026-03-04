@@ -3,6 +3,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap");
 @import "./katex-local.css";
 
+@font-face {
+  font-family: "Zpix";
+  src: url("/fonts/pixel/zpix.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --space-1: 8px;
   --space-2: 12px;
@@ -11,7 +19,21 @@
   --space-5: 32px;
   --space-6: 48px;
   --floating-safe-bottom: 0px;
-  --font-mono: "Share Tech Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-regular-sans: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-serif: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-display: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-tech: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-pixel-sans: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-pixel-serif: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-pixel-display: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-pixel-tech: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-pixel-mono: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Cascadia Code", "JetBrains Mono", monospace;
+  --font-sans: var(--font-pixel-sans);
+  --font-serif: var(--font-pixel-serif);
+  --font-display: var(--font-pixel-display);
+  --font-tech: var(--font-pixel-tech);
+  --font-mono: var(--font-pixel-mono);
   --code-panel: #f6f8fc;
   --code-border: #d7dfec;
   --code-header: #eef3fb;
@@ -30,9 +52,23 @@
   --pager-radius: 11px;
   --pager-gap: 0.42rem;
   --line-number-digits: 2;
-  --font-display: "Press Start 2P", "Chakra Petch", "Microsoft YaHei", sans-serif;
-  --font-tech: "Share Tech Mono", "Cascadia Code", "JetBrains Mono", monospace;
   --pixel-grid-size: 14px;
+}
+
+:root[data-font-preset="regular"] {
+  --font-sans: var(--font-regular-sans);
+  --font-serif: var(--font-regular-serif);
+  --font-display: var(--font-regular-display);
+  --font-tech: var(--font-regular-tech);
+  --font-mono: var(--font-regular-mono);
+}
+
+:root[data-font-preset="pixel"] {
+  --font-sans: var(--font-pixel-sans);
+  --font-serif: var(--font-pixel-serif);
+  --font-display: var(--font-pixel-display);
+  --font-tech: var(--font-pixel-tech);
+  --font-mono: var(--font-pixel-mono);
 }
 
 :root[data-theme="aurora-light"] {
@@ -259,6 +295,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+}
+
+:root[data-font-preset="pixel"] body {
+  text-rendering: geometricPrecision;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 body::before {

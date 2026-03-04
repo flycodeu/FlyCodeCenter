@@ -24,6 +24,11 @@ const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
 const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarvis");
 const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
+const typographyConfig = (siteConfig.theme as {
+  typography?: { fontPresetDefault?: string; fontPresets?: Record<string, unknown> };
+}).typography;
+const fontPresetDefault = String(typographyConfig?.fontPresetDefault || "pixel").trim() || "pixel";
+const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((key) => key.trim());
 ---
 
 <!doctype html>
@@ -35,6 +40,8 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
   data-code-theme={siteConfig.codeTheme.defaultTheme}
   data-code-theme-list={JSON.stringify(siteConfig.codeTheme.themes)}
   data-code-highlight-provider={String((siteConfig as { codeHighlight?: { provider?: string } }).codeHighlight?.provider ?? "prism")}
+  data-font-preset={fontPresetDefault}
+  data-font-preset-list={JSON.stringify(fontPresetList.length ? fontPresetList : ["regular", "pixel"])}
 >
   <head>
     <meta charset="utf-8" />
@@ -62,7 +69,9 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
       is:inline
       define:vars={{
         codeThemeStorageKey: siteConfig.codeTheme.storageKey,
-        codeThemePanelColorsJson: JSON.stringify(codeThemePanelColors)
+        codeThemePanelColorsJson: JSON.stringify(codeThemePanelColors),
+        fontPresetDefault,
+        fontPresetListJson: JSON.stringify(fontPresetList.length ? fontPresetList : ["regular", "pixel"])
       }}
     >
       (() => {
@@ -80,6 +89,29 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           }
         })();
         const fallback = root.dataset.defaultTheme || "aurora-light";
+        const parseFontPresetList = (input) => {
+          try {
+            const parsed = JSON.parse(input || "[]");
+            if (!Array.isArray(parsed)) return [];
+            return parsed.filter((item) => typeof item === "string" && item.trim());
+          } catch {
+            return [];
+          }
+        };
+        const configuredFontPresetList = parseFontPresetList(fontPresetListJson);
+        let fontPresetList = parseFontPresetList(root.dataset.fontPresetList || "[]");
+        if (!fontPresetList.length) {
+          fontPresetList = configuredFontPresetList;
+        }
+        if (!fontPresetList.length) {
+          fontPresetList = ["regular", "pixel"];
+        }
+        const normalizeFontPreset = (input) => {
+          const value = String(input || "").trim();
+          if (fontPresetList.includes(value)) return value;
+          if (fontPresetList.includes(fontPresetDefault)) return fontPresetDefault;
+          return fontPresetList[0];
+        };
         let themeList = [];
         try {
           const parsed = JSON.parse(root.dataset.themeList || "[]");
@@ -101,6 +133,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
 
         const saved = readSavedTheme();
         const next = normalizeTheme(saved || root.dataset.theme || fallback);
+        const nextFontPreset = normalizeFontPreset(root.dataset.fontPreset || fontPresetDefault);
         let codeThemeList = [];
         try {
           const parsed = JSON.parse(root.dataset.codeThemeList || "[]");
@@ -174,6 +207,8 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         };
 
         root.dataset.theme = next;
+        root.dataset.fontPreset = nextFontPreset;
+        root.dataset.fontPresetList = JSON.stringify(fontPresetList);
         root.dataset.codeTheme = nextCodeTheme;
         applyCodeThemePanelColors(nextCodeTheme);
         syncExpressiveCodeTheme(document, next);
@@ -192,6 +227,8 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
           nextRoot.dataset.theme = current;
           nextRoot.dataset.defaultTheme = root.dataset.defaultTheme || fallback;
           nextRoot.dataset.themeList = root.dataset.themeList || "[]";
+          nextRoot.dataset.fontPreset = normalizeFontPreset(root.dataset.fontPreset || fontPresetDefault);
+          nextRoot.dataset.fontPresetList = root.dataset.fontPresetList || JSON.stringify(fontPresetList);
           const nextCodeTheme = resolveCodeTheme(current);
           nextRoot.dataset.codeTheme = nextCodeTheme;
           nextRoot.dataset.codeThemeList = root.dataset.codeThemeList || "[]";
@@ -205,6 +242,7 @@ const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
         document.addEventListener("astro:page-load", () => {
           const current = normalizeTheme(readSavedTheme() || root.dataset.theme || fallback);
           root.dataset.theme = current;
+          root.dataset.fontPreset = normalizeFontPreset(root.dataset.fontPreset || fontPresetDefault);
           syncCodeThemeWithSiteTheme(current);
           syncExpressiveCodeTheme(document, current);
         });
