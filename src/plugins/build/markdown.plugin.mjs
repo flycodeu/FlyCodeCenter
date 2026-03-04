@@ -3,7 +3,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { remarkMarkdownInclude } from "../markdown/build/remark-include.ts";
 import { remarkNormalizeCodeLang } from "../markdown/build/remark-normalize-code-lang.ts";
-import { remarkExtendedBuild } from "../markdown/build/remark-extended-build.mjs";
+import { remarkExtendedBuild } from "../markdown/build/remark-extended-build.ts";
+import { rehypeDemoFallback } from "../markdown/build/rehype-demo-fallback.ts";
 import { rehypeImageEnhance } from "../markdown/build/rehype-image-enhance.ts";
 
 export const markdownBuildPlugin = {
@@ -30,6 +31,7 @@ export const markdownBuildPlugin = {
         remarkExtendedBuild,
         {
           enableChartJs: siteConfig.markdown.extended.chartjs?.enable,
+          enableDemoBlock: siteConfig.markdown.extended.demoBlock?.enable,
           enableTabs: siteConfig.markdown.extended.tabs?.enable,
           enableCodeGroup: siteConfig.markdown.extended.codeGroup?.enable,
           enableSteps: siteConfig.markdown.extended.steps?.enable,
@@ -37,6 +39,12 @@ export const markdownBuildPlugin = {
           enableIcon: siteConfig.markdown.extended.icon?.enable,
           enableCalloutTemplates: siteConfig.markdown.extended.calloutTemplates?.enable,
           chartHeight: siteConfig.markdown.extended.chartjs?.defaultHeight
+        }
+      ]);
+      rehypePlugins.push([
+        rehypeDemoFallback,
+        {
+          enableDemoBlock: siteConfig.markdown.extended.demoBlock?.enable
         }
       ]);
     }

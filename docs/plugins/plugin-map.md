@@ -34,7 +34,7 @@
 
 - `remark-include.ts`：Markdown include 语法
 - `remark-normalize-code-lang.ts`：代码块语言标准化
-- `remark-extended-build.ts(.mjs)`：tabs / steps / chartjs / shortcode 等扩展解析
+- `remark-extended-build.ts(.mjs)`：tabs / steps / chartjs / demo / shortcode 等扩展解析
 - `rehype-image-enhance.ts`：图片增强（figure/lazyload/size/mark）
 
 ## 三、文章页运行时插件（Article Runtime）
@@ -46,6 +46,7 @@
   - anti-crawl
   - Mermaid / Draw.io / ECharts / Chart.js
   - 代码块头部、语言标记、复制按钮、行号增强
+  - 代码块底部折叠图标（展开/收起）
   - 数学公式复制
   - Tabs 交互
   - Iconify 行内图标加载
@@ -63,5 +64,12 @@
 - 改代码块复制文案：`src/plugins/runtime/article/index.js`
 - 改 tabs 生成规则：`src/plugins/markdown/build/remark-extended-build.ts`
 - 改 chartjs 语法解析：`src/plugins/markdown/build/remark-extended-build.ts`
+- 改 demo 短代码解析：`src/plugins/markdown/build/remark-extended-build.ts`
 - 改 chartjs 运行时渲染：`src/plugins/runtime/article/index.js`
 - 改高亮 provider 默认值：`src/site.config.ts` -> `codeHighlight.provider`
+
+## 六、质量门禁
+
+- 脚本：`scripts/quality-guard.mjs`
+- 入口：`npm run guard:quality`
+- 构建链路：`npm run build` 会先执行 quality guard，再执行 frontmatter lint

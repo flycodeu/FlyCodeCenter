@@ -1,5 +1,6 @@
 interface ExtendedBuildOptions {
   enableChartJs?: boolean;
+  enableDemoBlock?: boolean;
   enableTabs?: boolean;
   enableCodeGroup?: boolean;
   enableSteps?: boolean;
@@ -22,15 +23,21 @@ const END_QUAD = /^::::\s*$/i;
 const TAB_LABEL = /^@tab\s+(.+)$/i;
 const CODE_GROUP_LABEL = /^@code\s+(.+)$/i;
 const INLINE_TOKEN = /==([^=\n][\s\S]*?)==\{\.(tip|warning|danger|important)\}|:\[([^\]]+)\]:/g;
-const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition|callout)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
+const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition|callout|demo)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
+const SHORTCODE_DEMO_OPEN = /^\[demo\b([^\]]*)\]\s*$/i;
+const SHORTCODE_DEMO_CLOSE = /^\[\/demo\]\s*$/i;
 const SHORTCODE_ATTR = /([a-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=]+))/gi;
 const ADMONITION_COLORS = new Set(["indigo", "green", "red", "blue", "orange", "black", "grey"]);
 const HIDDEN_TYPES = new Set(["background", "blur"]);
+const DEMO_MODES = new Set(["split", "stack"]);
+const DEMO_RESULTS = new Set(["auto", "force"]);
 
 type MdNode = {
   type?: string;
   children?: unknown[];
   value?: string;
+  lang?: string;
+  meta?: string;
   url?: string;
   position?: {
     start?: { offset?: number; line?: number; column?: number };
@@ -39,7 +46,7 @@ type MdNode = {
   data?: Record<string, unknown>;
 };
 
-type ShortcodeName = "video" | "checkbox" | "hidden" | "admonition" | "callout";
+type ShortcodeName = "video" | "checkbox" | "hidden" | "admonition" | "callout" | "demo";
 
 type ShortcodeParseResult = {
   name: ShortcodeName;
@@ -65,6 +72,26 @@ type InlineExtractOptions = {
 type SourceLocator = {
   text: string;
   lineStarts: number[];
+};
+
+type SourceLine = {
+  start: number;
+  end: number;
+  breakEnd: number;
+  text: string;
+};
+
+type DemoRegion = {
+  startOffset: number;
+  endOffset: number;
+  attrsRaw: string;
+  body: string;
+  consumed?: boolean;
+};
+
+type NodeOffsets = {
+  start: number;
+  end: number;
 };
 
 function decodeUrlSafely(value: string): string {
@@ -118,6 +145,113 @@ function createSourceLocator(sourceText: string): SourceLocator | null {
   return { text: sourceText, lineStarts };
 }
 
+function collectSourceLines(sourceText: string): SourceLine[] {
+  const lines: SourceLine[] = [];
+  if (!sourceText) return lines;
+  let lineStart = 0;
+
+  for (let i = 0; i < sourceText.length; i += 1) {
+    const char = sourceText.charCodeAt(i);
+    if (char !== 13 && char !== 10) continue;
+
+    const lineEnd = i;
+    if (char === 13 && sourceText.charCodeAt(i + 1) === 10) {
+      i += 1;
+    }
+    const breakEnd = i + 1;
+    lines.push({
+      start: lineStart,
+      end: lineEnd,
+      breakEnd,
+      text: sourceText.slice(lineStart, lineEnd)
+    });
+    lineStart = breakEnd;
+  }
+
+  lines.push({
+    start: lineStart,
+    end: sourceText.length,
+    breakEnd: sourceText.length,
+    text: sourceText.slice(lineStart)
+  });
+
+  return lines;
+}
+
+function parseFenceMarker(line: string): { char: "`" | "~"; length: number } | null {
+  const match = String(line || "").trim().match(/^(`{3,}|~{3,})/);
+  if (!match) return null;
+  const token = String(match[1] || "");
+  const char = token.slice(0, 1);
+  if (char !== "`" && char !== "~") return null;
+  return { char: char as "`" | "~", length: token.length };
+}
+
+function collectDemoRegionsFromSource(sourceText: string): DemoRegion[] {
+  if (!sourceText) return [];
+  const lines = collectSourceLines(sourceText);
+  const regions: DemoRegion[] = [];
+  let outerFence: { char: "`" | "~"; length: number } | null = null;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line) continue;
+    const trimmed = String(line.text || "").trim();
+    const fence = parseFenceMarker(trimmed);
+
+    if (outerFence) {
+      if (fence && fence.char === outerFence.char && fence.length >= outerFence.length) {
+        outerFence = null;
+      }
+      continue;
+    }
+    if (fence) {
+      outerFence = fence;
+      continue;
+    }
+
+    const open = trimmed.match(SHORTCODE_DEMO_OPEN);
+    if (!open) continue;
+
+    let closeIndex = -1;
+    let innerFence: { char: "`" | "~"; length: number } | null = null;
+    for (let cursor = i + 1; cursor < lines.length; cursor += 1) {
+      const current = lines[cursor];
+      if (!current) continue;
+      const currentTrimmed = String(current.text || "").trim();
+      const currentFence = parseFenceMarker(currentTrimmed);
+      if (innerFence) {
+        if (currentFence && currentFence.char === innerFence.char && currentFence.length >= innerFence.length) {
+          innerFence = null;
+        }
+        continue;
+      }
+      if (currentFence) {
+        innerFence = currentFence;
+        continue;
+      }
+      if (SHORTCODE_DEMO_CLOSE.test(currentTrimmed)) {
+        closeIndex = cursor;
+        break;
+      }
+    }
+
+    if (closeIndex < 0) break;
+    const closeLine = lines[closeIndex];
+    if (!closeLine) break;
+    const body = sourceText.slice(line.breakEnd, closeLine.start);
+    regions.push({
+      startOffset: line.start,
+      endOffset: closeLine.breakEnd,
+      attrsRaw: String(open[1] || ""),
+      body
+    });
+    i = closeIndex;
+  }
+
+  return regions;
+}
+
 function resolvePointOffset(
   point: { offset?: number; line?: number; column?: number } | undefined,
   locator: SourceLocator
@@ -137,6 +271,16 @@ function resolvePointOffset(
   const offset = lineStart + (column - 1);
   if (offset < 0 || offset > locator.text.length) return null;
   return offset;
+}
+
+function resolveNodeOffsets(node: unknown, locator: SourceLocator | null): NodeOffsets | null {
+  if (!locator || !locator.text) return null;
+  if (!isNode(node)) return null;
+  const start = resolvePointOffset(node.position?.start, locator);
+  const end = resolvePointOffset(node.position?.end, locator);
+  if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+  if (start < 0 || end <= start || end > locator.text.length) return null;
+  return { start, end };
 }
 
 function getNodeSourceSlice(node: unknown, locator: SourceLocator | null): string {
@@ -274,6 +418,108 @@ function parseShortcode(rawInput: string): ShortcodeParseResult | null {
   return { name, attrs, body };
 }
 
+function applyDemoRegionsToChildren(
+  children: unknown[],
+  regions: DemoRegion[],
+  sourceLocator: SourceLocator | null
+) {
+  if (!sourceLocator || !Array.isArray(children) || !children.length || !regions.length) return;
+
+  for (const region of regions) {
+    if (region.consumed) continue;
+
+    let firstIndex = -1;
+    let lastIndex = -1;
+    let firstOffsets: NodeOffsets | null = null;
+    let lastOffsets: NodeOffsets | null = null;
+
+    for (let i = 0; i < children.length; i += 1) {
+      const offsets = resolveNodeOffsets(children[i], sourceLocator);
+      if (!offsets) continue;
+      if (offsets.end <= region.startOffset) continue;
+      if (offsets.start >= region.endOffset) {
+        if (firstIndex >= 0) break;
+        continue;
+      }
+      if (firstIndex < 0) {
+        firstIndex = i;
+        firstOffsets = offsets;
+      }
+      lastIndex = i;
+      lastOffsets = offsets;
+    }
+
+    if (firstIndex < 0 || lastIndex < firstIndex || !firstOffsets || !lastOffsets) continue;
+    if (firstOffsets.start < region.startOffset || lastOffsets.end > region.endOffset) continue;
+
+    const shortcode: ShortcodeParseResult = {
+      name: "demo",
+      attrs: parseShortcodeAttributes(region.attrsRaw),
+      body: String(region.body || "")
+    };
+    const shortcodeNode = createShortcodeNode(shortcode);
+    if (!shortcodeNode) continue;
+    children.splice(firstIndex, lastIndex - firstIndex + 1, shortcodeNode);
+    region.consumed = true;
+  }
+}
+
+function readDemoOpenAttrs(node: unknown, sourceLocator: SourceLocator | null): string | null {
+  if (!isNode(node) || node.type !== "paragraph") return null;
+  const candidates = getParagraphCandidates(node, sourceLocator);
+  for (const candidate of candidates) {
+    const normalized = normalizeSmartQuotes(String(candidate || "")).trim();
+    const openMatch = normalized.match(SHORTCODE_DEMO_OPEN);
+    if (openMatch) return String(openMatch[1] || "");
+    const openLooseMatch = normalized.match(/^demo\b([\s\S]*)$/i);
+    if (!openLooseMatch) continue;
+    const attrsRaw = String(openLooseMatch[1] || "").trim();
+    if (!attrsRaw || !/[a-z][\w-]*\s*=/.test(attrsRaw)) continue;
+    return attrsRaw;
+  }
+  return null;
+}
+
+function readDemoCloseInfo(node: unknown, sourceLocator: SourceLocator | null): { noteBeforeClose: string } | null {
+  if (!isNode(node) || node.type !== "paragraph") return null;
+  const candidates = getParagraphCandidates(node, sourceLocator);
+  for (const candidate of candidates) {
+    const normalized = normalizeSmartQuotes(String(candidate || ""));
+    const closeMatch = normalized.match(/([\s\S]*?)\s*(?:\[\/demo\]|\/demo)\s*$/i);
+    if (!closeMatch) continue;
+    return { noteBeforeClose: String(closeMatch[1] || "").trim() };
+  }
+  return null;
+}
+
+function buildDemoShortcodeFromNodes(nodes: unknown[], attrs: Record<string, string>): ShortcodeParseResult | null {
+  if (!Array.isArray(nodes) || !nodes.length) return null;
+  const codeNode = nodes.find(
+    (node) => isNode(node) && node.type === "code" && typeof node.value === "string" && String(node.value || "").trim()
+  ) as MdNode | undefined;
+  if (!codeNode) return null;
+
+  const lang = String(attrs.lang || codeNode.lang || "text").trim().toLowerCase() || "text";
+  const code = String(codeNode.value || "").replace(/\r\n?/g, "\n").trim();
+  if (!code) return null;
+
+  const notes: string[] = [];
+  for (const node of nodes) {
+    if (!isNode(node) || node === codeNode) continue;
+    if (node.type === "paragraph") {
+      const text = normalizeSmartQuotes(getParagraphText(node)).trim();
+      if (text) notes.push(text);
+    }
+  }
+
+  const body = [`\`\`\`${lang}`, code, "\`\`\`", notes.join("\n\n")].filter(Boolean).join("\n");
+  return {
+    name: "demo",
+    attrs,
+    body
+  };
+}
+
 function parseBooleanAttr(rawValue: string | undefined, fallback = false): boolean {
   if (typeof rawValue !== "string") return fallback;
   const value = rawValue.trim().toLowerCase();
@@ -313,6 +559,34 @@ function normalizeAdmonitionColor(rawValue: string | undefined): string {
   const value = String(rawValue || "").trim().toLowerCase();
   if (ADMONITION_COLORS.has(value)) return value;
   return "indigo";
+}
+
+function normalizeDemoMode(rawValue: string | undefined): "split" | "stack" {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (DEMO_MODES.has(value)) return value as "split" | "stack";
+  return "split";
+}
+
+function normalizeDemoResult(rawValue: string | undefined): "auto" | "force" {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (DEMO_RESULTS.has(value)) return value as "auto" | "force";
+  return "auto";
+}
+
+function parseDemoBody(rawValue: string, attrs: Record<string, string>) {
+  const body = String(rawValue || "").replace(/\r\n?/g, "\n").trim();
+  if (!body) return null;
+  const fence = body.match(/```([a-z0-9-]*)[^\n]*\n([\s\S]*?)\n```/i);
+  if (!fence) return null;
+
+  const detectedLang = String(attrs.lang || fence[1] || "text").trim().toLowerCase() || "text";
+  const code = String(fence[2] || "").replace(/\r\n?/g, "\n").trim();
+  if (!code) return null;
+
+  const before = body.slice(0, fence.index || 0).trim();
+  const after = body.slice((fence.index || 0) + fence[0].length).trim();
+  const notes = [before, after].filter(Boolean).join("\n\n").trim();
+  return { lang: detectedLang, code, notes };
 }
 
 function getAdmonitionIconGlyph(rawValue: string | undefined): string {
@@ -411,6 +685,44 @@ function createShortcodeNode(result: ShortcodeParseResult): MdNode | null {
       body
     };
     return createShortcodeNode(normalized);
+  }
+
+  if (result.name === "demo") {
+    const parsed = parseDemoBody(body, result.attrs);
+    if (!parsed) return null;
+    const mode = normalizeDemoMode(result.attrs.mode);
+    const previewResult = normalizeDemoResult(result.attrs.result);
+    const title = String(result.attrs.title || "").trim();
+    const sourceCodeNode = { type: "code", lang: parsed.lang, value: parsed.code } as MdNode;
+    const previewCodeNode = { type: "code", lang: parsed.lang, value: parsed.code } as MdNode;
+
+    const sourceChildren: unknown[] = [createElement("div", { className: ["md-demo-label"] }, [createText("语法写法")]), sourceCodeNode];
+    const previewChildren: unknown[] = [createElement("div", { className: ["md-demo-label"] }, [createText("效果展示")]), previewCodeNode];
+    if (parsed.notes) {
+      previewChildren.push(createElement("div", { className: ["md-demo-note"] }, [createParagraph(parsed.notes)]));
+    }
+
+    const wrapperChildren: unknown[] = [];
+    if (title) {
+      wrapperChildren.push(createElement("header", { className: ["md-demo-head"] }, [createText(title)]));
+    }
+    wrapperChildren.push(
+      createElement("div", { className: ["md-demo-body"] }, [
+        createElement("section", { className: ["md-demo-source"] }, sourceChildren),
+        createElement("section", { className: ["md-demo-preview"], "data-result": previewResult }, previewChildren)
+      ])
+    );
+
+    return createElement(
+      "section",
+      {
+        className: ["md-demo"],
+        "data-mode": mode,
+        "data-result": previewResult,
+        "data-demo-lang": parsed.lang
+      },
+      wrapperChildren
+    );
   }
 
   if (result.name === "admonition") {
@@ -595,7 +907,7 @@ function transformInlineNodes(parent: { children?: unknown[] }, options: Extende
 function processContainerBlocks(
   parent: { children?: unknown[] },
   options: ExtendedBuildOptions,
-  state: { tabSeed: number },
+  state: { tabSeed: number; demoRegions: DemoRegion[] },
   sourceLocator: SourceLocator | null
 ) {
   if (!Array.isArray(parent.children)) return;
@@ -604,11 +916,46 @@ function processContainerBlocks(
   const enableTabs = options.enableTabs !== false;
   const enableCodeGroup = options.enableCodeGroup !== false;
   const enableChartJs = options.enableChartJs !== false;
+  const enableDemoBlock = options.enableDemoBlock !== false;
   const enableCalloutTemplates = options.enableCalloutTemplates !== false;
+  if (enableDemoBlock && sourceLocator) {
+    applyDemoRegionsToChildren(children, state.demoRegions, sourceLocator);
+  }
 
   for (let i = 0; i < children.length; i += 1) {
     const current = children[i];
     if (!isNode(current)) continue;
+    if (enableDemoBlock) {
+      const demoAttrsRaw = readDemoOpenAttrs(current, sourceLocator);
+      if (demoAttrsRaw !== null) {
+        let closeIndex = -1;
+        let closeInfo: { noteBeforeClose: string } | null = null;
+        for (let cursor = i + 1; cursor < children.length; cursor += 1) {
+          const info = readDemoCloseInfo(children[cursor], sourceLocator);
+          if (info) {
+            closeIndex = cursor;
+            closeInfo = info;
+            break;
+          }
+        }
+
+        if (closeIndex > i) {
+          const demoAttrs = parseShortcodeAttributes(demoAttrsRaw);
+          const demoBodyNodes = [...children.slice(i + 1, closeIndex)];
+          if (closeInfo?.noteBeforeClose) {
+            demoBodyNodes.push(createParagraph(closeInfo.noteBeforeClose));
+          }
+          const shortcode = buildDemoShortcodeFromNodes(demoBodyNodes, demoAttrs);
+          const shortcodeNode = shortcode ? createShortcodeNode(shortcode) : null;
+          if (shortcodeNode) {
+            children.splice(i, closeIndex - i + 1, shortcodeNode);
+            i -= 1;
+            continue;
+          }
+        }
+      }
+    }
+
     if (current.type === "paragraph") {
       const candidates = getParagraphCandidates(current, sourceLocator);
       if (candidates.length) {
@@ -617,6 +964,7 @@ function processContainerBlocks(
           const shortcode = parseShortcode(candidate);
           if (!shortcode) continue;
           if (shortcode.name === "callout" && !enableCalloutTemplates) continue;
+          if (shortcode.name === "demo" && !enableDemoBlock) continue;
           const shortcodeNode = createShortcodeNode(shortcode);
           if (!shortcodeNode) continue;
           children.splice(i, 1, shortcodeNode);
@@ -952,8 +1300,8 @@ function processContainerBlocks(
 export function remarkExtendedBuild(options: ExtendedBuildOptions = {}) {
   return (tree: unknown, file?: { value?: unknown }) => {
     if (!isNode(tree)) return;
-    const state = { tabSeed: 0 };
     const sourceText = typeof file?.value === "string" ? file.value : "";
+    const state = { tabSeed: 0, demoRegions: collectDemoRegionsFromSource(sourceText) };
     const sourceLocator = createSourceLocator(sourceText);
     processContainerBlocks(tree as { children?: unknown[] }, options, state, sourceLocator);
     transformInlineNodes(tree as { children?: unknown[] }, options);

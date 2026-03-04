@@ -4,10 +4,15 @@
     enableMermaid = false,
     enableDrawio = false,
     enableEcharts = false,
+    mermaidSource = "cdn",
     mermaidBundle = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
+    mermaidLocalBundle = "/vendor/diagram/mermaid.esm.min.mjs",
     mermaidTheme = "default",
     drawioViewerBase = "https://viewer.diagrams.net",
+    echartsSource = "cdn",
     echartsBundle = "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js",
+    echartsLocalBundle = "/vendor/diagram/echarts.esm.min.js",
+    diagramFallbackToCdn = true,
     chartHeight = 360,
     enableEchartsThemeSync = false,
     enableCodeCopy = true,
@@ -174,6 +179,7 @@
       const match = raw.match(/language-([a-z0-9-]+)/i);
       return (match?.[1] || raw).toLowerCase();
     };
+    const isInsideDemoSource = (code) => code instanceof HTMLElement && Boolean(code.closest(".md-demo-source"));
     const normalizeLanguageLabel = (rawLanguage) => {
       const lang = String(rawLanguage || "").trim().toLowerCase();
       if (!lang) return "text";
@@ -243,6 +249,194 @@
         return null;
       }
     };
+    const normalizeSmartQuotes = (input) =>
+      String(input || "")
+        .replace(/[\u201c\u201d\u2033\uff02]/g, "\"")
+        .replace(/[\u2018\u2019\u2032\uff07]/g, "'");
+    const DEMO_OPEN_LINE = /^\[demo\b([^\]]*)\]\s*$/i;
+    const DEMO_CLOSE_LINE = /^\[\/demo\]\s*$/i;
+    const SHORTCODE_ATTR = /([a-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=]+))/gi;
+    const parseShortcodeAttributes = (rawAttrs) => {
+      const attrs = {};
+      const normalizedAttrs = normalizeSmartQuotes(rawAttrs);
+      SHORTCODE_ATTR.lastIndex = 0;
+      let match;
+      while ((match = SHORTCODE_ATTR.exec(normalizedAttrs)) !== null) {
+        const key = String(match[1] || "").trim().toLowerCase();
+        if (!key) continue;
+        attrs[key] = String(match[2] ?? match[3] ?? match[4] ?? "").trim();
+      }
+      return attrs;
+    };
+    const extractNodeTextWithBreaks = (node) => {
+      if (!(node instanceof HTMLElement)) return "";
+      const clone = node.cloneNode(true);
+      if (!(clone instanceof HTMLElement)) return "";
+      clone.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+      return normalizeSmartQuotes((clone.textContent || "").replace(/\u00a0/g, " ").replace(/\r\n?/g, "\n")).trim();
+    };
+    const splitParagraphLines = (node) => {
+      const text = extractNodeTextWithBreaks(node);
+      if (!text) return [];
+      return text.split("\n");
+    };
+    const parseDemoOpenNode = (node) => {
+      if (!(node instanceof HTMLParagraphElement)) return null;
+      const lines = splitParagraphLines(node);
+      for (let idx = 0; idx < lines.length; idx += 1) {
+        const line = String(lines[idx] || "").trim();
+        const match = line.match(DEMO_OPEN_LINE);
+        if (!match) continue;
+        const leading = lines.slice(0, idx).join("\n").trim();
+        const trailing = lines.slice(idx + 1).join("\n").trim();
+        const note = [leading, trailing].filter(Boolean).join("\n\n").trim();
+        return { attrsRaw: String(match[1] || ""), note };
+      }
+      return null;
+    };
+    const parseDemoCloseNode = (node) => {
+      if (!(node instanceof HTMLParagraphElement)) return null;
+      const lines = splitParagraphLines(node);
+      for (let idx = 0; idx < lines.length; idx += 1) {
+        const line = String(lines[idx] || "").trim();
+        if (!DEMO_CLOSE_LINE.test(line)) continue;
+        return {
+          before: lines.slice(0, idx).join("\n").trim(),
+          after: lines.slice(idx + 1).join("\n").trim()
+        };
+      }
+      return null;
+    };
+    const findDemoCodeBlock = (node) => {
+      if (!(node instanceof HTMLElement)) return null;
+      if (node.matches(".expressive-code, .code-block-wrapper, pre")) return node;
+      const nested = node.querySelector(".expressive-code, .code-block-wrapper, pre");
+      return nested instanceof HTMLElement ? nested : null;
+    };
+    const inferCodeLanguageFromBlock = (block) => {
+      if (!(block instanceof HTMLElement)) return "text";
+      const pre = block.matches("pre") ? block : block.querySelector("pre");
+      if (!(pre instanceof HTMLElement)) return "text";
+      const raw = String(pre.getAttribute("data-language") || "").trim();
+      if (raw) return normalizeLanguageLabel(raw);
+      const code = pre.querySelector("code");
+      if (code instanceof HTMLElement) {
+        const match = String(code.className || "").match(/language-([a-z0-9-]+)/i);
+        if (match?.[1]) return normalizeLanguageLabel(match[1]);
+      }
+      return "text";
+    };
+    const appendDemoNote = (container, noteText) => {
+      const normalized = String(noteText || "").trim();
+      if (!normalized) return;
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "md-demo-note";
+      normalized
+        .split(/\n{2,}/)
+        .map((block) => block.trim())
+        .filter(Boolean)
+        .forEach((block) => {
+          const p = document.createElement("p");
+          p.textContent = block;
+          noteWrap.appendChild(p);
+        });
+      if (noteWrap.childElementCount) {
+        container.appendChild(noteWrap);
+      }
+    };
+    const transformDemoShortcodes = (article) => {
+      if (!enableExtendedMarkdown) return;
+      if (!(article instanceof HTMLElement)) return;
+      if (article.dataset.demoShortcodeEnhanced === "1") return;
+      article.dataset.demoShortcodeEnhanced = "1";
+
+      let node = article.firstElementChild;
+      while (node) {
+        const next = node.nextElementSibling;
+        const demoOpen = parseDemoOpenNode(node);
+        if (!demoOpen) {
+          node = next;
+          continue;
+        }
+
+        const consumed = [node];
+        const noteParts = [];
+        if (demoOpen.note) noteParts.push(demoOpen.note);
+        let sourceBlock = null;
+        let closeNode = null;
+        let cursor = node.nextElementSibling;
+
+        while (cursor) {
+          consumed.push(cursor);
+          if (!sourceBlock) {
+            sourceBlock = findDemoCodeBlock(cursor);
+          }
+          const close = parseDemoCloseNode(cursor);
+          if (close) {
+            if (close.before) noteParts.push(close.before);
+            closeNode = cursor;
+            break;
+          }
+          if (!findDemoCodeBlock(cursor)) {
+            const text = extractNodeTextWithBreaks(cursor);
+            if (text) noteParts.push(text);
+          }
+          cursor = cursor.nextElementSibling;
+        }
+
+        if (!(closeNode instanceof HTMLElement) || !(sourceBlock instanceof HTMLElement)) {
+          node = next;
+          continue;
+        }
+
+        const attrs = parseShortcodeAttributes(demoOpen.attrsRaw);
+        const mode = String(attrs.mode || "").trim().toLowerCase() === "stack" ? "stack" : "split";
+        const result = String(attrs.result || "").trim().toLowerCase() === "force" ? "force" : "auto";
+        const title = String(attrs.title || "").trim();
+        const lang = normalizeLanguageLabel(attrs.lang || inferCodeLanguageFromBlock(sourceBlock) || "text");
+
+        const demo = document.createElement("section");
+        demo.className = "md-demo";
+        demo.dataset.mode = mode;
+        demo.dataset.result = result;
+        demo.dataset.demoLang = lang;
+
+        if (title) {
+          const head = document.createElement("header");
+          head.className = "md-demo-head";
+          head.textContent = title;
+          demo.appendChild(head);
+        }
+
+        const body = document.createElement("div");
+        body.className = "md-demo-body";
+        const source = document.createElement("section");
+        source.className = "md-demo-source";
+        const sourceLabel = document.createElement("div");
+        sourceLabel.className = "md-demo-label";
+        sourceLabel.textContent = "语法写法";
+        source.appendChild(sourceLabel);
+        source.appendChild(sourceBlock.cloneNode(true));
+
+        const preview = document.createElement("section");
+        preview.className = "md-demo-preview";
+        preview.dataset.result = result;
+        const previewLabel = document.createElement("div");
+        previewLabel.className = "md-demo-label";
+        previewLabel.textContent = "效果展示";
+        preview.appendChild(previewLabel);
+        preview.appendChild(sourceBlock.cloneNode(true));
+        appendDemoNote(preview, noteParts.join("\n\n"));
+
+        body.appendChild(source);
+        body.appendChild(preview);
+        demo.appendChild(body);
+
+        node.before(demo);
+        consumed.forEach((item) => item.remove());
+        node = demo.nextElementSibling;
+      }
+    };
 
     const isMermaidBlock = (code) => {
       const language = getLanguage(code);
@@ -269,12 +463,59 @@
       return Boolean(parseChartOption(raw));
     };
 
+    const normalizeSourceMode = (value) => {
+      const mode = String(value || "cdn").trim().toLowerCase();
+      return mode === "local" ? "local" : "cdn";
+    };
+    const mermaidSourceMode = normalizeSourceMode(mermaidSource);
+    const echartsSourceMode = normalizeSourceMode(echartsSource);
+    const loadModuleBySource = async ({
+      localMode = false,
+      localUrl = "",
+      cdnUrl = "",
+      allowFallback = true,
+      label = "module"
+    }) => {
+      const loadFrom = (url) => import(/* @vite-ignore */ url).then((mod) => mod.default ?? mod);
+      if (localMode) {
+        if (localUrl) {
+          try {
+            return await loadFrom(localUrl);
+          } catch (localError) {
+            if (!allowFallback || !cdnUrl) throw localError;
+            try {
+              return await loadFrom(cdnUrl);
+            } catch (cdnError) {
+              const merged = new Error(
+                `${label} local+cdn load failed: ${String(localError?.message || localError)} | ${String(
+                  cdnError?.message || cdnError
+                )}`
+              );
+              throw merged;
+            }
+          }
+        }
+        if (!cdnUrl) {
+          throw new Error(`${label} local source enabled but local bundle is empty`);
+        }
+      }
+      if (!cdnUrl) {
+        throw new Error(`${label} cdn bundle is empty`);
+      }
+      return loadFrom(cdnUrl);
+    };
+
     let mermaidRenderIndex = 0;
     let mermaidApiPromise = null;
     const getMermaidApi = async () => {
       if (!mermaidApiPromise) {
-        mermaidApiPromise = import(/* @vite-ignore */ mermaidBundle).then((mod) => {
-          const mermaid = mod.default ?? mod;
+        mermaidApiPromise = loadModuleBySource({
+          localMode: mermaidSourceMode === "local",
+          localUrl: mermaidLocalBundle,
+          cdnUrl: mermaidBundle,
+          allowFallback: Boolean(diagramFallbackToCdn),
+          label: "mermaid"
+        }).then((mermaid) => {
           mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
           return mermaid;
         });
@@ -290,7 +531,13 @@
     const chartJsThemeApplied = new WeakSet();
     const getEchartsApi = async () => {
       if (!echartsApiPromise) {
-        echartsApiPromise = import(/* @vite-ignore */ echartsBundle).then((mod) => mod.default ?? mod);
+        echartsApiPromise = loadModuleBySource({
+          localMode: echartsSourceMode === "local",
+          localUrl: echartsLocalBundle,
+          cdnUrl: echartsBundle,
+          allowFallback: Boolean(diagramFallbackToCdn),
+          label: "echarts"
+        });
       }
       return echartsApiPromise;
     };
@@ -473,7 +720,12 @@
           title: "Mermaid 渲染失败，请检查语法。",
           detail: getErrorMessage(error, "unknown mermaid error"),
           raw,
-          hints: ["确认代码块语言为 mermaid。", "检查流程图语法和缩进。", "若仍失败，请检查 Mermaid 资源加载。"]
+          hints: [
+            "确认代码块语言为 mermaid。",
+            "检查流程图语法和缩进。",
+            "若使用 local source，请确认 mermaid localBundle 路径可访问。",
+            "若仍失败，请检查 Mermaid 资源加载。"
+          ]
         });
         console.error(error);
       }
@@ -566,6 +818,7 @@
           hints: [
             "确认代码块语言为 chart（或可解析的 JSON）。",
             "确认 JSON 有效，且包含 series / xAxis / yAxis 结构。",
+            "若使用 local source，请确认 echarts localBundle 路径可访问。",
             "若网络受限，请检查 ECharts bundle 是否加载成功。"
           ]
         });
@@ -659,7 +912,7 @@
           const pre = preElements[index];
           const code = pre.querySelector("code");
           const isDiagramBlock =
-            code && (isMermaidBlock(code) || isDrawioBlock(code) || isChartBlock(code));
+            code && !isInsideDemoSource(code) && (isMermaidBlock(code) || isDrawioBlock(code) || isChartBlock(code));
           if (!isDiagramBlock) {
             enhanceCodeBlock(pre);
           }
@@ -686,7 +939,7 @@
       return meta;
     };
 
-    const enhanceExpressiveCodeHeader = (article) => {
+    const enhanceExpressiveCodeHeader = (article, force = false) => {
       if (!isExpressiveProvider) return;
       const findDirectCopyWrap = (frame) => {
         for (const child of Array.from(frame.children)) {
@@ -699,12 +952,11 @@
       );
       for (const frame of frames) {
         if (!(frame instanceof HTMLElement)) continue;
-        if (frame.dataset.langLabelInitialized === "1") continue;
+        if (!force && frame.dataset.langLabelInitialized === "1") continue;
 
         const caption = frame.querySelector("figcaption.header");
         const pre = frame.querySelector("pre");
         if (!(caption instanceof HTMLElement) || !(pre instanceof HTMLElement)) {
-          frame.dataset.langLabelInitialized = "1";
           continue;
         }
         const headerMeta = ensureCodeBlockMeta(caption);
@@ -740,7 +992,9 @@
 
         const copyWrap =
           findDirectCopyWrap(frame) || caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .copy");
+        let copyReady = !enableCodeCopy;
         if (copyWrap instanceof HTMLElement) {
+          copyReady = true;
           copyWrap.classList.add("code-block-copy-wrap");
           if (copyWrap.parentElement !== headerMeta) {
             headerMeta.appendChild(copyWrap);
@@ -762,7 +1016,7 @@
           }
         }
 
-        frame.dataset.langLabelInitialized = "1";
+        frame.dataset.langLabelInitialized = copyReady ? "1" : "0";
       }
     };
     const syncExpressiveCodeTheme = (article) => {
@@ -796,6 +1050,7 @@
           if (!(pre instanceof HTMLElement)) return null;
           const code = pre.querySelector("code");
           if (!(code instanceof HTMLElement)) return null;
+          if (isInsideDemoSource(code)) return null;
           if (isMermaidBlock(code)) return { kind: "mermaid", pre, code };
           if (isDrawioBlock(code)) return { kind: "drawio", pre, code };
           if (isChartBlock(code)) return { kind: "chart", pre, code };
@@ -993,10 +1248,6 @@
 
         const pre = block.querySelector(":scope > pre");
         if (!(pre instanceof HTMLElement)) return;
-        const headerMeta =
-          block.querySelector(":scope > .code-block-header .code-block-meta") ||
-          block.querySelector(":scope > figcaption.header .code-block-meta");
-        if (!(headerMeta instanceof HTMLElement)) return;
 
         const expressiveLines = pre.querySelectorAll(".ec-line").length;
         const plainRaw = pre.querySelector("code")?.textContent || pre.textContent || "";
@@ -1011,19 +1262,43 @@
         pre.dataset.folded = "1";
         pre.style.setProperty("--code-fold-lines", String(foldLines));
 
+        let footer = block.querySelector(":scope > .code-fold-footer");
+        if (!(footer instanceof HTMLElement)) {
+          footer = document.createElement("div");
+          footer.className = "code-fold-footer";
+          block.appendChild(footer);
+        }
+
         const toggle = document.createElement("button");
         toggle.type = "button";
-        toggle.className = "code-fold-toggle";
-        toggle.textContent = "展开";
-        toggle.title = `展开代码（${lineCount} 行）`;
-        toggle.setAttribute("aria-label", "展开代码");
+        toggle.className = "code-fold-toggle-icon";
+        toggle.innerHTML = `
+          <svg class="icon-expand" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m5 7 5 6 5-6" />
+          </svg>
+          <svg class="icon-collapse" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m5 13 5-6 5 6" />
+          </svg>
+          <span class="sr-only">展开代码</span>
+        `;
+        const srText = toggle.querySelector(".sr-only");
+        const updateFoldState = (folded) => {
+          pre.dataset.folded = folded ? "1" : "0";
+          toggle.dataset.folded = folded ? "1" : "0";
+          toggle.title = folded ? `展开代码（${lineCount} 行）` : "收起代码";
+          toggle.setAttribute("aria-label", folded ? "展开代码" : "收起代码");
+          toggle.setAttribute("aria-expanded", folded ? "false" : "true");
+          if (srText instanceof HTMLElement) {
+            srText.textContent = folded ? "展开代码" : "收起代码";
+          }
+        };
+        updateFoldState(true);
         toggle.addEventListener("click", () => {
           const folded = pre.dataset.folded !== "0";
-          pre.dataset.folded = folded ? "0" : "1";
-          toggle.textContent = folded ? "收起" : "展开";
-          toggle.title = folded ? "收起代码" : "展开代码";
+          updateFoldState(!folded);
         });
-        headerMeta.prepend(toggle);
+        footer.innerHTML = "";
+        footer.appendChild(toggle);
         block.dataset.codeFoldReady = "1";
       });
     };
@@ -1127,6 +1402,18 @@
       cards.forEach((card) => observer.observe(card));
     };
 
+    const stabilizeCodeUi = (article) => {
+      if (!(article instanceof HTMLElement)) return;
+      const passes = [0, 90, 260, 520, 980, 1400];
+      passes.forEach((delay) => {
+        window.setTimeout(() => {
+          enhanceExpressiveCodeHeader(article, true);
+          enhanceDiffBlocks(article);
+          applyCodeFold(article);
+        }, delay);
+      });
+    };
+
     const initArticleEnhancements = async () => {
       if (root.dataset.encryptedLocked === "1") return;
       if (root.dataset.antiCrawlLocked === "1") return;
@@ -1135,6 +1422,7 @@
       if (article.dataset.enhanced === "1") return;
       article.dataset.enhanced = "1";
 
+      transformDemoShortcodes(article);
       bindTabsSwitch(article);
       bindCodeGroupSwitch(article);
       bindHiddenBlocks(article);
@@ -1149,11 +1437,20 @@
       enhanceCodeBlocksInBatches(article);
       enhanceDiffBlocks(article);
       applyCodeFold(article);
-      window.setTimeout(() => {
-        applyCodeFold(article);
-        enhanceDiffBlocks(article);
-      }, 420);
+      stabilizeCodeUi(article);
     };
+    const runArticleEnhancements = () => {
+      initArticleEnhancements().catch(console.error);
+    };
+
+    if (window.__flyPostEnhanceHandler) {
+      document.removeEventListener("astro:page-load", window.__flyPostEnhanceHandler);
+      document.removeEventListener("astro:after-swap", window.__flyPostEnhanceHandler);
+    }
+    window.__flyPostEnhanceHandler = runArticleEnhancements;
+    document.addEventListener("astro:page-load", runArticleEnhancements);
+    document.addEventListener("astro:after-swap", runArticleEnhancements);
+
     if (!window.__flyPostThemeSyncBound) {
       window.__flyPostThemeSyncBound = true;
       window.addEventListener("site:theme-change", () => {
@@ -1274,7 +1571,7 @@
       write();
     };
 
-    initArticleEnhancements().catch(console.error);
+    runArticleEnhancements();
     syncViewStats().catch(console.error);
     bindReadingState();
 }

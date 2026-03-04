@@ -59,6 +59,16 @@ fn sum(a: i32, b: i32) -> i32 { a + b }
 图表说明：近三日请求量。
 :::
 
+## Demo（写法 + 效果）
+[demo title="Mermaid Demo" lang="mermaid" mode="split" result="auto"]
+```mermaid
+flowchart LR
+  A[Plan] --> B[Build]
+  B --> C[Test]
+```
+预览区自动渲染，源码区保留可复制代码。
+[/demo]
+
 ## Mermaid
 ```mermaid
 flowchart LR

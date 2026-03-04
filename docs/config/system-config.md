@@ -45,7 +45,7 @@
 ## 图形与图表
 
 - 路径：`features.diagram.*`、`diagram.*`、`markdown.extended.chartjs.*`
-- 作用：Mermaid / Draw.io / ECharts / Chart.js 开关与 bundle
+- 作用：Mermaid / Draw.io / ECharts / Chart.js 开关、bundle、source(local/cdn)、fallback
 - 实现目录：
   - `src/plugins/runtime/article/index.js`
 
@@ -103,6 +103,21 @@ features: {
   }
 }
 ```
+
+## 6) 图表资源优先走本地 bundle
+
+```ts
+diagram: {
+  fallbackToCdn: true,
+  mermaid: { source: "local", localBundle: "/vendor/diagram/mermaid.esm.min.mjs" },
+  echarts: { source: "local", localBundle: "/vendor/diagram/echarts.esm.min.js" }
+}
+```
+
+## 7) 质量门禁
+
+- 命令：`npm run guard:quality`
+- 作用：校验 `mermaid/chart/drawio/demo` 语法与关键 frontmatter，失败即阻断构建
 
 ## 配置生效链路
 

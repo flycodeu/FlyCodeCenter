@@ -373,6 +373,36 @@ fn main() {
 - 打包发布
 ::::
 
+### 8.3 demo（语法 + 效果同屏）
+
+配置路径：
+
+- `markdown.extended.demoBlock.enable`
+
+语法写法：
+
+~~~md
+[demo title="Mermaid 演示" lang="mermaid" mode="split" result="auto"]
+```mermaid
+flowchart LR
+  A[Plan] --> B[Build]
+  B --> C[Test]
+```
+预览区自动渲染，源码区保留原始代码。
+[/demo]
+~~~
+
+效果展示：
+
+[demo title="Mermaid 演示" lang="mermaid" mode="split" result="auto"]
+```mermaid
+flowchart LR
+  A[Plan] --> B[Build]
+  B --> C[Test]
+```
+预览区自动渲染，源码区保留原始代码。
+[/demo]
+
 ## 9. 图表与流程图效果展示
 
 相关开关：
@@ -380,6 +410,9 @@ fn main() {
 - `features.diagram.mermaid = true`
 - `features.diagram.drawio = true`
 - `features.diagram.echarts = true`
+- `diagram.fallbackToCdn = true`
+- `diagram.mermaid.source = "cdn" | "local"`
+- `diagram.echarts.source = "cdn" | "local"`
 - `markdown.extended.chartjs.enable = true`
 
 ### 9.1 Mermaid

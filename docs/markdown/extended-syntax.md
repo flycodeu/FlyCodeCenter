@@ -13,12 +13,18 @@ markdown: {
     enable: true,
     parserMode: "build-time",
     chartjs: { enable: true, defaultHeight: 320, bundleUrl: "..." },
+    demoBlock: { enable: true },
     tabs: { enable: true },
     steps: { enable: true },
     mark: { enable: true, variants: ["tip", "warning", "danger", "important"] },
     icon: { enable: true, provider: "iconify", bundleUrl: "..." }
   },
   copy: { code: true, math: true, mermaid: true }
+},
+diagram: {
+  fallbackToCdn: true,
+  mermaid: { source: "local", localBundle: "/vendor/diagram/mermaid.esm.min.mjs", bundleUrl: "..." },
+  echarts: { source: "local", localBundle: "/vendor/diagram/echarts.esm.min.js", bundleUrl: "..." }
 }
 ```
 
@@ -74,6 +80,23 @@ chart notes here
 :::
 ~~~
 
+## 2.1) Demo 一体化容器（写法 + 效果）
+
+~~~md
+[demo title="Mermaid 演示" lang="mermaid" mode="split" result="auto"]
+```mermaid
+flowchart LR
+  A[Start] --> B[Build]
+```
+预览区会自动渲染，源码区保留原始代码块。
+[/demo]
+~~~
+
+说明：
+
+- `mode`: `split | stack`（并排 / 上下）
+- `result`: `auto | force`
+
 ## 3) Tabs 容器
 
 ~~~md
@@ -122,5 +145,7 @@ icon sample :[mdi:rocket 20px/#0ea5e9]:
 - Mermaid fenced block
 - Draw.io fenced block
 - ECharts `chart` fenced block
+- `demo` 短代码预览区的图形渲染
 - 代码块 toolbar / copy / 行号增强
+- 代码块底部折叠图标（展开/收起）
 - KaTeX 复制按钮

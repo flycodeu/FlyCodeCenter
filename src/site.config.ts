@@ -341,6 +341,9 @@ const siteConfig = defineSiteConfig({
         defaultHeight: 320,
         themeSync: true
       },
+      demoBlock: {
+        enable: true
+      },
       tabs: {
         enable: true
       },
@@ -384,7 +387,10 @@ const siteConfig = defineSiteConfig({
     }
   },
   diagram: {
+    fallbackToCdn: true,
     mermaid: {
+      source: "cdn" as "local" | "cdn",
+      localBundle: "/vendor/diagram/mermaid.esm.min.mjs",
       bundleUrl: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
       theme: "default"
     },
@@ -392,6 +398,8 @@ const siteConfig = defineSiteConfig({
       viewerBase: "https://viewer.diagrams.net"
     },
     echarts: {
+      source: "cdn" as "local" | "cdn",
+      localBundle: "/vendor/diagram/echarts.esm.min.js",
       bundleUrl: "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js",
       defaultHeight: 360,
       themeSync: true

@@ -83,10 +83,15 @@ const articleRuntimeConfig = {
   enableMermaid: siteConfig.features.diagram.mermaid,
   enableDrawio: siteConfig.features.diagram.drawio,
   enableEcharts: siteConfig.features.diagram.echarts,
+  mermaidSource: siteConfig.diagram.mermaid.source ?? "cdn",
   mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
+  mermaidLocalBundle: siteConfig.diagram.mermaid.localBundle ?? "",
   mermaidTheme: siteConfig.diagram.mermaid.theme,
   drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
+  echartsSource: siteConfig.diagram.echarts.source ?? "cdn",
   echartsBundle: siteConfig.diagram.echarts.bundleUrl,
+  echartsLocalBundle: siteConfig.diagram.echarts.localBundle ?? "",
+  diagramFallbackToCdn: Boolean((siteConfig.diagram as { fallbackToCdn?: boolean }).fallbackToCdn ?? true),
   chartHeight: siteConfig.diagram.echarts.defaultHeight,
   enableEchartsThemeSync: Boolean(
     (siteConfig.diagram as { echarts?: { themeSync?: boolean } }).echarts?.themeSync ?? false
@@ -635,6 +640,63 @@ const articleRuntimeConfig = {
   .article-body :global(.md-code-group-panel) {
     padding: 0.45rem 0.75rem 0.75rem;
   }
+  .article-body :global(.md-demo) {
+    margin: 1.2rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+  .article-body :global(.md-demo-head) {
+    padding: 0.62rem 0.82rem;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.86rem;
+    color: var(--text-soft);
+    font-weight: 600;
+    background: color-mix(in oklab, var(--surface-2) 82%, transparent 18%);
+  }
+  .article-body :global(.md-demo-body) {
+    display: grid;
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .article-body :global(.md-demo[data-mode="stack"] .md-demo-body) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .article-body :global(.md-demo-source),
+  .article-body :global(.md-demo-preview) {
+    min-width: 0;
+  }
+  .article-body :global(.md-demo-source) {
+    border-right: 1px solid var(--line-soft);
+  }
+  .article-body :global(.md-demo[data-mode="stack"] .md-demo-source) {
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .article-body :global(.md-demo-label) {
+    padding: 0.48rem 0.72rem;
+    font-size: 0.75rem;
+    color: var(--text-soft);
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 78%, transparent 22%);
+  }
+  .article-body :global(.md-demo-note) {
+    padding: 0.12rem 0.82rem 0.78rem;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+  }
+  .article-body :global(.md-demo-preview .diagram-wrapper) {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .article-body :global(.md-demo-preview .diagram-copy-btn) {
+    top: 0.55rem;
+    right: 0.58rem;
+  }
   .article-body :global(.md-chartjs) {
     margin: 1.25rem 0;
     border: 1px solid var(--line);
@@ -714,21 +776,40 @@ const articleRuntimeConfig = {
     line-height: 1.45;
     overflow-x: auto;
   }
-  .article-body :global(.code-fold-toggle) {
-    height: 24px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--line-soft) 70%, transparent 30%);
+  .article-body :global(.code-fold-footer) {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid var(--line-soft);
     background: color-mix(in oklab, var(--surface-2) 84%, transparent 16%);
+    padding: 0.22rem 0.35rem;
+  }
+  .article-body :global(.code-fold-toggle-icon) {
+    width: 100%;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--text-soft);
-    font-size: 0.72rem;
-    padding: 0 0.55rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
     cursor: pointer;
     transition: all 0.18s ease;
   }
-  .article-body :global(.code-fold-toggle:hover) {
+  .article-body :global(.code-fold-toggle-icon:hover) {
     color: var(--text);
     border-color: color-mix(in oklab, var(--brand) 38%, var(--line) 62%);
     background: color-mix(in oklab, var(--brand-soft) 62%, transparent 38%);
+  }
+  .article-body :global(.code-fold-toggle-icon .icon-collapse) {
+    display: none;
+  }
+  .article-body :global(.code-fold-toggle-icon[data-folded="0"] .icon-expand) {
+    display: none;
+  }
+  .article-body :global(.code-fold-toggle-icon[data-folded="0"] .icon-collapse) {
+    display: inline-block;
   }
   .article-body :global(pre[data-foldable="1"]) {
     position: relative;

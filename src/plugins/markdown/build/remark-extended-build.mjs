@@ -1,4 +1,4 @@
-const START_CHART = /^:::\s*chartjs(?:\s+(.+))?\s*$/i;
+﻿const START_CHART = /^:::\s*chartjs(?:\s+(.+))?\s*$/i;
 const START_CHART_LOOSE = /^:::\s*chartjs\b/i;
 const START_TABS = /^:::\s*tabs\s*$/i;
 const START_TABS_LOOSE = /^:::\s*tabs\b/i;
@@ -11,10 +11,14 @@ const END_QUAD = /^::::\s*$/i;
 const TAB_LABEL = /^@tab\s+(.+)$/i;
 const CODE_GROUP_LABEL = /^@code\s+(.+)$/i;
 const INLINE_TOKEN = /==([^=\n][\s\S]*?)==\{\.(tip|warning|danger|important)\}|:\[([^\]]+)\]:/g;
-const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition|callout)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
+const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition|callout|demo)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
+const SHORTCODE_DEMO_OPEN = /^\[demo\b([^\]]*)\]\s*$/i;
+const SHORTCODE_DEMO_CLOSE = /^\[\/demo\]\s*$/i;
 const SHORTCODE_ATTR = /([a-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=]+))/gi;
 const ADMONITION_COLORS = new Set(["indigo", "green", "red", "blue", "orange", "black", "grey"]);
 const HIDDEN_TYPES = new Set(["background", "blur"]);
+const DEMO_MODES = new Set(["split", "stack"]);
+const DEMO_RESULTS = new Set(["auto", "force"]);
 
 function isNode(value) {
   return Boolean(value && typeof value === "object");
@@ -78,6 +82,113 @@ function createSourceLocator(sourceText) {
   return { text: sourceText, lineStarts };
 }
 
+function collectSourceLines(sourceText) {
+  const lines = [];
+  if (!sourceText) return lines;
+  let lineStart = 0;
+
+  for (let i = 0; i < sourceText.length; i += 1) {
+    const char = sourceText.charCodeAt(i);
+    if (char !== 13 && char !== 10) continue;
+
+    const lineEnd = i;
+    if (char === 13 && sourceText.charCodeAt(i + 1) === 10) {
+      i += 1;
+    }
+    const breakEnd = i + 1;
+    lines.push({
+      start: lineStart,
+      end: lineEnd,
+      breakEnd,
+      text: sourceText.slice(lineStart, lineEnd)
+    });
+    lineStart = breakEnd;
+  }
+
+  lines.push({
+    start: lineStart,
+    end: sourceText.length,
+    breakEnd: sourceText.length,
+    text: sourceText.slice(lineStart)
+  });
+
+  return lines;
+}
+
+function parseFenceMarker(line) {
+  const match = String(line || "").trim().match(/^(`{3,}|~{3,})/);
+  if (!match) return null;
+  const token = String(match[1] || "");
+  const char = token.slice(0, 1);
+  if (char !== "`" && char !== "~") return null;
+  return { char, length: token.length };
+}
+
+function collectDemoRegionsFromSource(sourceText) {
+  if (!sourceText) return [];
+  const lines = collectSourceLines(sourceText);
+  const regions = [];
+  let outerFence = null;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line) continue;
+    const trimmed = String(line.text || "").trim();
+    const fence = parseFenceMarker(trimmed);
+
+    if (outerFence) {
+      if (fence && fence.char === outerFence.char && fence.length >= outerFence.length) {
+        outerFence = null;
+      }
+      continue;
+    }
+    if (fence) {
+      outerFence = fence;
+      continue;
+    }
+
+    const open = trimmed.match(SHORTCODE_DEMO_OPEN);
+    if (!open) continue;
+
+    let closeIndex = -1;
+    let innerFence = null;
+    for (let cursor = i + 1; cursor < lines.length; cursor += 1) {
+      const current = lines[cursor];
+      if (!current) continue;
+      const currentTrimmed = String(current.text || "").trim();
+      const currentFence = parseFenceMarker(currentTrimmed);
+      if (innerFence) {
+        if (currentFence && currentFence.char === innerFence.char && currentFence.length >= innerFence.length) {
+          innerFence = null;
+        }
+        continue;
+      }
+      if (currentFence) {
+        innerFence = currentFence;
+        continue;
+      }
+      if (SHORTCODE_DEMO_CLOSE.test(currentTrimmed)) {
+        closeIndex = cursor;
+        break;
+      }
+    }
+
+    if (closeIndex < 0) break;
+    const closeLine = lines[closeIndex];
+    if (!closeLine) break;
+    const body = sourceText.slice(line.breakEnd, closeLine.start);
+    regions.push({
+      startOffset: line.start,
+      endOffset: closeLine.breakEnd,
+      attrsRaw: String(open[1] || ""),
+      body
+    });
+    i = closeIndex;
+  }
+
+  return regions;
+}
+
 function resolvePointOffset(point, locator) {
   if (!point) return null;
   if (Number.isInteger(point.offset)) {
@@ -94,6 +205,16 @@ function resolvePointOffset(point, locator) {
   const offset = lineStart + (column - 1);
   if (offset < 0 || offset > locator.text.length) return null;
   return offset;
+}
+
+function resolveNodeOffsets(node, locator) {
+  if (!locator || !locator.text) return null;
+  if (!isNode(node)) return null;
+  const start = resolvePointOffset(node.position?.start, locator);
+  const end = resolvePointOffset(node.position?.end, locator);
+  if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+  if (start < 0 || end <= start || end > locator.text.length) return null;
+  return { start, end };
 }
 
 function getNodeSourceSlice(node, locator) {
@@ -231,6 +352,104 @@ function parseShortcode(rawInput) {
   return { name, attrs, body };
 }
 
+function applyDemoRegionsToChildren(children, regions, sourceLocator) {
+  if (!sourceLocator || !Array.isArray(children) || !children.length || !regions.length) return;
+
+  for (const region of regions) {
+    if (region.consumed) continue;
+
+    let firstIndex = -1;
+    let lastIndex = -1;
+    let firstOffsets = null;
+    let lastOffsets = null;
+
+    for (let i = 0; i < children.length; i += 1) {
+      const offsets = resolveNodeOffsets(children[i], sourceLocator);
+      if (!offsets) continue;
+      if (offsets.end <= region.startOffset) continue;
+      if (offsets.start >= region.endOffset) {
+        if (firstIndex >= 0) break;
+        continue;
+      }
+      if (firstIndex < 0) {
+        firstIndex = i;
+        firstOffsets = offsets;
+      }
+      lastIndex = i;
+      lastOffsets = offsets;
+    }
+
+    if (firstIndex < 0 || lastIndex < firstIndex || !firstOffsets || !lastOffsets) continue;
+    if (firstOffsets.start < region.startOffset || lastOffsets.end > region.endOffset) continue;
+
+    const shortcode = {
+      name: "demo",
+      attrs: parseShortcodeAttributes(region.attrsRaw),
+      body: String(region.body || "")
+    };
+    const shortcodeNode = createShortcodeNode(shortcode);
+    if (!shortcodeNode) continue;
+    children.splice(firstIndex, lastIndex - firstIndex + 1, shortcodeNode);
+    region.consumed = true;
+  }
+}
+
+function readDemoOpenAttrs(node, sourceLocator) {
+  if (!isNode(node) || node.type !== "paragraph") return null;
+  const candidates = getParagraphCandidates(node, sourceLocator);
+  for (const candidate of candidates) {
+    const normalized = normalizeSmartQuotes(String(candidate || "")).trim();
+    const openMatch = normalized.match(SHORTCODE_DEMO_OPEN);
+    if (openMatch) return String(openMatch[1] || "");
+    const openLooseMatch = normalized.match(/^demo\b([\s\S]*)$/i);
+    if (!openLooseMatch) continue;
+    const attrsRaw = String(openLooseMatch[1] || "").trim();
+    if (!attrsRaw || !/[a-z][\w-]*\s*=/.test(attrsRaw)) continue;
+    return attrsRaw;
+  }
+  return null;
+}
+
+function readDemoCloseInfo(node, sourceLocator) {
+  if (!isNode(node) || node.type !== "paragraph") return null;
+  const candidates = getParagraphCandidates(node, sourceLocator);
+  for (const candidate of candidates) {
+    const normalized = normalizeSmartQuotes(String(candidate || ""));
+    const closeMatch = normalized.match(/([\s\S]*?)\s*(?:\[\/demo\]|\/demo)\s*$/i);
+    if (!closeMatch) continue;
+    return { noteBeforeClose: String(closeMatch[1] || "").trim() };
+  }
+  return null;
+}
+
+function buildDemoShortcodeFromNodes(nodes, attrs) {
+  if (!Array.isArray(nodes) || !nodes.length) return null;
+  const codeNode = nodes.find(
+    (node) => isNode(node) && node.type === "code" && typeof node.value === "string" && String(node.value || "").trim()
+  );
+  if (!isNode(codeNode)) return null;
+
+  const lang = String(attrs.lang || codeNode.lang || "text").trim().toLowerCase() || "text";
+  const code = String(codeNode.value || "").replace(/\r\n?/g, "\n").trim();
+  if (!code) return null;
+
+  const notes = [];
+  for (const node of nodes) {
+    if (!isNode(node) || node === codeNode) continue;
+    if (node.type === "paragraph") {
+      const text = normalizeSmartQuotes(getParagraphText(node)).trim();
+      if (text) notes.push(text);
+    }
+  }
+
+  const body = [`\`\`\`${lang}`, code, "\`\`\`", notes.join("\n\n")].filter(Boolean).join("\n");
+  return {
+    name: "demo",
+    attrs,
+    body
+  };
+}
+
 function parseBooleanAttr(rawValue, fallback = false) {
   if (typeof rawValue !== "string") return fallback;
   const value = rawValue.trim().toLowerCase();
@@ -270,6 +489,34 @@ function normalizeAdmonitionColor(rawValue) {
   const value = String(rawValue || "").trim().toLowerCase();
   if (ADMONITION_COLORS.has(value)) return value;
   return "indigo";
+}
+
+function normalizeDemoMode(rawValue) {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (DEMO_MODES.has(value)) return value;
+  return "split";
+}
+
+function normalizeDemoResult(rawValue) {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (DEMO_RESULTS.has(value)) return value;
+  return "auto";
+}
+
+function parseDemoBody(rawValue, attrs) {
+  const body = String(rawValue || "").replace(/\r\n?/g, "\n").trim();
+  if (!body) return null;
+  const fence = body.match(/```([a-z0-9-]*)[^\n]*\n([\s\S]*?)\n```/i);
+  if (!fence) return null;
+
+  const detectedLang = String(attrs.lang || fence[1] || "text").trim().toLowerCase() || "text";
+  const code = String(fence[2] || "").replace(/\r\n?/g, "\n").trim();
+  if (!code) return null;
+
+  const before = body.slice(0, fence.index || 0).trim();
+  const after = body.slice((fence.index || 0) + fence[0].length).trim();
+  const notes = [before, after].filter(Boolean).join("\n\n").trim();
+  return { lang: detectedLang, code, notes };
 }
 
 function getAdmonitionIconGlyph(rawValue) {
@@ -348,13 +595,13 @@ function createShortcodeNode(result) {
   if (result.name === "callout") {
     const type = String(result.attrs.type || "info").trim().toLowerCase();
     const map = {
-      tip: { color: "indigo", icon: "tip", title: "提示" },
-      info: { color: "blue", icon: "info", title: "信息" },
-      warning: { color: "orange", icon: "warning", title: "注意" },
-      danger: { color: "red", icon: "danger", title: "危险" },
-      success: { color: "green", icon: "check", title: "成功" },
-      important: { color: "indigo", icon: "flag", title: "重要" },
-      note: { color: "grey", icon: "info", title: "说明" }
+      tip: { color: "indigo", icon: "tip", title: "鎻愮ず" },
+      info: { color: "blue", icon: "info", title: "淇℃伅" },
+      warning: { color: "orange", icon: "warning", title: "娉ㄦ剰" },
+      danger: { color: "red", icon: "danger", title: "鍗遍櫓" },
+      success: { color: "green", icon: "check", title: "鎴愬姛" },
+      important: { color: "indigo", icon: "flag", title: "閲嶈" },
+      note: { color: "grey", icon: "info", title: "璇存槑" }
     };
     const preset = map[type] || map.info;
     const normalized = {
@@ -368,6 +615,44 @@ function createShortcodeNode(result) {
       body
     };
     return createShortcodeNode(normalized);
+  }
+
+  if (result.name === "demo") {
+    const parsed = parseDemoBody(body, result.attrs);
+    if (!parsed) return null;
+    const mode = normalizeDemoMode(result.attrs.mode);
+    const previewResult = normalizeDemoResult(result.attrs.result);
+    const title = String(result.attrs.title || "").trim();
+    const sourceCodeNode = { type: "code", lang: parsed.lang, value: parsed.code };
+    const previewCodeNode = { type: "code", lang: parsed.lang, value: parsed.code };
+
+    const sourceChildren = [createElement("div", { className: ["md-demo-label"] }, [createText("璇硶鍐欐硶")]), sourceCodeNode];
+    const previewChildren = [createElement("div", { className: ["md-demo-label"] }, [createText("鏁堟灉灞曠ず")]), previewCodeNode];
+    if (parsed.notes) {
+      previewChildren.push(createElement("div", { className: ["md-demo-note"] }, [createParagraph(parsed.notes)]));
+    }
+
+    const wrapperChildren = [];
+    if (title) {
+      wrapperChildren.push(createElement("header", { className: ["md-demo-head"] }, [createText(title)]));
+    }
+    wrapperChildren.push(
+      createElement("div", { className: ["md-demo-body"] }, [
+        createElement("section", { className: ["md-demo-source"] }, sourceChildren),
+        createElement("section", { className: ["md-demo-preview"], "data-result": previewResult }, previewChildren)
+      ])
+    );
+
+    return createElement(
+      "section",
+      {
+        className: ["md-demo"],
+        "data-mode": mode,
+        "data-result": previewResult,
+        "data-demo-lang": parsed.lang
+      },
+      wrapperChildren
+    );
   }
 
   if (result.name === "admonition") {
@@ -556,11 +841,46 @@ function processContainerBlocks(parent, options, state, sourceLocator) {
   const enableTabs = options.enableTabs !== false;
   const enableCodeGroup = options.enableCodeGroup !== false;
   const enableChartJs = options.enableChartJs !== false;
+  const enableDemoBlock = options.enableDemoBlock !== false;
   const enableCalloutTemplates = options.enableCalloutTemplates !== false;
+  if (enableDemoBlock && sourceLocator) {
+    applyDemoRegionsToChildren(children, state.demoRegions, sourceLocator);
+  }
 
   for (let i = 0; i < children.length; i += 1) {
     const current = children[i];
     if (!isNode(current)) continue;
+    if (enableDemoBlock) {
+      const demoAttrsRaw = readDemoOpenAttrs(current, sourceLocator);
+      if (demoAttrsRaw !== null) {
+        let closeIndex = -1;
+        let closeInfo = null;
+        for (let cursor = i + 1; cursor < children.length; cursor += 1) {
+          const info = readDemoCloseInfo(children[cursor], sourceLocator);
+          if (info) {
+            closeIndex = cursor;
+            closeInfo = info;
+            break;
+          }
+        }
+
+        if (closeIndex > i) {
+          const demoAttrs = parseShortcodeAttributes(demoAttrsRaw);
+          const demoBodyNodes = [...children.slice(i + 1, closeIndex)];
+          if (closeInfo?.noteBeforeClose) {
+            demoBodyNodes.push(createParagraph(closeInfo.noteBeforeClose));
+          }
+          const shortcode = buildDemoShortcodeFromNodes(demoBodyNodes, demoAttrs);
+          const shortcodeNode = shortcode ? createShortcodeNode(shortcode) : null;
+          if (shortcodeNode) {
+            children.splice(i, closeIndex - i + 1, shortcodeNode);
+            i -= 1;
+            continue;
+          }
+        }
+      }
+    }
+
     if (current.type === "paragraph") {
       const candidates = getParagraphCandidates(current, sourceLocator);
       if (candidates.length) {
@@ -569,6 +889,7 @@ function processContainerBlocks(parent, options, state, sourceLocator) {
           const shortcode = parseShortcode(candidate);
           if (!shortcode) continue;
           if (shortcode.name === "callout" && !enableCalloutTemplates) continue;
+          if (shortcode.name === "demo" && !enableDemoBlock) continue;
           const shortcodeNode = createShortcodeNode(shortcode);
           if (!shortcodeNode) continue;
           children.splice(i, 1, shortcodeNode);
@@ -904,10 +1225,11 @@ function processContainerBlocks(parent, options, state, sourceLocator) {
 export function remarkExtendedBuild(options = {}) {
   return (tree, file) => {
     if (!isNode(tree)) return;
-    const state = { tabSeed: 0 };
     const sourceText = typeof file?.value === "string" ? file.value : "";
+    const state = { tabSeed: 0, demoRegions: collectDemoRegionsFromSource(sourceText) };
     const sourceLocator = createSourceLocator(sourceText);
     processContainerBlocks(tree, options, state, sourceLocator);
     transformInlineNodes(tree, options);
   };
 }
+
