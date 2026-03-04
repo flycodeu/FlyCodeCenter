@@ -84,6 +84,15 @@ ENCRYPT_PASSWORD=
 - 网站收藏中心分类与卡片排序（`src/content/sites/*.md` + `site.config.ts`）
 - 资源页与收藏页开关
 
+## 文档入口
+
+- 总目录：`docs/README.md`
+- 系统配置：`docs/config/system-config.md`
+- Markdown 扩展：`docs/markdown/extended-syntax.md`
+- 插件地图：`docs/plugins/plugin-map.md`
+- 功能与语法总手册（博客）：`/article/system-user-guide/`
+- 扩展开发总手册（博客）：`/article/system-extension-guide/`
+
 ## 新增页面
 
 - `/tags`：标签统计中心（`/types` 与 `/types/[domain]` 保留兼容跳转）

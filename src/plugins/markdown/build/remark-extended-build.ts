@@ -1,9 +1,11 @@
 interface ExtendedBuildOptions {
   enableChartJs?: boolean;
   enableTabs?: boolean;
+  enableCodeGroup?: boolean;
   enableSteps?: boolean;
   enableMark?: boolean;
   enableIcon?: boolean;
+  enableCalloutTemplates?: boolean;
   chartHeight?: number;
 }
 
@@ -11,13 +13,16 @@ const START_CHART = /^:::\s*chartjs(?:\s+(.+))?\s*$/i;
 const START_CHART_LOOSE = /^:::\s*chartjs\b/i;
 const START_TABS = /^:::\s*tabs\s*$/i;
 const START_TABS_LOOSE = /^:::\s*tabs\b/i;
+const START_CODE_GROUP = /^:::\s*code-group\s*$/i;
+const START_CODE_GROUP_LOOSE = /^:::\s*code-group\b/i;
 const END_TRIPLE = /^:::\s*$/i;
 const START_STEPS = /^::::\s*steps\s*$/i;
 const START_STEPS_LOOSE = /^::::\s*steps\b/i;
 const END_QUAD = /^::::\s*$/i;
 const TAB_LABEL = /^@tab\s+(.+)$/i;
+const CODE_GROUP_LABEL = /^@code\s+(.+)$/i;
 const INLINE_TOKEN = /==([^=\n][\s\S]*?)==\{\.(tip|warning|danger|important)\}|:\[([^\]]+)\]:/g;
-const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
+const SHORTCODE_PATTERN = /^\[(video|checkbox|hidden|admonition|callout)\b([^\]]*)\]([\s\S]*?)\[\/\1\]$/i;
 const SHORTCODE_ATTR = /([a-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=]+))/gi;
 const ADMONITION_COLORS = new Set(["indigo", "green", "red", "blue", "orange", "black", "grey"]);
 const HIDDEN_TYPES = new Set(["background", "blur"]);
@@ -34,7 +39,7 @@ type MdNode = {
   data?: Record<string, unknown>;
 };
 
-type ShortcodeName = "video" | "checkbox" | "hidden" | "admonition";
+type ShortcodeName = "video" | "checkbox" | "hidden" | "admonition" | "callout";
 
 type ShortcodeParseResult = {
   name: ShortcodeName;
@@ -383,6 +388,31 @@ function createShortcodeNode(result: ShortcodeParseResult): MdNode | null {
     return createElement("button", props, [createElement("span", { className: ["mdx-hidden-text"] }, [createText(body)])]);
   }
 
+  if (result.name === "callout") {
+    const type = String(result.attrs.type || "info").trim().toLowerCase();
+    const map: Record<string, { color: string; icon: string; title: string }> = {
+      tip: { color: "indigo", icon: "tip", title: "提示" },
+      info: { color: "blue", icon: "info", title: "信息" },
+      warning: { color: "orange", icon: "warning", title: "注意" },
+      danger: { color: "red", icon: "danger", title: "危险" },
+      success: { color: "green", icon: "check", title: "成功" },
+      important: { color: "indigo", icon: "flag", title: "重要" },
+      note: { color: "grey", icon: "info", title: "说明" }
+    };
+    const preset = map[type] || map.info;
+    const normalized: ShortcodeParseResult = {
+      name: "admonition",
+      attrs: {
+        ...result.attrs,
+        color: String(result.attrs.color || preset.color),
+        icon: String(result.attrs.icon || preset.icon),
+        title: String(result.attrs.title || preset.title)
+      },
+      body
+    };
+    return createShortcodeNode(normalized);
+  }
+
   if (result.name === "admonition") {
     const title = String(result.attrs.title || "").trim();
     const color = normalizeAdmonitionColor(result.attrs.color);
@@ -572,7 +602,9 @@ function processContainerBlocks(
   const children = parent.children;
   const enableSteps = options.enableSteps !== false;
   const enableTabs = options.enableTabs !== false;
+  const enableCodeGroup = options.enableCodeGroup !== false;
   const enableChartJs = options.enableChartJs !== false;
+  const enableCalloutTemplates = options.enableCalloutTemplates !== false;
 
   for (let i = 0; i < children.length; i += 1) {
     const current = children[i];
@@ -584,6 +616,7 @@ function processContainerBlocks(
         for (const candidate of candidates) {
           const shortcode = parseShortcode(candidate);
           if (!shortcode) continue;
+          if (shortcode.name === "callout" && !enableCalloutTemplates) continue;
           const shortcodeNode = createShortcodeNode(shortcode);
           if (!shortcodeNode) continue;
           children.splice(i, 1, shortcodeNode);
@@ -675,6 +708,124 @@ function processContainerBlocks(
               i -= 1;
               continue;
             }
+          }
+        }
+      }
+    }
+
+    if (enableCodeGroup) {
+      const codeGroupStartIndex = findLineIndex(lines, START_CODE_GROUP_LOOSE);
+      if (
+        codeGroupStartIndex >= 0 &&
+        (START_CODE_GROUP.test(lines[codeGroupStartIndex] || "") || START_CODE_GROUP_LOOSE.test(lines[codeGroupStartIndex] || ""))
+      ) {
+        let closeIndex = -1;
+        for (let cursor = i + 1; cursor < children.length; cursor += 1) {
+          const closeLines = getParagraphLines(children[cursor]);
+          if (closeLines.some((line) => END_TRIPLE.test(line))) {
+            closeIndex = cursor;
+            break;
+          }
+        }
+
+        if (closeIndex > i + 1) {
+          const leadingNodes = lines
+            .slice(codeGroupStartIndex + 1)
+            .filter(Boolean)
+            .map((line) => createParagraph(line));
+          const between = [...leadingNodes, ...children.slice(i + 1, closeIndex)];
+          const groups: Array<{ label: string; nodes: unknown[] }> = [];
+          let currentGroup: { label: string; nodes: unknown[] } | null = null;
+
+          const startCodeGroup = (label: string) => {
+            currentGroup = { label: label.trim(), nodes: [] };
+            groups.push(currentGroup);
+          };
+
+          const appendCodeNode = (node: unknown) => {
+            if (!currentGroup) return;
+            currentGroup.nodes.push(node);
+          };
+
+          between.forEach((node) => {
+            if (isNode(node) && node.type === "paragraph") {
+              const paraLines = getParagraphLines(node).filter(Boolean);
+              if (!paraLines.length) return;
+              if (paraLines.length === 1) {
+                const labelMatch = paraLines[0]?.match(CODE_GROUP_LABEL);
+                if (labelMatch) {
+                  startCodeGroup(labelMatch[1]);
+                  return;
+                }
+                appendCodeNode(node);
+                return;
+              }
+              paraLines.forEach((line) => {
+                const labelMatch = line.match(CODE_GROUP_LABEL);
+                if (labelMatch) {
+                  startCodeGroup(labelMatch[1]);
+                  return;
+                }
+                appendCodeNode(createParagraph(line));
+              });
+              return;
+            }
+            appendCodeNode(node);
+          });
+
+          const validGroups = groups.filter(
+            (group) => Array.isArray(group.nodes) && group.nodes.some((node) => isNode(node) && node.type === "code")
+          );
+          if (validGroups.length > 0) {
+            state.tabSeed += 1;
+            const groupSeed = state.tabSeed;
+            const navChildren: unknown[] = [];
+            const panelChildren: unknown[] = [];
+
+            validGroups.forEach((group, idx) => {
+              const isActive = idx === 0;
+              const tabId = `md-code-group-${groupSeed}-${idx + 1}`;
+              const panelId = `${tabId}-panel`;
+              navChildren.push(
+                createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: ["md-code-group-tab"],
+                    id: tabId,
+                    role: "tab",
+                    "data-tab-id": tabId,
+                    "data-active": isActive ? "1" : "0",
+                    "aria-controls": panelId,
+                    "aria-selected": isActive ? "true" : "false"
+                  },
+                  [createText(group.label)]
+                )
+              );
+
+              panelChildren.push(
+                createElement(
+                  "section",
+                  {
+                    className: ["md-code-group-panel"],
+                    id: panelId,
+                    role: "tabpanel",
+                    "aria-labelledby": tabId,
+                    "data-active": isActive ? "1" : "0",
+                    hidden: isActive ? undefined : true
+                  },
+                  group.nodes
+                )
+              );
+            });
+
+            const codeGroupNode = createElement("section", { className: ["md-code-group"] }, [
+              createElement("div", { className: ["md-code-group-nav"], role: "tablist" }, navChildren),
+              createElement("div", { className: ["md-code-group-panels"] }, panelChildren)
+            ]);
+            children.splice(i, closeIndex - i + 1, codeGroupNode);
+            i -= 1;
+            continue;
           }
         }
       }

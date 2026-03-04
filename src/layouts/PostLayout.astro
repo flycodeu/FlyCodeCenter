@@ -78,6 +78,128 @@ const jsonLd = buildArticleJsonLd({
   image: cover,
   tags
 });
+const articleRuntimeConfig = {
+  isEncrypted: encrypted,
+  enableMermaid: siteConfig.features.diagram.mermaid,
+  enableDrawio: siteConfig.features.diagram.drawio,
+  enableEcharts: siteConfig.features.diagram.echarts,
+  mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
+  mermaidTheme: siteConfig.diagram.mermaid.theme,
+  drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
+  echartsBundle: siteConfig.diagram.echarts.bundleUrl,
+  chartHeight: siteConfig.diagram.echarts.defaultHeight,
+  enableEchartsThemeSync: Boolean(
+    (siteConfig.diagram as { echarts?: { themeSync?: boolean } }).echarts?.themeSync ?? false
+  ),
+  enableCodeCopy: siteConfig.markdown.copy.code,
+  enableMathCopy: siteConfig.markdown.copy.math,
+  enableMermaidCopy: siteConfig.markdown.copy.mermaid,
+  enableExtendedMarkdown: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { enable?: boolean };
+      }
+    ).extended?.enable ?? false
+  ),
+  enableChartJs: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { chartjs?: { enable?: boolean } };
+      }
+    ).extended?.chartjs?.enable ?? false
+  ),
+  chartJsBundle:
+    (
+      siteConfig.markdown as {
+        extended?: { chartjs?: { bundleUrl?: string } };
+      }
+    ).extended?.chartjs?.bundleUrl ?? "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+  enableChartJsThemeSync: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { chartjs?: { themeSync?: boolean } };
+      }
+    ).extended?.chartjs?.themeSync ?? false
+  ),
+  enableCodeFold: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { codeFold?: { enable?: boolean } };
+      }
+    ).extended?.codeFold?.enable ?? false
+  ),
+  codeFoldDefaultLines: Number(
+    (
+      siteConfig.markdown as {
+        extended?: { codeFold?: { defaultLines?: number } };
+      }
+    ).extended?.codeFold?.defaultLines ?? 18
+  ),
+  enableCodeGroup: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { codeGroup?: { enable?: boolean } };
+      }
+    ).extended?.codeGroup?.enable ?? false
+  ),
+  enableDiffEnhance: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { diffEnhance?: { enable?: boolean } };
+      }
+    ).extended?.diffEnhance?.enable ?? false
+  ),
+  enableAnchorCopy: Boolean(
+    (siteConfig.article as { anchorCopy?: { enable?: boolean } }).anchorCopy?.enable ?? false
+  ),
+  enableDiagramDiagnostics: Boolean(
+    (siteConfig.article as { diagnostics?: { enable?: boolean } }).diagnostics?.enable ?? true
+  ),
+  enableInlineIcon: Boolean(
+    (
+      siteConfig.markdown as {
+        extended?: { icon?: { enable?: boolean } };
+      }
+    ).extended?.icon?.enable ?? false
+  ),
+  iconifyBundle:
+    (
+      siteConfig.markdown as {
+        extended?: { icon?: { bundleUrl?: string } };
+      }
+    ).extended?.icon?.bundleUrl ?? "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
+  codeHighlightProvider: String(
+    (
+      siteConfig as {
+        codeHighlight?: { provider?: string };
+      }
+    ).codeHighlight?.provider ?? "prism"
+  ),
+  enableCodeLineNumbers: Boolean(
+    (
+      siteConfig as {
+        codeHighlight?: { lineNumbers?: boolean };
+      }
+    ).codeHighlight?.lineNumbers ?? true
+  ),
+  codeWindowTitleMode: String(
+    (
+      siteConfig as {
+        codeHighlight?: { window?: { titleMode?: string } };
+      }
+    ).codeHighlight?.window?.titleMode ?? "lang"
+  ),
+  articleTitle: title,
+  articleTags: tags,
+  viewStatsEnabled: siteConfig.stats.enable,
+  viewStatsEndpoint: siteConfig.stats.endpoint,
+  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
+  antiCrawlLockOnSuspicious: Boolean(
+    (siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true
+  ),
+  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
+  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+};
 ---
 
 <BaseLayout title={title} description={description} canonicalPath={articleUrl} image={cover}>
@@ -156,934 +278,21 @@ const jsonLd = buildArticleJsonLd({
     {!encrypted && <aside class="post-toc-rail"><TOC headings={headings} /></aside>}
   </div>
 
-  <script
-    type="module"
-    define:vars={{
-      isEncrypted: encrypted,
-      enableMermaid: siteConfig.features.diagram.mermaid,
-      enableDrawio: siteConfig.features.diagram.drawio,
-      enableEcharts: siteConfig.features.diagram.echarts,
-      mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
-      mermaidTheme: siteConfig.diagram.mermaid.theme,
-      drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
-      echartsBundle: siteConfig.diagram.echarts.bundleUrl,
-      chartHeight: siteConfig.diagram.echarts.defaultHeight,
-      enableCodeCopy: siteConfig.markdown.copy.code,
-      enableMathCopy: siteConfig.markdown.copy.math,
-      enableMermaidCopy: siteConfig.markdown.copy.mermaid,
-      enableExtendedMarkdown: Boolean(
-        (
-          siteConfig.markdown as {
-            extended?: { enable?: boolean };
-          }
-        ).extended?.enable ?? false
-      ),
-      enableChartJs: Boolean(
-        (
-          siteConfig.markdown as {
-            extended?: { chartjs?: { enable?: boolean } };
-          }
-        ).extended?.chartjs?.enable ?? false
-      ),
-      chartJsBundle:
-        (
-          siteConfig.markdown as {
-            extended?: { chartjs?: { bundleUrl?: string } };
-          }
-        ).extended?.chartjs?.bundleUrl ?? "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
-      enableInlineIcon: Boolean(
-        (
-          siteConfig.markdown as {
-            extended?: { icon?: { enable?: boolean } };
-          }
-        ).extended?.icon?.enable ?? false
-      ),
-      iconifyBundle:
-        (
-          siteConfig.markdown as {
-            extended?: { icon?: { bundleUrl?: string } };
-          }
-        ).extended?.icon?.bundleUrl ?? "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
-      codeHighlightProvider: String(
-        (
-          siteConfig as {
-            codeHighlight?: { provider?: string };
-          }
-        ).codeHighlight?.provider ?? "prism"
-      ),
-      enableCodeLineNumbers: Boolean(
-        (
-          siteConfig as {
-            codeHighlight?: { lineNumbers?: boolean };
-          }
-        ).codeHighlight?.lineNumbers ?? true
-      ),
-      codeWindowTitleMode: String(
-        (
-          siteConfig as {
-            codeHighlight?: { window?: { titleMode?: string } };
-          }
-        ).codeHighlight?.window?.titleMode ?? "lang"
-      ),
-      articleTitle: title,
-      articleTags: tags,
-      viewStatsEnabled: siteConfig.stats.enable,
-      viewStatsEndpoint: siteConfig.stats.endpoint,
-      antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
-      antiCrawlLockOnSuspicious: Boolean(
-        (siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true
-      ),
-      antiCrawlMaxCopyActions: Number(
-        (siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8
-      ),
-      antiCrawlTimeWindowMs: Number(
-        (siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000
-      )
-    }}
-  >
-    const root = document.documentElement;
-    root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
-    root.dataset.antiCrawlLocked = "0";
-    const activeHighlightProvider = String(
-      codeHighlightProvider || root.dataset.codeHighlightProvider || "prism"
-    ).toLowerCase();
-    const isExpressiveProvider = activeHighlightProvider === "expressive";
+  <script id="article-runtime-config" type="application/json" set:html={JSON.stringify(articleRuntimeConfig)} />
+  <script>
+    import { initArticleRuntime } from "@/plugins/runtime/article/index.js";
 
-    const BOT_UA_PATTERN = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
-    const antiCrawlEvents = [];
-    let antiCrawlLocked = false;
-
-    const lockByAntiCrawl = (reason) => {
-      if (!antiCrawlEnabled || antiCrawlLocked) return;
-      antiCrawlLocked = true;
-      root.dataset.antiCrawlLocked = "1";
-      document.body.classList.add("anti-crawl-locked");
-
-      const article = document.querySelector(".article-body");
-      if (article instanceof HTMLElement) {
-        article.innerHTML = `
-          <section class="anti-crawl-lock" role="alert">
-            <h2>访问已受限</h2>
-            <p>检测到异常抓取行为，本文已临时禁止访问。</p>
-            <p class="anti-crawl-reason">原因: ${reason}</p>
-          </section>
-        `;
+    let runtimeConfig = {};
+    const runtimeConfigNode = document.getElementById("article-runtime-config");
+    if (runtimeConfigNode?.textContent) {
+      try {
+        runtimeConfig = JSON.parse(runtimeConfigNode.textContent);
+      } catch (error) {
+        console.error("failed to parse article runtime config", error);
       }
-    };
-
-    const markAntiCrawlAction = (name) => {
-      if (!antiCrawlEnabled || !antiCrawlLockOnSuspicious || antiCrawlLocked) return;
-      const now = Date.now();
-      antiCrawlEvents.push(now);
-      while (antiCrawlEvents.length && now - antiCrawlEvents[0] > antiCrawlTimeWindowMs) {
-        antiCrawlEvents.shift();
-      }
-      if (antiCrawlEvents.length >= antiCrawlMaxCopyActions) {
-        lockByAntiCrawl(`high-frequency-${name}`);
-      }
-    };
-
-    if (antiCrawlEnabled) {
-      const ua = navigator.userAgent || "";
-      const isWebdriver = Boolean(navigator.webdriver);
-      const isSuspiciousUa = BOT_UA_PATTERN.test(ua);
-
-      if (antiCrawlLockOnSuspicious && (isWebdriver || isSuspiciousUa)) {
-        lockByAntiCrawl(isWebdriver ? "webdriver" : "suspicious-ua");
-      }
-
-      const trackSensitiveAction = (event, action) => {
-        if (antiCrawlLocked) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        markAntiCrawlAction(action);
-      };
-
-      document.addEventListener("copy", (event) => trackSensitiveAction(event, "copy"), { capture: true });
-      document.addEventListener("cut", (event) => trackSensitiveAction(event, "cut"), { capture: true });
-      document.addEventListener("contextmenu", (event) => trackSensitiveAction(event, "contextmenu"), { capture: true });
-      document.addEventListener("selectstart", (event) => trackSensitiveAction(event, "selectstart"), { capture: true });
-
-      document.addEventListener(
-        "keydown",
-        (event) => {
-          if (antiCrawlLocked) {
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-          if (!event.ctrlKey && !event.metaKey) return;
-          const hotkey = event.key.toLowerCase();
-          if (hotkey === "c" || hotkey === "s" || hotkey === "u" || hotkey === "p") {
-            markAntiCrawlAction(`hotkey-${hotkey}`);
-          }
-        },
-        { capture: true }
-      );
     }
 
-    if (isEncrypted) {
-      window.addEventListener("site:decrypted", () => {
-        root.dataset.encryptedLocked = "0";
-        initArticleEnhancements().catch(console.error);
-      });
-    }
-
-    const copyIcon = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
-    const successIcon = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
-
-    const copyWithFeedback = async (btn, text) => {
-      try {
-        await navigator.clipboard.writeText(text);
-        btn.classList.add("copied");
-        btn.innerHTML = successIcon;
-        setTimeout(() => {
-          btn.classList.remove("copied");
-          btn.innerHTML = copyIcon;
-        }, 1800);
-      } catch (error) {
-        console.error("copy failed", error);
-      }
-    };
-
-    const createCopyBtn = (className, title, contentProvider) => {
-      const btn = document.createElement("button");
-      btn.className = className;
-      btn.type = "button";
-      btn.title = title;
-      btn.innerHTML = copyIcon;
-      btn.addEventListener("click", () => {
-        copyWithFeedback(btn, contentProvider());
-      });
-      return btn;
-    };
-
-    const scheduleIdle = (task) => {
-      if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(task, { timeout: 500 });
-      } else {
-        window.setTimeout(() => task({ timeRemaining: () => 8 }), 20);
-      }
-    };
-
-    const getLanguage = (code) => {
-      const pre = code.closest("pre");
-      const raw =
-        pre?.getAttribute("data-language") ||
-        code.getAttribute("data-language") ||
-        code.className ||
-        "";
-      const match = raw.match(/language-([a-z0-9-]+)/i);
-      return (match?.[1] || raw).toLowerCase();
-    };
-    const normalizeLanguageLabel = (rawLanguage) => {
-      const lang = String(rawLanguage || "").trim().toLowerCase();
-      if (!lang) return "text";
-      if (lang === "plaintext" || lang === "plain") return "text";
-      return lang;
-    };
-
-    const isMermaidBlock = (code) => {
-      const language = getLanguage(code);
-      return language.includes("mermaid");
-    };
-
-    const isDrawioBlock = (code) => {
-      const raw = (code.textContent || "").trim();
-      const language = getLanguage(code);
-      if (language.includes("drawio")) return true;
-      return /^https?:\/\/\S+\.drawio(\?.*)?$/i.test(raw);
-    };
-
-    const isChartBlock = (code) => {
-      const raw = (code.textContent || "").trim();
-      const language = getLanguage(code);
-      if (language.includes("chart")) return true;
-      if (!(language.includes("json") || language.includes("plain"))) return false;
-      return raw.startsWith("{") && raw.includes('"series"');
-    };
-
-    let mermaidRenderIndex = 0;
-    let mermaidApiPromise = null;
-    const getMermaidApi = async () => {
-      if (!mermaidApiPromise) {
-        mermaidApiPromise = import(/* @vite-ignore */ mermaidBundle).then((mod) => {
-          const mermaid = mod.default ?? mod;
-          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
-          return mermaid;
-        });
-      }
-      return mermaidApiPromise;
-    };
-
-    let echartsApiPromise = null;
-    const chartInstances = [];
-    let chartResizeBound = false;
-    let chartJsApiPromise = null;
-    const chartJsInstances = [];
-    const getEchartsApi = async () => {
-      if (!echartsApiPromise) {
-        echartsApiPromise = import(/* @vite-ignore */ echartsBundle).then((mod) => mod.default ?? mod);
-      }
-      return echartsApiPromise;
-    };
-
-    const getChartJsApi = async () => {
-      if (chartJsApiPromise) return chartJsApiPromise;
-      chartJsApiPromise = new Promise((resolve, reject) => {
-        if (window.Chart) {
-          resolve(window.Chart);
-          return;
-        }
-        const script = document.createElement("script");
-        script.src = chartJsBundle;
-        script.async = true;
-        script.onload = () => {
-          if (window.Chart) resolve(window.Chart);
-          else reject(new Error("Chart.js global missing"));
-        };
-        script.onerror = () => reject(new Error("Chart.js load failed"));
-        document.head.appendChild(script);
-      });
-      return chartJsApiPromise;
-    };
-
-    const bindChartResize = () => {
-      if (chartResizeBound) return;
-      chartResizeBound = true;
-      window.addEventListener("resize", () => {
-        chartInstances.forEach((chart) => {
-          try {
-            chart.resize();
-          } catch {
-            // no-op
-          }
-        });
-        chartJsInstances.forEach((chart) => {
-          try {
-            chart.resize();
-          } catch {
-            // no-op
-          }
-        });
-      });
-    };
-
-    const renderMermaidBlock = async (code) => {
-      const pre = code.closest("pre");
-      if (!pre || pre.dataset.diagramEnhanced === "1") return;
-      pre.dataset.diagramEnhanced = "1";
-      const raw = (code.textContent || "").trim();
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "diagram-wrapper";
-
-      wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制 Mermaid 源码", () => raw));
-
-      const host = document.createElement("div");
-      host.className = "diagram-host mermaid-host";
-      wrapper.appendChild(host);
-      pre.replaceWith(wrapper);
-
-      try {
-        const mermaid = await getMermaidApi();
-        const result = await mermaid.render(`mermaid-${mermaidRenderIndex++}`, raw);
-        host.innerHTML = result.svg;
-      } catch (error) {
-        host.textContent = "Mermaid 渲染失败，请检查语法。";
-        console.error(error);
-      }
-    };
-
-    const addMathCopy = (article) => {
-      if (!enableMathCopy) return;
-      const displays = article.querySelectorAll(".katex-display");
-      displays.forEach((display) => {
-        if (display.querySelector(".math-copy-btn")) return;
-        const annotation = display.querySelector("annotation[encoding='application/x-tex']");
-        if (!annotation) return;
-        const raw = annotation.textContent || "";
-        display.classList.add("math-wrapper");
-        display.appendChild(createCopyBtn("math-copy-btn", "复制公式源码", () => raw));
-      });
-    };
-
-    const renderDrawioBlock = async (code) => {
-      const pre = code.closest("pre");
-      if (!pre || pre.dataset.diagramEnhanced === "1") return;
-      pre.dataset.diagramEnhanced = "1";
-      const src = (code.textContent || "").trim();
-      const wrapper = document.createElement("div");
-      wrapper.className = "diagram-wrapper";
-      const host = document.createElement("figure");
-      host.className = "diagram-host drawio-host";
-      wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制 Draw.io 源码", () => src));
-
-      if (!src) {
-        host.textContent = "Draw.io 代码块需要填写文件 URL。";
-        wrapper.appendChild(host);
-        pre.replaceWith(wrapper);
-        return;
-      }
-
-      const iframe = document.createElement("iframe");
-      const encoded = btoa(unescape(encodeURIComponent(src)));
-      iframe.src = `${drawioViewerBase}?lightbox=1&nav=1&edit=_blank#U${encoded}`;
-      iframe.loading = "lazy";
-      iframe.referrerPolicy = "no-referrer";
-      iframe.title = "drawio diagram";
-      iframe.style.width = "100%";
-      iframe.style.height = "460px";
-      iframe.style.border = "1px solid var(--line)";
-      iframe.style.borderRadius = "12px";
-      host.appendChild(iframe);
-
-      const note = document.createElement("figcaption");
-      note.innerHTML = `<a href="${src}" target="_blank" rel="noreferrer">打开原始 Draw.io 文件</a>`;
-      host.appendChild(note);
-      wrapper.appendChild(host);
-      pre.replaceWith(wrapper);
-    };
-
-    const renderChartBlock = async (code) => {
-      const pre = code.closest("pre");
-      if (!pre || pre.dataset.diagramEnhanced === "1") return;
-      pre.dataset.diagramEnhanced = "1";
-      const raw = (code.textContent || "{}").trim();
-      const wrapper = document.createElement("div");
-      wrapper.className = "diagram-wrapper";
-      const host = document.createElement("div");
-      host.className = "diagram-host chart-host";
-      host.style.height = `${chartHeight}px`;
-      wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制图表 JSON", () => raw));
-      wrapper.appendChild(host);
-      pre.replaceWith(wrapper);
-
-      try {
-        const echarts = await getEchartsApi();
-        const option = JSON.parse(raw);
-        const chart = echarts.init(host);
-        chartInstances.push(chart);
-        bindChartResize();
-        chart.setOption(option);
-      } catch (error) {
-        host.textContent = "图表配置 JSON 解析失败。";
-        console.error(error);
-      }
-    };
-
-    const toCodeLines = (codeNode) => {
-      if (!(codeNode instanceof HTMLElement)) return [];
-      if (codeNode.dataset.linesWrapped === "1") return [];
-      const raw = (codeNode.innerHTML || "").replace(/\n$/, "");
-      const lines = raw.split("\n");
-      if (!lines.length) return [];
-      codeNode.innerHTML = lines.map((line) => `<span class="code-line">${line || " "}</span>`).join("\n");
-      codeNode.dataset.linesWrapped = "1";
-      return lines;
-    };
-
-    const isExpressiveCodeBlock = (pre) =>
-      pre instanceof HTMLElement && (Boolean(pre.closest(".expressive-code")) || pre.classList.contains("ec-line"));
-
-    const enhanceCodeBlock = (pre) => {
-      if (!(pre instanceof HTMLElement)) return;
-      if (pre.dataset.codeEnhanced === "1" || pre.closest(".code-block-wrapper")) return;
-      if (isExpressiveProvider || isExpressiveCodeBlock(pre)) {
-        pre.dataset.codeEnhanced = "1";
-        return;
-      }
-      const codeNode = pre.querySelector("code");
-      if (!(codeNode instanceof HTMLElement)) return;
-      const language = (
-        pre.getAttribute("data-language") ||
-        codeNode?.getAttribute("data-language") ||
-        pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
-        "text"
-      ).toLowerCase();
-      if (["mermaid", "drawio", "chart"].some((name) => language.includes(name))) return;
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "code-block-wrapper";
-      wrapper.dataset.window = "mac";
-      wrapper.dataset.provider = String(codeHighlightProvider || "prism").toLowerCase();
-      pre.parentNode?.insertBefore(wrapper, pre);
-      wrapper.appendChild(pre);
-
-      const header = document.createElement("div");
-      header.className = "code-block-header";
-      const headerMeta = document.createElement("div");
-      headerMeta.className = "code-block-meta";
-
-      const langSpan = document.createElement("span");
-      langSpan.className = "code-block-lang";
-      if (codeWindowTitleMode === "none") {
-        langSpan.textContent = "";
-      } else {
-        langSpan.textContent = language;
-      }
-      if (langSpan.textContent) {
-        headerMeta.appendChild(langSpan);
-      }
-
-      const existingCopyBtn =
-        wrapper.querySelector(".code-block-copy") || pre.querySelector(".code-block-copy") || header.querySelector(".code-block-copy");
-      if (existingCopyBtn instanceof HTMLElement) {
-        headerMeta.appendChild(existingCopyBtn);
-      } else if (enableCodeCopy) {
-        const btn = createCopyBtn("code-block-copy", "复制代码", () => codeNode?.textContent || pre.textContent || "");
-        headerMeta.appendChild(btn);
-      }
-
-      header.appendChild(headerMeta);
-      wrapper.insertBefore(header, pre);
-      const allowRuntimeLineNumbers = enableCodeLineNumbers && activeHighlightProvider === "prism";
-      if (allowRuntimeLineNumbers) {
-        const lines = toCodeLines(codeNode);
-        if (lines.length) {
-          pre.dataset.lineNumbers = "1";
-          pre.style.setProperty("--line-number-digits", String(Math.max(2, String(lines.length).length)));
-        }
-      }
-      pre.dataset.codeEnhanced = "1";
-    };
-
-    const enhanceCodeBlocksInBatches = (article) => {
-      if (isExpressiveProvider) return;
-      const preElements = [...article.querySelectorAll("pre")].filter((pre) => pre instanceof HTMLElement);
-      let index = 0;
-
-      const step = (deadline) => {
-        while (index < preElements.length) {
-          const pre = preElements[index];
-          const code = pre.querySelector("code");
-          const isDiagramBlock =
-            code && (isMermaidBlock(code) || isDrawioBlock(code) || isChartBlock(code));
-          if (!isDiagramBlock) {
-            enhanceCodeBlock(pre);
-          }
-          index += 1;
-          if (deadline && typeof deadline.timeRemaining === "function" && deadline.timeRemaining() < 4) {
-            break;
-          }
-        }
-        if (index < preElements.length) {
-          scheduleIdle(step);
-        }
-      };
-
-      scheduleIdle(step);
-    };
-
-    const ensureCodeBlockMeta = (header) => {
-      let meta = header.querySelector(":scope > .code-block-meta");
-      if (!(meta instanceof HTMLElement)) {
-        meta = document.createElement("div");
-        meta.className = "code-block-meta";
-        header.appendChild(meta);
-      }
-      return meta;
-    };
-
-    const enhanceExpressiveCodeHeader = (article) => {
-      if (!isExpressiveProvider) return;
-      const findDirectCopyWrap = (frame) => {
-        for (const child of Array.from(frame.children)) {
-          if (child instanceof HTMLElement && child.classList.contains("copy")) return child;
-        }
-        return null;
-      };
-      const frames = [...article.querySelectorAll(".expressive-code figure.frame")].filter(
-        (frame) => frame instanceof HTMLElement
-      );
-      for (const frame of frames) {
-        if (!(frame instanceof HTMLElement)) continue;
-        if (frame.dataset.langLabelInitialized === "1") continue;
-
-        const caption = frame.querySelector("figcaption.header");
-        const pre = frame.querySelector("pre");
-        if (!(caption instanceof HTMLElement) || !(pre instanceof HTMLElement)) {
-          frame.dataset.langLabelInitialized = "1";
-          continue;
-        }
-        const headerMeta = ensureCodeBlockMeta(caption);
-
-        const preLang =
-          pre.getAttribute("data-language") ||
-          pre.dataset.language ||
-          pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
-          "";
-        const languageLabel = normalizeLanguageLabel(preLang);
-        let titleNode = headerMeta.querySelector(":scope > .title, :scope > .code-block-lang") || caption.querySelector(":scope > .title");
-
-        if (codeWindowTitleMode !== "none") {
-          if (!(titleNode instanceof HTMLElement)) {
-            titleNode = document.createElement("span");
-            titleNode.className = "title";
-            headerMeta.appendChild(titleNode);
-          }
-          const displayLabel = languageLabel || "text";
-          titleNode.textContent = displayLabel;
-          titleNode.classList.add("code-block-lang");
-          titleNode.classList.remove("sr-only");
-          titleNode.removeAttribute("hidden");
-          if (titleNode.parentElement !== headerMeta) {
-            headerMeta.appendChild(titleNode);
-          }
-          frame.classList.add("has-title");
-        } else if (titleNode instanceof HTMLElement) {
-          titleNode.textContent = "";
-          titleNode.setAttribute("hidden", "true");
-          frame.classList.remove("has-title");
-        }
-
-        const copyWrap =
-          findDirectCopyWrap(frame) || caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .copy");
-        if (copyWrap instanceof HTMLElement) {
-          copyWrap.classList.add("code-block-copy-wrap");
-          if (copyWrap.parentElement !== headerMeta) {
-            headerMeta.appendChild(copyWrap);
-          }
-          const copyButton = copyWrap.querySelector("button");
-          if (copyButton instanceof HTMLButtonElement) {
-            copyButton.classList.add("code-block-copy");
-            copyButton.title = "复制代码";
-            copyButton.setAttribute("aria-label", "复制代码");
-          }
-        }
-        if (titleNode instanceof HTMLElement && titleNode.parentElement === headerMeta) {
-          if (copyWrap instanceof HTMLElement && copyWrap.parentElement === headerMeta) {
-            if (titleNode.nextElementSibling !== copyWrap) {
-              headerMeta.insertBefore(titleNode, copyWrap);
-            }
-          } else {
-            headerMeta.prepend(titleNode);
-          }
-        }
-
-        frame.dataset.langLabelInitialized = "1";
-      }
-    };
-    const syncExpressiveCodeTheme = (article) => {
-      if (!isExpressiveProvider) return;
-      const siteTheme = String(root.dataset.theme || "").trim().toLowerCase();
-      const expressiveTheme = siteTheme.includes("dark") ? "github-dark" : "github-light";
-      article.querySelectorAll(".expressive-code").forEach((block) => {
-        if (block instanceof HTMLElement) {
-          block.dataset.theme = expressiveTheme;
-        }
-      });
-    };
-    const bindHiddenBlocks = (article) => {
-      const blocks = [...article.querySelectorAll(".mdx-hidden")];
-      for (const block of blocks) {
-        if (!(block instanceof HTMLButtonElement)) continue;
-        if (block.dataset.hiddenBound === "1") continue;
-        block.dataset.hiddenBound = "1";
-        block.addEventListener("click", () => {
-          const revealed = block.dataset.revealed === "1";
-          const nextState = revealed ? "0" : "1";
-          block.dataset.revealed = nextState;
-          block.setAttribute("aria-expanded", nextState === "1" ? "true" : "false");
-        });
-      }
-    };
-
-    const observeAndRenderDiagrams = (article) => {
-      const allCodeBlocks = [...article.querySelectorAll("pre code")];
-      const targets = allCodeBlocks.filter((code) => {
-        if (isMermaidBlock(code)) return Boolean(enableMermaid);
-        if (isDrawioBlock(code)) return Boolean(enableDrawio);
-        if (isChartBlock(code)) return Boolean(enableEcharts);
-        return false;
-      });
-
-      if (!targets.length) return;
-
-      const runForCode = (code) => {
-        if (isMermaidBlock(code) && enableMermaid) {
-          renderMermaidBlock(code).catch(console.error);
-          return;
-        }
-        if (isDrawioBlock(code) && enableDrawio) {
-          renderDrawioBlock(code).catch(console.error);
-          return;
-        }
-        if (isChartBlock(code) && enableEcharts) {
-          renderChartBlock(code).catch(console.error);
-        }
-      };
-
-      if (!("IntersectionObserver" in window)) {
-        targets.forEach((code) => scheduleIdle(() => runForCode(code)));
-        return;
-      }
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            observer.unobserve(entry.target);
-            const code = entry.target;
-            if (code instanceof HTMLElement) {
-              scheduleIdle(() => runForCode(code));
-            }
-          });
-        },
-        { rootMargin: "220px 0px" }
-      );
-
-      targets.forEach((code) => observer.observe(code));
-    };
-
-    let iconifyApiPromise = null;
-    const ensureIconifyLoaded = async () => {
-      if (iconifyApiPromise) return iconifyApiPromise;
-      iconifyApiPromise = new Promise((resolve, reject) => {
-        if (window.customElements?.get("iconify-icon")) {
-          resolve(true);
-          return;
-        }
-        const script = document.createElement("script");
-        script.src = iconifyBundle;
-        script.async = true;
-        script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("iconify load failed"));
-        document.head.appendChild(script);
-      });
-      return iconifyApiPromise;
-    };
-
-    const bindTabsSwitch = (article) => {
-      article.querySelectorAll(".md-tabs").forEach((tabsRoot) => {
-        if (!(tabsRoot instanceof HTMLElement)) return;
-        if (tabsRoot.dataset.bound === "1") return;
-        tabsRoot.dataset.bound = "1";
-        tabsRoot.addEventListener("click", (event) => {
-          const target = event.target;
-          if (!(target instanceof Element)) return;
-          const trigger = target.closest(".md-tabs-tab");
-          if (!(trigger instanceof HTMLButtonElement)) return;
-          const tabId = trigger.dataset.tabId;
-          if (!tabId) return;
-          tabsRoot.querySelectorAll(".md-tabs-tab").forEach((tabButton) => {
-            if (!(tabButton instanceof HTMLButtonElement)) return;
-            const active = tabButton.dataset.tabId === tabId;
-            tabButton.dataset.active = active ? "1" : "0";
-            tabButton.setAttribute("aria-selected", active ? "true" : "false");
-          });
-          tabsRoot.querySelectorAll(".md-tabs-panel").forEach((panel) => {
-            if (!(panel instanceof HTMLElement)) return;
-            const active = panel.getAttribute("aria-labelledby") === tabId;
-            panel.dataset.active = active ? "1" : "0";
-            panel.hidden = !active;
-          });
-        });
-      });
-    };
-    const initInlineIcons = async (article) => {
-      if (!enableInlineIcon) return;
-      if (!article.querySelector("iconify-icon")) return;
-      await ensureIconifyLoaded();
-    };
-
-    const renderChartJsCards = async (article) => {
-      if (!enableExtendedMarkdown || !enableChartJs) return;
-      const cards = [...article.querySelectorAll(".md-chartjs")];
-      if (!cards.length) return;
-
-      const runForCard = async (card) => {
-        if (!(card instanceof HTMLElement)) return;
-        if (card.dataset.chartjsRendered === "1") return;
-        const raw = card.dataset.chartjsConfig || "";
-        const canvas = card.querySelector("canvas");
-        if (!(canvas instanceof HTMLCanvasElement)) return;
-
-        try {
-          const Chart = await getChartJsApi();
-          const config = JSON.parse(raw);
-          if (!config?.type) throw new Error("chart type missing");
-          config.options = config.options || {};
-          if (typeof config.options.responsive === "undefined") {
-            config.options.responsive = true;
-          }
-          if (typeof config.options.maintainAspectRatio === "undefined") {
-            config.options.maintainAspectRatio = false;
-          }
-
-          const instance = new Chart(canvas, config);
-          chartJsInstances.push(instance);
-          bindChartResize();
-          card.dataset.chartjsRendered = "1";
-        } catch (error) {
-          card.dataset.chartjsRendered = "error";
-          const fallback = document.createElement("p");
-          fallback.className = "md-chartjs-error";
-          fallback.textContent = "Chart.js 配置解析失败，请检查 JSON。";
-          card.appendChild(fallback);
-          console.error(error);
-        }
-      };
-
-      if (!("IntersectionObserver" in window)) {
-        for (const card of cards) {
-          await runForCard(card);
-        }
-        return;
-      }
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            observer.unobserve(entry.target);
-            runForCard(entry.target).catch(console.error);
-          });
-        },
-        { rootMargin: "220px 0px" }
-      );
-      cards.forEach((card) => observer.observe(card));
-    };
-
-    const initArticleEnhancements = async () => {
-      if (root.dataset.encryptedLocked === "1") return;
-      if (root.dataset.antiCrawlLocked === "1") return;
-      const article = document.querySelector(".article-body");
-      if (!article) return;
-      if (article.dataset.enhanced === "1") return;
-      article.dataset.enhanced = "1";
-
-      bindTabsSwitch(article);
-      bindHiddenBlocks(article);
-      await initInlineIcons(article);
-      await renderChartJsCards(article);
-      addMathCopy(article);
-      observeAndRenderDiagrams(article);
-      syncExpressiveCodeTheme(article);
-      enhanceExpressiveCodeHeader(article);
-      enhanceCodeBlocksInBatches(article);
-    };
-    if (!window.__flyPostThemeSyncBound) {
-      window.__flyPostThemeSyncBound = true;
-      window.addEventListener("site:theme-change", () => {
-        const article = document.querySelector(".article-body");
-        if (!(article instanceof HTMLElement)) return;
-        syncExpressiveCodeTheme(article);
-      });
-      document.addEventListener("astro:page-load", () => {
-        const article = document.querySelector(".article-body");
-        if (!(article instanceof HTMLElement)) return;
-        syncExpressiveCodeTheme(article);
-      });
-    }
-
-    const VIEW_CLIENT_KEY = "fly-view-client-id";
-    const HISTORY_KEY = "fly-reading-history-v1";
-    const STATE_KEY = "fly-reading-state-v1";
-
-    const getClientId = () => {
-      let id = localStorage.getItem(VIEW_CLIENT_KEY);
-      if (!id) {
-        id = `u-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
-        localStorage.setItem(VIEW_CLIENT_KEY, id);
-      }
-      return id;
-    };
-
-    const updateViewChip = (count) => {
-      const chip = document.getElementById("post-view-count");
-      if (!chip) return;
-      chip.textContent = `阅读 ${Number(count || 0).toLocaleString("zh-CN")}`;
-    };
-
-    const syncViewStats = async () => {
-      if (!viewStatsEnabled || !viewStatsEndpoint) return;
-      const chip = document.getElementById("post-view-count");
-      if (!(chip instanceof HTMLElement)) return;
-      const slug = chip.dataset.viewSlug || location.pathname;
-      if (!slug) return;
-
-      const clientId = getClientId();
-
-      try {
-        const getResp = await fetch(`${viewStatsEndpoint}?slug=${encodeURIComponent(slug)}`, {
-          headers: { "X-Client-Id": clientId }
-        });
-        if (getResp.ok) {
-          const payload = await getResp.json();
-          updateViewChip(payload?.count || 0);
-        }
-      } catch (error) {
-        console.warn("view count get failed", error);
-      }
-
-      try {
-        const postResp = await fetch(viewStatsEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Client-Id": clientId
-          },
-          body: JSON.stringify({ slug })
-        });
-        if (postResp.ok) {
-          const payload = await postResp.json();
-          updateViewChip(payload?.count || 0);
-        }
-      } catch (error) {
-        console.warn("view count post failed", error);
-      }
-    };
-
-    const writeReadingHistory = (progress) => {
-      const entry = {
-        title: articleTitle,
-        url: location.pathname,
-        tags: articleTags,
-        updatedAt: Date.now(),
-        progress
-      };
-
-      const list = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-      const next = [entry, ...list.filter((item) => item.url !== entry.url)].slice(0, 20);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-
-      const state = JSON.parse(localStorage.getItem(STATE_KEY) || "{}");
-      state[entry.url] = { progress, updatedAt: entry.updatedAt };
-      localStorage.setItem(STATE_KEY, JSON.stringify(state));
-    };
-
-    const bindReadingState = () => {
-      let timer = 0;
-      let lastProgress = -1;
-      const write = () => {
-        const total = Math.max(document.body.scrollHeight - window.innerHeight, 1);
-        const progress = Math.max(0, Math.min(100, Math.round((window.scrollY / total) * 100)));
-        if (Math.abs(progress - lastProgress) < 1) return;
-        lastProgress = progress;
-        writeReadingHistory(progress);
-      };
-
-      window.addEventListener("scroll", () => {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          if ("requestIdleCallback" in window) {
-            window.requestIdleCallback(write, { timeout: 600 });
-          } else {
-            write();
-          }
-        }, 360);
-      }, { passive: true });
-
-      window.addEventListener("beforeunload", write);
-      write();
-    };
-
-    initArticleEnhancements().catch(console.error);
-    syncViewStats().catch(console.error);
-    bindReadingState();
+    initArticleRuntime(runtimeConfig);
   </script>
 
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -1386,6 +595,46 @@ const jsonLd = buildArticleJsonLd({
   .article-body :global(.md-tabs-panel) {
     padding: 0.9rem 0.95rem;
   }
+  .article-body :global(.md-code-group) {
+    margin: 1.15rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+  .article-body :global(.md-code-group-nav) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.48rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+  }
+  .article-body :global(.md-code-group-tab) {
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0 0.7rem;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  }
+  .article-body :global(.md-code-group-tab:hover) {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    background: color-mix(in oklab, var(--brand-soft) 60%, transparent 40%);
+  }
+  .article-body :global(.md-code-group-tab[data-active="1"]) {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 44%, var(--line) 56%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+  }
+  .article-body :global(.md-code-group-panel) {
+    padding: 0.45rem 0.75rem 0.75rem;
+  }
   .article-body :global(.md-chartjs) {
     margin: 1.25rem 0;
     border: 1px solid var(--line);
@@ -1425,6 +674,136 @@ const jsonLd = buildArticleJsonLd({
     color: color-mix(in oklab, #ef4444 82%, var(--text) 18%);
     background: color-mix(in oklab, #ef4444 10%, transparent);
     font-size: 0.85rem;
+  }
+  .article-body :global(.diagram-diagnostic-host) {
+    border: 0;
+    background: transparent;
+  }
+  .article-body :global(.diagram-diagnostic) {
+    margin: 0.9rem;
+    border-radius: 10px;
+    border: 1px solid color-mix(in oklab, #ef4444 34%, var(--line) 66%);
+    background: color-mix(in oklab, #ef4444 9%, var(--surface-1) 91%);
+    padding: 0.72rem 0.8rem;
+    display: grid;
+    gap: 0.48rem;
+  }
+  .article-body :global(.diagram-diagnostic-title) {
+    margin: 0;
+    font-size: 0.9rem;
+    color: color-mix(in oklab, #ef4444 78%, var(--text) 22%);
+  }
+  .article-body :global(.diagram-diagnostic-detail) {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+  }
+  .article-body :global(.diagram-diagnostic-hints) {
+    margin: 0;
+    padding-left: 1rem;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+  }
+  .article-body :global(.diagram-diagnostic-source) {
+    margin: 0;
+    padding: 0.6rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 85%, transparent 15%);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    overflow-x: auto;
+  }
+  .article-body :global(.code-fold-toggle) {
+    height: 24px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--line-soft) 70%, transparent 30%);
+    background: color-mix(in oklab, var(--surface-2) 84%, transparent 16%);
+    color: var(--text-soft);
+    font-size: 0.72rem;
+    padding: 0 0.55rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .article-body :global(.code-fold-toggle:hover) {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 38%, var(--line) 62%);
+    background: color-mix(in oklab, var(--brand-soft) 62%, transparent 38%);
+  }
+  .article-body :global(pre[data-foldable="1"]) {
+    position: relative;
+  }
+  .article-body :global(pre[data-foldable="1"][data-folded="1"]) {
+    max-height: calc(var(--code-fold-lines, 18) * 1.55em + 1.3rem) !important;
+    overflow: hidden !important;
+  }
+  .article-body :global(pre[data-foldable="1"][data-folded="1"]::after) {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3.2rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--code-panel) 92%, transparent 8%));
+  }
+  .article-body :global(pre[data-language*="diff"] .ec-line.diff-added),
+  .article-body :global(pre[data-language*="diff"] .code-line.diff-added) {
+    background: color-mix(in oklab, #16a34a 16%, transparent) !important;
+  }
+  .article-body :global(pre[data-language*="diff"] .ec-line.diff-removed),
+  .article-body :global(pre[data-language*="diff"] .code-line.diff-removed) {
+    background: color-mix(in oklab, #dc2626 14%, transparent) !important;
+  }
+  .article-body :global(pre[data-language*="diff"] .ec-line.diff-hunk),
+  .article-body :global(pre[data-language*="diff"] .code-line.diff-hunk) {
+    background: color-mix(in oklab, #2563eb 12%, transparent) !important;
+  }
+  .article-body :global(.has-heading-copy) {
+    position: relative;
+    padding-right: 2rem;
+  }
+  .article-body :global(.heading-copy-btn) {
+    position: absolute;
+    right: 0.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+    color: var(--text-soft);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.18s ease;
+  }
+  .article-body :global(.has-heading-copy:hover .heading-copy-btn),
+  .article-body :global(.heading-copy-btn:focus-visible) {
+    opacity: 1;
+  }
+  .post-head h1.has-title-copy {
+    position: relative;
+    padding-right: 4.2rem;
+  }
+  .post-head .title-copy-btn {
+    position: absolute;
+    right: 0;
+    top: 0.2rem;
+    height: 1.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+    color: var(--text-soft);
+    font-size: 0.74rem;
+    padding: 0 0.62rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .post-head .title-copy-btn:hover {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 38%, var(--line) 62%);
+    background: color-mix(in oklab, var(--brand-soft) 62%, transparent 38%);
   }
   .article-body :global(.mdx-video) {
     margin: 1.18rem 0;
@@ -1661,3 +1040,5 @@ const jsonLd = buildArticleJsonLd({
     color: var(--text-muted);
   }
 </style>
+
+

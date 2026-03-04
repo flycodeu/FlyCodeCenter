@@ -69,6 +69,12 @@ const siteConfig = defineSiteConfig({
       lockOnSuspicious: true,
       maxCopyActions: 8,
       timeWindowMs: 20000
+    },
+    diagnostics: {
+      enable: true
+    },
+    anchorCopy: {
+      enable: true
     }
   },
   articleMeta: articleMetaConfig,
@@ -169,7 +175,7 @@ const siteConfig = defineSiteConfig({
     themes: ["aurora-light", "aurora-dark"] as ThemeId[],
     switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
     typography: {
-      fontPresetDefault: "regular" as "regular" | "pixel",
+      fontPresetDefault: "regular",
       fontPresets: {
         regular: {
           sans: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
@@ -332,12 +338,26 @@ const siteConfig = defineSiteConfig({
       chartjs: {
         enable: true,
         bundleUrl: "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
-        defaultHeight: 320
+        defaultHeight: 320,
+        themeSync: true
       },
       tabs: {
         enable: true
       },
+      codeGroup: {
+        enable: true
+      },
       steps: {
+        enable: true
+      },
+      codeFold: {
+        enable: true,
+        defaultLines: 18
+      },
+      calloutTemplates: {
+        enable: true
+      },
+      diffEnhance: {
         enable: true
       },
       mark: {
@@ -373,7 +393,8 @@ const siteConfig = defineSiteConfig({
     },
     echarts: {
       bundleUrl: "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js",
-      defaultHeight: 360
+      defaultHeight: 360,
+      themeSync: true
     }
   },
   codeHighlight: {

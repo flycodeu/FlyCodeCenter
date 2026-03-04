@@ -1,0 +1,159 @@
+---
+title: 系统扩展开发手册（插件与语法扩展）
+createTime: '2026/03/04 14:30:00'
+code: zdocu6a2
+permalink: /article/system-extension-guide/
+summary: 面向开发者的扩展指南，覆盖 build 插件、Markdown 语法、文章 runtime、配置注入、测试回归与博客文档维护规范。
+tags:
+  - Astro
+  - architecture
+  - guide
+  - 插件
+cover: https://images.unsplash.com/photo-1516117172878-fd2c41f4a759?auto=format&fit=crop&w=1600&q=80
+---
+
+这篇文档面向二次开发者，目标是让你在不改散落逻辑的前提下，稳定扩展系统功能。
+
+原则只有一个：
+
+- 配置集中在 `src/site.config.ts`
+- 能力实现集中在 `src/plugins/*`
+
+## 1. 插件目录地图
+
+## 构建期插件
+
+- `src/plugins/build/integrations.plugin.mjs`
+- `src/plugins/build/markdown.plugin.mjs`
+- `src/plugins/build/code-highlight.plugin.mjs`
+- `src/plugins/build/index.mjs`
+- `src/plugins/core/build-pipeline.mjs`
+
+## Markdown 语法插件
+
+- `src/plugins/markdown/build/remark-include.ts`
+- `src/plugins/markdown/build/remark-normalize-code-lang.ts`
+- `src/plugins/markdown/build/remark-extended-build.ts`
+- `src/plugins/markdown/build/rehype-image-enhance.ts`
+
+## 代码高亮 provider 插件
+
+- `src/plugins/code-highlight/resolve-config.ts`
+
+## 文章页运行时插件
+
+- `src/plugins/runtime/article/index.js`
+
+## 2. 构建链路（必须先理解）
+
+主入口：
+
+- `astro.config.mjs`
+
+工作方式：
+
+1. 读取 `site.config.ts`
+2. 通过 `build-pipeline.mjs` 聚合 build plugins 输出
+3. 生成 Astro 的 `integrations` 与 `markdown` 配置
+
+这样做的好处是：新增能力只需要改插件目录，不要把逻辑塞回 `astro.config.mjs`。
+
+## 3. 如何新增 Build 插件
+
+1. 新建 `src/plugins/build/xxx.plugin.mjs`
+2. 导出标准结构
+3. 在 `src/plugins/build/index.mjs` 注册
+
+模板：
+
+```js
+export const xxxBuildPlugin = {
+  id: "xxx",
+  setup(siteConfig) {
+    return {
+      integrations: [],
+      remarkPlugins: [],
+      rehypePlugins: [],
+      markdown: {}
+    };
+  }
+};
+```
+
+## 4. 如何新增 Markdown 语法
+
+## 解析层
+
+在 `src/plugins/markdown/build/remark-extended-build.ts` 增加 AST 转换规则。
+
+## 装配层
+
+在 `src/plugins/build/markdown.plugin.mjs` 挂载对应 remark/rehype 插件。
+
+## 样式层
+
+在 `src/styles/global.css` 增加对应样式。
+
+## 运行时层（如需要）
+
+如果语法有交互或动态渲染，再在 `src/plugins/runtime/article/index.js` 添加行为。
+
+## 5. 如何新增文章页运行时能力
+
+入口文件：
+
+- `src/plugins/runtime/article/index.js`
+
+建议步骤：
+
+1. 在 `initArticleRuntime(config)` 中增加配置读取
+2. 写独立函数处理具体行为（避免主函数继续膨胀）
+3. 在 `initArticleEnhancements()` 中统一调度
+4. 给新增 DOM 结构补齐 class，并在 `global.css` 中加样式
+
+## 6. 配置项如何注入 runtime（标准做法）
+
+不要再使用 `define:vars` 内联 import 模式。  
+推荐方式是：
+
+1. 在 `PostLayout.astro` frontmatter 组装 `articleRuntimeConfig`
+2. 用 `application/json` 脚本输出配置
+3. 用打包后的 `type="module"` 脚本导入 runtime 并读取 JSON 初始化
+
+这样可避免 `/plugins/runtime/article/index.js` 直链 404 问题。
+
+## 7. 新增能力时的决策顺序
+
+1. 是否只影响构建期？是则优先改 `src/plugins/build/*`
+2. 是否属于 Markdown 语法？优先改 `src/plugins/markdown/build/*`
+3. 是否属于文章页交互？改 `src/plugins/runtime/article/index.js`
+4. 是否需要用户配置？加到 `src/site.config.ts`
+5. 是否需要文档？同步更新使用手册与扩展手册
+
+## 8. 回归测试清单
+
+每次改动至少执行：
+
+1. `npm run lint:frontmatter`
+2. `npm run build`
+3. 抽查 1 篇文章页面：
+   - 代码块复制
+   - tabs/steps
+   - hidden/admonition
+   - mermaid/chartjs（若开启）
+4. 检查浏览器控制台无 runtime 报错
+5. 检查网络面板无 `/plugins/runtime/article/index.js` 404
+
+## 9. 博客文档维护规范
+
+你现在有两篇总文档（都在博客中）：
+
+1. 使用手册：`/article/system-user-guide/`
+2. 扩展手册：`/article/system-extension-guide/`
+
+后续新增任何功能时，至少同步更新这两篇中的一篇：
+
+- 用户可感知能力变化，更新使用手册
+- 插件结构或开发流程变化，更新扩展手册
+
+这样可以保证“功能实现”和“使用说明”始终一致。
