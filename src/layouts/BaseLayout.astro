@@ -22,7 +22,18 @@ const {
 } = Astro.props;
 const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
-const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarvis");
+const normalizePath = (value: string) => {
+  const raw = String(value || "").trim() || "/";
+  if (raw === "/") return "/";
+  return raw.replace(/\/+$/, "") || "/";
+};
+const orbConfig = (siteConfig.jarvis?.floatingOrb as { excludeRoutes?: string[] } | undefined) ?? {};
+const defaultOrbExcluded = siteConfig.jarvis?.route ?? "/jarvis";
+const orbExcludeRoutes = (Array.isArray(orbConfig.excludeRoutes) && orbConfig.excludeRoutes.length
+  ? orbConfig.excludeRoutes
+  : [defaultOrbExcluded]
+).map(normalizePath);
+const showJarvisOrb = !orbExcludeRoutes.includes(normalizePath(Astro.url.pathname));
 const footerConfig = siteConfig.theme.footer as {
   message: string;
   copyright: string;
@@ -74,6 +85,8 @@ const backgroundImageConfig = (siteConfig.theme as {
     enable?: boolean;
     url?: string;
     fallbackUrl?: string;
+    wallpapers?: Array<{ id?: string; name?: string; url?: string; thumbnail?: string }>;
+    defaultWallpaperId?: string;
     opacity?: number;
     blur?: number;
     overlayOpacity?: number;
@@ -81,8 +94,27 @@ const backgroundImageConfig = (siteConfig.theme as {
     grayscale?: number;
   };
 }).backgroundImage;
-const backgroundImageUrl =
+const backgroundImageFallbackUrl =
   String(backgroundImageConfig?.url || "").trim() || String(backgroundImageConfig?.fallbackUrl || "").trim();
+const configuredWallpapers = Array.isArray(backgroundImageConfig?.wallpapers) ? backgroundImageConfig.wallpapers : [];
+const normalizedWallpapers = configuredWallpapers
+  .map((item, index) => {
+    const url = String(item?.url || "").trim();
+    if (!url) return null;
+    const id = String(item?.id || `wallpaper-${index + 1}`).trim() || `wallpaper-${index + 1}`;
+    return {
+      id,
+      name: String(item?.name || `壁纸 ${index + 1}`).trim() || `壁纸 ${index + 1}`,
+      url,
+      thumbnail: String(item?.thumbnail || url).trim() || url
+    };
+  })
+  .filter((item): item is { id: string; name: string; url: string; thumbnail: string } => Boolean(item));
+const defaultWallpaperId =
+  String(backgroundImageConfig?.defaultWallpaperId || "").trim() || normalizedWallpapers[0]?.id || "";
+const defaultWallpaper = normalizedWallpapers.find((item) => item.id === defaultWallpaperId) ?? normalizedWallpapers[0];
+const backgroundImageUrl = defaultWallpaper?.url || backgroundImageFallbackUrl;
+const wallpaperPayload = JSON.stringify(normalizedWallpapers);
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const globalBackgroundEnable = Boolean(backgroundImageConfig?.enable && backgroundImageUrl);
 const globalBackgroundOpacity = clamp(Number(backgroundImageConfig?.opacity ?? 0.14), 0, 1);
@@ -388,12 +420,16 @@ const layoutCssVars = [
   </head>
   <body>
     <div
+      id="site-bg-image"
       class="site-bg-image"
       data-enabled={globalBackgroundEnable ? "1" : "0"}
+      data-wallpapers={wallpaperPayload}
+      data-default-wallpaper={defaultWallpaperId}
+      data-wallpaper-storage-key="flycode-wallpaper-id"
       style={globalBackgroundVars}
       aria-hidden="true"
     >
-      {globalBackgroundEnable && <img src={backgroundImageUrl} alt="" loading="lazy" decoding="async" />}
+      {globalBackgroundEnable && <img id="site-bg-image-el" src={backgroundImageUrl} alt="" loading="eager" decoding="async" />}
     </div>
     <div class="site-bg-overlay" data-enabled={globalBackgroundEnable ? "1" : "0"} style={globalBackgroundVars} aria-hidden="true"></div>
     <div class="aurora-bg" data-style={themeBackgroundStyle} aria-hidden="true">
@@ -492,6 +528,104 @@ const layoutCssVars = [
         window.requestAnimationFrame(update);
       };
 
+      const initWallpaperSystem = () => {
+        const host = document.getElementById("site-bg-image");
+        if (!(host instanceof HTMLElement)) return;
+        if (host.dataset.enabled !== "1") return;
+
+        const image = document.getElementById("site-bg-image-el");
+        if (!(image instanceof HTMLImageElement)) return;
+
+        const storageKey = String(host.dataset.wallpaperStorageKey || "flycode-wallpaper-id");
+        let wallpapers = [];
+        try {
+          const parsed = JSON.parse(host.dataset.wallpapers || "[]");
+          wallpapers = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          wallpapers = [];
+        }
+        if (!wallpapers.length) return;
+
+        const normalized = wallpapers
+          .map((item, index) => {
+            const id = String(item?.id || `wallpaper-${index + 1}`).trim();
+            const name = String(item?.name || `壁纸 ${index + 1}`).trim();
+            const url = String(item?.url || "").trim();
+            if (!id || !url) return null;
+            return { id, name, url };
+          })
+          .filter(Boolean);
+        if (!normalized.length) return;
+
+        const getIndexById = (id) => normalized.findIndex((item) => item.id === id);
+        const fallbackId = String(host.dataset.defaultWallpaper || normalized[0].id).trim() || normalized[0].id;
+
+        const applyWallpaper = (id, persist = true, source = "base-layout") => {
+          const index = getIndexById(id);
+          const target = normalized[index >= 0 ? index : 0];
+          const nextUrl = target.url;
+          const currentUrl = String(image.dataset.activeUrl || image.getAttribute("src") || "").trim();
+          if (currentUrl !== nextUrl) {
+            image.classList.add("is-switching");
+            if (window.__flyWallpaperSwitchTimer) {
+              window.clearTimeout(window.__flyWallpaperSwitchTimer);
+            }
+            window.__flyWallpaperSwitchTimer = window.setTimeout(() => {
+              image.classList.remove("is-switching");
+            }, 320);
+          }
+          image.src = nextUrl;
+          image.dataset.activeUrl = nextUrl;
+          host.dataset.activeWallpaper = target.id;
+          document.documentElement.dataset.wallpaperId = target.id;
+          if (persist) {
+            try {
+              localStorage.setItem(storageKey, target.id);
+            } catch {}
+          }
+          window.dispatchEvent(
+            new CustomEvent("jarvis:wallpaper-updated", {
+              detail: { id: target.id, name: target.name, url: target.url, source }
+            })
+          );
+        };
+
+        const getCurrentId = () => String(host.dataset.activeWallpaper || fallbackId).trim() || fallbackId;
+        const nextWallpaper = (source = "base-layout") => {
+          const current = getCurrentId();
+          const currentIndex = getIndexById(current);
+          const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % normalized.length;
+          applyWallpaper(normalized[nextIndex].id, true, source);
+        };
+        const setWallpaper = (id, source = "base-layout") => {
+          if (!String(id || "").trim()) return;
+          applyWallpaper(String(id).trim(), true, source);
+        };
+
+        if (window.__flyWallpaperNextHandler) {
+          window.removeEventListener("jarvis:wallpaper-next", window.__flyWallpaperNextHandler);
+        }
+        if (window.__flyWallpaperSetHandler) {
+          window.removeEventListener("jarvis:wallpaper-set", window.__flyWallpaperSetHandler);
+        }
+
+        window.__flyWallpaperNextHandler = (event) => {
+          nextWallpaper(String(event?.detail?.source || "").trim() || "external");
+        };
+        window.__flyWallpaperSetHandler = (event) => {
+          setWallpaper(event?.detail?.id, String(event?.detail?.source || "").trim() || "external");
+        };
+        window.addEventListener("jarvis:wallpaper-next", window.__flyWallpaperNextHandler);
+        window.addEventListener("jarvis:wallpaper-set", window.__flyWallpaperSetHandler);
+
+        let selectedId = fallbackId;
+        try {
+          const cached = localStorage.getItem(storageKey);
+          if (cached && getIndexById(cached) >= 0) selectedId = cached;
+        } catch {}
+        applyWallpaper(selectedId, false, "init");
+      };
+
       const initLayoutOffsets = () => {
         const root = document.documentElement;
         const header = document.querySelector(".site-header");
@@ -586,6 +720,7 @@ const layoutCssVars = [
         initGlobalCodeCopy();
         initLayoutOffsets();
         initFloatingSafeArea();
+        initWallpaperSystem();
         initSiteRuntime();
       });
       if (!window.__flyLayoutOffsetBound) {
@@ -599,6 +734,7 @@ const layoutCssVars = [
       initGlobalCodeCopy();
       initLayoutOffsets();
       initFloatingSafeArea();
+      initWallpaperSystem();
       initSiteRuntime();
     </script>
   </body>
@@ -688,6 +824,12 @@ const layoutCssVars = [
       grayscale(var(--site-bg-grayscale, 0%));
     transform: scale(1.06);
     transform-origin: center;
+    transition: opacity 220ms ease, transform 320ms ease;
+  }
+
+  .site-bg-image img.is-switching {
+    opacity: 0.05;
+    transform: scale(1.1);
   }
 
   .site-bg-overlay {

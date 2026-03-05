@@ -64,10 +64,7 @@ const articleMetaConfig = {
     planned: "/covers/project-planned.svg"
   } as Record<ProjectStage, string>,
   overridesByCode: {
-    "r57x3pt2": {
-      pinned: true
-    },
-    "r6q2m9ad": {
+    "roadmap2026": {
       pinned: true
     },
     "r2a1d7kq": {

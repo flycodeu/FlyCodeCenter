@@ -2,371 +2,414 @@
 import siteConfig from "@/site.config";
 
 const enabled = siteConfig.jarvis?.enable && siteConfig.jarvis?.floatingOrb?.enable;
-const target = siteConfig.jarvis?.route ?? "/jarvis";
+const targetRoute = siteConfig.jarvis?.route ?? "/jarvis";
 const orbConfig = siteConfig.jarvis?.floatingOrb;
 const interaction = siteConfig.jarvis?.interaction;
+const eventNamespace = interaction?.eventNamespace ?? "jarvis";
+
 const label = orbConfig?.label ?? "JARVIS";
 const position = orbConfig?.position ?? "left";
 const offsetX = orbConfig?.offsetX ?? 16;
 const offsetY = orbConfig?.offsetY ?? 16;
-const eventNamespace = interaction?.eventNamespace ?? "jarvis";
 const defaultState = orbConfig?.defaultState ?? interaction?.defaultState ?? "idle";
-const clickState = orbConfig?.clickState ?? interaction?.clickState ?? "active";
-const hoverState = interaction?.hoverState ?? "active";
 const defaultText = orbConfig?.defaultText ?? "已待命";
 const activeText = orbConfig?.activeText ?? "连接中";
-const modelPresetKey = orbConfig?.modelPresetKey ?? "";
-const actionId = orbConfig?.actionId ?? "open-settings";
+
+const wallpaperConfig = ((siteConfig.theme as {
+  backgroundImage?: {
+    wallpapers?: Array<{ id?: string; name?: string; url?: string; thumbnail?: string }>;
+  };
+}).backgroundImage?.wallpapers ?? []) as Array<{ id?: string; name?: string; url?: string; thumbnail?: string }>;
+
+const wallpapers = wallpaperConfig
+  .map((item, index) => {
+    const id = String(item?.id || `wallpaper-${index + 1}`).trim();
+    const name = String(item?.name || `壁纸 ${index + 1}`).trim();
+    const url = String(item?.url || "").trim();
+    if (!id || !url) return null;
+    return {
+      id,
+      name,
+      thumbnail: String(item?.thumbnail || url).trim() || url
+    };
+  })
+  .filter((item): item is { id: string; name: string; thumbnail: string } => Boolean(item));
 ---
 
 {
   enabled && (
-    <a
-      id="jarvis-orb"
-      class={`jarvis-orb ${position === "left" ? "is-left" : "is-right"}`}
-      href={target}
-      aria-label="打开 Jarvis 控制台"
-      title="进入 Jarvis 控制台"
+    <section
+      id="jarvis-bot"
+      class={`jarvis-bot ${position === "left" ? "is-left" : "is-right"}`}
       data-event-namespace={eventNamespace}
       data-default-state={defaultState}
-      data-click-state={clickState}
-      data-hover-state={hoverState}
       data-default-text={defaultText}
       data-active-text={activeText}
-      data-model-preset={modelPresetKey}
-      data-action-id={actionId}
-      style={`--orb-offset-x:${offsetX}px;--orb-offset-y:${offsetY}px;`}
+      data-target-route={targetRoute}
+      data-expression="dot"
+      style={`--bot-offset-x:${offsetX}px;--bot-offset-y:${offsetY}px;`}
+      aria-label="Jarvis assistant"
     >
-      <span class="orb-shell" aria-hidden="true">
-        <span class="orb-ring ring-1"></span>
-        <span class="orb-ring ring-2"></span>
-        <span class="orb-pulse"></span>
-        <span class="orb-eyes">
-          <span class="orb-eye"><i></i></span>
-          <span class="orb-eye"><i></i></span>
+      <button id="jarvis-bot-trigger" class="jarvis-bot-trigger" type="button" aria-label="Jarvis actions">
+        <span class="bot-core" aria-hidden="true">
+          <span class="bot-pack"></span>
+          <span class="bot-arm bot-arm-left bot-arm-primary"><i class="bot-arm-segment"></i><i class="bot-hand"></i></span>
+          <span class="bot-arm bot-arm-right"><i class="bot-arm-segment"></i><i class="bot-hand"></i></span>
+          <span class="bot-shell">
+            <span class="bot-screen">
+              <span class="screen-grid"></span>
+              <span class="screen-scan"></span>
+              <span class="bot-eyes"><span class="eye"><i></i></span><span class="eye"><i></i></span></span>
+              <span class="screen-icon">AI</span>
+            </span>
+            <span class="bot-chest-strip"></span>
+          </span>
         </span>
-      </span>
-      <span class="orb-label">{label}</span>
-      <span class="orb-state" id="jarvis-orb-state">{defaultText}</span>
-    </a>
+      </button>
+
+      <p class="bot-label">{label}</p>
+      <p id="jarvis-bot-status" class="bot-status">{defaultText}</p>
+
+      <div id="jarvis-bot-menu" class="jarvis-bot-menu" role="menu" hidden>
+        <button type="button" class="menu-item" data-action="start-chat" role="menuitem">开始对话</button>
+        <button type="button" class="menu-item" data-action="toggle-music" role="menuitem">播放音乐（模拟）</button>
+        <button type="button" class="menu-item" data-action="wallpaper-next" role="menuitem">切换壁纸（下一张）</button>
+        <p class="menu-title">动作</p>
+        <button type="button" class="menu-item" data-action="action-wave" role="menuitem">挥手</button>
+        <button type="button" class="menu-item" data-action="action-nod" role="menuitem">点头</button>
+        <button type="button" class="menu-item" data-action="action-shake" role="menuitem">摇头</button>
+        <button type="button" class="menu-item" data-action="action-scan" role="menuitem">扫描</button>
+        <p class="menu-title">表情</p>
+        <button type="button" class="menu-item" data-action="expression-next" role="menuitem">切换下一种表情</button>
+        <button type="button" class="menu-item" data-action="expression-random" role="menuitem">随机表情</button>
+        <button type="button" class="menu-item" data-action="reset-idle" role="menuitem">恢复待机</button>
+        <p class="menu-title">壁纸列表</p>
+        {
+          wallpapers.length ? (
+            <div class="menu-wallpaper-list">
+              {wallpapers.map((wallpaper) => (
+                <button type="button" class="menu-item is-wallpaper" data-action="wallpaper-set" data-wallpaper-id={wallpaper.id} data-wallpaper-name={wallpaper.name} role="menuitem">
+                  <span class="wallpaper-thumb" style={`background-image:url('${wallpaper.thumbnail}')`}></span>
+                  <span>{wallpaper.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button type="button" class="menu-item is-disabled" disabled role="menuitem">未配置壁纸</button>
+          )
+        }
+      </div>
+    </section>
   )
 }
 
 {
   enabled && (
     <script type="module">
-      const node = document.getElementById("jarvis-orb");
-      if (!(node instanceof HTMLElement)) {
-        // no-op
-      } else {
-        const stateText = document.getElementById("jarvis-orb-state");
-        const eyes = [...node.querySelectorAll(".orb-eye i")].filter((item) => item instanceof HTMLElement);
-        const eventNamespace = node.dataset.eventNamespace || "jarvis";
-        const defaultState = node.dataset.defaultState || "idle";
-        const clickState = node.dataset.clickState || "active";
-        const hoverState = node.dataset.hoverState || "active";
-        let defaultText = node.dataset.defaultText || "已待命";
-        let activeText = node.dataset.activeText || "连接中";
-        const modelPreset = node.dataset.modelPreset || "";
-        const actionId = node.dataset.actionId || "open-settings";
-        const modelKey = "fly-jarvis-model-preset";
+      const cleanupKey = "__jarvisRobotCleanup";
+      const expressionOrder = ["dot", "arc", "cross", "heart", "wink", "sleepy", "surprised", "focus", "angry", "loading"];
+      const primaryActions = ["wave", "nod", "pulse", "shake"];
+      const actionClasses = { wave: "is-waving", nod: "is-nodding", shake: "is-shaking", pulse: "is-pulsing", scan: "is-scanning" };
+      const actionDurations = { wave: 1000, nod: 760, shake: 700, pulse: 800, scan: 980 };
 
-        const emit = (name, detail) => {
-          window.dispatchEvent(new CustomEvent(`${eventNamespace}:${name}`, { detail }));
+      const init = () => {
+        const host = document.getElementById("jarvis-bot");
+        const trigger = document.getElementById("jarvis-bot-trigger");
+        const status = document.getElementById("jarvis-bot-status");
+        const menu = document.getElementById("jarvis-bot-menu");
+        if (!(host instanceof HTMLElement) || !(trigger instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) return () => {};
+
+        const eventNs = host.dataset.eventNamespace || "jarvis";
+        const route = host.dataset.targetRoute || "/jarvis";
+        const defaultText = host.dataset.defaultText || "已待命";
+        const activeText = host.dataset.activeText || "连接中";
+        const defaultState = host.dataset.defaultState || "idle";
+        let expressionIndex = 0;
+        let actionIndex = 0;
+        let isMusicOn = false;
+        let statusTimer = 0;
+        let blinkTimer = 0;
+        let actionTimer = 0;
+        let longPressTimer = 0;
+        let menuOpen = false;
+
+        const setStatus = (text, timeout = 0) => {
+          if (!(status instanceof HTMLElement)) return;
+          status.textContent = String(text || "").trim() || defaultText;
+          if (statusTimer) window.clearTimeout(statusTimer);
+          if (timeout > 0) {
+            statusTimer = window.setTimeout(() => {
+              status.textContent = host.dataset.state === "active" ? activeText : defaultText;
+            }, timeout);
+          }
         };
 
-        const setState = (state, notify = true, source = "orb") => {
-          node.dataset.state = state;
-          node.classList.toggle("is-active", state === "active");
-          if (stateText instanceof HTMLElement) {
-            stateText.textContent = state === "active" ? activeText : defaultText;
-          }
-          if (notify) {
-            emit("state-change", { state, source });
-          }
+        const emit = (name, detail) => window.dispatchEvent(new CustomEvent(`${eventNs}:${name}`, { detail }));
+
+        const setState = (state, source = "orb") => {
+          const next = state === "active" ? "active" : "idle";
+          host.dataset.state = next;
+          host.classList.toggle("is-active", next === "active");
+          setStatus(next === "active" ? activeText : defaultText);
+          emit("state-change", { state: next, source });
         };
 
-        if (modelPreset && !localStorage.getItem(modelKey)) {
-          localStorage.setItem(modelKey, modelPreset);
-          emit("model-change", { modelId: modelPreset, source: "orb-init" });
-        }
+        const setExpression = (name) => {
+          if (!expressionOrder.includes(name)) return;
+          host.dataset.expression = name;
+          expressionIndex = expressionOrder.indexOf(name);
+        };
+        const nextExpression = () => setExpression(expressionOrder[(expressionIndex + 1) % expressionOrder.length]);
+        const randomExpression = () => setExpression(expressionOrder[Math.floor(Math.random() * expressionOrder.length)]);
 
-        setState(defaultState, true, "orb-init");
+        const blink = () => {
+          host.classList.add("is-blink");
+          window.setTimeout(() => host.classList.remove("is-blink"), 170);
+        };
+        const scheduleBlink = () => {
+          blinkTimer = window.setTimeout(() => {
+            blink();
+            scheduleBlink();
+          }, 1400 + Math.random() * 2200);
+        };
 
-        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const clearActions = () => {
+          if (actionTimer) window.clearTimeout(actionTimer);
+          Object.values(actionClasses).forEach((className) => host.classList.remove(className));
+        };
+        const runAction = (actionId) => {
+          const className = actionClasses[actionId];
+          if (!className) return;
+          clearActions();
+          host.classList.add(className);
+          actionTimer = window.setTimeout(() => host.classList.remove(className), actionDurations[actionId] ?? 760);
+          emit("action", { actionId, source: "orb" });
+        };
 
-        const track = (clientX, clientY) => {
-          const rect = node.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          const diffX = clamp((clientX - centerX) / 18, -5, 5);
-          const diffY = clamp((clientY - centerY) / 18, -5, 5);
-          const tiltX = clamp((clientY - centerY) / 64, -7, 7);
-          const tiltY = clamp((centerX - clientX) / 64, -7, 7);
-
-          node.style.setProperty("--eye-x", `${diffX}px`);
-          node.style.setProperty("--eye-y", `${diffY}px`);
-          node.style.setProperty("--tilt-x", `${tiltX}deg`);
-          node.style.setProperty("--tilt-y", `${tiltY}deg`);
-
-          eyes.forEach((eye) => {
-            eye.style.transform = `translate(${diffX}px, ${diffY}px)`;
+        const syncWallpaperActive = (id) => {
+          const targetId = String(id || "").trim();
+          menu.querySelectorAll('button[data-action="wallpaper-set"]').forEach((button) => {
+            if (!(button instanceof HTMLButtonElement)) return;
+            button.classList.toggle("is-active", button.dataset.wallpaperId === targetId);
           });
         };
 
-        const onMove = (event) => {
-          track(event.clientX, event.clientY);
+        const openMenu = (x, y) => {
+          const rect = menu.getBoundingClientRect();
+          const left = Math.max(10, Math.min(x, window.innerWidth - (rect.width || 260) - 10));
+          const top = Math.max(10, Math.min(y, window.innerHeight - (rect.height || 240) - 10));
+          menu.style.left = `${left}px`;
+          menu.style.top = `${top}px`;
+          menu.hidden = false;
+          menuOpen = true;
+        };
+        const closeMenu = () => {
+          if (!menuOpen) return;
+          menu.hidden = true;
+          menuOpen = false;
         };
 
-        const spawnRipple = (x, y) => {
-          const rect = node.getBoundingClientRect();
-          const ripple = document.createElement("span");
-          ripple.className = "orb-ripple";
-          ripple.style.left = `${x - rect.left}px`;
-          ripple.style.top = `${y - rect.top}px`;
-          node.appendChild(ripple);
-          window.setTimeout(() => ripple.remove(), 520);
+        const handlers = {
+          "start-chat": () => {
+            setStatus("正在打开对话...", 1200);
+            window.location.assign(route);
+          },
+          "toggle-music": () => {
+            isMusicOn = !isMusicOn;
+            host.classList.toggle("is-music-on", isMusicOn);
+            setExpression(isMusicOn ? "heart" : "dot");
+            setStatus(isMusicOn ? "音乐模式已开启（模拟）" : "音乐模式已关闭", 1600);
+          },
+          "wallpaper-next": () => {
+            window.dispatchEvent(new CustomEvent("jarvis:wallpaper-next", { detail: { source: "orb" } }));
+            setStatus("已切换到下一张壁纸", 1200);
+          },
+          "wallpaper-set": ({ wallpaperId, wallpaperName }) => {
+            if (!wallpaperId) return;
+            window.dispatchEvent(new CustomEvent("jarvis:wallpaper-set", { detail: { id: wallpaperId, source: "orb" } }));
+            setStatus(wallpaperName ? `已切换到壁纸：${wallpaperName}` : "已切换壁纸", 1300);
+          },
+          "action-wave": () => { setExpression("wink"); runAction("wave"); setStatus("执行动作：挥手", 1200); },
+          "action-nod": () => { setExpression("focus"); runAction("nod"); setStatus("执行动作：点头", 1200); },
+          "action-shake": () => { setExpression("angry"); runAction("shake"); setStatus("执行动作：摇头", 1200); },
+          "action-scan": () => { setExpression("loading"); runAction("scan"); setStatus("执行动作：扫描", 1200); },
+          "expression-next": () => { nextExpression(); setStatus(`表情：${host.dataset.expression || "dot"}`, 900); },
+          "expression-random": () => { randomExpression(); setStatus(`随机表情：${host.dataset.expression || "dot"}`, 900); },
+          "reset-idle": () => { clearActions(); setExpression("dot"); setState("idle", "orb"); setStatus("已恢复待机", 900); }
         };
 
-        window.addEventListener(`${eventNamespace}:state-change`, (event) => {
-          if (!(event instanceof CustomEvent)) return;
-          const state = String(event.detail?.state || "").trim();
-          if (!state || state === node.dataset.state) return;
-          setState(state, false, "external");
-        });
+        const runPrimary = () => {
+          closeMenu();
+          const action = primaryActions[actionIndex % primaryActions.length];
+          actionIndex += 1;
+          runAction(action);
+          blink();
+          nextExpression();
+          setStatus(`执行动作：${action}`, 900);
+        };
 
-        window.addEventListener(`${eventNamespace}:persona-change`, (event) => {
-          if (!(event instanceof CustomEvent)) return;
-          const nextDefault = String(event.detail?.defaultText || "").trim();
-          const nextActive = String(event.detail?.activeText || "").trim();
-          if (nextDefault) defaultText = nextDefault;
-          if (nextActive) activeText = nextActive;
-          const currentState = node.dataset.state || defaultState;
-          setState(currentState, false, "external");
-        });
+        const clearLongPress = () => {
+          if (!longPressTimer) return;
+          window.clearTimeout(longPressTimer);
+          longPressTimer = 0;
+        };
 
-        let speakTimer = 0;
-        window.addEventListener(`${eventNamespace}:speak`, (event) => {
+        const onMenuClick = (event) => {
+          const target = event.target instanceof HTMLElement ? event.target.closest("button[data-action]") : null;
+          if (!(target instanceof HTMLButtonElement)) return;
+          const action = String(target.dataset.action || "").trim();
+          const handler = handlers[action];
+          if (typeof handler === "function") handler({ wallpaperId: target.dataset.wallpaperId || "", wallpaperName: target.dataset.wallpaperName || "" });
+          closeMenu();
+        };
+        const onPrimaryPointerDown = (event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          runPrimary();
+        };
+        const onTouchLongPressStart = (event) => {
+          if (event.pointerType !== "touch") return;
+          clearLongPress();
+          longPressTimer = window.setTimeout(() => openMenu(event.clientX, event.clientY), 460);
+        };
+        const onContextMenu = (event) => {
+          event.preventDefault();
+          openMenu(event.clientX, event.clientY);
+        };
+        const onDocumentPointerDown = (event) => {
+          const target = event.target;
+          if (target instanceof Node && (host.contains(target) || menu.contains(target))) return;
+          closeMenu();
+        };
+        const onDocumentKeydown = (event) => {
+          if (event.key === "Escape") closeMenu();
+        };
+        const onSpeak = (event) => {
           if (!(event instanceof CustomEvent)) return;
           const text = String(event.detail?.text || "").trim();
-          if (!(stateText instanceof HTMLElement) || !text) return;
-          window.clearTimeout(speakTimer);
-          stateText.textContent = text;
-          node.classList.add("is-active");
-          speakTimer = window.setTimeout(() => {
-            node.classList.toggle("is-active", (node.dataset.state || defaultState) === "active");
-            stateText.textContent = (node.dataset.state || defaultState) === "active" ? activeText : defaultText;
-          }, 2200);
-        });
+          if (text) setStatus(text, 2100);
+        };
+        const onWallpaperUpdated = (event) => {
+          if (!(event instanceof CustomEvent)) return;
+          const id = String(event.detail?.id || "").trim();
+          const name = String(event.detail?.name || "").trim();
+          syncWallpaperActive(id);
+          if (name) setStatus(`壁纸已切换：${name}`, 1400);
+        };
 
-        node.addEventListener("pointermove", onMove, { passive: true });
-        window.addEventListener("pointermove", onMove, { passive: true });
+        trigger.addEventListener("pointerdown", onPrimaryPointerDown);
+        trigger.addEventListener("pointerdown", onTouchLongPressStart);
+        trigger.addEventListener("pointerup", clearLongPress);
+        trigger.addEventListener("pointercancel", clearLongPress);
+        trigger.addEventListener("pointermove", clearLongPress);
+        host.addEventListener("contextmenu", onContextMenu);
+        menu.addEventListener("click", onMenuClick);
+        document.addEventListener("pointerdown", onDocumentPointerDown, true);
+        document.addEventListener("keydown", onDocumentKeydown);
+        window.addEventListener(`${eventNs}:speak`, onSpeak);
+        window.addEventListener("jarvis:wallpaper-updated", onWallpaperUpdated);
 
-        node.addEventListener("pointerenter", () => {
-          setState(hoverState, true, "orb-hover");
-        });
+        syncWallpaperActive(document.documentElement.dataset.wallpaperId || "");
+        setState(defaultState, "orb-init");
+        scheduleBlink();
 
-        node.addEventListener("pointerdown", (event) => {
-          setState(clickState, true, "orb-click");
-          emit("action", { actionId, source: "orb" });
-          spawnRipple(event.clientX, event.clientY);
-        });
+        return () => {
+          clearLongPress();
+          clearActions();
+          if (statusTimer) window.clearTimeout(statusTimer);
+          if (blinkTimer) window.clearTimeout(blinkTimer);
+          trigger.removeEventListener("pointerdown", onPrimaryPointerDown);
+          trigger.removeEventListener("pointerdown", onTouchLongPressStart);
+          trigger.removeEventListener("pointerup", clearLongPress);
+          trigger.removeEventListener("pointercancel", clearLongPress);
+          trigger.removeEventListener("pointermove", clearLongPress);
+          host.removeEventListener("contextmenu", onContextMenu);
+          document.removeEventListener("pointerdown", onDocumentPointerDown, true);
+          document.removeEventListener("keydown", onDocumentKeydown);
+          window.removeEventListener(`${eventNs}:speak`, onSpeak);
+          window.removeEventListener("jarvis:wallpaper-updated", onWallpaperUpdated);
+          menu.removeEventListener("click", onMenuClick);
+        };
+      };
 
-        node.addEventListener("pointerleave", () => {
-          setState(defaultState, true, "orb-leave");
-        });
-      }
+      const boot = () => {
+        if (typeof window[cleanupKey] === "function") window[cleanupKey]();
+        window[cleanupKey] = init();
+      };
+      document.addEventListener("astro:before-swap", () => {
+        if (typeof window[cleanupKey] === "function") {
+          window[cleanupKey]();
+          window[cleanupKey] = null;
+        }
+      });
+      document.addEventListener("astro:page-load", boot);
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+      else boot();
     </script>
   )
 }
 
 <style>
-  .jarvis-orb {
-    --eye-x: 0px;
-    --eye-y: 0px;
-    --tilt-x: 0deg;
-    --tilt-y: 0deg;
-    position: fixed;
-    bottom: calc(var(--orb-offset-y) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
-    width: 74px;
-    height: 74px;
-    z-index: 79;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    color: var(--text);
-    text-decoration: none;
-    transform-style: preserve-3d;
-    transform: perspective(220px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-    transition: transform 120ms ease, filter 180ms ease;
-    isolation: isolate;
-  }
-
-  .jarvis-orb.is-left {
-    left: var(--orb-offset-x);
-  }
-
-  .jarvis-orb.is-right {
-    right: var(--orb-offset-x);
-  }
-
-  .jarvis-orb:hover {
-    filter: saturate(1.08);
-  }
-
-  .orb-shell {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    position: relative;
-    border: 1px solid color-mix(in oklab, var(--brand) 48%, var(--line) 52%);
-    background:
-      radial-gradient(circle at 30% 24%, color-mix(in oklab, #fff 70%, transparent 30%), transparent 38%),
-      radial-gradient(circle at 65% 74%, color-mix(in oklab, var(--accent) 30%, transparent 70%), transparent 54%),
-      linear-gradient(160deg, color-mix(in oklab, var(--brand-soft) 72%, transparent 28%), color-mix(in oklab, var(--bg-elev) 84%, transparent 16%));
-    backdrop-filter: blur(9px);
-    box-shadow:
-      0 14px 30px -16px color-mix(in oklab, var(--brand) 50%, transparent 50%),
-      inset 0 1px 0 color-mix(in oklab, #fff 26%, transparent 74%);
-    overflow: hidden;
-  }
-
-  .orb-ring {
-    position: absolute;
-    inset: 8px;
-    border-radius: 50%;
-    border: 1px solid color-mix(in oklab, var(--brand) 42%, transparent 58%);
-    animation: orb-spin 10s linear infinite;
-    opacity: 0.84;
-  }
-
-  .orb-ring.ring-2 {
-    inset: 16px;
-    animation-duration: 6.8s;
-    animation-direction: reverse;
-    opacity: 0.62;
-  }
-
-  .orb-pulse {
-    position: absolute;
-    inset: 16px;
-    border-radius: 50%;
-    background: radial-gradient(circle, color-mix(in oklab, var(--brand) 40%, transparent 60%), transparent 74%);
-    animation: orb-pulse 2.2s ease-out infinite;
-  }
-
-  .orb-eyes {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-  }
-
-  .orb-eye {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 1px solid color-mix(in oklab, var(--brand) 56%, var(--line) 44%);
-    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
-    display: grid;
-    place-items: center;
-  }
-
-  .orb-eye i {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--brand);
-    transition: transform 100ms linear;
-  }
-
-  .orb-label,
-  .orb-state {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
-    pointer-events: none;
-  }
-
-  .orb-label {
-    bottom: -1.35rem;
-    font-size: 0.62rem;
-    letter-spacing: 0.16em;
-    font-weight: 700;
-    color: color-mix(in oklab, var(--text-soft) 74%, var(--brand) 26%);
-  }
-
-  .orb-state {
-    bottom: -2.2rem;
-    font-size: 0.56rem;
-    letter-spacing: 0.02em;
-    color: var(--text-muted);
-  }
-
-  .jarvis-orb.is-active .orb-state {
-    color: var(--brand);
-  }
-
-  .orb-ripple {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--brand) 66%, transparent 34%);
-    transform: translate(-50%, -50%);
-    animation: orb-ripple 0.52s ease-out forwards;
-    pointer-events: none;
-  }
-
-  @keyframes orb-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes orb-pulse {
-    0% {
-      transform: scale(0.84);
-      opacity: 0.86;
-    }
-    100% {
-      transform: scale(1.16);
-      opacity: 0;
-    }
-  }
-
-  @keyframes orb-ripple {
-    0% {
-      width: 8px;
-      height: 8px;
-      opacity: 0.84;
-    }
-    100% {
-      width: 64px;
-      height: 64px;
-      opacity: 0;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .jarvis-orb {
-      width: 64px;
-      height: 64px;
-    }
-
-    .orb-label {
-      font-size: 0.56rem;
-      bottom: -1.1rem;
-    }
-
-    .orb-state {
-      bottom: -1.85rem;
-    }
-  }
+  .jarvis-bot { position: fixed; bottom: calc(var(--bot-offset-y) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px)); z-index: 81; width: 114px; display: grid; justify-items: center; gap: 0.3rem; }
+  .jarvis-bot.is-left { left: var(--bot-offset-x); }
+  .jarvis-bot.is-right { right: var(--bot-offset-x); }
+  .jarvis-bot-trigger { border: 0; background: transparent; cursor: pointer; padding: 0; width: 100%; display: grid; justify-items: center; }
+  .bot-core { position: relative; width: 90px; height: 108px; filter: drop-shadow(0 14px 20px color-mix(in oklab, var(--brand) 35%, transparent 65%)); }
+  .bot-shell { position: absolute; inset: 10px 10px 0; z-index: 2; border-radius: 24px; border: 2px solid color-mix(in oklab, var(--line) 64%, var(--brand) 36%); background: linear-gradient(165deg, color-mix(in oklab, var(--surface-1) 92%, transparent 8%), color-mix(in oklab, var(--surface-2) 82%, transparent 18%)); }
+  .bot-pack { position: absolute; left: 50%; top: 22px; z-index: 0; width: 30px; height: 58px; border-radius: 14px; border: 2px solid color-mix(in oklab, var(--line) 74%, var(--brand) 26%); transform: translateX(-50%); }
+  .bot-pack::before { content: ""; position: absolute; left: 50%; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: color-mix(in oklab, #22d3ee 75%, #fff 25%); transform: translateX(-50%); box-shadow: 0 0 8px color-mix(in oklab, #22d3ee 52%, transparent 48%); }
+  .bot-arm { position: absolute; top: 46px; z-index: 4; width: 32px; height: 12px; }
+  .bot-arm-left { left: -18px; transform-origin: 32px 6px; transform: rotate(-32deg); }
+  .bot-arm-right { right: -18px; transform-origin: 0 6px; transform: rotate(32deg); }
+  .bot-arm-segment { position: absolute; top: 4px; width: 21px; height: 4px; border-radius: 999px; background: color-mix(in oklab, var(--line) 36%, var(--brand) 64%); }
+  .bot-arm-left .bot-arm-segment { left: 4px; } .bot-arm-right .bot-arm-segment { right: 4px; }
+  .bot-hand { position: absolute; top: 1px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid color-mix(in oklab, var(--line) 62%, var(--brand) 38%); background: color-mix(in oklab, var(--surface-1) 88%, var(--brand-soft) 12%); }
+  .bot-arm-left .bot-hand { left: -5px; } .bot-arm-right .bot-hand { right: -5px; }
+  .bot-screen { position: absolute; left: 50%; top: 10px; width: 62px; height: 42px; transform: translateX(-50%); border-radius: 11px; overflow: hidden; border: 1px solid color-mix(in oklab, var(--brand) 46%, var(--line) 54%); background: linear-gradient(180deg, color-mix(in oklab, #02232a 92%, transparent 8%), color-mix(in oklab, #011116 94%, transparent 6%)); }
+  .screen-grid { position: absolute; inset: 0; background: linear-gradient(to right, color-mix(in oklab, #22d3ee 12%, transparent 88%) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, #22d3ee 12%, transparent 88%) 1px, transparent 1px); background-size: 8px 8px; opacity: 0.42; }
+  .screen-scan { position: absolute; left: -60%; top: 0; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, color-mix(in oklab, #67e8f9 35%, transparent 65%), transparent); opacity: 0; }
+  .bot-eyes { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; z-index: 1; }
+  .eye i { display: block; width: 11px; height: 8px; border-radius: 9px; background: #67e8f9; box-shadow: 0 0 7px color-mix(in oklab, #22d3ee 64%, transparent 36%); transition: all 180ms ease; }
+  .eye i::before, .eye i::after { content: none; }
+  .screen-icon { position: absolute; right: 6px; bottom: 4px; font-size: 0.5rem; letter-spacing: 0.1em; color: color-mix(in oklab, #67e8f9 70%, #fff 30%); opacity: 0.74; font-family: var(--font-tech); }
+  .bot-chest-strip { position: absolute; left: 50%; bottom: 13px; width: 36px; height: 6px; transform: translateX(-50%); border-radius: 999px; background: linear-gradient(90deg, color-mix(in oklab, #67e8f9 82%, #fff 18%), color-mix(in oklab, var(--brand) 72%, #fff 28%)); animation: bot-breathe 2.5s ease-in-out infinite; }
+  .jarvis-bot[data-expression="dot"] .eye i { width: 10px; height: 10px; border-radius: 50%; }
+  .jarvis-bot[data-expression="arc"] .eye i { width: 12px; height: 7px; background: transparent; border: 2px solid #67e8f9; border-top: 0; border-radius: 0 0 9px 9px; box-shadow: none; }
+  .jarvis-bot[data-expression="cross"] .eye i, .jarvis-bot[data-expression="heart"] .eye i, .jarvis-bot[data-expression="surprised"] .eye i { width: 12px; height: 12px; border-radius: 50%; }
+  .jarvis-bot[data-expression="cross"] .eye i { background: transparent; border: 2px solid #67e8f9; box-shadow: none; }
+  .jarvis-bot[data-expression="heart"] .eye i { background: linear-gradient(180deg, #fb7185, #f43f5e); border-radius: 3px; transform: rotate(45deg); }
+  .jarvis-bot[data-expression="wink"] .eye:first-child i, .jarvis-bot[data-expression="sleepy"] .eye i { width: 12px; height: 2px; border-radius: 999px; }
+  .jarvis-bot[data-expression="focus"] .eye i, .jarvis-bot[data-expression="loading"] .eye i { width: 12px; height: 3px; border-radius: 999px; }
+  .jarvis-bot[data-expression="loading"] .eye i { animation: bot-loading-eye 1s linear infinite; }
+  .jarvis-bot[data-expression="angry"] .eye i { width: 12px; height: 3px; border-radius: 3px; }
+  .jarvis-bot[data-expression="angry"] .eye:first-child i { transform: rotate(-18deg); }
+  .jarvis-bot[data-expression="angry"] .eye:last-child i { transform: rotate(18deg); }
+  .jarvis-bot.is-blink .eye i { transform: scaleY(0.22); }
+  .jarvis-bot.is-waving .bot-arm-primary { animation: bot-wave 1s ease; }
+  .jarvis-bot.is-nodding .bot-core { animation: bot-nod 760ms ease; }
+  .jarvis-bot.is-shaking .bot-core { animation: bot-shake 700ms ease; }
+  .jarvis-bot.is-pulsing .bot-core { animation: bot-pulse 800ms ease; }
+  .jarvis-bot.is-scanning .screen-scan { opacity: 1; animation: bot-scan 980ms ease; }
+  .jarvis-bot.is-music-on .bot-core { animation: bot-bob 1.2s ease-in-out infinite; }
+  .bot-label, .bot-status { margin: 0; pointer-events: none; text-align: center; white-space: nowrap; }
+  .bot-label { font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in oklab, var(--text-soft) 72%, var(--brand) 28%); font-weight: 700; }
+  .bot-status { font-size: 0.58rem; color: var(--text-muted); letter-spacing: 0.02em; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; }
+  .jarvis-bot.is-active .bot-status { color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%); }
+  .jarvis-bot-menu { position: fixed; width: min(290px, calc(100vw - 20px)); max-height: min(68vh, 460px); overflow: auto; border-radius: 14px; border: 1px solid color-mix(in oklab, var(--line) 56%, var(--brand) 44%); background: linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 96%, transparent 4%), color-mix(in oklab, var(--bg-elev) 96%, transparent 4%)); backdrop-filter: blur(12px); padding: 0.5rem; z-index: 93; }
+  .menu-title { margin: 0.38rem 0.22rem 0.18rem; font-size: 0.62rem; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; }
+  .menu-wallpaper-list { display: grid; gap: 0.18rem; }
+  .menu-item { width: 100%; border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%); background: color-mix(in oklab, var(--bg) 90%, transparent 10%); color: var(--text); border-radius: 10px; padding: 0.45rem 0.52rem; display: flex; align-items: center; gap: 0.55rem; cursor: pointer; font-size: 0.82rem; text-align: left; }
+  .menu-item:hover { border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%); background: color-mix(in oklab, var(--brand-soft) 68%, transparent 32%); }
+  .menu-item.is-disabled { opacity: 0.5; cursor: not-allowed; }
+  .menu-item.is-wallpaper.is-active { border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%); background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%); color: var(--brand); }
+  .wallpaper-thumb { width: 34px; height: 20px; border-radius: 6px; background-size: cover; background-position: center; border: 1px solid color-mix(in oklab, #fff 26%, transparent 74%); flex: 0 0 auto; }
+  @keyframes bot-wave { 0% { transform: rotate(-32deg); } 20% { transform: rotate(-6deg); } 40% { transform: rotate(-50deg); } 60% { transform: rotate(14deg); } 80% { transform: rotate(-36deg); } 100% { transform: rotate(-32deg); } }
+  @keyframes bot-nod { 0% { transform: translateY(0); } 40% { transform: translateY(2px); } 100% { transform: translateY(0); } }
+  @keyframes bot-shake { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
+  @keyframes bot-pulse { 0% { transform: scale(1); } 45% { transform: scale(1.04); } 100% { transform: scale(1); } }
+  @keyframes bot-scan { 0% { transform: translateX(0%); } 100% { transform: translateX(320%); } }
+  @keyframes bot-loading-eye { 0% { opacity: 0.35; transform: scaleX(0.7); } 50% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0.35; transform: scaleX(0.7); } }
+  @keyframes bot-breathe { 0% { opacity: 0.42; } 50% { opacity: 0.92; } 100% { opacity: 0.42; } }
+  @keyframes bot-bob { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+  @media (max-width: 960px) { .jarvis-bot { width: 102px; } .bot-core { width: 82px; height: 98px; } }
 </style>

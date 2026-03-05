@@ -429,10 +429,18 @@ const siteConfig = defineSiteConfig({
       ]
     },
     backgroundImage: {
-      enable: false,
-      url: "",
+      enable: true,
+      url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
       fallbackUrl:
         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
+      wallpapers: [
+        {
+          id: "default-01",
+          name: "默认背景",
+          url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80"
+        }
+      ],
+      defaultWallpaperId: "default-01",
       opacity: 0.14,
       blur: 14,
       overlayOpacity: 0.58,
@@ -849,7 +857,8 @@ const siteConfig = defineSiteConfig({
       defaultText: "已待命",
       activeText: "连接中",
       modelPresetKey: "gpt-4o-mini",
-      actionId: "open-settings"
+      actionId: "open-settings",
+      excludeRoutes: ["/jarvis"]
     },
     personaPresets: [
       {

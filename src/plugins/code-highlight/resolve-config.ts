@@ -49,6 +49,16 @@ const resolveThemePair = (siteConfig: any) => {
 };
 
 export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightConfig => {
+  const isFastDev = process.env.FLY_FAST_DEV_ACTIVE === "1";
+  if (isFastDev) {
+    return {
+      provider: "prism",
+      integrations: [],
+      syntaxHighlight: "prism",
+      extraRehypePlugins: []
+    };
+  }
+
   const provider = readProvider(siteConfig);
   const { light, dark } = resolveThemePair(siteConfig);
   const langs = Array.isArray(siteConfig?.codeHighlight?.languages) ? siteConfig.codeHighlight.languages : [];

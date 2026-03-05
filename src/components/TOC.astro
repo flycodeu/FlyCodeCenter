@@ -113,6 +113,26 @@ const list: TocItem[] = filtered.map((item) => {
         const panel = document.getElementById("toc-mobile-panel");
         const desktopList = document.querySelector(".toc-list-desktop");
         const body = document.body;
+        const getHeaderOffset = () => {
+          const root = document.documentElement;
+          const cssValue = Number.parseFloat(getComputedStyle(root).getPropertyValue("--layout-header-height"));
+          if (Number.isFinite(cssValue) && cssValue > 0) return cssValue;
+          const header = document.querySelector(".site-header");
+          return header instanceof HTMLElement ? header.offsetHeight : 68;
+        };
+
+        const scrollToHeading = (id) => {
+          const heading = document.getElementById(id);
+          if (!(heading instanceof HTMLElement)) return;
+          const offset = getHeaderOffset() + 16;
+          const top = Math.max(0, window.scrollY + heading.getBoundingClientRect().top - offset);
+          window.scrollTo({ top, behavior: "smooth" });
+          if (history.replaceState) {
+            history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+          } else {
+            window.location.hash = id;
+          }
+        };
 
         const openMobileToc = () => {
           if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
@@ -165,7 +185,7 @@ const list: TocItem[] = filtered.map((item) => {
 
         let ticking = false;
         const updateActive = () => {
-          const edge = 140;
+          const edge = getHeaderOffset() + 24;
           let current = sections[0];
           for (const section of sections) {
             const top = section.heading.getBoundingClientRect().top;
@@ -190,8 +210,25 @@ const list: TocItem[] = filtered.map((item) => {
         window.addEventListener("hashchange", queueUpdate);
         window.addEventListener("site:decrypted", queueUpdate);
 
+        const mobileAnchorHandlers = [];
         document.querySelectorAll(".toc-list-mobile a").forEach((anchor) => {
-          anchor.addEventListener("click", closeMobileToc);
+          if (!(anchor instanceof HTMLAnchorElement)) return;
+          const onMobileAnchorClick = (event) => {
+            const hash = String(anchor.getAttribute("href") || "");
+            if (!hash.startsWith("#")) {
+              closeMobileToc();
+              return;
+            }
+            event.preventDefault();
+            const id = decodeURIComponent(hash.slice(1));
+            closeMobileToc();
+            window.setTimeout(() => {
+              scrollToHeading(id);
+              queueUpdate();
+            }, 190);
+          };
+          anchor.addEventListener("click", onMobileAnchorClick);
+          mobileAnchorHandlers.push([anchor, onMobileAnchorClick]);
         });
 
         queueUpdate();
@@ -205,6 +242,9 @@ const list: TocItem[] = filtered.map((item) => {
           window.removeEventListener("resize", queueUpdate);
           window.removeEventListener("hashchange", queueUpdate);
           window.removeEventListener("site:decrypted", queueUpdate);
+          mobileAnchorHandlers.forEach(([anchor, handler]) => {
+            anchor.removeEventListener("click", handler);
+          });
         };
       };
 
@@ -310,7 +350,10 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-overlay {
     position: fixed;
-    inset: 0;
+    top: var(--layout-header-height, 68px);
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    left: 0;
     background: rgba(8, 10, 18, 0.45);
     backdrop-filter: blur(2px);
     z-index: 90;
@@ -324,14 +367,15 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-panel {
     position: fixed;
-    top: 0;
+    top: calc(var(--layout-header-height, 68px) + 0.5rem);
     right: 0;
     width: min(88vw, 360px);
-    height: 100vh;
+    bottom: calc(env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px) + 0.5rem);
+    height: auto;
     z-index: 91;
     transform: translateX(100%);
     transition: transform 180ms ease;
-    padding: 0.65rem 0.65rem 0.75rem;
+    padding: 0 0.65rem 0;
   }
 
   .toc-mobile-panel.open {
