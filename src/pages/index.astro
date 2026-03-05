@@ -23,6 +23,12 @@ const [blogs, tutorials, allEntries, homeFeedEntries] = await Promise.all([
   fetchHomeFeedEntries()
 ]);
 const hero = siteConfig.home.hero;
+const heroImageConfig = (hero.image ?? {}) as { enable?: boolean; src?: string; fallbackSrc?: string; alt?: string };
+const heroImageSrc =
+  String(heroImageConfig.src || "").trim() ||
+  String(heroImageConfig.fallbackSrc || "").trim() ||
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80";
+const heroImageAlt = String(heroImageConfig.alt || "Hero Image").trim() || "Hero Image";
 const featuredConfig = siteConfig.home.featured;
 const tagCount = makeTagItems(allEntries).length;
 const homeFeedConfig = (siteConfig.home as { feed?: { mode?: "page" | "infinite"; pageSize?: number; mixCollections?: readonly ("blog" | "tutorial")[] } }).feed ?? {};
@@ -68,9 +74,9 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
       hero.enable && (
         <section class="hero surface fade-up">
           {siteConfig.watermark.enable && siteConfig.watermark.scope === "hero" && <Watermark scope="hero" />}
-          {hero.image?.enable && (
+          {heroImageConfig.enable && heroImageSrc && (
             <div class="hero-bg">
-              <img src={hero.image.src} alt={hero.image.alt} loading="lazy" />
+              <img src={heroImageSrc} alt={heroImageAlt} loading="lazy" />
             </div>
           )}
           <div class="hero-content">

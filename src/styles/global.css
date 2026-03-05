@@ -283,6 +283,8 @@ body {
 
 html {
   scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: color-mix(in oklab, var(--line) 80%, transparent 20%) transparent;
 }
 
 @supports not (scrollbar-gutter: stable) {
@@ -1352,8 +1354,8 @@ main pre.has-global-copy {
 
 /* Custom Mac-style Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
@@ -1362,8 +1364,8 @@ main pre.has-global-copy {
 
 ::-webkit-scrollbar-thumb {
   background-color: color-mix(in oklab, var(--line) 80%, transparent 20%);
-  border-radius: 10px;
-  border: 2px solid var(--bg);
+  border-radius: 12px;
+  border: 3px solid var(--bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {

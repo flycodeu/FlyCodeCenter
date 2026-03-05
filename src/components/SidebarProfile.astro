@@ -27,7 +27,11 @@ const extractEmail = (value: string) => {
 
 const profileEmailEntry = profile.socials.find((item) => String(item.icon || "").toLowerCase() === "email");
 const contactEmail = extractEmail(themeSocial.email ?? "") || extractEmail(profileEmailEntry?.link ?? "");
-const visibleSocials = profile.socials.filter((item) => String(item.icon || "").toLowerCase() !== "email");
+const hasEmailSocial = profile.socials.some((item) => String(item.icon || "").toLowerCase() === "email");
+const mergedSocials = [
+  ...profile.socials,
+  ...(!hasEmailSocial && contactEmail ? [{ name: "Email", icon: "email", link: `mailto:${contactEmail}` }] : [])
+];
 ---
 
 <section class="surface profile-card">
@@ -37,25 +41,73 @@ const visibleSocials = profile.socials.filter((item) => String(item.icon || "").
   <h3 class="site-name">{siteConfig.site.title}</h3>
   <h4 class="name">{profile.name}</h4>
   <p class="desc">{profile.desc}</p>
-  {contactEmail && <p class="contact-email">Email: {contactEmail}</p>}
   {profile.quote && <blockquote class="quote">{profile.quote}</blockquote>}
-  
+
   <hr class="divider" />
-  
+
   <div class="social-links">
-    {visibleSocials.map((social) => (
-      <a
-        href={social.link}
-        title={social.name}
-        target={isHttpLink(social.link) ? "_blank" : undefined}
-        rel={isHttpLink(social.link) ? "noreferrer" : undefined}
-        class="social-icon"
-      >
-        <Fragment set:html={getIcon(social.icon)} />
-      </a>
-    ))}
+    {mergedSocials.map((social) =>
+      String(social.icon || "").toLowerCase() === "email" && contactEmail ? (
+        <button
+          type="button"
+          class="social-icon social-copy"
+          title={`Email: ${contactEmail}（点击复制）`}
+          aria-label={`复制邮箱 ${contactEmail}`}
+          data-copy-text={contactEmail}
+          data-copy-label="邮箱"
+        >
+          <Fragment set:html={getIcon(social.icon)} />
+        </button>
+      ) : (
+        <a
+          href={social.link}
+          title={social.name}
+          target={isHttpLink(social.link) ? "_blank" : undefined}
+          rel={isHttpLink(social.link) ? "noreferrer" : undefined}
+          class="social-icon"
+        >
+          <Fragment set:html={getIcon(social.icon)} />
+        </a>
+      )
+    )}
   </div>
 </section>
+
+<script is:inline>
+  const initProfileSocialCopy = () => {
+    document.querySelectorAll(".social-copy[data-copy-text]").forEach((node) => {
+      if (!(node instanceof HTMLButtonElement)) return;
+      if (node.dataset.copyBound === "1") return;
+      node.dataset.copyBound = "1";
+
+      const baseTitle = node.title || "点击复制";
+      node.addEventListener("click", async () => {
+        const text = node.dataset.copyText || "";
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          node.classList.add("is-copied");
+          const label = node.dataset.copyLabel || "内容";
+          if (typeof window.__flyNotifyCopySuccess === "function") {
+            window.__flyNotifyCopySuccess(`${label}已复制`);
+          } else {
+            window.dispatchEvent(new CustomEvent("fly:copy-success", { detail: { message: `${label}已复制` } }));
+          }
+          node.title = `${label}已复制: ${text}`;
+          window.setTimeout(() => {
+            node.classList.remove("is-copied");
+            node.title = baseTitle;
+          }, 1600);
+        } catch (error) {
+          console.error("copy profile contact failed", error);
+        }
+      });
+    });
+  };
+
+  document.addEventListener("astro:page-load", initProfileSocialCopy);
+  initProfileSocialCopy();
+</script>
 
 <style>
   .profile-card {
@@ -103,19 +155,6 @@ const visibleSocials = profile.socials.filter((item) => String(item.icon || "").
     font-size: 0.875rem;
     line-height: 1.5;
   }
-  .contact-email {
-    margin: 0.5rem 0 0;
-    width: 100%;
-    text-align: left;
-    color: var(--text);
-    font-size: 0.84rem;
-    line-height: 1.45;
-    font-family: var(--font-tech);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 0.45rem 0.6rem;
-    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
-  }
   .quote {
     margin: 1rem 0 0;
     padding: 0.5rem 0.75rem;
@@ -155,9 +194,17 @@ const visibleSocials = profile.socials.filter((item) => String(item.icon || "").
     text-decoration: none;
     background: var(--bg-elev);
   }
+  .social-copy {
+    font: inherit;
+    cursor: copy;
+  }
   .social-icon:hover {
     color: var(--brand);
     border-color: var(--brand);
     box-shadow: none;
+  }
+  .social-copy.is-copied {
+    color: #10b981;
+    border-color: #10b981;
   }
 </style>

@@ -134,12 +134,20 @@
 
     const copyIcon = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
     const successIcon = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
+    const emitCopySuccessToast = (message = "复制成功") => {
+      if (typeof window.__flyNotifyCopySuccess === "function") {
+        window.__flyNotifyCopySuccess(message);
+        return;
+      }
+      window.dispatchEvent(new CustomEvent("fly:copy-success", { detail: { message } }));
+    };
 
     const copyWithFeedback = async (btn, text) => {
       try {
         await navigator.clipboard.writeText(text);
         btn.classList.add("copied");
         btn.innerHTML = successIcon;
+        emitCopySuccessToast("复制成功");
         setTimeout(() => {
           btn.classList.remove("copied");
           btn.innerHTML = copyIcon;

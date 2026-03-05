@@ -214,6 +214,11 @@ const siteConfig = defineSiteConfig({
     },
     list: {
       showPageHero: false
+    },
+    copyToast: {
+      enable: true,
+      durationMs: 1800,
+      position: "bottom-right" as "bottom-right" | "bottom-center"
     }
   },
   articlePrefix: "/article",
@@ -252,7 +257,7 @@ const siteConfig = defineSiteConfig({
       enable: true
     },
     anchorCopy: {
-      enable: true
+      enable: false
     }
   },
   articleMeta: articleMetaConfig,
@@ -344,6 +349,7 @@ const siteConfig = defineSiteConfig({
       image: {
         enable: true,
         src: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80",
+        fallbackSrc: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80",
         alt: "Hero Image"
       }
     }
@@ -421,6 +427,17 @@ const siteConfig = defineSiteConfig({
         { name: "Email", icon: "email", link: "mailto:flycode@flycode.icu" },
         { name: "Discord", icon: "discord", link: "#" }
       ]
+    },
+    backgroundImage: {
+      enable: false,
+      url: "",
+      fallbackUrl:
+        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
+      opacity: 0.14,
+      blur: 14,
+      overlayOpacity: 0.58,
+      saturate: 102,
+      grayscale: 0
     },
     toc: {
       enable: true,

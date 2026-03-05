@@ -69,6 +69,44 @@ const activeLayoutMeta = themePresetConfig?.layouts?.[activeLayoutPreset];
 const themeBackgroundStyle = String(activePackMeta?.backgroundStyle || "aurora");
 const themeSurfaceStyle = String(activePackMeta?.surfaceStyle || "grid");
 const themeCodeMap = activePackMeta?.codeThemeMap ?? ((siteConfig.theme as { codeThemeMap?: Record<string, string> }).codeThemeMap ?? {});
+const backgroundImageConfig = (siteConfig.theme as {
+  backgroundImage?: {
+    enable?: boolean;
+    url?: string;
+    fallbackUrl?: string;
+    opacity?: number;
+    blur?: number;
+    overlayOpacity?: number;
+    saturate?: number;
+    grayscale?: number;
+  };
+}).backgroundImage;
+const backgroundImageUrl =
+  String(backgroundImageConfig?.url || "").trim() || String(backgroundImageConfig?.fallbackUrl || "").trim();
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const globalBackgroundEnable = Boolean(backgroundImageConfig?.enable && backgroundImageUrl);
+const globalBackgroundOpacity = clamp(Number(backgroundImageConfig?.opacity ?? 0.14), 0, 1);
+const globalBackgroundBlur = clamp(Number(backgroundImageConfig?.blur ?? 14), 0, 40);
+const globalBackgroundOverlayOpacity = clamp(Number(backgroundImageConfig?.overlayOpacity ?? 0.58), 0, 1);
+const globalBackgroundSaturate = clamp(Number(backgroundImageConfig?.saturate ?? 102), 50, 180);
+const globalBackgroundGrayscale = clamp(Number(backgroundImageConfig?.grayscale ?? 0), 0, 100);
+const copyToastConfig = (siteConfig.ui as {
+  copyToast?: {
+    enable?: boolean;
+    durationMs?: number;
+    position?: "bottom-right" | "bottom-center";
+  };
+}).copyToast;
+const copyToastEnable = copyToastConfig?.enable ?? true;
+const copyToastDurationMs = Math.max(1000, Number(copyToastConfig?.durationMs ?? 1800));
+const copyToastPosition = copyToastConfig?.position === "bottom-center" ? "bottom-center" : "bottom-right";
+const globalBackgroundVars = [
+  `--site-bg-opacity:${globalBackgroundOpacity}`,
+  `--site-bg-blur:${globalBackgroundBlur}px`,
+  `--site-bg-overlay-opacity:${globalBackgroundOverlayOpacity}`,
+  `--site-bg-saturate:${globalBackgroundSaturate}%`,
+  `--site-bg-grayscale:${globalBackgroundGrayscale}%`
+].join(";");
 const layoutCssVars = [
   `--layout-container-width:${Number(activeLayoutMeta?.containerWidth ?? 1160)}px`,
   `--layout-main-grid-gap:${Number(activeLayoutMeta?.mainGridGap ?? 32)}px`,
@@ -349,6 +387,15 @@ const layoutCssVars = [
     </script>
   </head>
   <body>
+    <div
+      class="site-bg-image"
+      data-enabled={globalBackgroundEnable ? "1" : "0"}
+      style={globalBackgroundVars}
+      aria-hidden="true"
+    >
+      {globalBackgroundEnable && <img src={backgroundImageUrl} alt="" loading="lazy" decoding="async" />}
+    </div>
+    <div class="site-bg-overlay" data-enabled={globalBackgroundEnable ? "1" : "0"} style={globalBackgroundVars} aria-hidden="true"></div>
     <div class="aurora-bg" data-style={themeBackgroundStyle} aria-hidden="true">
       <span class="aurora-orb orb-a"></span>
       <span class="aurora-orb orb-b"></span>
@@ -376,7 +423,61 @@ const layoutCssVars = [
     </footer>
     <SearchModal />
     {showJarvisOrb && <JarvisOrb />}
+    {copyToastEnable && (
+      <div
+        id="global-copy-toast"
+        class={`global-copy-toast ${copyToastPosition}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-hidden="true"
+        data-duration-ms={String(copyToastDurationMs)}
+      ></div>
+    )}
     <script is:inline>
+      const emitCopySuccessToast = (message = "复制成功") => {
+        if (typeof window.__flyNotifyCopySuccess === "function") {
+          window.__flyNotifyCopySuccess(message);
+          return;
+        }
+        window.dispatchEvent(new CustomEvent("fly:copy-success", { detail: { message } }));
+      };
+
+      const initGlobalCopyToast = () => {
+        const host = document.getElementById("global-copy-toast");
+        const notify = (message = "复制成功") => {
+          window.dispatchEvent(new CustomEvent("fly:copy-success", { detail: { message } }));
+        };
+        window.__flyNotifyCopySuccess = notify;
+
+        if (!(host instanceof HTMLElement)) return;
+        const durationMs = Math.max(1000, Number.parseInt(host.dataset.durationMs || "1800", 10) || 1800);
+        if (window.__flyCopyToastHandler) {
+          window.removeEventListener("fly:copy-success", window.__flyCopyToastHandler);
+        }
+
+        const hide = () => {
+          host.classList.remove("is-visible");
+          host.setAttribute("aria-hidden", "true");
+        };
+
+        const show = (message) => {
+          const text = String(message || "复制成功").trim() || "复制成功";
+          host.textContent = text;
+          host.classList.add("is-visible");
+          host.setAttribute("aria-hidden", "false");
+          if (window.__flyCopyToastTimer) {
+            window.clearTimeout(window.__flyCopyToastTimer);
+          }
+          window.__flyCopyToastTimer = window.setTimeout(hide, durationMs);
+        };
+
+        window.__flyCopyToastHandler = (event) => {
+          show(event?.detail?.message);
+        };
+        window.addEventListener("fly:copy-success", window.__flyCopyToastHandler);
+      };
+
       const initFloatingSafeArea = () => {
         const root = document.documentElement;
         const update = () => {
@@ -441,6 +542,7 @@ const layoutCssVars = [
             await navigator.clipboard.writeText(text);
             button.innerHTML = success;
             button.classList.add("copied");
+            emitCopySuccessToast("代码已复制");
             window.setTimeout(() => {
               button.innerHTML = icon;
               button.classList.remove("copied");
@@ -480,6 +582,7 @@ const layoutCssVars = [
             } catch {}
           }
         }
+        initGlobalCopyToast();
         initGlobalCodeCopy();
         initLayoutOffsets();
         initFloatingSafeArea();
@@ -492,6 +595,7 @@ const layoutCssVars = [
           initFloatingSafeArea();
         });
       }
+      initGlobalCopyToast();
       initGlobalCodeCopy();
       initLayoutOffsets();
       initFloatingSafeArea();
@@ -517,7 +621,7 @@ const layoutCssVars = [
   main {
     padding: calc(var(--layout-header-height) + 1rem) 0 calc(var(--layout-footer-height) + 0.9rem);
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
   .site-footer {
     position: fixed;
@@ -562,11 +666,42 @@ const layoutCssVars = [
     margin: 0;
   }
 
+  .site-bg-image,
+  .site-bg-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .site-bg-image[data-enabled="0"],
+  .site-bg-overlay[data-enabled="0"] {
+    display: none;
+  }
+
+  .site-bg-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: var(--site-bg-opacity, 0.14);
+    filter: blur(var(--site-bg-blur, 14px)) saturate(var(--site-bg-saturate, 102%))
+      grayscale(var(--site-bg-grayscale, 0%));
+    transform: scale(1.06);
+    transform-origin: center;
+  }
+
+  .site-bg-overlay {
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--bg) 58%, transparent 42%), color-mix(in oklab, var(--bg) 86%, transparent 14%)),
+      radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--brand-soft) 20%, transparent 80%), transparent 72%);
+    opacity: var(--site-bg-overlay-opacity, 0.58);
+  }
+
   .aurora-bg {
     position: fixed;
     inset: -20vh -20vw;
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
     overflow: hidden;
     filter: blur(44px);
   }
@@ -681,7 +816,64 @@ const layoutCssVars = [
       transform: translate3d(0, 0, 0) scale(1);
     }
   }
+
+  .global-copy-toast {
+    position: fixed;
+    bottom: calc(var(--layout-footer-height) + 16px);
+    z-index: 120;
+    max-width: min(60vw, 320px);
+    padding: 0.52rem 0.78rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    color: var(--text);
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    box-shadow: 0 8px 20px color-mix(in oklab, var(--bg) 75%, transparent 25%);
+    backdrop-filter: blur(8px);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    font-family: var(--font-tech);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+  }
+
+  .global-copy-toast.bottom-right {
+    right: 18px;
+  }
+
+  .global-copy-toast.bottom-center {
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+  }
+
+  .global-copy-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .global-copy-toast.bottom-center.is-visible {
+    transform: translateX(-50%) translateY(0);
+  }
+
   @media (max-width: 760px) {
+    .global-copy-toast {
+      left: 12px;
+      right: 12px;
+      bottom: calc(var(--layout-footer-height) + 10px);
+      max-width: none;
+    }
+    .global-copy-toast.bottom-center,
+    .global-copy-toast.bottom-right {
+      left: 12px;
+      right: 12px;
+      transform: translateY(8px);
+    }
+    .global-copy-toast.bottom-center.is-visible,
+    .global-copy-toast.bottom-right.is-visible {
+      transform: translateY(0);
+    }
     .footer-inner {
       flex-direction: column;
       align-items: flex-start;
