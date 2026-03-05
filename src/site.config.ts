@@ -706,6 +706,12 @@ const siteConfig = defineSiteConfig({
       title: "项目实践",
       showFeaturedFirst: true
     },
+    about: {
+      enable: true,
+      comments: {
+        enable: true
+      }
+    },
     tutorials: {
       enable: true,
       title: "教程总览",

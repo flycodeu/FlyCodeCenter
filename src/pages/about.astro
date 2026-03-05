@@ -1,5 +1,7 @@
 ﻿---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import siteConfig from "@/site.config";
+import Comments from "@/components/Comments.astro";
 import { fetchProjectEntries } from "@/utils/query";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { getProjectEntryUrl } from "@/utils/content";
@@ -47,6 +49,9 @@ const allProjectMetas = [...projectMap.values()].map((item) => item.meta);
 const completedCount = allProjectMetas.filter((meta) => meta.projectStage === "completed").length;
 const plannedCount = allProjectMetas.filter((meta) => meta.projectStage === "planned").length;
 const topPriority = [...allProjectMetas].sort((a, b) => b.priority - a.priority)[0];
+const aboutCommentsEnabled =
+  ((siteConfig.pages as { about?: { comments?: { enable?: boolean } } }).about?.comments?.enable ?? true) &&
+  siteConfig.comment.provider !== "off";
 ---
 
 <BaseLayout title={aboutPage.entry.data.title} description={aboutPage.entry.data.description}>
@@ -132,6 +137,8 @@ const topPriority = [...allProjectMetas].sort((a, b) => b.priority - a.priority)
     <section class="surface prose narrative-panel">
       <aboutContent />
     </section>
+
+    {aboutCommentsEnabled && <Comments />}
   </section>
 </BaseLayout>
 
