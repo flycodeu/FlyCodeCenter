@@ -24,6 +24,25 @@ export async function fetchTutorialEntries(): Promise<CollectionEntry<"tutorial"
   return [...all].sort((a, b) => resolveArticleMeta(b).createTime.getTime() - resolveArticleMeta(a).createTime.getTime());
 }
 
+type TutorialsHomeVisibilityConfig = {
+  seriesMeta?: Record<string, { showOnHome?: boolean }>;
+};
+
+function canTutorialShowOnHome(entry: CollectionEntry<"tutorial">): boolean {
+  const tutorialsConfig = (siteConfig.pages.tutorials as TutorialsHomeVisibilityConfig | undefined) ?? {};
+  const seriesMeta = tutorialsConfig.seriesMeta ?? {};
+  const rawSeries = String(resolveArticleMeta(entry).series || "").trim();
+  const normalizedSeries = normalizeSeriesKey(rawSeries);
+  if (!rawSeries && !normalizedSeries) return false;
+
+  return Boolean(seriesMeta[rawSeries]?.showOnHome ?? seriesMeta[normalizedSeries]?.showOnHome);
+}
+
+export async function fetchHomeVisibleTutorialEntries(): Promise<CollectionEntry<"tutorial">[]> {
+  const all = await fetchTutorialEntries();
+  return all.filter((entry) => canTutorialShowOnHome(entry));
+}
+
 export async function fetchSitesEntries(): Promise<CollectionEntry<"sites">[]> {
   const all = await getCollection("sites", (entry) => isPublished(entry));
   return [...all].sort((a, b) => {
@@ -99,6 +118,11 @@ export async function fetchProjectEntries(): Promise<CollectionEntry<"projects">
 
 export async function fetchAllEntries(): Promise<PostEntry[]> {
   const [blog, tutorial] = await Promise.all([fetchBlogEntries(), fetchTutorialEntries()]);
+  return sortByDateDesc([...blog, ...tutorial]);
+}
+
+export async function fetchHomeFeedEntries(): Promise<PostEntry[]> {
+  const [blog, tutorial] = await Promise.all([fetchBlogEntries(), fetchHomeVisibleTutorialEntries()]);
   return sortByDateDesc([...blog, ...tutorial]);
 }
 

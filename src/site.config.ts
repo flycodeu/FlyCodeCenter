@@ -919,13 +919,23 @@ const siteConfig = defineSiteConfig({
         showDescription: true
       },
       seriesMeta: {
+        "system-guide": {
+          label: "系统运行与配置教程",
+          description: "从配置入口到部署上线，系统化掌握 FlyCodeCenter 的完整运行机制。",
+          category: "工程实践",
+          cover: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80",
+          icon: "guide",
+          order: 0,
+          showOnHome: false
+        },
         rust: {
           label: "Rust 教程",
           description: "从零开始学习 Rust 编程语言",
           category: "编程语言",
           cover: "",
           icon: "rust",
-          order: 1
+          order: 1,
+          showOnHome: false
         },
         datastruct: {
           label: "数据结构教程",
@@ -933,7 +943,8 @@ const siteConfig = defineSiteConfig({
           category: "计算机基础",
           cover: "",
           icon: "datastruct",
-          order: 2
+          order: 2,
+          showOnHome: false
         },
         godot: {
           label: "Godot 教程",
@@ -941,7 +952,8 @@ const siteConfig = defineSiteConfig({
           category: "游戏开发",
           cover: "",
           icon: "godot",
-          order: 3
+          order: 3,
+          showOnHome: false
         },
         redis: {
           label: "Redis 教程",
@@ -949,7 +961,8 @@ const siteConfig = defineSiteConfig({
           category: "中间件",
           cover: "",
           icon: "redis",
-          order: 4
+          order: 4,
+          showOnHome: false
         }
       },
       reader: {
@@ -975,6 +988,7 @@ const siteConfig = defineSiteConfig({
         }
       },
       seriesLabels: {
+        "system-guide": "系统运行与配置教程",
         rust: "Rust 教程",
         godot: "Godot 教程",
         redis: "Redis 教程",

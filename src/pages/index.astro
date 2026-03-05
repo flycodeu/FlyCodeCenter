@@ -5,12 +5,23 @@ import PostCard from "@/components/PostCard.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
 import StatsCard from "@/components/StatsCard.astro";
 import Watermark from "@/components/Watermark.astro";
-import { fetchAllEntries, fetchBlogEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
+import {
+  fetchAllEntries,
+  fetchBlogEntries,
+  fetchHomeFeedEntries,
+  fetchTutorialEntries,
+  makeTagItems
+} from "@/utils/query";
 import { getBlogEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { formatDate } from "@/utils/date";
 
-const [blogs, tutorials, allEntries] = await Promise.all([fetchBlogEntries(), fetchTutorialEntries(), fetchAllEntries()]);
+const [blogs, tutorials, allEntries, homeFeedEntries] = await Promise.all([
+  fetchBlogEntries(),
+  fetchTutorialEntries(),
+  fetchAllEntries(),
+  fetchHomeFeedEntries()
+]);
 const hero = siteConfig.home.hero;
 const featuredConfig = siteConfig.home.featured;
 const tagCount = makeTagItems(allEntries).length;
@@ -26,7 +37,7 @@ const featuredEntry =
     : undefined;
 const featuredMeta = featuredEntry ? resolveArticleMeta(featuredEntry) : undefined;
 const featuredLink = featuredEntry ? getBlogEntryUrl(featuredEntry) : "#";
-const recentEntries = allEntries.filter((entry) => {
+const recentEntries = homeFeedEntries.filter((entry) => {
   if (!feedCollections.has(entry.collection)) return false;
   if (!featuredEntry) return true;
   return !(entry.collection === "blog" && entry.id === featuredEntry.id);
