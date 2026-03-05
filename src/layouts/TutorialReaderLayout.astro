@@ -1,0 +1,464 @@
+﻿---
+import siteConfig from "@/site.config";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TOC from "@/components/TOC.astro";
+import Comments from "@/components/Comments.astro";
+import ReadingProgress from "@/components/ReadingProgress.astro";
+import EncryptGate from "@/components/EncryptGate.astro";
+import TutorialSidebar from "@/components/TutorialSidebar.astro";
+import { formatDate } from "@/utils/date";
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface TutorialSidebarItem {
+  id: string;
+  slug: string;
+  title: string;
+  order: number;
+  url: string;
+}
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface Props {
+  title: string;
+  summary?: string;
+  description?: string;
+  tags?: string[];
+  articleUrl: string;
+  seriesKey: string;
+  seriesLabel: string;
+  currentSlug: string;
+  items: TutorialSidebarItem[];
+  headings?: Heading[];
+  pubDate: Date;
+  updatedDate?: Date;
+  wordCount?: number;
+  readingMinutes?: number;
+  prev?: Neighbor;
+  next?: Neighbor;
+  encrypted?: boolean;
+  encryptedFile?: string;
+  passwordHint?: string;
+}
+
+const {
+  title,
+  summary = "",
+  description = summary || title,
+  tags = [],
+  articleUrl,
+  seriesKey,
+  seriesLabel,
+  currentSlug,
+  items,
+  headings = [],
+  pubDate,
+  updatedDate,
+  wordCount = 0,
+  readingMinutes = 0,
+  prev,
+  next,
+  encrypted = false,
+  encryptedFile = "",
+  passwordHint = ""
+} = Astro.props;
+
+const tutorialsConfig =
+  (siteConfig.pages.tutorials as {
+    reader?: {
+      sidebar?: {
+        enable?: boolean;
+        position?: "left" | "right";
+        width?: number;
+        collapsible?: boolean;
+        defaultCollapsed?: boolean;
+        showOrder?: boolean;
+        showProgress?: boolean;
+        mobileDrawer?: boolean;
+      };
+      toc?: {
+        enable?: boolean;
+        position?: "left" | "right";
+        width?: number;
+      };
+      content?: {
+        maxWidth?: number;
+        showPrevNext?: boolean;
+        showSeriesBreadcrumb?: boolean;
+      };
+    };
+  } | undefined) ?? {};
+
+const reader = tutorialsConfig.reader ?? {};
+const sidebar = reader.sidebar ?? {};
+const toc = reader.toc ?? {};
+const content = reader.content ?? {};
+
+const sidebarEnable = sidebar.enable ?? true;
+const sidebarPosition = sidebar.position === "right" ? "right" : "left";
+const sidebarWidth = Number(sidebar.width ?? 260);
+const tocEnable = (toc.enable ?? true) && siteConfig.theme.toc.enable;
+const tocPosition = toc.position === "left" ? "left" : "right";
+const tocWidth = Number(toc.width ?? 280);
+const contentMaxWidth = Number(content.maxWidth ?? 780);
+const showPrevNext = content.showPrevNext ?? true;
+const showSeriesBreadcrumb = content.showSeriesBreadcrumb ?? true;
+
+const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
+const articleRuntimeConfig = {
+  isEncrypted: encrypted,
+  enableMermaid: siteConfig.features.diagram.mermaid,
+  enableDrawio: siteConfig.features.diagram.drawio,
+  enableEcharts: siteConfig.features.diagram.echarts,
+  mermaidSource: siteConfig.diagram.mermaid.source ?? "cdn",
+  mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
+  mermaidLocalBundle: siteConfig.diagram.mermaid.localBundle ?? "",
+  mermaidTheme: siteConfig.diagram.mermaid.theme,
+  drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
+  echartsSource: siteConfig.diagram.echarts.source ?? "cdn",
+  echartsBundle: siteConfig.diagram.echarts.bundleUrl,
+  echartsLocalBundle: siteConfig.diagram.echarts.localBundle ?? "",
+  diagramFallbackToCdn: Boolean((siteConfig.diagram as { fallbackToCdn?: boolean }).fallbackToCdn ?? true),
+  chartHeight: siteConfig.diagram.echarts.defaultHeight,
+  enableEchartsThemeSync: Boolean((siteConfig.diagram as { echarts?: { themeSync?: boolean } }).echarts?.themeSync ?? false),
+  enableCodeCopy: siteConfig.markdown.copy.code,
+  enableMathCopy: siteConfig.markdown.copy.math,
+  enableMermaidCopy: siteConfig.markdown.copy.mermaid,
+  enableExtendedMarkdown: Boolean((siteConfig.markdown as { extended?: { enable?: boolean } }).extended?.enable ?? false),
+  enableChartJs: Boolean((siteConfig.markdown as { extended?: { chartjs?: { enable?: boolean } } }).extended?.chartjs?.enable ?? false),
+  chartJsBundle:
+    (siteConfig.markdown as { extended?: { chartjs?: { bundleUrl?: string } } }).extended?.chartjs?.bundleUrl ??
+    "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+  enableChartJsThemeSync: Boolean(
+    (siteConfig.markdown as { extended?: { chartjs?: { themeSync?: boolean } } }).extended?.chartjs?.themeSync ?? false
+  ),
+  enableCodeFold: Boolean((siteConfig.markdown as { extended?: { codeFold?: { enable?: boolean } } }).extended?.codeFold?.enable ?? false),
+  codeFoldDefaultLines: Number((siteConfig.markdown as { extended?: { codeFold?: { defaultLines?: number } } }).extended?.codeFold?.defaultLines ?? 18),
+  enableCodeGroup: Boolean((siteConfig.markdown as { extended?: { codeGroup?: { enable?: boolean } } }).extended?.codeGroup?.enable ?? false),
+  enableDiffEnhance: Boolean((siteConfig.markdown as { extended?: { diffEnhance?: { enable?: boolean } } }).extended?.diffEnhance?.enable ?? false),
+  enableAnchorCopy: false,
+  enableDiagramDiagnostics: Boolean((siteConfig.article as { diagnostics?: { enable?: boolean } }).diagnostics?.enable ?? true),
+  enableInlineIcon: Boolean((siteConfig.markdown as { extended?: { icon?: { enable?: boolean } } }).extended?.icon?.enable ?? false),
+  iconifyBundle:
+    (siteConfig.markdown as { extended?: { icon?: { bundleUrl?: string } } }).extended?.icon?.bundleUrl ??
+    "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
+  codeHighlightProvider: String((siteConfig as { codeHighlight?: { provider?: string } }).codeHighlight?.provider ?? "prism"),
+  enableCodeLineNumbers: Boolean((siteConfig as { codeHighlight?: { lineNumbers?: boolean } }).codeHighlight?.lineNumbers ?? true),
+  codeWindowTitleMode: String((siteConfig as { codeHighlight?: { window?: { titleMode?: string } } }).codeHighlight?.window?.titleMode ?? "lang"),
+  articleTitle: title,
+  articleTags: tags,
+  viewStatsEnabled: siteConfig.stats.enable,
+  viewStatsEndpoint: siteConfig.stats.endpoint,
+  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
+  antiCrawlLockOnSuspicious: Boolean((siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true),
+  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
+  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+};
+---
+
+<BaseLayout title={title} description={description} canonicalPath={articleUrl}>
+  <ReadingProgress />
+
+  <div
+    class="tutorial-reader"
+    style={`--tutorial-sidebar-width:${sidebarWidth}px;--tutorial-toc-width:${tocWidth}px;--tutorial-content-max:${contentMaxWidth}px;`}
+  >
+    {
+      sidebarEnable && sidebarPosition === "left" && (
+        <TutorialSidebar
+          seriesKey={seriesKey}
+          seriesLabel={seriesLabel}
+          currentSlug={currentSlug}
+          items={items}
+          width={sidebarWidth}
+          collapsible={sidebar.collapsible ?? true}
+          defaultCollapsed={sidebar.defaultCollapsed ?? false}
+          showOrder={sidebar.showOrder ?? true}
+          showProgress={sidebar.showProgress ?? true}
+          mobileDrawer={sidebar.mobileDrawer ?? true}
+        />
+      )
+    }
+
+    {tocEnable && tocPosition === "left" && <aside class="tutorial-toc-rail"><TOC headings={headings} /></aside>}
+
+    <section class="tutorial-main-wrap">
+      <section class="tutorial-main">
+        <section class="surface tutorial-card tutorial-head-card">
+          {
+            showSeriesBreadcrumb && (
+              <nav class="tutorial-breadcrumb" aria-label="面包屑">
+                <a href="/tutorials">教程</a>
+                <span>/</span>
+                <a href={`/tutorials/${encodeURIComponent(seriesKey)}`}>{seriesLabel}</a>
+                <span>/</span>
+                <span>{title}</span>
+              </nav>
+            )
+          }
+
+          <header class="tutorial-head">
+            <h1>{title}</h1>
+            {summary && <p class="summary">{summary}</p>}
+            <div class="meta-strip">
+              <div class="meta-row">
+                <span class="chip">{wordCount} 字</span>
+                {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
+                {siteConfig.stats.enable && <span class="chip" id="post-view-count" data-view-slug={articleUrl}>阅读 --</span>}
+                <span class="chip date-chip">发布 {formatDate(pubDate, "YYYY-MM-DD")}</span>
+                {updatedDate && <span class="chip date-chip">更新 {formatDate(updatedDate, "YYYY-MM-DD")}</span>}
+              </div>
+              {
+                tags.length > 0 && (
+                  <div class="tag-row-badge">
+                    {tags.map((tag) => <a class="tag-badge tag-link" href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>)}
+                  </div>
+                )
+              }
+            </div>
+          </header>
+        </section>
+
+        <section class="surface tutorial-card tutorial-body-card">
+          <article class="prose article-body" data-article-encrypted={encrypted ? "1" : "0"}>
+            {encrypted && siteConfig.encrypt.enable ? <EncryptGate encryptedFile={encryptedFile} passwordHint={passwordHint} /> : <slot />}
+          </article>
+        </section>
+
+        {
+          showPrevNext && (prev || next) && (
+            <section class="surface tutorial-card tutorial-nav-card">
+              <nav class="prev-next">
+                {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
+                {next ? <a href={next.url}>{next.title} →</a> : <span />}
+              </nav>
+            </section>
+          )
+        }
+
+        <section class="surface tutorial-card tutorial-comment-card">
+          <Comments deferUntilEvent={deferUntilEvent} />
+        </section>
+      </section>
+    </section>
+
+    {
+      sidebarEnable && sidebarPosition === "right" && (
+        <TutorialSidebar
+          seriesKey={seriesKey}
+          seriesLabel={seriesLabel}
+          currentSlug={currentSlug}
+          items={items}
+          width={sidebarWidth}
+          collapsible={sidebar.collapsible ?? true}
+          defaultCollapsed={sidebar.defaultCollapsed ?? false}
+          showOrder={sidebar.showOrder ?? true}
+          showProgress={sidebar.showProgress ?? true}
+          mobileDrawer={sidebar.mobileDrawer ?? true}
+        />
+      )
+    }
+
+    {tocEnable && tocPosition === "right" && <aside class="tutorial-toc-rail"><TOC headings={headings} /></aside>}
+  </div>
+
+  <script id="article-runtime-config" type="application/json" set:html={JSON.stringify(articleRuntimeConfig)} />
+  <script>
+    import { initArticleRuntime } from "@/plugins/runtime/article/index.js";
+
+    let runtimeConfig = {};
+    const runtimeConfigNode = document.getElementById("article-runtime-config");
+    if (runtimeConfigNode?.textContent) {
+      try {
+        runtimeConfig = JSON.parse(runtimeConfigNode.textContent);
+      } catch (error) {
+        console.error("failed to parse article runtime config", error);
+      }
+    }
+
+    initArticleRuntime(runtimeConfig);
+  </script>
+</BaseLayout>
+
+<style>
+  :global(main.container) {
+    width: min(1360px, calc(100% - var(--space-6)));
+  }
+
+  .tutorial-reader {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .tutorial-main-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .tutorial-main {
+    width: min(100%, var(--tutorial-content-max));
+    min-width: 0;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .tutorial-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+    padding: 1rem;
+  }
+
+  .tutorial-toc-rail {
+    width: var(--tutorial-toc-width);
+    flex: 0 0 var(--tutorial-toc-width);
+    position: sticky;
+    top: 84px;
+    height: calc(100vh - 98px - var(--floating-safe-bottom, 0px));
+  }
+
+  .tutorial-breadcrumb {
+    margin-bottom: 0.65rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .tutorial-breadcrumb a {
+    color: var(--text-soft);
+    text-decoration: none;
+  }
+
+  .tutorial-breadcrumb a:hover {
+    color: var(--brand);
+  }
+
+  .tutorial-head {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .tutorial-head h1 {
+    margin: 0;
+    line-height: 1.26;
+    font-size: clamp(1.66rem, 2.2vw + 1rem, 2.35rem);
+  }
+
+  .summary {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.58;
+  }
+
+  .meta-strip {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--surface-1) 82%, transparent 18%);
+    padding: 0.65rem;
+    display: grid;
+    gap: 0.56rem;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .tag-row-badge {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .tag-link {
+    text-decoration: none;
+    transition: border-color 120ms ease, color 120ms ease;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.58rem;
+  }
+
+  .tag-link:hover {
+    border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+    color: var(--brand);
+  }
+
+  .tutorial-body-card {
+    min-width: 0;
+  }
+
+  .article-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: clamp(1rem, 0.2vw + 0.98rem, 1.08rem);
+  }
+
+  .prev-next {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .prev-next a {
+    color: var(--brand);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .prev-next a:hover {
+    color: var(--text);
+  }
+
+  .prev-next a:last-child {
+    text-align: right;
+  }
+
+  .tutorial-comment-card {
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .tutorial-reader {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tutorial-main {
+      width: 100%;
+    }
+
+    .tutorial-toc-rail {
+      width: auto;
+      height: auto;
+      position: static;
+    }
+  }
+
+  @media (max-width: 760px) {
+    :global(main.container) {
+      width: min(100%, calc(100% - var(--space-4)));
+    }
+
+    .tutorial-card {
+      padding: 0.85rem;
+    }
+  }
+</style>

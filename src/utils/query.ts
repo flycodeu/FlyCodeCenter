@@ -1,4 +1,5 @@
 ﻿import { getCollection, type CollectionEntry } from "astro:content";
+import siteConfig from "@/site.config";
 import {
   isPublished,
   matchesInclude,
@@ -10,6 +11,7 @@ import {
   type PostEntry
 } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
+import { stripSlashes } from "@/utils/url";
 
 export async function fetchBlogEntries(): Promise<CollectionEntry<"blog">[]> {
   const all = await getCollection("blog", (entry) => isPublished(entry));
@@ -43,11 +45,44 @@ export async function fetchReadingEntries(): Promise<CollectionEntry<"reading">[
   });
 }
 
+export function normalizeSeriesKey(series: string): string {
+  return String(series || "").trim().toLowerCase();
+}
+
+export function resolveTutorialSlug(entry: CollectionEntry<"tutorial">): string {
+  const meta = resolveArticleMeta(entry);
+  const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
+  const normalized = stripSlashes(meta.permalink);
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length >= 2 && parts[0] === prefix && parts[1]) {
+    return parts[1];
+  }
+  return meta.code;
+}
+
 export async function fetchTutorialSeries(series: string): Promise<CollectionEntry<"tutorial">[]> {
   const all = await fetchTutorialEntries();
-  const normalized = String(series || "").trim().toLowerCase();
+  const normalized = normalizeSeriesKey(series);
   const target = all.filter((entry) => resolveArticleMeta(entry).series.trim().toLowerCase() === normalized);
   return sortTutorialByOrder(target);
+}
+
+export async function fetchTutorialSeriesEntries(series: string): Promise<CollectionEntry<"tutorial">[]> {
+  return fetchTutorialSeries(series);
+}
+
+export async function findTutorialEntryBySeriesSlug(series: string, slug: string): Promise<CollectionEntry<"tutorial"> | null> {
+  const normalizedSeries = normalizeSeriesKey(series);
+  const normalizedSlug = String(slug || "").trim().toLowerCase();
+  if (!normalizedSeries || !normalizedSlug) return null;
+
+  const entries = await fetchTutorialSeriesEntries(normalizedSeries);
+  for (const entry of entries) {
+    if (resolveTutorialSlug(entry).toLowerCase() === normalizedSlug) {
+      return entry;
+    }
+  }
+  return null;
 }
 
 export async function fetchProjectEntries(): Promise<CollectionEntry<"projects">[]> {

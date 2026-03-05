@@ -1,28 +1,62 @@
----
+﻿---
 import ListLayout from "@/layouts/ListLayout.astro";
 import siteConfig from "@/site.config";
 import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
 import { resolveArticleMeta } from "@/utils/article-meta";
-import { getTutorialEntryUrl } from "@/utils/content";
 import { formatDate } from "@/utils/date";
+
+interface TutorialsPageConfig {
+  title?: string;
+  description?: string;
+  seriesLabels?: Record<string, string>;
+  overview?: {
+    columns?: { xl?: number; lg?: number; md?: number };
+    gap?: number;
+    cardStyle?: "cover-top" | "cover-left" | "compact";
+    coverAspectRatio?: string;
+    showEntryCount?: boolean;
+    showLastUpdated?: boolean;
+    showCategory?: boolean;
+    showDescription?: boolean;
+  };
+  seriesMeta?: Record<
+    string,
+    {
+      label?: string;
+      description?: string;
+      category?: string;
+      cover?: string;
+      icon?: string;
+      order?: number;
+    }
+  >;
+}
+
+type TutorialEntry = Awaited<ReturnType<typeof fetchTutorialEntries>>[number];
 
 const [tutorials, allEntries] = await Promise.all([fetchTutorialEntries(), fetchAllEntries()]);
 const tags = makeTagItems(allEntries);
-const metaCache = new Map<string, ReturnType<typeof resolveArticleMeta>>();
-const getMeta = (entry: (typeof tutorials)[number]) => {
-  const cache = metaCache.get(entry.id);
-  if (cache) return cache;
-  const meta = resolveArticleMeta(entry);
-  metaCache.set(entry.id, meta);
-  return meta;
-};
+const pageConfig = (siteConfig.pages.tutorials as TutorialsPageConfig | undefined) ?? {};
+const overview = pageConfig.overview ?? {};
+const seriesMeta = pageConfig.seriesMeta ?? {};
+const seriesLabels = pageConfig.seriesLabels ?? {};
 
-const seriesLabels = (siteConfig.pages.tutorials as { seriesLabels?: Record<string, string> } | undefined)?.seriesLabels ?? {};
+const columns = {
+  xl: Number(overview.columns?.xl ?? 3),
+  lg: Number(overview.columns?.lg ?? 2),
+  md: Number(overview.columns?.md ?? 1)
+};
+const gap = Number(overview.gap ?? 16);
+const cardStyle = overview.cardStyle ?? "cover-top";
+const coverAspectRatio = overview.coverAspectRatio ?? "16 / 9";
+const showEntryCount = overview.showEntryCount ?? true;
+const showLastUpdated = overview.showLastUpdated ?? true;
+const showCategory = overview.showCategory ?? true;
+const showDescription = overview.showDescription ?? true;
+
 const prettifySeriesKey = (key: string) => {
   const raw = String(key || "").trim();
   if (!raw) return "未分类教程";
-  const mapped = seriesLabels[raw];
-  if (mapped && mapped.trim()) return mapped.trim();
   const normalized = raw.replace(/[-_]+/g, " ").trim();
   if (/^[a-z0-9 ]+$/i.test(normalized)) {
     return normalized.replace(/\b[a-z]/g, (char) => char.toUpperCase());
@@ -30,72 +64,112 @@ const prettifySeriesKey = (key: string) => {
   return normalized;
 };
 
+const getSeriesLabel = (key: string) => {
+  const metaLabel = String(seriesMeta[key]?.label || "").trim();
+  if (metaLabel) return metaLabel;
+  const oldLabel = String(seriesLabels[key] || "").trim();
+  if (oldLabel) return oldLabel;
+  return prettifySeriesKey(key);
+};
+
 type SeriesBucket = {
   key: string;
   label: string;
-  entries: (typeof tutorials)[number][];
+  description: string;
+  category: string;
+  cover: string;
+  icon: string;
+  order: number;
+  entries: TutorialEntry[];
   latestAt: number;
 };
 
 const seriesMap = new Map<string, SeriesBucket>();
 for (const entry of tutorials) {
-  const meta = getMeta(entry);
-  const key = (meta.series || "uncategorized").trim().toLowerCase();
-  const bucket = seriesMap.get(key) ?? {
-    key,
-    label: prettifySeriesKey(key),
-    entries: [],
-    latestAt: 0
-  };
+  const meta = resolveArticleMeta(entry);
+  const key = String(meta.series || "uncategorized").trim().toLowerCase() || "uncategorized";
+  const seriesConfig = seriesMeta[key] ?? {};
+  const bucket =
+    seriesMap.get(key) ??
+    {
+      key,
+      label: getSeriesLabel(key),
+      description: String(seriesConfig.description || "").trim(),
+      category: String(seriesConfig.category || "").trim(),
+      cover: String(seriesConfig.cover || "").trim(),
+      icon: String(seriesConfig.icon || "").trim(),
+      order: Number(seriesConfig.order ?? Number.MAX_SAFE_INTEGER),
+      entries: [],
+      latestAt: 0
+    };
+
   bucket.entries.push(entry);
   bucket.latestAt = Math.max(bucket.latestAt, meta.createTime.getTime());
+  if (!bucket.cover) bucket.cover = String(meta.cover || "").trim();
   seriesMap.set(key, bucket);
 }
 
-const seriesList = [...seriesMap.values()].sort((a, b) => {
-  if (b.latestAt !== a.latestAt) return b.latestAt - a.latestAt;
-  return b.entries.length - a.entries.length;
-});
+const seriesList = [...seriesMap.values()]
+  .map((bucket) => ({
+    ...bucket,
+    entries: [...bucket.entries].sort((a, b) => {
+      const metaA = resolveArticleMeta(a);
+      const metaB = resolveArticleMeta(b);
+      if (metaA.order !== metaB.order) return metaA.order - metaB.order;
+      return metaA.createTime.getTime() - metaB.createTime.getTime();
+    })
+  }))
+  .sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    if (b.latestAt !== a.latestAt) return b.latestAt - a.latestAt;
+    return b.entries.length - a.entries.length;
+  });
 ---
 
 <ListLayout
-  title="教程总览"
-  description="先按教程系列浏览，再进入每个系列查看完整章节。"
+  title={pageConfig.title ?? "教程总览"}
+  description={pageConfig.description ?? "系统化学习各技术栈的完整教程系列。"}
   stats={[
     { title: "教程总数", value: tutorials.length },
     { title: "系列数量", value: seriesList.length },
-    { title: "归档时间轴", value: "打开", href: "/archives" }
+    { title: "归档页", value: "打开", href: "/archives" }
   ]}
   tags={tags}
 >
-  <div class="series-grid">
+  <div
+    class={`series-grid style-${cardStyle}`}
+    style={`--series-grid-gap:${gap}px;--series-col-xl:${columns.xl};--series-col-lg:${columns.lg};--series-col-md:${columns.md};--series-cover-ratio:${coverAspectRatio};`}
+  >
     {
       seriesList.map((bucket) => {
-        const leadMeta = getMeta(bucket.entries[0]);
+        const href = `/tutorials/${encodeURIComponent(bucket.key)}`;
         return (
           <article class="surface series-card">
-            <header class="series-head">
-              <div class="head-main">
-                <h2>
-                  <a href={`/tutorials/${encodeURIComponent(bucket.key)}`}>{bucket.label}</a>
-                </h2>
-                <p>{formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")} 更新</p>
-              </div>
-              <span class="series-count">{bucket.entries.length} 篇</span>
-            </header>
-
-            {leadMeta.cover && (
-              <a class="series-cover" href={`/tutorials/${encodeURIComponent(bucket.key)}`} aria-label={bucket.label}>
-                <img src={leadMeta.cover} alt={bucket.label} loading="lazy" decoding="async" />
+            {bucket.cover && (
+              <a class="series-cover" href={href} aria-label={bucket.label}>
+                <img src={bucket.cover} alt={bucket.label} loading="lazy" decoding="async" />
               </a>
             )}
 
-            <ul class="series-preview">
-              {bucket.entries.slice(0, 3).map((entry) => <li><a href={getTutorialEntryUrl(entry)}>{getMeta(entry).title}</a></li>)}
-            </ul>
-            <footer class="series-foot">
-              <a href={`/tutorials/${encodeURIComponent(bucket.key)}`}>查看系列文章</a>
-            </footer>
+            <div class="series-body">
+              <header class="series-head">
+                <h2>
+                  <a href={href}>{bucket.label}</a>
+                </h2>
+                {showCategory && bucket.category && <span class="category-chip">{bucket.category}</span>}
+              </header>
+
+              {showDescription && bucket.description && <p class="series-description">{bucket.description}</p>}
+
+              <div class="series-meta">
+                {showEntryCount && <span>{bucket.entries.length} 篇</span>}
+                {showLastUpdated && <span>更新于 {formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")}</span>}
+              </div>
+
+              <footer class="series-foot">
+                <a href={href}>开始学习</a>
+              </footer>
+            </div>
           </article>
         );
       })
@@ -106,63 +180,42 @@ const seriesList = [...seriesMap.values()].sort((a, b) => {
 <style>
   .series-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4);
+    grid-template-columns: repeat(var(--series-col-xl), minmax(0, 1fr));
+    gap: var(--series-grid-gap);
   }
 
   .series-card {
-    padding: 0.92rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
     display: grid;
-    gap: 0.78rem;
   }
 
-  .series-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-2);
+  .series-grid.style-cover-top .series-card,
+  .series-grid.style-compact .series-card {
+    grid-template-columns: 1fr;
   }
 
-  .head-main h2 {
-    margin: 0;
-    font-size: 1.12rem;
-    line-height: 1.35;
-    letter-spacing: -0.01em;
-  }
-
-  .head-main p {
-    margin: 0.38rem 0 0;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-
-  .series-count {
-    flex: 0 0 auto;
-    border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
-    color: var(--brand);
-    background: color-mix(in oklab, var(--brand-soft) 84%, transparent 16%);
-    font-size: 0.74rem;
-    font-weight: 640;
-    line-height: 1;
-    padding: 0.32rem 0.56rem;
-  }
-
-  .series-preview {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    gap: 0.52rem;
+  .series-grid.style-cover-left .series-card {
+    grid-template-columns: minmax(160px, 42%) minmax(0, 1fr);
   }
 
   .series-cover {
     display: block;
-    aspect-ratio: 16 / 9;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--line);
     background: color-mix(in oklab, var(--surface-2) 86%, transparent 14%);
+  }
+
+  .series-grid.style-cover-top .series-cover,
+  .series-grid.style-compact .series-cover {
+    aspect-ratio: var(--series-cover-ratio);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .series-grid.style-cover-left .series-cover {
+    height: 100%;
+    min-height: 164px;
+    border-right: 1px solid var(--line);
   }
 
   .series-cover img {
@@ -170,25 +223,67 @@ const seriesList = [...seriesMap.values()].sort((a, b) => {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 180ms ease;
+    transition: transform 200ms ease;
   }
 
   .series-card:hover .series-cover img {
-    transform: scale(1.02);
+    transform: scale(1.03);
   }
 
-  .series-preview a {
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    line-height: 1.55;
+  .series-body {
+    padding: 0.9rem;
+    display: grid;
+    gap: 0.62rem;
+    align-content: start;
   }
 
-  .series-preview a:hover {
+  .series-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.52rem;
+  }
+
+  .series-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .series-head h2 a {
     color: var(--text);
+    text-decoration: none;
   }
 
-  .series-foot {
-    padding-top: 0.15rem;
+  .series-head h2 a:hover {
+    color: var(--brand);
+  }
+
+  .category-chip {
+    flex: 0 0 auto;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+    color: var(--brand);
+    background: color-mix(in oklab, var(--brand-soft) 84%, transparent 16%);
+    font-size: 0.72rem;
+    font-weight: 640;
+    line-height: 1;
+    padding: 0.26rem 0.5rem;
+  }
+
+  .series-description {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    line-height: 1.52;
+  }
+
+  .series-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem 0.78rem;
+    font-size: 0.77rem;
+    color: var(--text-muted);
   }
 
   .series-foot a {
@@ -196,9 +291,10 @@ const seriesList = [...seriesMap.values()].sort((a, b) => {
     align-items: center;
     border-radius: var(--radius-pill);
     border: 1px solid var(--line);
-    padding: 0.4rem 0.74rem;
-    font-size: 0.82rem;
+    padding: 0.36rem 0.68rem;
+    font-size: 0.8rem;
     color: var(--text-soft);
+    text-decoration: none;
     background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
   }
 
@@ -207,9 +303,26 @@ const seriesList = [...seriesMap.values()].sort((a, b) => {
     border-color: color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     .series-grid {
+      grid-template-columns: repeat(var(--series-col-lg), minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 900px) {
+    .series-grid {
+      grid-template-columns: repeat(var(--series-col-md), minmax(0, 1fr));
+    }
+
+    .series-grid.style-cover-left .series-card {
       grid-template-columns: 1fr;
+    }
+
+    .series-grid.style-cover-left .series-cover {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+      aspect-ratio: var(--series-cover-ratio);
+      min-height: 0;
     }
   }
 </style>

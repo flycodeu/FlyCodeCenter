@@ -23,6 +23,14 @@ const {
 const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
 const showJarvisOrb = Astro.url.pathname !== (siteConfig.jarvis?.route ?? "/jarvis");
+const footerConfig = siteConfig.theme.footer as {
+  message: string;
+  copyright: string;
+  showRuntime?: boolean;
+  runtimeSince?: string;
+};
+const showRuntime = footerConfig.showRuntime ?? true;
+const runtimeSince = String(footerConfig.runtimeSince || "2026-03-05T00:00:00+08:00");
 const codeThemePanelColors = siteConfig.codeTheme.panelColors ?? {};
 const typographyConfig = (siteConfig.theme as {
   typography?: { fontPresetDefault?: string; fontPresets?: Record<string, unknown> };
@@ -282,8 +290,17 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
     </main>
     <footer class="site-footer">
       <div class="container footer-inner">
-        <p>{siteConfig.theme.footer.message}</p>
-        <small>{siteConfig.theme.footer.copyright}</small>
+        <p>{footerConfig.message}</p>
+        <div class="footer-meta">
+          {
+            showRuntime && (
+              <small class="footer-runtime" id="site-runtime" data-runtime-since={runtimeSince}>
+                已运行 -- 天 --:--:--
+              </small>
+            )
+          }
+          <small>{footerConfig.copyright}</small>
+        </div>
       </div>
     </footer>
     <SearchModal />
@@ -311,6 +328,35 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
         const footerHeight = footer instanceof HTMLElement ? footer.offsetHeight : 54;
         root.style.setProperty("--layout-header-height", `${headerHeight}px`);
         root.style.setProperty("--layout-footer-height", `${footerHeight}px`);
+      };
+
+      const initSiteRuntime = () => {
+        const host = document.getElementById("site-runtime");
+        if (!(host instanceof HTMLElement)) return;
+
+        const raw = String(host.dataset.runtimeSince || "").trim();
+        const start = Date.parse(raw);
+        if (!Number.isFinite(start)) {
+          host.textContent = "已运行 -- 天 --:--:--";
+          return;
+        }
+
+        const pad = (value) => String(value).padStart(2, "0");
+        const render = () => {
+          const elapsed = Math.max(0, Date.now() - start);
+          const totalSeconds = Math.floor(elapsed / 1000);
+          const days = Math.floor(totalSeconds / 86400);
+          const hours = Math.floor((totalSeconds % 86400) / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          host.textContent = `已运行 ${days} 天 ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        };
+
+        if (window.__flyRuntimeTicker) {
+          window.clearInterval(window.__flyRuntimeTicker);
+        }
+        render();
+        window.__flyRuntimeTicker = window.setInterval(render, 1000);
       };
 
       const initGlobalCodeCopy = () => {
@@ -366,6 +412,7 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
         initGlobalCodeCopy();
         initLayoutOffsets();
         initFloatingSafeArea();
+        initSiteRuntime();
       });
       if (!window.__flyLayoutOffsetBound) {
         window.__flyLayoutOffsetBound = true;
@@ -377,6 +424,7 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
       initGlobalCodeCopy();
       initLayoutOffsets();
       initFloatingSafeArea();
+      initSiteRuntime();
     </script>
   </body>
 </html>
@@ -428,6 +476,15 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
     font-size: 0.8rem;
     font-family: var(--font-tech);
     line-height: 1.25;
+  }
+  .footer-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .footer-runtime {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.92;
   }
   .footer-inner p,
   .footer-inner small {
@@ -499,6 +556,10 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
       align-items: flex-start;
       gap: 0.35rem;
       padding: 0.35rem 0;
+    }
+    .footer-meta {
+      flex-wrap: wrap;
+      gap: 0.3rem 0.9rem;
     }
   }
 </style>

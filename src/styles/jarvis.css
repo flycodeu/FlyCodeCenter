@@ -1,5 +1,9 @@
 .jarvis-shell {
-  --jarvis-chat-height: clamp(520px, 72dvh, 860px);
+  --jarvis-chat-height: clamp(
+    580px,
+    calc(100dvh - var(--layout-header-height) - 2.1rem - var(--floating-safe-bottom, 0px)),
+    980px
+  );
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   gap: 1rem;
@@ -685,7 +689,7 @@
   }
 
   .jarvis-chat {
-    height: 72dvh;
+    height: clamp(560px, calc(100dvh - var(--layout-header-height) - 10rem - var(--floating-safe-bottom, 0px)), 920px);
   }
 }
 
@@ -725,8 +729,8 @@
 
 @media (max-width: 760px) {
   .jarvis-chat {
-    height: 62dvh;
-    min-height: 420px;
+    height: calc(100dvh - var(--layout-header-height) - 8.1rem - env(safe-area-inset-bottom) - var(--floating-safe-bottom, 0px));
+    min-height: 460px;
     padding: 0.72rem;
   }
 

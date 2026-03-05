@@ -13,6 +13,7 @@ import { summarizeReading } from "@/utils/reading-time";
 
 interface RouteProps {
   series: string;
+  slug: string;
   currentEntryId: string;
 }
 
@@ -23,37 +24,64 @@ interface TutorialsPageConfig {
 
 export async function getStaticPaths() {
   const tutorials = await fetchTutorialEntries();
-  const seriesKeys = [...new Set(tutorials.map((item) => normalizeSeriesKey(resolveArticleMeta(item).series || "uncategorized")))];
+  const grouped = new Map<string, typeof tutorials>();
 
-  const settled = await Promise.all(
-    seriesKeys.map(async (series) => {
-      const entries = await fetchTutorialSeriesEntries(series);
-      const first = entries[0];
-      if (!first) return null;
-      return {
-        params: { series },
+  for (const entry of tutorials) {
+    const series = normalizeSeriesKey(resolveArticleMeta(entry).series || "uncategorized");
+    const bucket = grouped.get(series) ?? [];
+    bucket.push(entry);
+    grouped.set(series, bucket);
+  }
+
+  const paths: Array<{ params: { series: string; slug: string }; props: RouteProps }> = [];
+  const routeKeySet = new Set<string>();
+
+  for (const [series, bucket] of grouped.entries()) {
+    const sorted = [...bucket].sort((a, b) => {
+      const metaA = resolveArticleMeta(a);
+      const metaB = resolveArticleMeta(b);
+      if (metaA.order !== metaB.order) return metaA.order - metaB.order;
+      return metaA.createTime.getTime() - metaB.createTime.getTime();
+    });
+
+    for (const entry of sorted) {
+      const slug = resolveTutorialSlug(entry);
+      const routeKey = `${series}::${slug}`;
+      if (routeKeySet.has(routeKey)) {
+        throw new Error(`Duplicate tutorial route detected: /tutorials/${series}/${slug}`);
+      }
+      routeKeySet.add(routeKey);
+      paths.push({
+        params: {
+          series,
+          slug
+        },
         props: {
           series,
-          currentEntryId: first.id
+          slug,
+          currentEntryId: entry.id
         }
-      };
-    })
-  );
+      });
+    }
+  }
 
-  return settled.filter((item): item is NonNullable<typeof item> => Boolean(item));
+  return paths;
 }
 
-const { series, currentEntryId } = Astro.props as RouteProps;
+const { series, slug, currentEntryId } = Astro.props as RouteProps;
 const seriesKey = normalizeSeriesKey(series);
 const entries = await fetchTutorialSeriesEntries(seriesKey);
 if (!entries.length) {
   throw new Error(`Tutorial series not found: ${seriesKey}`);
 }
 
-const currentEntry = entries.find((entry) => entry.id === currentEntryId) ?? entries[0];
+const currentEntry = entries.find((entry) => entry.id === currentEntryId);
+if (!currentEntry) {
+  throw new Error(`Tutorial entry not found: ${seriesKey}/${slug}`);
+}
+
 const currentMeta = resolveArticleMeta(currentEntry);
 const currentSlug = resolveTutorialSlug(currentEntry);
-
 const rendered = await render(currentEntry);
 const Content = rendered.Content;
 const headings = rendered.headings;
@@ -61,13 +89,13 @@ const reading = summarizeReading(currentEntry.body);
 
 const navItems = entries.map((entry) => {
   const meta = resolveArticleMeta(entry);
-  const slug = resolveTutorialSlug(entry);
+  const entrySlug = resolveTutorialSlug(entry);
   return {
     id: entry.id,
-    slug,
+    slug: entrySlug,
     title: meta.title,
     order: meta.order,
-    url: `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(slug)}`
+    url: `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(entrySlug)}`
   };
 });
 
@@ -86,7 +114,7 @@ const seriesLabel =
   String(seriesLabels[seriesKey] || "").trim() ||
   seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
 
-const articleUrl = `/tutorials/${encodeURIComponent(seriesKey)}`;
+const articleUrl = `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(currentSlug)}`;
 ---
 
 <TutorialReaderLayout

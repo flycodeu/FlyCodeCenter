@@ -1,0 +1,433 @@
+﻿---
+interface TutorialSidebarItem {
+  id: string;
+  slug: string;
+  title: string;
+  order: number;
+  url: string;
+}
+
+interface Props {
+  seriesKey: string;
+  seriesLabel: string;
+  currentSlug: string;
+  items: TutorialSidebarItem[];
+  width?: number;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
+  showOrder?: boolean;
+  showProgress?: boolean;
+  mobileDrawer?: boolean;
+}
+
+const {
+  seriesKey,
+  seriesLabel,
+  currentSlug,
+  items,
+  width = 320,
+  collapsible = true,
+  defaultCollapsed = false,
+  showOrder = true,
+  showProgress = true,
+  mobileDrawer = true
+} = Astro.props;
+---
+
+<div
+  class={`tutorial-sidebar-wrap ${defaultCollapsed ? "is-collapsed" : ""}`}
+  style={`--tutorial-sidebar-width:${width}px;`}
+  data-tutorial-sidebar-root
+  data-series-key={seriesKey}
+  data-current-slug={currentSlug}
+  data-show-progress={showProgress ? "1" : "0"}
+>
+  <aside class="surface tutorial-sidebar desktop-rail" aria-label={`${seriesLabel} 章节导航`}>
+    <header class="tutorial-sidebar-head">
+      <h3>{seriesLabel}</h3>
+      {
+        collapsible && (
+          <button class="tutorial-sidebar-toggle" type="button" data-sidebar-toggle aria-label="折叠章节导航">
+            收起
+          </button>
+        )
+      }
+    </header>
+
+    <ol class="tutorial-sidebar-list" data-sidebar-list>
+      {
+        items.map((item) => (
+          <li data-tutorial-item data-slug={item.slug}>
+            <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
+              {showOrder && <span class="order">{item.order}</span>}
+              <span class="title">{item.title}</span>
+              {showProgress && <span class="progress-mark" aria-hidden="true" />}
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </aside>
+
+  {
+    mobileDrawer && (
+      <>
+        <button class="tutorial-sidebar-mobile-open" type="button" data-sidebar-mobile-open aria-label="打开章节目录">
+          章节
+        </button>
+        <div class="tutorial-sidebar-mobile-overlay" data-sidebar-mobile-overlay hidden></div>
+        <aside class="surface tutorial-sidebar mobile-drawer" data-sidebar-mobile-panel hidden aria-label={`${seriesLabel} 章节导航`}>
+          <header class="tutorial-sidebar-head">
+            <h3>{seriesLabel}</h3>
+            <button class="tutorial-sidebar-mobile-close" type="button" data-sidebar-mobile-close aria-label="关闭章节目录">
+              关闭
+            </button>
+          </header>
+          <ol class="tutorial-sidebar-list" data-sidebar-list>
+            {
+              items.map((item) => (
+                <li data-tutorial-item data-slug={item.slug}>
+                  <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
+                    {showOrder && <span class="order">{item.order}</span>}
+                    <span class="title">{item.title}</span>
+                    {showProgress && <span class="progress-mark" aria-hidden="true" />}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </aside>
+      </>
+    )
+  }
+</div>
+
+<script type="module">
+  const PROGRESS_KEY = "fly-tutorial-progress-v1";
+
+  const readProgress = () => {
+    try {
+      const raw = localStorage.getItem(PROGRESS_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return {};
+      return parsed;
+    } catch {
+      return {};
+    }
+  };
+
+  const writeProgress = (value) => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(value));
+  };
+
+  const initSidebar = () => {
+    document.querySelectorAll("[data-tutorial-sidebar-root]").forEach((root) => {
+      if (!(root instanceof HTMLElement)) return;
+      if (root.dataset.bound === "1") return;
+      root.dataset.bound = "1";
+
+      const seriesKey = String(root.dataset.seriesKey || "").trim();
+      const currentSlug = String(root.dataset.currentSlug || "").trim();
+      const showProgress = root.dataset.showProgress === "1";
+      const toggleBtn = root.querySelector("[data-sidebar-toggle]");
+      const openBtn = root.querySelector("[data-sidebar-mobile-open]");
+      const closeBtn = root.querySelector("[data-sidebar-mobile-close]");
+      const mobilePanel = root.querySelector("[data-sidebar-mobile-panel]");
+      const mobileOverlay = root.querySelector("[data-sidebar-mobile-overlay]");
+
+      const closeDrawer = () => {
+        if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
+        mobilePanel.classList.remove("open");
+        mobileOverlay.classList.remove("open");
+        document.body.classList.remove("tutorial-sidebar-drawer-open");
+        window.setTimeout(() => {
+          mobilePanel.hidden = true;
+          mobileOverlay.hidden = true;
+        }, 180);
+      };
+
+      const openDrawer = () => {
+        if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
+        mobilePanel.hidden = false;
+        mobileOverlay.hidden = false;
+        document.body.classList.add("tutorial-sidebar-drawer-open");
+        requestAnimationFrame(() => {
+          mobilePanel.classList.add("open");
+          mobileOverlay.classList.add("open");
+        });
+      };
+
+      toggleBtn?.addEventListener("click", () => {
+        root.classList.toggle("is-collapsed");
+      });
+      openBtn?.addEventListener("click", openDrawer);
+      closeBtn?.addEventListener("click", closeDrawer);
+      mobileOverlay?.addEventListener("click", closeDrawer);
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 1024) closeDrawer();
+      });
+
+      root.querySelectorAll(".tutorial-sidebar-list").forEach((listNode) => {
+        if (!(listNode instanceof HTMLElement)) return;
+        if (listNode.clientHeight < 2) return;
+        const activeLink = listNode.querySelector("a.is-active");
+        if (!(activeLink instanceof HTMLElement)) return;
+
+        const activeTop = activeLink.offsetTop;
+        const activeBottom = activeTop + activeLink.offsetHeight;
+        const viewTop = listNode.scrollTop;
+        const viewBottom = viewTop + listNode.clientHeight;
+
+        if (activeTop >= viewTop && activeBottom <= viewBottom) return;
+        const targetTop = Math.max(0, activeTop - (listNode.clientHeight - activeLink.offsetHeight) / 2);
+        listNode.scrollTo({ top: targetTop, behavior: "auto" });
+      });
+
+      if (!showProgress || !seriesKey || !currentSlug) return;
+      const state = readProgress();
+      const series = Array.isArray(state[seriesKey]) ? state[seriesKey] : [];
+      if (!series.includes(currentSlug)) {
+        state[seriesKey] = [...series, currentSlug];
+        writeProgress(state);
+      }
+
+      const visited = new Set(Array.isArray(state[seriesKey]) ? state[seriesKey] : []);
+      root.querySelectorAll("[data-tutorial-item]").forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        const slug = String(node.dataset.slug || "").trim();
+        node.classList.toggle("is-read", Boolean(slug && visited.has(slug)));
+      });
+    });
+  };
+
+  initSidebar();
+  if (!window.__flyTutorialSidebarBound) {
+    window.__flyTutorialSidebarBound = true;
+    document.addEventListener("astro:page-load", initSidebar);
+  }
+</script>
+
+<style>
+  .tutorial-sidebar-wrap {
+    width: var(--tutorial-sidebar-width);
+    flex: 0 0 var(--tutorial-sidebar-width);
+    min-width: 0;
+    position: sticky;
+    top: 84px;
+    height: calc(100vh - 98px - var(--floating-safe-bottom, 0px));
+    align-self: flex-start;
+  }
+
+  .tutorial-sidebar {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--surface-1) 86%, transparent 14%);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.72rem;
+    padding: 0.86rem 0.84rem;
+  }
+
+  .desktop-rail {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .tutorial-sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.58rem;
+  }
+
+  .tutorial-sidebar-head h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+
+  .tutorial-sidebar-toggle,
+  .tutorial-sidebar-mobile-close,
+  .tutorial-sidebar-mobile-open {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
+    color: var(--text-soft);
+    font-size: 0.76rem;
+    padding: 0.24rem 0.62rem;
+    cursor: pointer;
+  }
+
+  .tutorial-sidebar-toggle:hover,
+  .tutorial-sidebar-mobile-close:hover,
+  .tutorial-sidebar-mobile-open:hover {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
+  }
+
+  .tutorial-sidebar-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    align-content: start;
+    grid-auto-rows: min-content;
+    gap: 0.3rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    min-height: 0;
+    padding-right: 0.2rem;
+  }
+
+  .tutorial-sidebar-list a {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-soft);
+    border: 1px solid color-mix(in oklab, var(--line) 86%, transparent 14%);
+    border-left: 3px solid transparent;
+    border-radius: 12px;
+    padding: 0.52rem 0.56rem;
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+  }
+
+  .tutorial-sidebar-list a:hover {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 28%, var(--line) 72%);
+    background: color-mix(in oklab, var(--brand-soft) 32%, transparent 68%);
+  }
+
+  .tutorial-sidebar-list a.is-active {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%);
+    border-left-color: color-mix(in oklab, var(--brand) 88%, #fff 12%);
+    background: color-mix(in oklab, var(--brand-soft) 64%, transparent 36%);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 24%, transparent 76%);
+  }
+
+  .tutorial-sidebar-list .order {
+    min-width: 1.45rem;
+    text-align: center;
+    font-size: 0.74rem;
+    font-family: var(--font-tech);
+    color: var(--text-muted);
+  }
+
+  .tutorial-sidebar-list .title {
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
+  .progress-mark {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+  }
+
+  [data-tutorial-item].is-read .progress-mark {
+    border-color: color-mix(in oklab, #16a34a 56%, var(--line) 44%);
+    background: color-mix(in oklab, #16a34a 72%, transparent 28%);
+  }
+
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-list,
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-head h3 {
+    display: none;
+  }
+
+  .tutorial-sidebar-wrap.is-collapsed {
+    flex-basis: 68px;
+    width: 68px;
+  }
+
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar {
+    justify-items: center;
+    padding-inline: 0.45rem;
+  }
+
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-head {
+    justify-content: center;
+  }
+
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-toggle {
+    writing-mode: vertical-rl;
+    padding: 0.56rem 0.3rem;
+  }
+
+  .tutorial-sidebar-mobile-open,
+  .tutorial-sidebar-mobile-overlay,
+  .mobile-drawer {
+    display: none;
+  }
+
+  @media (max-width: 1024px) {
+    .tutorial-sidebar-wrap {
+      width: 0;
+      flex-basis: 0;
+      position: static;
+      top: auto;
+      height: auto;
+    }
+
+    .desktop-rail {
+      display: none;
+    }
+
+    .tutorial-sidebar-mobile-open {
+      display: inline-flex;
+      position: fixed;
+      left: 1rem;
+      bottom: calc(5rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+      z-index: 78;
+      box-shadow: 0 8px 24px color-mix(in oklab, var(--text) 12%, transparent 88%);
+    }
+
+    .tutorial-sidebar-mobile-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 18, 0.45);
+      backdrop-filter: blur(2px);
+      z-index: 90;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+
+    .tutorial-sidebar-mobile-overlay.open {
+      opacity: 1;
+    }
+
+    .mobile-drawer {
+      display: grid;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: min(86vw, 340px);
+      height: 100vh;
+      z-index: 91;
+      transform: translateX(-100%);
+      transition: transform 180ms ease;
+      border-radius: 0 14px 14px 0;
+      padding: 0.72rem;
+    }
+
+    .mobile-drawer.open {
+      transform: translateX(0);
+    }
+
+    .mobile-drawer .tutorial-sidebar-list {
+      max-height: none;
+      overflow: auto;
+    }
+
+    :global(body.tutorial-sidebar-drawer-open) {
+      overflow: hidden;
+    }
+  }
+</style>

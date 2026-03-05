@@ -1,5 +1,5 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
-export type CommentProvider = "off" | "giscus" | "waline" | "twikoo";
+export type CommentProvider = "off" | "giscus" | "waline" | "twikoo" | "utterances";
 export type ThemeId = "aurora-light" | "aurora-dark";
 export type PaginationMode = "page" | "loadMore";
 export type CoverMode = "right" | "left" | "top" | "none";
@@ -213,11 +213,13 @@ const siteConfig = defineSiteConfig({
     },
     social: {
       github: "https://github.com/flycodeu",
-      wechat: "https://mp.weixin.qq.com"
+      email: "mailto:flycode@flycode.icu"
     },
     footer: {
       message: "Built with Astro. Static First.",
-      copyright: "Copyright (c) 2026 飞云"
+      copyright: "Copyright (c) 2026 飞云",
+      showRuntime: true,
+      runtimeSince: "2026-03-05T00:00:00+08:00"
     },
     profile: {
       avatar: "https://avatars.githubusercontent.com/flycodeu",
@@ -228,7 +230,7 @@ const siteConfig = defineSiteConfig({
       quote: "以日拱一卒的坚持，打磨真正能落地的软件。",
       socials: [
         { name: "GitHub", icon: "github", link: "https://github.com/flycodeu" },
-        { name: "WeChat", icon: "wechat", link: "#" },
+        { name: "Email", icon: "email", link: "mailto:flycode@flycode.icu" },
         { name: "Discord", icon: "discord", link: "#" }
       ]
     },
@@ -590,7 +592,7 @@ const siteConfig = defineSiteConfig({
     endpoint: "/api/views"
   },
   comment: {
-    provider: "waline" as CommentProvider,
+    provider: "giscus" as CommentProvider,
     giscus: {
       repo: PUBLIC_ENV.PUBLIC_GISCUS_REPO ?? "owner/repo",
       repoId: PUBLIC_ENV.PUBLIC_GISCUS_REPO_ID ?? "",
@@ -607,6 +609,13 @@ const siteConfig = defineSiteConfig({
     },
     twikoo: {
       envId: PUBLIC_ENV.PUBLIC_TWIKOO_ENV_ID ?? ""
+    },
+    utterances: {
+      repo: PUBLIC_ENV.PUBLIC_UTTERANCES_REPO ?? "owner/repo",
+      issueTerm: PUBLIC_ENV.PUBLIC_UTTERANCES_ISSUE_TERM ?? "pathname",
+      label: PUBLIC_ENV.PUBLIC_UTTERANCES_LABEL ?? "comment",
+      themeLight: PUBLIC_ENV.PUBLIC_UTTERANCES_THEME_LIGHT ?? "github-light",
+      themeDark: PUBLIC_ENV.PUBLIC_UTTERANCES_THEME_DARK ?? "github-dark"
     }
   },
   encrypt: {
@@ -700,6 +709,77 @@ const siteConfig = defineSiteConfig({
     tutorials: {
       enable: true,
       title: "教程总览",
+      description: "系统化学习各技术栈的完整教程系列。",
+      overview: {
+        columns: {
+          xl: 3,
+          lg: 2,
+          md: 1
+        },
+        gap: 16,
+        cardStyle: "cover-top" as "cover-top" | "cover-left" | "compact",
+        coverAspectRatio: "16 / 9",
+        showEntryCount: true,
+        showLastUpdated: true,
+        showCategory: true,
+        showDescription: true
+      },
+      seriesMeta: {
+        rust: {
+          label: "Rust 教程",
+          description: "从零开始学习 Rust 编程语言",
+          category: "编程语言",
+          cover: "",
+          icon: "rust",
+          order: 1
+        },
+        datastruct: {
+          label: "数据结构教程",
+          description: "常用数据结构与算法实战",
+          category: "计算机基础",
+          cover: "",
+          icon: "datastruct",
+          order: 2
+        },
+        godot: {
+          label: "Godot 教程",
+          description: "使用 Godot 引擎开发 2D/3D 游戏",
+          category: "游戏开发",
+          cover: "",
+          icon: "godot",
+          order: 3
+        },
+        redis: {
+          label: "Redis 教程",
+          description: "Redis 核心数据结构与实战应用",
+          category: "中间件",
+          cover: "",
+          icon: "redis",
+          order: 4
+        }
+      },
+      reader: {
+        sidebar: {
+          enable: true,
+          position: "left" as "left" | "right",
+          width: 320,
+          collapsible: true,
+          defaultCollapsed: false,
+          showOrder: true,
+          showProgress: true,
+          mobileDrawer: true
+        },
+        toc: {
+          enable: true,
+          position: "right" as "left" | "right",
+          width: 280
+        },
+        content: {
+          maxWidth: 780,
+          showPrevNext: true,
+          showSeriesBreadcrumb: true
+        }
+      },
       seriesLabels: {
         rust: "Rust 教程",
         godot: "Godot 教程",

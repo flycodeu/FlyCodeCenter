@@ -10,18 +10,21 @@ const { deferUntilEvent } = Astro.props;
 const provider = siteConfig.comment.provider;
 const giscus = siteConfig.comment.giscus;
 const walineServer = siteConfig.comment.waline.serverUrl;
+const utterances = (siteConfig.comment as { utterances?: Record<string, string> }).utterances ?? {};
 const giscusReady =
   Boolean(giscus.repo && giscus.repo !== "owner/repo") &&
   Boolean(giscus.repoId) &&
   Boolean(giscus.categoryId);
-const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
+const utterancesReady = Boolean(utterances.repo && utterances.repo !== "owner/repo");
+const activeProvider = provider;
+const commentsEnabled = activeProvider !== "off";
 ---
 
 {
-  activeProvider === "off" ? null : (
+  !commentsEnabled ? null : (
     <section class="surface comment-section">
       <h3>评论</h3>
-      {activeProvider === "giscus" && <Giscus deferUntilEvent={deferUntilEvent} />}
+      {activeProvider === "giscus" && giscusReady && <Giscus deferUntilEvent={deferUntilEvent} />}
       {
         activeProvider === "waline" && (
           <>
@@ -31,6 +34,19 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
         )
       }
       {activeProvider === "twikoo" && <div id="twikoo-root" data-defer={deferUntilEvent ?? ""}></div>}
+      {activeProvider === "utterances" && utterancesReady && (
+        <div id="utterances-root" data-defer={deferUntilEvent ?? ""}></div>
+      )}
+      {
+        activeProvider === "utterances" && (
+          <>
+            {!utterancesReady && <p class="comment-hint">Utterances 尚未配置 `PUBLIC_UTTERANCES_REPO`，请先填写 GitHub 仓库。</p>}
+          </>
+        )
+      }
+      {provider === "giscus" && !giscusReady && (
+        <p class="comment-hint">当前已选 Giscus，但缺少仓库/分类 ID 配置，评论区未启用。</p>
+      )}
     </section>
   )
 }
@@ -74,6 +90,60 @@ const activeProvider = provider === "giscus" && !giscusReady ? "off" : provider;
       } else {
         mount().catch(console.error);
       }
+    </script>
+  )
+}
+
+{
+  activeProvider === "utterances" && (
+    <script
+      type="module"
+      define:vars={{
+        deferUntilEvent,
+        repo: String(utterances.repo ?? ""),
+        issueTerm: String(utterances.issueTerm ?? "pathname"),
+        label: String(utterances.label ?? "comment"),
+        themeLight: String(utterances.themeLight ?? "github-light"),
+        themeDark: String(utterances.themeDark ?? "github-dark")
+      }}
+    >
+      const themeOfSite = () => {
+        const theme = document.documentElement.dataset.theme || "";
+        return theme.includes("dark") ? themeDark : themeLight;
+      };
+
+      const syncUtterancesTheme = () => {
+        const frame = document.querySelector("iframe.utterances-frame");
+        if (frame instanceof HTMLIFrameElement && frame.contentWindow) {
+          frame.contentWindow.postMessage({ type: "set-theme", theme: themeOfSite() }, "https://utteranc.es");
+        }
+      };
+
+      const mount = async () => {
+        const root = document.getElementById("utterances-root");
+        if (!root || !repo) return;
+
+        root.innerHTML = "";
+        const script = document.createElement("script");
+        script.src = "https://utteranc.es/client.js";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.setAttribute("repo", repo);
+        script.setAttribute("issue-term", issueTerm || "pathname");
+        script.setAttribute("label", label || "comment");
+        script.setAttribute("theme", themeOfSite());
+        root.appendChild(script);
+
+        window.setTimeout(syncUtterancesTheme, 220);
+      };
+
+      if (deferUntilEvent) {
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+      } else {
+        mount().catch(console.error);
+      }
+
+      document.addEventListener("theme:change", syncUtterancesTheme);
     </script>
   )
 }
