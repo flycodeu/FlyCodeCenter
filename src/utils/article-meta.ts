@@ -160,7 +160,7 @@ function deriveTutorialSeries(entry: ArticleEntry): string {
   if (entry.collection !== "tutorial") return "";
   const raw = String(entry.id || "").replace(/\\/g, "/");
   const first = raw.split("/").find((segment) => segment && segment !== ".");
-  return first ? first.trim().toLowerCase() : "";
+  return first ? first.trim() : "";
 }
 
 function deriveTutorialOrder(entry: ArticleEntry): number | undefined {

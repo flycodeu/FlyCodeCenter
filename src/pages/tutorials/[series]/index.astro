@@ -1,4 +1,4 @@
-﻿---
+---
 import { render } from "astro:content";
 import siteConfig from "@/site.config";
 import TutorialReaderLayout from "@/layouts/TutorialReaderLayout.astro";
@@ -8,6 +8,7 @@ import {
   normalizeSeriesKey,
   resolveTutorialSlug
 } from "@/utils/query";
+import { buildTutorialSeriesBuckets } from "@/utils/tutorial-series";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { summarizeReading } from "@/utils/reading-time";
 
@@ -16,31 +17,27 @@ interface RouteProps {
   currentEntryId: string;
 }
 
-interface TutorialsPageConfig {
-  seriesLabels?: Record<string, string>;
-  seriesMeta?: Record<string, { label?: string; description?: string }>;
-}
-
 export async function getStaticPaths() {
   const tutorials = await fetchTutorialEntries();
-  const seriesKeys = [...new Set(tutorials.map((item) => normalizeSeriesKey(resolveArticleMeta(item).series || "uncategorized")))];
+  const seriesMap = buildTutorialSeriesBuckets(tutorials);
+  const paths: Array<{ params: { series: string }; props: RouteProps }> = [];
 
-  const settled = await Promise.all(
-    seriesKeys.map(async (series) => {
-      const entries = await fetchTutorialSeriesEntries(series);
-      const first = entries[0];
-      if (!first) return null;
-      return {
-        params: { series },
-        props: {
-          series,
-          currentEntryId: first.id
-        }
-      };
-    })
-  );
+  for (const bucket of seriesMap.values()) {
+    const first = bucket.readmeEntry ?? bucket.entries[0];
+    if (!first) continue;
+    if (!bucket.readmeEntry) {
+      console.warn(`[tutorials] Missing README in series "${bucket.key}". Using "${first.id}" as series entry.`);
+    }
+    paths.push({
+      params: { series: bucket.key },
+      props: {
+        series: bucket.key,
+        currentEntryId: first.id
+      }
+    });
+  }
 
-  return settled.filter((item): item is NonNullable<typeof item> => Boolean(item));
+  return paths;
 }
 
 const { series, currentEntryId } = Astro.props as RouteProps;
@@ -50,7 +47,8 @@ if (!entries.length) {
   throw new Error(`Tutorial series not found: ${seriesKey}`);
 }
 
-const currentEntry = entries.find((entry) => entry.id === currentEntryId) ?? entries[0];
+const seriesBucket = buildTutorialSeriesBuckets(entries).get(seriesKey);
+const currentEntry = entries.find((entry) => entry.id === currentEntryId) ?? seriesBucket?.readmeEntry ?? entries[0];
 const currentMeta = resolveArticleMeta(currentEntry);
 const currentSlug = resolveTutorialSlug(currentEntry);
 
@@ -59,15 +57,17 @@ const Content = rendered.Content;
 const headings = rendered.headings;
 const reading = summarizeReading(currentEntry.body);
 
+const seriesBase = `/tutorials/${encodeURIComponent(seriesKey)}`;
 const navItems = entries.map((entry) => {
   const meta = resolveArticleMeta(entry);
   const slug = resolveTutorialSlug(entry);
+  const displayOrder = slug === "index" ? 0 : meta.order;
   return {
     id: entry.id,
     slug,
     title: meta.title,
-    order: meta.order,
-    url: `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(slug)}`
+    order: displayOrder,
+    url: slug === "index" ? seriesBase : `${seriesBase}/${encodeURIComponent(slug)}`
   };
 });
 
@@ -78,15 +78,9 @@ const next =
     ? { title: navItems[currentIndex + 1].title, url: navItems[currentIndex + 1].url }
     : undefined;
 
-const tutorialsConfig = (siteConfig.pages.tutorials as TutorialsPageConfig | undefined) ?? {};
-const seriesMeta = tutorialsConfig.seriesMeta ?? {};
-const seriesLabels = tutorialsConfig.seriesLabels ?? {};
-const seriesLabel =
-  String(seriesMeta[seriesKey]?.label || "").trim() ||
-  String(seriesLabels[seriesKey] || "").trim() ||
-  seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
+const seriesLabel = seriesBucket?.label ?? seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
 
-const articleUrl = `/tutorials/${encodeURIComponent(seriesKey)}`;
+const articleUrl = seriesBase;
 ---
 
 <TutorialReaderLayout

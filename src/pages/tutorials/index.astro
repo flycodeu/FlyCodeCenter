@@ -2,13 +2,12 @@
 import ListLayout from "@/layouts/ListLayout.astro";
 import siteConfig from "@/site.config";
 import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
-import { resolveArticleMeta } from "@/utils/article-meta";
+import { buildTutorialSeriesBuckets } from "@/utils/tutorial-series";
 import { formatDate } from "@/utils/date";
 
 interface TutorialsPageConfig {
   title?: string;
   description?: string;
-  seriesLabels?: Record<string, string>;
   overview?: {
     columns?: { xl?: number; lg?: number; md?: number };
     gap?: number;
@@ -19,27 +18,12 @@ interface TutorialsPageConfig {
     showCategory?: boolean;
     showDescription?: boolean;
   };
-  seriesMeta?: Record<
-    string,
-    {
-      label?: string;
-      description?: string;
-      category?: string;
-      cover?: string;
-      icon?: string;
-      order?: number;
-    }
-  >;
 }
-
-type TutorialEntry = Awaited<ReturnType<typeof fetchTutorialEntries>>[number];
 
 const [tutorials, allEntries] = await Promise.all([fetchTutorialEntries(), fetchAllEntries()]);
 const tags = makeTagItems(allEntries);
 const pageConfig = (siteConfig.pages.tutorials as TutorialsPageConfig | undefined) ?? {};
 const overview = pageConfig.overview ?? {};
-const seriesMeta = pageConfig.seriesMeta ?? {};
-const seriesLabels = pageConfig.seriesLabels ?? {};
 
 const columns = {
   xl: Number(overview.columns?.xl ?? 3),
@@ -54,71 +38,9 @@ const showLastUpdated = overview.showLastUpdated ?? true;
 const showCategory = overview.showCategory ?? true;
 const showDescription = overview.showDescription ?? true;
 
-const prettifySeriesKey = (key: string) => {
-  const raw = String(key || "").trim();
-  if (!raw) return "未分类教程";
-  const normalized = raw.replace(/[-_]+/g, " ").trim();
-  if (/^[a-z0-9 ]+$/i.test(normalized)) {
-    return normalized.replace(/\b[a-z]/g, (char) => char.toUpperCase());
-  }
-  return normalized;
-};
-
-const getSeriesLabel = (key: string) => {
-  const metaLabel = String(seriesMeta[key]?.label || "").trim();
-  if (metaLabel) return metaLabel;
-  const oldLabel = String(seriesLabels[key] || "").trim();
-  if (oldLabel) return oldLabel;
-  return prettifySeriesKey(key);
-};
-
-type SeriesBucket = {
-  key: string;
-  label: string;
-  description: string;
-  category: string;
-  cover: string;
-  icon: string;
-  order: number;
-  entries: TutorialEntry[];
-  latestAt: number;
-};
-
-const seriesMap = new Map<string, SeriesBucket>();
-for (const entry of tutorials) {
-  const meta = resolveArticleMeta(entry);
-  const key = String(meta.series || "uncategorized").trim().toLowerCase() || "uncategorized";
-  const seriesConfig = seriesMeta[key] ?? {};
-  const bucket =
-    seriesMap.get(key) ??
-    {
-      key,
-      label: getSeriesLabel(key),
-      description: String(seriesConfig.description || "").trim(),
-      category: String(seriesConfig.category || "").trim(),
-      cover: String(seriesConfig.cover || "").trim(),
-      icon: String(seriesConfig.icon || "").trim(),
-      order: Number(seriesConfig.order ?? Number.MAX_SAFE_INTEGER),
-      entries: [],
-      latestAt: 0
-    };
-
-  bucket.entries.push(entry);
-  bucket.latestAt = Math.max(bucket.latestAt, meta.createTime.getTime());
-  if (!bucket.cover) bucket.cover = String(meta.cover || "").trim();
-  seriesMap.set(key, bucket);
-}
+const seriesMap = buildTutorialSeriesBuckets(tutorials);
 
 const seriesList = [...seriesMap.values()]
-  .map((bucket) => ({
-    ...bucket,
-    entries: [...bucket.entries].sort((a, b) => {
-      const metaA = resolveArticleMeta(a);
-      const metaB = resolveArticleMeta(b);
-      if (metaA.order !== metaB.order) return metaA.order - metaB.order;
-      return metaA.createTime.getTime() - metaB.createTime.getTime();
-    })
-  }))
   .sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
     if (b.latestAt !== a.latestAt) return b.latestAt - a.latestAt;

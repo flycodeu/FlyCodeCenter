@@ -1,17 +1,22 @@
-﻿import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
 import {
   isPublished,
   matchesInclude,
   sortByDateDesc,
   sortBlogWithPin,
-  sortTutorialByOrder,
   toTagMap,
   type AnyEntry,
   type PostEntry
 } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
-import { stripSlashes } from "@/utils/url";
+import {
+  buildTutorialSeriesBuckets,
+  isTutorialReadmeEntry,
+  normalizeSeriesKey as normalizeSeriesKeyInternal,
+  resolveSeriesKeyFromTutorialEntry,
+  resolveTutorialSlug as resolveTutorialSlugInternal
+} from "@/utils/tutorial-series";
 
 export async function fetchBlogEntries(): Promise<CollectionEntry<"blog">[]> {
   const all = await getCollection("blog", (entry) => isPublished(entry));
@@ -31,7 +36,7 @@ type TutorialsHomeVisibilityConfig = {
 function canTutorialShowOnHome(entry: CollectionEntry<"tutorial">): boolean {
   const tutorialsConfig = (siteConfig.pages.tutorials as TutorialsHomeVisibilityConfig | undefined) ?? {};
   const seriesMeta = tutorialsConfig.seriesMeta ?? {};
-  const rawSeries = String(resolveArticleMeta(entry).series || "").trim();
+  const rawSeries = resolveSeriesKeyFromTutorialEntry(entry);
   const normalizedSeries = normalizeSeriesKey(rawSeries);
   if (!rawSeries && !normalizedSeries) return false;
 
@@ -40,7 +45,13 @@ function canTutorialShowOnHome(entry: CollectionEntry<"tutorial">): boolean {
 
 export async function fetchHomeVisibleTutorialEntries(): Promise<CollectionEntry<"tutorial">[]> {
   const all = await fetchTutorialEntries();
-  return all.filter((entry) => canTutorialShowOnHome(entry));
+  const buckets = buildTutorialSeriesBuckets(all);
+  return all.filter((entry) => {
+    const key = normalizeSeriesKey(resolveSeriesKeyFromTutorialEntry(entry));
+    const bucket = buckets.get(key);
+    if (bucket) return bucket.showOnHome;
+    return canTutorialShowOnHome(entry);
+  });
 }
 
 export async function fetchSitesEntries(): Promise<CollectionEntry<"sites">[]> {
@@ -65,25 +76,18 @@ export async function fetchReadingEntries(): Promise<CollectionEntry<"reading">[
 }
 
 export function normalizeSeriesKey(series: string): string {
-  return String(series || "").trim().toLowerCase();
+  return normalizeSeriesKeyInternal(series);
 }
 
 export function resolveTutorialSlug(entry: CollectionEntry<"tutorial">): string {
-  const meta = resolveArticleMeta(entry);
-  const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
-  const normalized = stripSlashes(meta.permalink);
-  const parts = normalized.split("/").filter(Boolean);
-  if (parts.length >= 2 && parts[0] === prefix && parts[1]) {
-    return parts[1];
-  }
-  return meta.code;
+  return resolveTutorialSlugInternal(entry);
 }
 
 export async function fetchTutorialSeries(series: string): Promise<CollectionEntry<"tutorial">[]> {
   const all = await fetchTutorialEntries();
+  const buckets = buildTutorialSeriesBuckets(all);
   const normalized = normalizeSeriesKey(series);
-  const target = all.filter((entry) => resolveArticleMeta(entry).series.trim().toLowerCase() === normalized);
-  return sortTutorialByOrder(target);
+  return buckets.get(normalized)?.entries ?? [];
 }
 
 export async function fetchTutorialSeriesEntries(series: string): Promise<CollectionEntry<"tutorial">[]> {
@@ -96,6 +100,10 @@ export async function findTutorialEntryBySeriesSlug(series: string, slug: string
   if (!normalizedSeries || !normalizedSlug) return null;
 
   const entries = await fetchTutorialSeriesEntries(normalizedSeries);
+  if (normalizedSlug === "index") {
+    return entries.find((entry) => isTutorialReadmeEntry(entry)) ?? entries[0] ?? null;
+  }
+
   for (const entry of entries) {
     if (resolveTutorialSlug(entry).toLowerCase() === normalizedSlug) {
       return entry;

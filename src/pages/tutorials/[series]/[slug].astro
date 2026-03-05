@@ -1,4 +1,4 @@
-﻿---
+---
 import { render } from "astro:content";
 import siteConfig from "@/site.config";
 import TutorialReaderLayout from "@/layouts/TutorialReaderLayout.astro";
@@ -8,6 +8,7 @@ import {
   normalizeSeriesKey,
   resolveTutorialSlug
 } from "@/utils/query";
+import { buildTutorialSeriesBuckets } from "@/utils/tutorial-series";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { summarizeReading } from "@/utils/reading-time";
 
@@ -17,47 +18,29 @@ interface RouteProps {
   currentEntryId: string;
 }
 
-interface TutorialsPageConfig {
-  seriesLabels?: Record<string, string>;
-  seriesMeta?: Record<string, { label?: string; description?: string }>;
-}
-
 export async function getStaticPaths() {
   const tutorials = await fetchTutorialEntries();
-  const grouped = new Map<string, typeof tutorials>();
-
-  for (const entry of tutorials) {
-    const series = normalizeSeriesKey(resolveArticleMeta(entry).series || "uncategorized");
-    const bucket = grouped.get(series) ?? [];
-    bucket.push(entry);
-    grouped.set(series, bucket);
-  }
-
+  const seriesMap = buildTutorialSeriesBuckets(tutorials);
   const paths: Array<{ params: { series: string; slug: string }; props: RouteProps }> = [];
   const routeKeySet = new Set<string>();
 
-  for (const [series, bucket] of grouped.entries()) {
-    const sorted = [...bucket].sort((a, b) => {
-      const metaA = resolveArticleMeta(a);
-      const metaB = resolveArticleMeta(b);
-      if (metaA.order !== metaB.order) return metaA.order - metaB.order;
-      return metaA.createTime.getTime() - metaB.createTime.getTime();
-    });
-
-    for (const entry of sorted) {
+  for (const bucket of seriesMap.values()) {
+    for (const entry of bucket.entries) {
       const slug = resolveTutorialSlug(entry);
-      const routeKey = `${series}::${slug}`;
+      if (slug === "index") continue;
+
+      const routeKey = `${bucket.key}::${slug}`;
       if (routeKeySet.has(routeKey)) {
-        throw new Error(`Duplicate tutorial route detected: /tutorials/${series}/${slug}`);
+        throw new Error(`Duplicate tutorial route detected: /tutorials/${bucket.key}/${slug}`);
       }
       routeKeySet.add(routeKey);
       paths.push({
         params: {
-          series,
+          series: bucket.key,
           slug
         },
         props: {
-          series,
+          series: bucket.key,
           slug,
           currentEntryId: entry.id
         }
@@ -75,6 +58,7 @@ if (!entries.length) {
   throw new Error(`Tutorial series not found: ${seriesKey}`);
 }
 
+const seriesBucket = buildTutorialSeriesBuckets(entries).get(seriesKey);
 const currentEntry = entries.find((entry) => entry.id === currentEntryId);
 if (!currentEntry) {
   throw new Error(`Tutorial entry not found: ${seriesKey}/${slug}`);
@@ -82,20 +66,26 @@ if (!currentEntry) {
 
 const currentMeta = resolveArticleMeta(currentEntry);
 const currentSlug = resolveTutorialSlug(currentEntry);
+if (currentSlug === "index") {
+  throw new Error(`Tutorial entry not found: ${seriesKey}/${slug}`);
+}
+
 const rendered = await render(currentEntry);
 const Content = rendered.Content;
 const headings = rendered.headings;
 const reading = summarizeReading(currentEntry.body);
 
+const seriesBase = `/tutorials/${encodeURIComponent(seriesKey)}`;
 const navItems = entries.map((entry) => {
   const meta = resolveArticleMeta(entry);
   const entrySlug = resolveTutorialSlug(entry);
+  const displayOrder = entrySlug === "index" ? 0 : meta.order;
   return {
     id: entry.id,
     slug: entrySlug,
     title: meta.title,
-    order: meta.order,
-    url: `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(entrySlug)}`
+    order: displayOrder,
+    url: entrySlug === "index" ? seriesBase : `${seriesBase}/${encodeURIComponent(entrySlug)}`
   };
 });
 
@@ -106,15 +96,9 @@ const next =
     ? { title: navItems[currentIndex + 1].title, url: navItems[currentIndex + 1].url }
     : undefined;
 
-const tutorialsConfig = (siteConfig.pages.tutorials as TutorialsPageConfig | undefined) ?? {};
-const seriesMeta = tutorialsConfig.seriesMeta ?? {};
-const seriesLabels = tutorialsConfig.seriesLabels ?? {};
-const seriesLabel =
-  String(seriesMeta[seriesKey]?.label || "").trim() ||
-  String(seriesLabels[seriesKey] || "").trim() ||
-  seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
+const seriesLabel = seriesBucket?.label ?? seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
 
-const articleUrl = `/tutorials/${encodeURIComponent(seriesKey)}/${encodeURIComponent(currentSlug)}`;
+const articleUrl = `${seriesBase}/${encodeURIComponent(currentSlug)}`;
 ---
 
 <TutorialReaderLayout

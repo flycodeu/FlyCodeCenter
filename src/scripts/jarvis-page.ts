@@ -1,4 +1,6 @@
-﻿interface SeedModel { id?: string; name?: string; apiBase?: string }
+import { marked } from "marked";
+
+interface SeedModel { id?: string; name?: string; apiBase?: string }
 interface SeedPersona { id?: string; name?: string; greeting?: string }
 interface JarvisInitConfig {
   defaultModels?: SeedModel[];
@@ -148,7 +150,9 @@ const getEl = <T extends HTMLElement>(id: string): T | null => document.getEleme
 
 type Mode = "info" | "warning" | "success" | "error";
 
-export const initJarvisPage = (config: JarvisInitConfig) => {
+marked.setOptions({ gfm: true, breaks: true });
+
+export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   const nodes = {
     sessionNew: getEl<HTMLButtonElement>("jarvis-session-new"),
     sessionList: getEl<HTMLElement>("jarvis-session-list"),
@@ -202,13 +206,12 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
 
   if (Object.values(nodes).some((n) => !n)) {
     console.error("jarvis ui not ready");
-    return;
+    return () => {};
   }
 
   const el = nodes as { [K in keyof typeof nodes]-?: NonNullable<(typeof nodes)[K]> };
   const eventNs = config.interactionConfig?.eventNamespace || "jarvis";
-
-  let markedParse: ((text: string) => string) | null = null;
+  const globalEventController = new AbortController();
 
   const seedModels = Array.isArray(config.defaultModels) ? config.defaultModels : [];
   const seedRoles = Array.isArray(config.personaPresets) ? config.personaPresets : [];
@@ -453,9 +456,13 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
   };
 
   const markdownToHtml = (text: string) => {
-    const source = escapeHtml(text || "");
-    if (!markedParse) return source.replaceAll("\n", "<br/>");
-    return sanitizeHtml(markedParse(source));
+    const source = String(text || "");
+    try {
+      const rendered = marked.parse(source);
+      return sanitizeHtml(typeof rendered === "string" ? rendered : "");
+    } catch {
+      return escapeHtml(source).replaceAll("\n", "<br/>");
+    }
   };
 
   const renderMessages = () => {
@@ -786,7 +793,7 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
       sessionMenuId = "";
       renderAll();
     }
-  });
+  }, { signal: globalEventController.signal });
 
   el.settingsOpen.addEventListener("click", () => toggleSettings(true));
   el.modalClose.addEventListener("click", () => toggleSettings(false));
@@ -983,26 +990,19 @@ export const initJarvisPage = (config: JarvisInitConfig) => {
   window.addEventListener(`${eventNs}:action`, (event) => {
     const custom = event as CustomEvent<{ actionId?: string }>;
     if ((custom.detail?.actionId || "").trim() === "open-settings") toggleSettings(true);
-  });
+  }, { signal: globalEventController.signal });
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (!el.confirm.hidden) return toggleConfirm(false);
     if (!el.modal.hidden) toggleSettings(false);
-  });
-  void import("marked")
-    .then((mod) => {
-      mod.marked.setOptions({ gfm: true, breaks: true });
-      markedParse = (text: string) => {
-        const rendered = mod.marked.parse(text);
-        return typeof rendered === "string" ? rendered : "";
-      };
-      renderMessages();
-    })
-    .catch(() => {});
+  }, { signal: globalEventController.signal });
 
   renderAll();
   emitModelChange();
   emitRoleChange();
   setSettingsStatus("可配置多个模型，但同一时刻仅启用一个。", "info");
   setChatStatus("AI 回复在左侧、用户消息在右侧，支持流式 Markdown。", "info");
+  return () => {
+    globalEventController.abort();
+  };
 };

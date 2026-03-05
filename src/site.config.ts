@@ -935,53 +935,6 @@ const siteConfig = defineSiteConfig({
         showCategory: true,
         showDescription: true
       },
-      seriesMeta: {
-        "system-guide": {
-          label: "系统运行与配置教程",
-          description: "从配置入口到部署上线，系统化掌握 FlyCodeCenter 的完整运行机制。",
-          category: "工程实践",
-          cover: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80",
-          icon: "guide",
-          order: 0,
-          showOnHome: false
-        },
-        rust: {
-          label: "Rust 教程",
-          description: "从零开始学习 Rust 编程语言",
-          category: "编程语言",
-          cover: "",
-          icon: "rust",
-          order: 1,
-          showOnHome: false
-        },
-        datastruct: {
-          label: "数据结构教程",
-          description: "常用数据结构与算法实战",
-          category: "计算机基础",
-          cover: "",
-          icon: "datastruct",
-          order: 2,
-          showOnHome: false
-        },
-        godot: {
-          label: "Godot 教程",
-          description: "使用 Godot 引擎开发 2D/3D 游戏",
-          category: "游戏开发",
-          cover: "",
-          icon: "godot",
-          order: 3,
-          showOnHome: false
-        },
-        redis: {
-          label: "Redis 教程",
-          description: "Redis 核心数据结构与实战应用",
-          category: "中间件",
-          cover: "",
-          icon: "redis",
-          order: 4,
-          showOnHome: false
-        }
-      },
       reader: {
         sidebar: {
           enable: true,
@@ -1003,14 +956,6 @@ const siteConfig = defineSiteConfig({
           showPrevNext: true,
           showSeriesBreadcrumb: true
         }
-      },
-      seriesLabels: {
-        "system-guide": "系统运行与配置教程",
-        rust: "Rust 教程",
-        godot: "Godot 教程",
-        redis: "Redis 教程",
-        datastruct: "数据结构教程",
-        uncategorized: "未分类教程"
       }
     },
     archives: {

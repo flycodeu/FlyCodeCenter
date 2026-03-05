@@ -10,11 +10,15 @@ const articleSchema = z.object({
   code: z.string().optional(),
   permalink: z.string().optional(),
   summary: z.string().optional(),
+  description: z.string().optional(),
   outline: z.string().optional(),
   series: z.string().optional(),
   order: z.number().int().optional(),
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
+  category: z.string().optional(),
+  icon: z.string().optional(),
+  showOnHome: z.boolean().optional(),
   coverMode: z.enum(["left", "right", "top", "none"]).optional(),
   coverPosition: z.enum(["left", "right", "top", "none"]).optional()
 });
