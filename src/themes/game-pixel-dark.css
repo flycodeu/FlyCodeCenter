@@ -1,0 +1,31 @@
+:root[data-theme="game-pixel-dark"] {
+  --font-sans: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-display: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --font-tech: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
+  --bg: #131a22;
+  --bg-elev: #1b2430;
+  --bg-mesh-a: color-mix(in oklab, #3ecf8e 16%, transparent 84%);
+  --bg-mesh-b: color-mix(in oklab, #2da6ff 12%, transparent 88%);
+  --text: #d6f5d9;
+  --text-soft: #9ad8a4;
+  --text-muted: #7fb58a;
+  --line: #2f6f53;
+  --line-soft: #3c8663;
+  --line-strong: #4fa176;
+  --surface-1: #1a2631;
+  --surface-2: #203243;
+  --brand: #3dd17a;
+  --brand-soft: #22493a;
+  --accent: #2fb3ff;
+  --code-bg: #1b2c3a;
+  --code-border: #356d7f;
+  --card-shadow: 0 8px 0 0 rgb(16 39 36 / 0.64);
+  --card-shadow-strong: 0 10px 0 0 rgb(11 29 28 / 0.76);
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-pill: 2px;
+  --radius: var(--radius-md);
+  --header-blur: 0px;
+}

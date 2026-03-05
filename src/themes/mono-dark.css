@@ -1,0 +1,31 @@
+:root[data-theme="mono-dark"] {
+  --font-sans: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  --font-tech: "Cascadia Code", "JetBrains Mono", "Share Tech Mono", monospace;
+  --bg: #111317;
+  --bg-elev: #161a20;
+  --bg-mesh-a: color-mix(in oklab, #8b98a9 10%, transparent 90%);
+  --bg-mesh-b: color-mix(in oklab, #94a3b8 8%, transparent 92%);
+  --text: #ebedf1;
+  --text-soft: #b2b9c4;
+  --text-muted: #9299a5;
+  --line: #353b46;
+  --line-soft: #404857;
+  --line-strong: #556073;
+  --surface-1: #191e25;
+  --surface-2: #202630;
+  --brand: #90a4c6;
+  --brand-soft: #2a3342;
+  --accent: #8f98a9;
+  --code-bg: #1a212b;
+  --code-border: #495567;
+  --card-shadow: 0 16px 30px -22px rgb(2 6 12 / 0.58);
+  --card-shadow-strong: 0 28px 46px -24px rgb(2 6 12 / 0.66);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --radius: var(--radius-md);
+  --header-blur: 9px;
+}

@@ -1,0 +1,31 @@
+:root[data-theme="oceanic-light"] {
+  --font-sans: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  --font-tech: "Share Tech Mono", "Cascadia Code", "JetBrains Mono", monospace;
+  --bg: #f3f8fd;
+  --bg-elev: #fdfefe;
+  --bg-mesh-a: color-mix(in oklab, #7dd3fc 18%, transparent 82%);
+  --bg-mesh-b: color-mix(in oklab, #60a5fa 14%, transparent 86%);
+  --text: #0d2037;
+  --text-soft: #435f82;
+  --text-muted: #5f7998;
+  --line: #c8d9eb;
+  --line-soft: #d9e6f4;
+  --line-strong: #adc3dc;
+  --surface-1: #ffffff;
+  --surface-2: #f3f9ff;
+  --brand: #0b7fc2;
+  --brand-soft: #deeffd;
+  --accent: #0ea5a8;
+  --code-bg: #f4f9ff;
+  --code-border: #c4d7ec;
+  --card-shadow: 0 16px 30px -26px rgb(5 39 72 / 0.24);
+  --card-shadow-strong: 0 28px 46px -32px rgb(5 39 72 / 0.3);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --radius: var(--radius-md);
+  --header-blur: 10px;
+}

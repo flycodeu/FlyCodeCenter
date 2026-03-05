@@ -305,14 +305,14 @@ const articleRuntimeConfig = {
 
 <style>
   :global(main.container) {
-    width: min(1280px, calc(100% - var(--space-6)));
+    width: min(var(--layout-post-shell-max, 1280px), calc(100% - var(--space-6)));
   }
 
   .post-layout {
-    --post-main-width: 860px;
-    --toc-width: 332px;
+    --post-main-width: var(--layout-post-main-width, 860px);
+    --toc-width: var(--layout-post-toc-width, 332px);
     padding-bottom: 1.2rem;
-    column-gap: 1.7rem;
+    column-gap: var(--layout-post-gap, 1.7rem);
     row-gap: 1rem;
     align-items: start;
   }

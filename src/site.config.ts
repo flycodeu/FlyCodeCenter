@@ -1,6 +1,25 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo" | "utterances";
-export type ThemeId = "aurora-light" | "aurora-dark";
+export type ThemeId =
+  | "aurora-light"
+  | "aurora-dark"
+  | "oceanic-light"
+  | "oceanic-dark"
+  | "ember-light"
+  | "ember-dark"
+  | "mono-light"
+  | "mono-dark"
+  | "nature-light"
+  | "nature-dark"
+  | "game-pixel-light"
+  | "game-pixel-dark"
+  | "night"
+  | "ocean"
+  | "plume"
+  | "sunset"
+  | "tech";
+export type ThemePackId = "aurora" | "oceanic" | "ember" | "mono" | "nature" | "game-pixel";
+export type LayoutPresetId = "balanced" | "editorial" | "compact" | "showcase";
 export type PaginationMode = "page" | "loadMore";
 export type CoverMode = "right" | "left" | "top" | "none";
 export type CardStyle = "rounded" | "square" | "glass";
@@ -12,6 +31,165 @@ const PUBLIC_ENV =
     string,
     string | undefined
   >;
+
+const activeThemePack: ThemePackId = "aurora";
+const activeLayoutPreset: LayoutPresetId = "balanced";
+
+const themePresetPacks = {
+  aurora: {
+    label: "Aurora Neon",
+    description: "霓虹科技感，适合工程/教程站点。",
+    defaultTheme: "aurora-light" as ThemeId,
+    themes: ["aurora-light", "aurora-dark"] as ThemeId[],
+    switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
+    backgroundStyle: "aurora" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "grid" as "grid" | "plain",
+    codeThemeMap: {
+      "aurora-light": "mac-light",
+      "aurora-dark": "mac-dark"
+    } as Record<string, string>
+  },
+  oceanic: {
+    label: "Oceanic Editorial",
+    description: "清爽蓝色调，偏内容阅读体验。",
+    defaultTheme: "oceanic-light" as ThemeId,
+    themes: ["oceanic-light", "oceanic-dark"] as ThemeId[],
+    switchableThemes: ["oceanic-light", "oceanic-dark"] as ThemeId[],
+    backgroundStyle: "mesh" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "plain" as "grid" | "plain",
+    codeThemeMap: {
+      "oceanic-light": "github-light",
+      "oceanic-dark": "github-dark"
+    } as Record<string, string>
+  },
+  ember: {
+    label: "Ember Chronicle",
+    description: "暖色编辑部风格，适合叙事/随笔。",
+    defaultTheme: "ember-light" as ThemeId,
+    themes: ["ember-light", "ember-dark"] as ThemeId[],
+    switchableThemes: ["ember-light", "ember-dark"] as ThemeId[],
+    backgroundStyle: "flare" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "plain" as "grid" | "plain",
+    codeThemeMap: {
+      "ember-light": "one-light",
+      "ember-dark": "one-dark"
+    } as Record<string, string>
+  },
+  mono: {
+    label: "Mono Journal",
+    description: "简洁黑白灰，强调排版与长文。",
+    defaultTheme: "mono-light" as ThemeId,
+    themes: ["mono-light", "mono-dark"] as ThemeId[],
+    switchableThemes: ["mono-light", "mono-dark"] as ThemeId[],
+    backgroundStyle: "none" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "plain" as "grid" | "plain",
+    codeThemeMap: {
+      "mono-light": "github-light",
+      "mono-dark": "github-dark"
+    } as Record<string, string>
+  },
+  nature: {
+    label: "Nature Paper",
+    description: "严格论文排版风格，强调可读性与学术质感。",
+    defaultTheme: "nature-light" as ThemeId,
+    themes: ["nature-light", "nature-dark"] as ThemeId[],
+    switchableThemes: ["nature-light", "nature-dark"] as ThemeId[],
+    backgroundStyle: "none" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "plain" as "grid" | "plain",
+    codeThemeMap: {
+      "nature-light": "github-light",
+      "nature-dark": "github-dark"
+    } as Record<string, string>
+  },
+  "game-pixel": {
+    label: "Pixel Arcade",
+    description: "复古像素游戏界面风格，强调状态感与交互反馈。",
+    defaultTheme: "game-pixel-dark" as ThemeId,
+    themes: ["game-pixel-light", "game-pixel-dark"] as ThemeId[],
+    switchableThemes: ["game-pixel-light", "game-pixel-dark"] as ThemeId[],
+    backgroundStyle: "none" as "aurora" | "mesh" | "flare" | "none",
+    surfaceStyle: "grid" as "grid" | "plain",
+    codeThemeMap: {
+      "game-pixel-light": "one-light",
+      "game-pixel-dark": "one-dark"
+    } as Record<string, string>
+  }
+} as const;
+
+const layoutPresets = {
+  balanced: {
+    label: "平衡双栏",
+    description: "默认综合布局，适合大多数博客。",
+    containerWidth: 1160,
+    mainGridGap: 32,
+    mainSidebarWidth: 300,
+    postShellWidth: 1280,
+    postMainWidth: 860,
+    postTocWidth: 332,
+    postGap: 27,
+    tutorialShellWidth: 1360,
+    tutorialSidebarWidth: 320,
+    tutorialTocWidth: 280,
+    tutorialContentMaxWidth: 780,
+    cardBorderWidth: 2,
+    radiusScale: 1
+  },
+  editorial: {
+    label: "编辑排版",
+    description: "更宽正文与留白，突出阅读节奏。",
+    containerWidth: 1240,
+    mainGridGap: 38,
+    mainSidebarWidth: 320,
+    postShellWidth: 1340,
+    postMainWidth: 900,
+    postTocWidth: 360,
+    postGap: 32,
+    tutorialShellWidth: 1420,
+    tutorialSidebarWidth: 340,
+    tutorialTocWidth: 300,
+    tutorialContentMaxWidth: 840,
+    cardBorderWidth: 1,
+    radiusScale: 1.15
+  },
+  compact: {
+    label: "紧凑信息流",
+    description: "更高密度，适合高频更新站点。",
+    containerWidth: 1080,
+    mainGridGap: 24,
+    mainSidebarWidth: 280,
+    postShellWidth: 1200,
+    postMainWidth: 820,
+    postTocWidth: 300,
+    postGap: 22,
+    tutorialShellWidth: 1260,
+    tutorialSidebarWidth: 300,
+    tutorialTocWidth: 260,
+    tutorialContentMaxWidth: 740,
+    cardBorderWidth: 1,
+    radiusScale: 0.9
+  },
+  showcase: {
+    label: "展示杂志",
+    description: "更大的横向空间，适合封面与图文展示。",
+    containerWidth: 1320,
+    mainGridGap: 40,
+    mainSidebarWidth: 340,
+    postShellWidth: 1420,
+    postMainWidth: 940,
+    postTocWidth: 380,
+    postGap: 34,
+    tutorialShellWidth: 1480,
+    tutorialSidebarWidth: 360,
+    tutorialTocWidth: 320,
+    tutorialContentMaxWidth: 880,
+    cardBorderWidth: 1,
+    radiusScale: 1.25
+  }
+} as const;
+
+const resolvedThemePack = themePresetPacks[activeThemePack];
+const resolvedLayoutPreset = layoutPresets[activeLayoutPreset];
+const resolvedDefaultCodeTheme = resolvedThemePack.codeThemeMap[resolvedThemePack.defaultTheme] ?? "github-light";
 
 const siteConfig = defineSiteConfig({
   site: {
@@ -171,9 +349,19 @@ const siteConfig = defineSiteConfig({
     }
   },
   theme: {
-    defaultTheme: "aurora-light" as ThemeId,
-    themes: ["aurora-light", "aurora-dark"] as ThemeId[],
-    switchableThemes: ["aurora-light", "aurora-dark"] as ThemeId[],
+    preset: {
+      activePack: activeThemePack,
+      activeLayout: activeLayoutPreset,
+      packs: themePresetPacks,
+      layouts: layoutPresets
+    },
+    defaultTheme: resolvedThemePack.defaultTheme as ThemeId,
+    themes: [...resolvedThemePack.themes] as ThemeId[],
+    switchableThemes: [...resolvedThemePack.switchableThemes] as ThemeId[],
+    codeThemeMap: resolvedThemePack.codeThemeMap,
+    layout: {
+      ...resolvedLayoutPreset
+    },
     typography: {
       fontPresetDefault: "regular",
       fontPresets: {
@@ -239,7 +427,7 @@ const siteConfig = defineSiteConfig({
       minDepth: 1,
       maxDepth: 6,
       position: "right" as "left" | "right",
-      width: 332
+      width: resolvedLayoutPreset.postTocWidth
     },
     navbar: [
       { text: "首页", link: "/" },
@@ -495,7 +683,7 @@ const siteConfig = defineSiteConfig({
   },
   codeTheme: {
     defaultTheme:
-      "github-light" as
+      resolvedDefaultCodeTheme as
         | "mac-light"
         | "mac-dark"
         | "github-light"
@@ -768,7 +956,7 @@ const siteConfig = defineSiteConfig({
         sidebar: {
           enable: true,
           position: "left" as "left" | "right",
-          width: 320,
+          width: resolvedLayoutPreset.tutorialSidebarWidth,
           collapsible: true,
           defaultCollapsed: false,
           showOrder: true,
@@ -778,10 +966,10 @@ const siteConfig = defineSiteConfig({
         toc: {
           enable: true,
           position: "right" as "left" | "right",
-          width: 280
+          width: resolvedLayoutPreset.tutorialTocWidth
         },
         content: {
-          maxWidth: 780,
+          maxWidth: resolvedLayoutPreset.tutorialContentMaxWidth,
           showPrevNext: true,
           showSeriesBreadcrumb: true
         }

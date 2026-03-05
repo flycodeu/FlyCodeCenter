@@ -101,14 +101,17 @@ const reader = tutorialsConfig.reader ?? {};
 const sidebar = reader.sidebar ?? {};
 const toc = reader.toc ?? {};
 const content = reader.content ?? {};
+const layoutPreset = (siteConfig.theme as {
+  layout?: { tutorialSidebarWidth?: number; tutorialTocWidth?: number; tutorialContentMaxWidth?: number };
+}).layout;
 
 const sidebarEnable = sidebar.enable ?? true;
 const sidebarPosition = sidebar.position === "right" ? "right" : "left";
-const sidebarWidth = Number(sidebar.width ?? 260);
+const sidebarWidth = Number(sidebar.width ?? layoutPreset?.tutorialSidebarWidth ?? 320);
 const tocEnable = (toc.enable ?? true) && siteConfig.theme.toc.enable;
 const tocPosition = toc.position === "left" ? "left" : "right";
-const tocWidth = Number(toc.width ?? 280);
-const contentMaxWidth = Number(content.maxWidth ?? 780);
+const tocWidth = Number(toc.width ?? layoutPreset?.tutorialTocWidth ?? 280);
+const contentMaxWidth = Number(content.maxWidth ?? layoutPreset?.tutorialContentMaxWidth ?? 780);
 const showPrevNext = content.showPrevNext ?? true;
 const showSeriesBreadcrumb = content.showSeriesBreadcrumb ?? true;
 
@@ -290,7 +293,7 @@ const articleRuntimeConfig = {
 
 <style>
   :global(main.container) {
-    width: min(1360px, calc(100% - var(--space-6)));
+    width: min(var(--layout-tutorial-shell-max, 1360px), calc(100% - var(--space-6)));
   }
 
   .tutorial-reader {

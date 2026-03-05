@@ -1,0 +1,31 @@
+:root[data-theme="nature-dark"] {
+  --font-sans: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --font-tech: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --bg: #161412;
+  --bg-elev: #1f1c18;
+  --bg-mesh-a: color-mix(in oklab, #596273 10%, transparent 90%);
+  --bg-mesh-b: color-mix(in oklab, #6b5b49 8%, transparent 92%);
+  --text: #ece7df;
+  --text-soft: #c3b9ab;
+  --text-muted: #a89e90;
+  --line: #4e463c;
+  --line-soft: #5a5248;
+  --line-strong: #706556;
+  --surface-1: #221f1a;
+  --surface-2: #2a251f;
+  --brand: #8ba6c7;
+  --brand-soft: #2c3643;
+  --accent: #b49a78;
+  --code-bg: #26231e;
+  --code-border: #5d5448;
+  --card-shadow: 0 12px 24px -14px rgb(4 3 2 / 0.56);
+  --card-shadow-strong: 0 18px 34px -14px rgb(4 3 2 / 0.64);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-pill: 4px;
+  --radius: var(--radius-md);
+  --header-blur: 5px;
+}

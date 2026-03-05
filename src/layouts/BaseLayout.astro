@@ -37,6 +37,53 @@ const typographyConfig = (siteConfig.theme as {
 }).typography;
 const fontPresetDefault = String(typographyConfig?.fontPresetDefault || "pixel").trim() || "pixel";
 const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((key) => key.trim());
+const themePresetConfig = (siteConfig.theme as {
+  preset?: {
+    activePack?: string;
+    activeLayout?: string;
+    packs?: Record<string, { backgroundStyle?: string; surfaceStyle?: string; codeThemeMap?: Record<string, string> }>;
+    layouts?: Record<
+      string,
+      {
+        containerWidth?: number;
+        mainGridGap?: number;
+        mainSidebarWidth?: number;
+        postShellWidth?: number;
+        postMainWidth?: number;
+        postTocWidth?: number;
+        postGap?: number;
+        tutorialShellWidth?: number;
+        tutorialSidebarWidth?: number;
+        tutorialTocWidth?: number;
+        tutorialContentMaxWidth?: number;
+        cardBorderWidth?: number;
+        radiusScale?: number;
+      }
+    >;
+  };
+}).preset;
+const activeThemePack = String(themePresetConfig?.activePack || "aurora").trim() || "aurora";
+const activeLayoutPreset = String(themePresetConfig?.activeLayout || "balanced").trim() || "balanced";
+const activePackMeta = themePresetConfig?.packs?.[activeThemePack];
+const activeLayoutMeta = themePresetConfig?.layouts?.[activeLayoutPreset];
+const themeBackgroundStyle = String(activePackMeta?.backgroundStyle || "aurora");
+const themeSurfaceStyle = String(activePackMeta?.surfaceStyle || "grid");
+const themeCodeMap = activePackMeta?.codeThemeMap ?? ((siteConfig.theme as { codeThemeMap?: Record<string, string> }).codeThemeMap ?? {});
+const layoutCssVars = [
+  `--layout-container-width:${Number(activeLayoutMeta?.containerWidth ?? 1160)}px`,
+  `--layout-main-grid-gap:${Number(activeLayoutMeta?.mainGridGap ?? 32)}px`,
+  `--layout-main-sidebar-width:${Number(activeLayoutMeta?.mainSidebarWidth ?? 300)}px`,
+  `--layout-post-shell-max:${Number(activeLayoutMeta?.postShellWidth ?? 1280)}px`,
+  `--layout-post-main-width:${Number(activeLayoutMeta?.postMainWidth ?? 860)}px`,
+  `--layout-post-toc-width:${Number(activeLayoutMeta?.postTocWidth ?? 332)}px`,
+  `--layout-post-gap:${Number(activeLayoutMeta?.postGap ?? 27)}px`,
+  `--layout-tutorial-shell-max:${Number(activeLayoutMeta?.tutorialShellWidth ?? 1360)}px`,
+  `--layout-tutorial-sidebar-width:${Number(activeLayoutMeta?.tutorialSidebarWidth ?? 320)}px`,
+  `--layout-tutorial-toc-width:${Number(activeLayoutMeta?.tutorialTocWidth ?? 280)}px`,
+  `--layout-tutorial-content-max:${Number(activeLayoutMeta?.tutorialContentMaxWidth ?? 780)}px`,
+  `--layout-card-border-width:${Number(activeLayoutMeta?.cardBorderWidth ?? 2)}px`,
+  `--layout-radius-scale:${Number(activeLayoutMeta?.radiusScale ?? 1)}`
+].join(";");
 ---
 
 <!doctype html>
@@ -45,11 +92,17 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
   data-theme={siteConfig.theme.defaultTheme}
   data-default-theme={siteConfig.theme.defaultTheme}
   data-theme-list={JSON.stringify(siteConfig.theme.switchableThemes ?? siteConfig.theme.themes)}
+  data-theme-pack={activeThemePack}
+  data-layout-preset={activeLayoutPreset}
+  data-theme-bg-style={themeBackgroundStyle}
+  data-theme-surface-style={themeSurfaceStyle}
+  data-theme-code-map={JSON.stringify(themeCodeMap)}
   data-code-theme={siteConfig.codeTheme.defaultTheme}
   data-code-theme-list={JSON.stringify(siteConfig.codeTheme.themes)}
   data-code-highlight-provider={String((siteConfig as { codeHighlight?: { provider?: string } }).codeHighlight?.provider ?? "prism")}
   data-font-preset={fontPresetDefault}
   data-font-preset-list={JSON.stringify(fontPresetList.length ? fontPresetList : ["regular", "pixel"])}
+  style={layoutCssVars}
 >
   <head>
     <meta charset="utf-8" />
@@ -150,6 +203,14 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
           }
         } catch {}
         const codeFallback = root.dataset.codeTheme || "github-light";
+        const themeCodeMap = (() => {
+          try {
+            const parsed = JSON.parse(root.dataset.themeCodeMap || "{}");
+            return parsed && typeof parsed === "object" ? parsed : {};
+          } catch {
+            return {};
+          }
+        })();
         const normalizeCodeTheme = (input) => {
           const value = String(input || "").trim();
           if (codeThemeList.includes(value)) return value;
@@ -157,9 +218,14 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
           return codeThemeList.length ? codeThemeList[0] : "github-light";
         };
         const mapCodeThemeFromSiteTheme = (theme) => {
-          const normalized = String(theme || "").trim().toLowerCase();
+          const key = String(theme || "").trim();
+          if (key && typeof themeCodeMap[key] === "string" && String(themeCodeMap[key]).trim()) {
+            return String(themeCodeMap[key]).trim();
+          }
+          const normalized = key.toLowerCase();
           if (normalized.includes("dark")) return "mac-dark";
-          return "mac-light";
+          if (normalized.includes("light")) return "mac-light";
+          return codeFallback;
         };
         const isExpressiveProvider =
           String(root.dataset.codeHighlightProvider || "")
@@ -235,6 +301,11 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
           nextRoot.dataset.theme = current;
           nextRoot.dataset.defaultTheme = root.dataset.defaultTheme || fallback;
           nextRoot.dataset.themeList = root.dataset.themeList || "[]";
+          nextRoot.dataset.themePack = root.dataset.themePack || nextRoot.dataset.themePack || "aurora";
+          nextRoot.dataset.layoutPreset = root.dataset.layoutPreset || nextRoot.dataset.layoutPreset || "balanced";
+          nextRoot.dataset.themeBgStyle = root.dataset.themeBgStyle || nextRoot.dataset.themeBgStyle || "aurora";
+          nextRoot.dataset.themeSurfaceStyle = root.dataset.themeSurfaceStyle || nextRoot.dataset.themeSurfaceStyle || "grid";
+          nextRoot.dataset.themeCodeMap = root.dataset.themeCodeMap || nextRoot.dataset.themeCodeMap || "{}";
           nextRoot.dataset.fontPreset = normalizeFontPreset(root.dataset.fontPreset || fontPresetDefault);
           nextRoot.dataset.fontPresetList = root.dataset.fontPresetList || JSON.stringify(fontPresetList);
           const nextCodeTheme = resolveCodeTheme(current);
@@ -278,7 +349,7 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
     </script>
   </head>
   <body>
-    <div class="aurora-bg" aria-hidden="true">
+    <div class="aurora-bg" data-style={themeBackgroundStyle} aria-hidden="true">
       <span class="aurora-orb orb-a"></span>
       <span class="aurora-orb orb-b"></span>
       <span class="aurora-orb orb-c"></span>
@@ -537,6 +608,66 @@ const fontPresetList = Object.keys(typographyConfig?.fontPresets ?? {}).filter((
     bottom: 10%;
     background: color-mix(in oklab, var(--brand) 40%, transparent 60%);
     animation-delay: -11s;
+  }
+
+  .aurora-bg[data-style="none"] {
+    display: none;
+  }
+
+  .aurora-bg[data-style="mesh"] {
+    filter: blur(56px) saturate(108%);
+  }
+
+  .aurora-bg[data-style="mesh"] .orb-a {
+    width: 44vw;
+    height: 40vw;
+    left: -4%;
+    top: -4%;
+    background: color-mix(in oklab, var(--brand) 44%, transparent 56%);
+  }
+
+  .aurora-bg[data-style="mesh"] .orb-b {
+    width: 36vw;
+    height: 32vw;
+    right: -4%;
+    top: 8%;
+    background: color-mix(in oklab, var(--accent) 40%, transparent 60%);
+  }
+
+  .aurora-bg[data-style="mesh"] .orb-c {
+    width: 48vw;
+    height: 34vw;
+    left: 18%;
+    bottom: -8%;
+    background: color-mix(in oklab, var(--brand-soft) 42%, transparent 58%);
+  }
+
+  .aurora-bg[data-style="flare"] {
+    filter: blur(62px) saturate(118%);
+  }
+
+  .aurora-bg[data-style="flare"] .orb-a {
+    width: 42vw;
+    height: 38vw;
+    left: 6%;
+    top: 12%;
+    background: color-mix(in oklab, var(--brand) 50%, transparent 50%);
+  }
+
+  .aurora-bg[data-style="flare"] .orb-b {
+    width: 34vw;
+    height: 34vw;
+    right: 4%;
+    top: 0;
+    background: color-mix(in oklab, var(--accent) 52%, transparent 48%);
+  }
+
+  .aurora-bg[data-style="flare"] .orb-c {
+    width: 22vw;
+    height: 22vw;
+    left: 38%;
+    bottom: 4%;
+    background: color-mix(in oklab, var(--brand-soft) 34%, transparent 66%);
   }
 
   @keyframes aurora-float {
