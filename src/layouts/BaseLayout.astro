@@ -267,12 +267,20 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
             window.matchMedia("(prefers-reduced-motion: reduce)").matches;
           const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
           const saveData = Boolean(connection && connection.saveData);
+          const ua = navigator.userAgent || "";
+          const isMobileUa = /Android|iPhone|iPad|iPod/i.test(ua);
+          const isTouchSmall =
+            typeof navigator.maxTouchPoints === "number" &&
+            navigator.maxTouchPoints > 1 &&
+            window.innerWidth < 768;
+          const isMobile = isMobileUa || isTouchSmall;
           const deviceMemory = Number(navigator.deviceMemory || 0);
           const concurrency = Number(navigator.hardwareConcurrency || 0);
           const lowDevice =
             (deviceMemory && deviceMemory <= lowDeviceMemory) ||
             (concurrency && concurrency <= lowConcurrency);
           if (reducedMotion) return "low";
+          if (isMobile) return "low";
           if (saveDataAsLow && saveData) return "low";
           if (lowDevice) return "low";
           return "high";

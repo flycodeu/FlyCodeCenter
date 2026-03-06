@@ -303,6 +303,10 @@ const articleRuntimeConfig = {
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 </BaseLayout>
 
+<style is:global>
+  @import "../styles/katex-local.css";
+</style>
+
 <style>
   :global(main.container) {
     width: min(var(--layout-post-shell-max, 1280px), calc(100% - var(--space-6)));

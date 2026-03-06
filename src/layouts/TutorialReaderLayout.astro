@@ -291,6 +291,10 @@ const articleRuntimeConfig = {
   </script>
 </BaseLayout>
 
+<style is:global>
+  @import "../styles/katex-local.css";
+</style>
+
 <style>
   :global(main.container) {
     width: min(var(--layout-tutorial-shell-max, 1360px), calc(100% - var(--space-6)));
