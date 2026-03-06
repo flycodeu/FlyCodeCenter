@@ -86,6 +86,8 @@ const link = kind === "blog" ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
     padding: 0.88rem 0.92rem;
     display: grid;
     gap: 0.72rem;
+    content-visibility: auto;
+    contain-intrinsic-size: 320px 200px;
   }
 
   .archive-title-block {

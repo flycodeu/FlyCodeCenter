@@ -106,6 +106,16 @@ const wallpapers = wallpaperConfig
 {
   enabled && (
     <script type="module">
+      const perfTier = document.documentElement.dataset.perf || "high";
+      const isLowPerf = perfTier === "low";
+      const runWhenIdle = (task, timeout = 1200) => {
+        if (typeof task !== "function") return;
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => task(), { timeout });
+          return;
+        }
+        window.setTimeout(task, 0);
+      };
       const cleanupKey = "__jarvisRobotCleanup";
       const expressionOrder = ["dot", "arc", "cross", "heart", "wink", "sleepy", "surprised", "focus", "angry", "loading"];
       const primaryActions = ["wave", "nod", "pulse", "shake"];
@@ -167,10 +177,12 @@ const wallpapers = wallpaperConfig
           window.setTimeout(() => host.classList.remove("is-blink"), 170);
         };
         const scheduleBlink = () => {
+          const baseDelay = isLowPerf ? 2800 : 1400;
+          const randomJitter = isLowPerf ? 2600 : 2200;
           blinkTimer = window.setTimeout(() => {
             blink();
             scheduleBlink();
-          }, 1400 + Math.random() * 2200);
+          }, baseDelay + Math.random() * randomJitter);
         };
 
         const clearActions = () => {
@@ -333,8 +345,15 @@ const wallpapers = wallpaperConfig
       };
 
       const boot = () => {
-        if (typeof window[cleanupKey] === "function") window[cleanupKey]();
-        window[cleanupKey] = init();
+        const run = () => {
+          if (typeof window[cleanupKey] === "function") window[cleanupKey]();
+          window[cleanupKey] = init();
+        };
+        if (isLowPerf) {
+          runWhenIdle(run, 1600);
+          return;
+        }
+        run();
       };
       document.addEventListener("astro:before-swap", () => {
         if (typeof window[cleanupKey] === "function") {
@@ -411,5 +430,8 @@ const wallpapers = wallpaperConfig
   @keyframes bot-loading-eye { 0% { opacity: 0.35; transform: scaleX(0.7); } 50% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0.35; transform: scaleX(0.7); } }
   @keyframes bot-breathe { 0% { opacity: 0.42; } 50% { opacity: 0.92; } 100% { opacity: 0.42; } }
   @keyframes bot-bob { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+  :root[data-perf="low"] .jarvis-bot .bot-chest-strip { animation-duration: 4s; }
+  :root[data-perf="low"] .jarvis-bot.is-music-on .bot-core { animation-duration: 2.4s; }
+  :root[data-perf="low"] .jarvis-bot .screen-scan { animation-duration: 1.4s; }
   @media (max-width: 960px) { .jarvis-bot { width: 102px; } .bot-core { width: 82px; height: 98px; } }
 </style>

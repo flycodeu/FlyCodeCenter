@@ -132,6 +132,14 @@ const copyToastConfig = (siteConfig.ui as {
 const copyToastEnable = copyToastConfig?.enable ?? true;
 const copyToastDurationMs = Math.max(1000, Number(copyToastConfig?.durationMs ?? 1800));
 const copyToastPosition = copyToastConfig?.position === "bottom-center" ? "bottom-center" : "bottom-right";
+const perfTiering = (siteConfig.performance as {
+  tiering?: {
+    enable?: boolean;
+    lowDeviceMemory?: number;
+    lowConcurrency?: number;
+    saveDataAsLow?: boolean;
+  };
+})?.tiering ?? {};
 const globalBackgroundVars = [
   `--site-bg-opacity:${globalBackgroundOpacity}`,
   `--site-bg-blur:${globalBackgroundBlur}px`,
@@ -154,6 +162,30 @@ const layoutCssVars = [
   `--layout-card-border-width:${Number(activeLayoutMeta?.cardBorderWidth ?? 2)}px`,
   `--layout-radius-scale:${Number(activeLayoutMeta?.radiusScale ?? 1)}`
 ].join(";");
+const buildImageUrl = (input: string, width: number) => {
+  const raw = String(input || "").trim();
+  if (!raw) return raw;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const url = new URL(raw);
+      url.searchParams.set("w", String(width));
+      return url.toString();
+    } catch {
+      return raw;
+    }
+  }
+  const [path, query = ""] = raw.split("?");
+  const params = new URLSearchParams(query);
+  params.set("w", String(width));
+  const nextQuery = params.toString();
+  return nextQuery ? `${path}?${nextQuery}` : path;
+};
+const buildImageSrcset = (input: string, sizes: number[]) => {
+  const raw = String(input || "").trim();
+  if (!raw) return "";
+  return sizes.map((size) => `${buildImageUrl(raw, size)} ${size}w`).join(", ");
+};
+const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 1280, 1600, 2000, 2400]);
 ---
 
 <!doctype html>
@@ -163,6 +195,7 @@ const layoutCssVars = [
   data-default-theme={siteConfig.theme.defaultTheme}
   data-theme-list={JSON.stringify(siteConfig.theme.switchableThemes ?? siteConfig.theme.themes)}
   data-theme-pack={activeThemePack}
+  data-perf="high"
   data-layout-preset={activeLayoutPreset}
   data-theme-bg-style={themeBackgroundStyle}
   data-theme-surface-style={themeSurfaceStyle}
@@ -180,6 +213,12 @@ const layoutCssVars = [
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href={siteConfig.site.icon} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap"
+    />
     {canonical && <link rel="canonical" href={canonical} />}
     <meta property="og:type" content="website" />
     <meta property="og:title" content={pageTitle} />
@@ -202,11 +241,45 @@ const layoutCssVars = [
         codeThemeStorageKey: siteConfig.codeTheme.storageKey,
         codeThemePanelColorsJson: JSON.stringify(codeThemePanelColors),
         fontPresetDefault,
-        fontPresetListJson: JSON.stringify(fontPresetList.length ? fontPresetList : ["regular", "pixel"])
+        fontPresetListJson: JSON.stringify(fontPresetList.length ? fontPresetList : ["regular", "pixel"]),
+        perfTieringJson: JSON.stringify(perfTiering)
       }}
     >
       (() => {
         const root = document.documentElement;
+        const parsePerfTiering = (input) => {
+          try {
+            const parsed = JSON.parse(input || "{}");
+            return parsed && typeof parsed === "object" ? parsed : {};
+          } catch {
+            return {};
+          }
+        };
+        const perfTiering = parsePerfTiering(perfTieringJson);
+        const tieringEnabled = perfTiering.enable !== false;
+        const lowDeviceMemory = Number(perfTiering.lowDeviceMemory ?? 4);
+        const lowConcurrency = Number(perfTiering.lowConcurrency ?? 4);
+        const saveDataAsLow = perfTiering.saveDataAsLow !== false;
+        const detectPerfTier = () => {
+          if (!tieringEnabled) return "high";
+          const reducedMotion =
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          const saveData = Boolean(connection && connection.saveData);
+          const deviceMemory = Number(navigator.deviceMemory || 0);
+          const concurrency = Number(navigator.hardwareConcurrency || 0);
+          const lowDevice =
+            (deviceMemory && deviceMemory <= lowDeviceMemory) ||
+            (concurrency && concurrency <= lowConcurrency);
+          if (reducedMotion) return "low";
+          if (saveDataAsLow && saveData) return "low";
+          if (lowDevice) return "low";
+          return "high";
+        };
+        const perfTier = detectPerfTier();
+        root.dataset.perf = perfTier;
+        window.__flyPerfTier = perfTier;
         const key = "flycode-theme";
         const explicitKey = "flycode-theme-explicit";
         const codeThemeKey = codeThemeStorageKey;
@@ -369,6 +442,7 @@ const layoutCssVars = [
           const current = normalizeTheme(root.dataset.theme || readSavedTheme() || fallback);
           const nextRoot = nextDocument.documentElement;
           nextRoot.dataset.theme = current;
+          nextRoot.dataset.perf = root.dataset.perf || "high";
           nextRoot.dataset.defaultTheme = root.dataset.defaultTheme || fallback;
           nextRoot.dataset.themeList = root.dataset.themeList || "[]";
           nextRoot.dataset.themePack = root.dataset.themePack || nextRoot.dataset.themePack || "aurora";
@@ -429,7 +503,18 @@ const layoutCssVars = [
       style={globalBackgroundVars}
       aria-hidden="true"
     >
-      {globalBackgroundEnable && <img id="site-bg-image-el" src={backgroundImageUrl} alt="" loading="eager" decoding="async" />}
+      {globalBackgroundEnable && (
+        <img
+          id="site-bg-image-el"
+          src={backgroundImageUrl}
+          srcset={backgroundImageSrcset || undefined}
+          sizes="100vw"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          fetchpriority="low"
+        />
+      )}
     </div>
     <div class="site-bg-overlay" data-enabled={globalBackgroundEnable ? "1" : "0"} style={globalBackgroundVars} aria-hidden="true"></div>
     <div class="aurora-bg" data-style={themeBackgroundStyle} aria-hidden="true">
@@ -471,6 +556,24 @@ const layoutCssVars = [
       ></div>
     )}
     <script is:inline>
+      const perfTier = document.documentElement.dataset.perf || "high";
+      const isLowPerf = perfTier === "low";
+      const runWhenIdle = (task, timeout = 1200) => {
+        if (typeof task !== "function") return;
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => task(), { timeout });
+          return;
+        }
+        window.setTimeout(task, 0);
+      };
+      const scheduleNonCritical = (task) => {
+        if (isLowPerf) {
+          runWhenIdle(task, 1600);
+          return;
+        }
+        window.setTimeout(() => task?.(), 0);
+      };
+
       const emitCopySuccessToast = (message = "复制成功") => {
         if (typeof window.__flyNotifyCopySuccess === "function") {
           window.__flyNotifyCopySuccess(message);
@@ -657,12 +760,32 @@ const layoutCssVars = [
           const seconds = totalSeconds % 60;
           host.textContent = `已运行 ${days} 天 ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         };
+        const intervalMs = isLowPerf ? 5000 : 1000;
+        const stop = () => {
+          if (window.__flyRuntimeTicker) {
+            window.clearInterval(window.__flyRuntimeTicker);
+            window.__flyRuntimeTicker = 0;
+          }
+        };
+        const startTicker = () => {
+          stop();
+          render();
+          window.__flyRuntimeTicker = window.setInterval(render, intervalMs);
+        };
+        window.__flyRuntimeStart = startTicker;
+        window.__flyRuntimeStop = stop;
+        startTicker();
 
-        if (window.__flyRuntimeTicker) {
-          window.clearInterval(window.__flyRuntimeTicker);
+        if (!window.__flyRuntimeVisibilityBound) {
+          window.__flyRuntimeVisibilityBound = true;
+          document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+              window.__flyRuntimeStop?.();
+            } else {
+              window.__flyRuntimeStart?.();
+            }
+          });
         }
-        render();
-        window.__flyRuntimeTicker = window.setInterval(render, 1000);
       };
 
       const initGlobalCodeCopy = () => {
@@ -707,7 +830,7 @@ const layoutCssVars = [
         });
       };
 
-      document.addEventListener("astro:page-load", () => {
+      const boot = () => {
         document.body.classList.remove("has-overlay");
         for (const dialog of document.querySelectorAll("dialog[open]")) {
           if (dialog instanceof HTMLDialogElement) {
@@ -717,12 +840,14 @@ const layoutCssVars = [
           }
         }
         initGlobalCopyToast();
-        initGlobalCodeCopy();
+        scheduleNonCritical(initGlobalCodeCopy);
         initLayoutOffsets();
         initFloatingSafeArea();
-        initWallpaperSystem();
-        initSiteRuntime();
-      });
+        scheduleNonCritical(initWallpaperSystem);
+        scheduleNonCritical(initSiteRuntime);
+      };
+
+      document.addEventListener("astro:page-load", boot);
       if (!window.__flyLayoutOffsetBound) {
         window.__flyLayoutOffsetBound = true;
         window.addEventListener("resize", () => {
@@ -730,12 +855,7 @@ const layoutCssVars = [
           initFloatingSafeArea();
         });
       }
-      initGlobalCopyToast();
-      initGlobalCodeCopy();
-      initLayoutOffsets();
-      initFloatingSafeArea();
-      initWallpaperSystem();
-      initSiteRuntime();
+      boot();
     </script>
   </body>
 </html>

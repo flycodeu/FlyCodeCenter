@@ -10,7 +10,6 @@
 @import "../themes/nature-dark.css";
 @import "../themes/game-pixel-light.css";
 @import "../themes/game-pixel-dark.css";
-@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap");
 @import "./katex-local.css";
 
 @font-face {
@@ -84,6 +83,42 @@
   --font-display: var(--font-pixel-display);
   --font-tech: var(--font-pixel-tech);
   --font-mono: var(--font-pixel-mono);
+}
+
+:root[data-perf="low"] .site-bg-image {
+  --site-bg-opacity: 0.1 !important;
+  --site-bg-blur: 4px !important;
+  --site-bg-saturate: 100% !important;
+  --site-bg-grayscale: 0% !important;
+}
+
+:root[data-perf="low"] .site-bg-overlay {
+  --site-bg-overlay-opacity: 0.45 !important;
+}
+
+:root[data-perf="low"] .aurora-bg {
+  filter: blur(28px) !important;
+}
+
+:root[data-perf="low"] .aurora-orb {
+  animation: none !important;
+  opacity: 0.12 !important;
+}
+
+:root[data-perf="low"] body::before,
+:root[data-perf="low"] body::after {
+  opacity: 0.05;
+}
+
+:root[data-perf="low"] .surface,
+:root[data-perf="low"] .site-footer,
+:root[data-perf="low"] .global-copy-toast,
+:root[data-perf="low"] .search-fallback {
+  backdrop-filter: none !important;
+}
+
+:root[data-perf="low"] .search-modal::backdrop {
+  backdrop-filter: none !important;
 }
 
 :root[data-theme$="-light"],

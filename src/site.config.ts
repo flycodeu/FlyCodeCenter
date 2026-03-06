@@ -783,6 +783,12 @@ const siteConfig = defineSiteConfig({
   performance: {
     partytown: {
       enable: true
+    },
+    tiering: {
+      enable: true,
+      lowDeviceMemory: 4,
+      lowConcurrency: 4,
+      saveDataAsLow: true
     }
   },
   watermark: {
