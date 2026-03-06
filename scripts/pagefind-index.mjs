@@ -2,9 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
-const distDir = path.join(process.cwd(), "dist");
-const pagefindSourceDir = path.join(distDir, "pagefind");
-const pagefindClientDir = path.join(distDir, "client", "pagefind");
+const projectRoot = process.cwd();
+const distDir = path.join(projectRoot, "dist");
+const distClientDir = path.join(distDir, "client");
+const vercelStaticDir = path.join(projectRoot, ".vercel", "output", "static");
 
 async function exists(dir) {
   try {
@@ -15,26 +16,40 @@ async function exists(dir) {
   }
 }
 
+async function findSiteDir() {
+  const candidates = [vercelStaticDir, distClientDir, distDir];
+  for (const dir of candidates) {
+    if (!(await exists(dir))) continue;
+    if (await exists(path.join(dir, "index.html"))) return dir;
+  }
+  return null;
+}
+
 async function buildPagefind() {
-  if (!(await exists(distDir))) {
-    console.log("[pagefind] dist directory missing, skip indexing.");
+  const siteDir = await findSiteDir();
+  if (!siteDir) {
+    console.log("[pagefind] site output missing, skip indexing.");
     return;
   }
 
-  execSync("npx pagefind --site dist --output-subdir pagefind", {
+  execSync(`npx pagefind --site "${siteDir}" --output-subdir pagefind`, {
     stdio: "inherit",
     shell: true
   });
 
-  if (!(await exists(pagefindSourceDir))) {
-    console.log("[pagefind] source index missing, skip copy.");
+  const pagefindOutputDir = path.join(siteDir, "pagefind");
+  if (!(await exists(pagefindOutputDir))) {
+    console.log("[pagefind] output index missing, skip copy.");
     return;
   }
 
-  await fs.rm(pagefindClientDir, { recursive: true, force: true });
-  await fs.mkdir(path.dirname(pagefindClientDir), { recursive: true });
-  await fs.cp(pagefindSourceDir, pagefindClientDir, { recursive: true });
-  console.log("[pagefind] copied index to dist/client/pagefind");
+  if (siteDir !== distClientDir && (await exists(distClientDir))) {
+    const pagefindClientDir = path.join(distClientDir, "pagefind");
+    await fs.rm(pagefindClientDir, { recursive: true, force: true });
+    await fs.mkdir(path.dirname(pagefindClientDir), { recursive: true });
+    await fs.cp(pagefindOutputDir, pagefindClientDir, { recursive: true });
+    console.log("[pagefind] copied index to dist/client/pagefind");
+  }
 }
 
 buildPagefind().catch((error) => {
