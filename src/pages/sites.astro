@@ -29,11 +29,7 @@ const groups = [...entries].sort((a, b) => (a.entry.data.order ?? 999) - (b.entr
 const defaultCategory = siteConfig.pages.sites.filter.defaultCategory;
 const showFilter = siteConfig.pages.sites.filter.enable;
 const totalItems = groups.reduce((sum, group) => sum + group.cards.length, 0);
-
-const resolveIcon = (url: string, icon: string) => {
-  if (icon?.trim()) return icon.trim();
-  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=64`;
-};
+const defaultSiteIcon = "/icons/site-default.svg";
 
 const getHost = (url: string) => {
   try {
@@ -42,6 +38,15 @@ const getHost = (url: string) => {
     return "";
   }
 };
+
+const resolveIcon = (url: string, icon: string) => {
+  if (icon?.trim()) return icon.trim();
+  const host = getHost(url);
+  if (!host) return defaultSiteIcon;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`;
+};
+
+const iconFallbackScript = `if(this.dataset.fallbackApplied==='1')return;this.dataset.fallbackApplied='1';this.src='${defaultSiteIcon}';`;
 ---
 
 <BaseLayout title={siteConfig.pages.sites.title} description={siteConfig.pages.sites.description}>
@@ -101,7 +106,13 @@ const getHost = (url: string) => {
               group.cards.map((card) => (
                 <article class="site-card">
                   <header class="site-card-head">
-                    <img src={resolveIcon(card.url, card.icon)} alt="" loading="lazy" decoding="async" />
+                    <img
+                      src={resolveIcon(card.url, card.icon)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      onerror={iconFallbackScript}
+                    />
                     <div class="site-title-wrap">
                       <h3 title={card.title}>{card.title}</h3>
                       {card.badge && <span class="site-badge">{card.badge}</span>}

@@ -3,6 +3,8 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 
 const distDir = path.join(process.cwd(), "dist");
+const pagefindSourceDir = path.join(distDir, "pagefind");
+const pagefindClientDir = path.join(distDir, "client", "pagefind");
 
 async function exists(dir) {
   try {
@@ -23,6 +25,16 @@ async function buildPagefind() {
     stdio: "inherit",
     shell: true
   });
+
+  if (!(await exists(pagefindSourceDir))) {
+    console.log("[pagefind] source index missing, skip copy.");
+    return;
+  }
+
+  await fs.rm(pagefindClientDir, { recursive: true, force: true });
+  await fs.mkdir(path.dirname(pagefindClientDir), { recursive: true });
+  await fs.cp(pagefindSourceDir, pagefindClientDir, { recursive: true });
+  console.log("[pagefind] copied index to dist/client/pagefind");
 }
 
 buildPagefind().catch((error) => {

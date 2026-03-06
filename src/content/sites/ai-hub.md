@@ -13,19 +13,16 @@ cards:
     badge: "热门"
     category: "会话"
     pinned: true
-    icon: "https://cdn.simpleicons.org/openai"
   - title: "Claude"
     url: "https://claude.ai"
     desc: "长文本理解与推理能力突出。"
     tags: ["会话", "推理"]
     category: "会话"
-    icon: "https://cdn.simpleicons.org/anthropic"
   - title: "Gemini"
     url: "https://gemini.google.com"
     desc: "Google 生态下的多模态助手。"
     tags: ["会话", "多模态"]
     category: "会话"
-    icon: "https://cdn.simpleicons.org/googlegemini"
   - title: "Kimi"
     url: "https://kimi.moonshot.cn"
     desc: "中文语境下长上下文表现优秀。"
@@ -36,25 +33,21 @@ cards:
     desc: "IDE 内代码补全与生成。"
     tags: ["编程", "效率"]
     category: "编程"
-    icon: "https://cdn.simpleicons.org/githubcopilot"
   - title: "Cursor"
     url: "https://cursor.com"
     desc: "AI 原生代码编辑器。"
     tags: ["编程", "IDE"]
     category: "编程"
-    icon: "https://cdn.simpleicons.org/cursor"
   - title: "OpenRouter"
     url: "https://openrouter.ai"
     desc: "聚合多模型 API，便于切换与成本控制。"
     tags: ["平台", "网关", "API"]
     category: "平台"
-    icon: "https://cdn.simpleicons.org/openrouter"
   - title: "Vercel AI Gateway"
     url: "https://vercel.com/docs/ai-gateway"
     desc: "偏生产可观测的接入网关。"
     tags: ["平台", "网关", "部署"]
     category: "平台"
-    icon: "https://cdn.simpleicons.org/vercel"
   - title: "Midjourney"
     url: "https://www.midjourney.com"
     desc: "高质量文生图平台。"

@@ -37,7 +37,6 @@ cards:
     tags: ["社区", "平台"]
     category: "社区"
     pinned: true
-    icon: "https://cdn.simpleicons.org/steam"
   - title: "Nexus Mods"
     url: "https://www.nexusmods.com"
     desc: "MOD 资源与管理。"
