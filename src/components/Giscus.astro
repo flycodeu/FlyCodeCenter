@@ -7,7 +7,14 @@ interface Props {
 
 const { deferUntilEvent } = Astro.props;
 const giscus = siteConfig.comment.giscus;
-const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(giscus.repoId) && Boolean(giscus.categoryId);
+const mapping = String(giscus.mapping || "pathname").trim() || "pathname";
+const needsTerm = mapping === "specific" || mapping === "number";
+const term = String((giscus as { term?: string }).term ?? "").trim();
+const ready =
+  Boolean(giscus.repo && giscus.repo !== "owner/repo") &&
+  Boolean(giscus.repoId) &&
+  Boolean(giscus.categoryId) &&
+  (!needsTerm || Boolean(term));
 ---
 
 {
@@ -27,9 +34,17 @@ const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(gi
   let mounted = false;
   let readyToMount = !deferUntilEvent;
 
+  const isDarkSiteTheme = (input) => {
+    const theme = String(input || "").trim().toLowerCase();
+    if (!theme) return false;
+    return theme.endsWith("-dark") || theme === "night" || theme === "tech";
+  };
+
   const themeOfSite = () => {
-    const theme = document.documentElement.dataset.theme;
-    return theme === "aurora-dark" ? "dark" : "light";
+    const theme = document.documentElement.dataset.theme || "";
+    const themeLight = String(giscus.themeLight || "light").trim() || "light";
+    const themeDark = String(giscus.themeDark || "dark").trim() || "dark";
+    return isDarkSiteTheme(theme) ? themeDark : themeLight;
   };
 
   const syncTheme = () => {
@@ -45,7 +60,7 @@ const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(gi
     if (!ready || !anchor || mounted || !readyToMount) return;
     mounted = true;
     const script = document.createElement("script");
-    script.type = "text/partytown";
+    script.type = "text/javascript";
     script.src = "https://giscus.app/client.js";
     script.async = true;
     script.crossOrigin = "anonymous";
@@ -54,11 +69,17 @@ const ready = Boolean(giscus.repo && giscus.repo !== "owner/repo") && Boolean(gi
     script.setAttribute("data-category", giscus.category);
     script.setAttribute("data-category-id", giscus.categoryId);
     script.setAttribute("data-mapping", giscus.mapping);
+    script.setAttribute("data-strict", String(giscus.strict || "1"));
     script.setAttribute("data-reactions-enabled", giscus.reactionsEnabled);
     script.setAttribute("data-emit-metadata", giscus.emitMetadata);
     script.setAttribute("data-input-position", giscus.inputPosition);
+    script.setAttribute("data-loading", String(giscus.loading || "lazy"));
     script.setAttribute("data-theme", themeOfSite());
     script.setAttribute("data-lang", giscus.lang);
+    const term = String(giscus.term || "").trim();
+    if ((giscus.mapping === "specific" || giscus.mapping === "number") && term) {
+      script.setAttribute("data-term", term);
+    }
     anchor.appendChild(script);
   };
 

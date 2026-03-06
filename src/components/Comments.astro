@@ -11,10 +11,17 @@ const provider = siteConfig.comment.provider;
 const giscus = siteConfig.comment.giscus;
 const walineServer = siteConfig.comment.waline.serverUrl;
 const utterances = (siteConfig.comment as { utterances?: Record<string, string> }).utterances ?? {};
-const giscusReady =
-  Boolean(giscus.repo && giscus.repo !== "owner/repo") &&
-  Boolean(giscus.repoId) &&
-  Boolean(giscus.categoryId);
+const giscusMapping = String(giscus.mapping || "pathname").trim() || "pathname";
+const giscusMissingFields = [
+  !String(giscus.repo || "").trim() || String(giscus.repo || "").trim() === "owner/repo" ? "repo" : "",
+  !String(giscus.repoId || "").trim() ? "repoId" : "",
+  !String(giscus.category || "").trim() ? "category" : "",
+  !String(giscus.categoryId || "").trim() ? "categoryId" : "",
+  (giscusMapping === "specific" || giscusMapping === "number") && !String((giscus as { term?: string }).term || "").trim()
+    ? "term"
+    : ""
+].filter(Boolean);
+const giscusReady = giscusMissingFields.length === 0;
 const utterancesReady = Boolean(utterances.repo && utterances.repo !== "owner/repo");
 const activeProvider = provider;
 const commentsEnabled = activeProvider !== "off";
@@ -45,7 +52,18 @@ const commentsEnabled = activeProvider !== "off";
         )
       }
       {provider === "giscus" && !giscusReady && (
-        <p class="comment-hint">当前已选 Giscus，但缺少仓库/分类 ID 配置，评论区未启用。</p>
+        <p class="comment-hint">
+          当前已选 Giscus，但以下配置缺失或无效：
+          {
+            giscusMissingFields.map((field, index) => (
+              <>
+                <code>{field}</code>
+                {index < giscusMissingFields.length - 1 ? "、" : ""}
+              </>
+            ))
+          }
+          。请先在 <code>site.config.ts</code> 或 <code>PUBLIC_GISCUS_*</code> 环境变量中补齐。
+        </p>
       )}
     </section>
   )

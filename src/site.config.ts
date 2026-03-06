@@ -1,5 +1,8 @@
 ﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo" | "utterances";
+export type GiscusMapping = "pathname" | "url" | "title" | "og:title" | "specific" | "number";
+export type GiscusInputPosition = "top" | "bottom";
+export type GiscusLoading = "lazy" | "eager";
 export type ThemeId =
   | "aurora-light"
   | "aurora-dark"
@@ -817,11 +820,16 @@ const siteConfig = defineSiteConfig({
       repoId: PUBLIC_ENV.PUBLIC_GISCUS_REPO_ID ?? "",
       category: PUBLIC_ENV.PUBLIC_GISCUS_CATEGORY ?? "General",
       categoryId: PUBLIC_ENV.PUBLIC_GISCUS_CATEGORY_ID ?? "",
-      mapping: "pathname",
-      reactionsEnabled: "1",
-      emitMetadata: "0",
-      inputPosition: "top",
-      lang: "zh-CN"
+      mapping: (PUBLIC_ENV.PUBLIC_GISCUS_MAPPING ?? "pathname") as GiscusMapping,
+      term: PUBLIC_ENV.PUBLIC_GISCUS_TERM ?? "",
+      strict: PUBLIC_ENV.PUBLIC_GISCUS_STRICT ?? "1",
+      reactionsEnabled: PUBLIC_ENV.PUBLIC_GISCUS_REACTIONS_ENABLED ?? "1",
+      emitMetadata: PUBLIC_ENV.PUBLIC_GISCUS_EMIT_METADATA ?? "0",
+      inputPosition: (PUBLIC_ENV.PUBLIC_GISCUS_INPUT_POSITION ?? "top") as GiscusInputPosition,
+      lang: PUBLIC_ENV.PUBLIC_GISCUS_LANG ?? "zh-CN",
+      loading: (PUBLIC_ENV.PUBLIC_GISCUS_LOADING ?? "lazy") as GiscusLoading,
+      themeLight: PUBLIC_ENV.PUBLIC_GISCUS_THEME_LIGHT ?? "light",
+      themeDark: PUBLIC_ENV.PUBLIC_GISCUS_THEME_DARK ?? "dark"
     },
     waline: {
       serverUrl: PUBLIC_ENV.PUBLIC_WALINE_SERVER ?? ""
