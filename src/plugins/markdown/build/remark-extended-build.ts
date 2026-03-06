@@ -418,6 +418,27 @@ function parseShortcode(rawInput: string): ShortcodeParseResult | null {
   return { name, attrs, body };
 }
 
+function parseShortcodeSequence(rawInput: string): ShortcodeParseResult[] | null {
+  const raw = normalizeSmartQuotes(String(rawInput || ""));
+  if (!raw.trim()) return null;
+  const results: ShortcodeParseResult[] = [];
+  const pattern = /^\[(video|checkbox|hidden|admonition|callout|demo)\b([^\]]*)\]([\s\S]*?)\[\/\1\]/i;
+  let cursor = 0;
+  while (cursor < raw.length) {
+    while (cursor < raw.length && /\s/.test(raw[cursor] || "")) cursor += 1;
+    if (cursor >= raw.length) break;
+    const slice = raw.slice(cursor);
+    const match = slice.match(pattern);
+    if (!match) return null;
+    const full = match[0];
+    const shortcode = parseShortcode(full);
+    if (!shortcode) return null;
+    results.push(shortcode);
+    cursor += full.length;
+  }
+  return results.length ? results : null;
+}
+
 function applyDemoRegionsToChildren(
   children: unknown[],
   regions: DemoRegion[],
@@ -959,6 +980,58 @@ function processContainerBlocks(
     if (current.type === "paragraph") {
       const candidates = getParagraphCandidates(current, sourceLocator);
       if (candidates.length) {
+        let replacedTabLines = false;
+        for (const candidate of candidates) {
+          const text = String(candidate || "");
+          if (!/:::\s*tabs\b/i.test(text) || !/@tab\s+/i.test(text)) continue;
+          let normalized = text;
+          if (!/\r?\n/.test(normalized)) {
+            normalized = normalized.replace(/:::\s*tabs\s*/i, (match) => `${match.trim()}\n`);
+            normalized = normalized.replace(/\s+@tab\s+/gi, "\n@tab ");
+          }
+          const lines = normalized
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+          if (lines.length < 2) continue;
+          const splitNodes = lines.map((line) => createParagraph(line));
+          children.splice(i, 1, ...splitNodes);
+          i += splitNodes.length - 1;
+          replacedTabLines = true;
+          break;
+        }
+        if (replacedTabLines) continue;
+
+        let replacedSequence = false;
+        for (const candidate of candidates) {
+          const shortcodes = parseShortcodeSequence(candidate);
+          if (!shortcodes || shortcodes.length < 2) continue;
+          const shortcodeNodes: unknown[] = [];
+          let canReplace = true;
+          for (const shortcode of shortcodes) {
+            if (shortcode.name === "callout" && !enableCalloutTemplates) {
+              canReplace = false;
+              break;
+            }
+            if (shortcode.name === "demo" && !enableDemoBlock) {
+              canReplace = false;
+              break;
+            }
+            const shortcodeNode = createShortcodeNode(shortcode);
+            if (!shortcodeNode) {
+              canReplace = false;
+              break;
+            }
+            shortcodeNodes.push(shortcodeNode);
+          }
+          if (!canReplace || !shortcodeNodes.length) continue;
+          children.splice(i, 1, ...shortcodeNodes);
+          i += shortcodeNodes.length - 1;
+          replacedSequence = true;
+          break;
+        }
+        if (replacedSequence) continue;
+
         let replacedShortcode = false;
         for (const candidate of candidates) {
           const shortcode = parseShortcode(candidate);
