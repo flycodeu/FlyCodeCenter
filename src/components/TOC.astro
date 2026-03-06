@@ -113,6 +113,8 @@ const list: TocItem[] = filtered.map((item) => {
         const panel = document.getElementById("toc-mobile-panel");
         const desktopList = document.querySelector(".toc-list-desktop");
         const body = document.body;
+        const shouldTrackActive = () =>
+          document.documentElement.dataset.perf !== "low" && window.innerWidth > 1024;
         const getHeaderOffset = () => {
           const root = document.documentElement;
           const cssValue = Number.parseFloat(getComputedStyle(root).getPropertyValue("--layout-header-height"));
@@ -200,15 +202,18 @@ const list: TocItem[] = filtered.map((item) => {
         };
 
         const queueUpdate = () => {
+          if (!shouldTrackActive()) return;
           if (ticking) return;
           ticking = true;
           window.requestAnimationFrame(updateActive);
         };
 
-        window.addEventListener("scroll", queueUpdate, { passive: true });
-        window.addEventListener("resize", queueUpdate);
-        window.addEventListener("hashchange", queueUpdate);
-        window.addEventListener("site:decrypted", queueUpdate);
+        if (shouldTrackActive()) {
+          window.addEventListener("scroll", queueUpdate, { passive: true });
+          window.addEventListener("resize", queueUpdate);
+          window.addEventListener("hashchange", queueUpdate);
+          window.addEventListener("site:decrypted", queueUpdate);
+        }
 
         const mobileAnchorHandlers = [];
         document.querySelectorAll(".toc-list-mobile a").forEach((anchor) => {
@@ -231,7 +236,9 @@ const list: TocItem[] = filtered.map((item) => {
           mobileAnchorHandlers.push([anchor, onMobileAnchorClick]);
         });
 
-        queueUpdate();
+        if (shouldTrackActive()) {
+          queueUpdate();
+        }
 
         window[cleanupKey] = () => {
           toggleBtn?.removeEventListener("click", openMobileToc);

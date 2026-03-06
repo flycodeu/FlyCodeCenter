@@ -319,9 +319,14 @@ const pagefindEnabled = siteConfig.search.provider === "pagefind" && (!import.me
   }
 
   @media (max-width: 760px) {
+    .search-modal::backdrop,
+    .search-fallback {
+      backdrop-filter: none;
+    }
     .search-panel {
       padding: 0.8rem 0.7rem 0.62rem;
       border-radius: 14px;
+      background: var(--bg-elev);
     }
     .search-results {
       max-height: 56vh;

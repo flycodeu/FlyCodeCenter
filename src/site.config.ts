@@ -468,7 +468,7 @@ const siteConfig = defineSiteConfig({
       { text: "关于", link: "/about" }
     ],
     transitions: {
-      page: true,
+      page: false,
       list: true,
       theme: true
     }

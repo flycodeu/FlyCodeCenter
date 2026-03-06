@@ -108,6 +108,7 @@ const wallpapers = wallpaperConfig
     <script type="module">
       const perfTier = document.documentElement.dataset.perf || "high";
       const isLowPerf = perfTier === "low";
+      const isCompactViewport = window.matchMedia("(max-width: 900px)").matches;
       const runWhenIdle = (task, timeout = 1200) => {
         if (typeof task !== "function") return;
         if ("requestIdleCallback" in window) {
@@ -128,6 +129,10 @@ const wallpapers = wallpaperConfig
         const status = document.getElementById("jarvis-bot-status");
         const menu = document.getElementById("jarvis-bot-menu");
         if (!(host instanceof HTMLElement) || !(trigger instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) return () => {};
+        if (isLowPerf || isCompactViewport) {
+          host.hidden = true;
+          return () => {};
+        }
 
         const eventNs = host.dataset.eventNamespace || "jarvis";
         const route = host.dataset.targetRoute || "/jarvis";
@@ -349,7 +354,7 @@ const wallpapers = wallpaperConfig
           if (typeof window[cleanupKey] === "function") window[cleanupKey]();
           window[cleanupKey] = init();
         };
-        if (isLowPerf) {
+        if (isLowPerf || isCompactViewport) {
           runWhenIdle(run, 1600);
           return;
         }
@@ -430,8 +435,10 @@ const wallpapers = wallpaperConfig
   @keyframes bot-loading-eye { 0% { opacity: 0.35; transform: scaleX(0.7); } 50% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0.35; transform: scaleX(0.7); } }
   @keyframes bot-breathe { 0% { opacity: 0.42; } 50% { opacity: 0.92; } 100% { opacity: 0.42; } }
   @keyframes bot-bob { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+  :root[data-perf="low"] .jarvis-bot { display: none !important; }
   :root[data-perf="low"] .jarvis-bot .bot-chest-strip { animation-duration: 4s; }
   :root[data-perf="low"] .jarvis-bot.is-music-on .bot-core { animation-duration: 2.4s; }
   :root[data-perf="low"] .jarvis-bot .screen-scan { animation-duration: 1.4s; }
   @media (max-width: 960px) { .jarvis-bot { width: 102px; } .bot-core { width: 82px; height: 98px; } }
+  @media (max-width: 900px) { .jarvis-bot { display: none !important; } }
 </style>

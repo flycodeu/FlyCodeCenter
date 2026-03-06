@@ -297,4 +297,14 @@ const outlineLines = listCard.outlineLines ?? 2;
       height: var(--cover-top-max-height);
     }
   }
+
+  @media (hover: none) {
+    .post-card:hover {
+      transform: none;
+    }
+
+    .post-card:hover .cover-wrap img {
+      transform: none;
+    }
+  }
 </style>

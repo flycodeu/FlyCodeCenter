@@ -566,6 +566,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
     <script is:inline>
       const perfTier = document.documentElement.dataset.perf || "high";
       const isLowPerf = perfTier === "low";
+      const isCompactViewport = window.matchMedia("(max-width: 900px)").matches;
       const runWhenIdle = (task, timeout = 1200) => {
         if (typeof task !== "function") return;
         if ("requestIdleCallback" in window) {
@@ -575,7 +576,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
         window.setTimeout(task, 0);
       };
       const scheduleNonCritical = (task) => {
-        if (isLowPerf) {
+        if (isLowPerf || isCompactViewport) {
           runWhenIdle(task, 1600);
           return;
         }
@@ -768,7 +769,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
           const seconds = totalSeconds % 60;
           host.textContent = `已运行 ${days} 天 ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         };
-        const intervalMs = isLowPerf ? 5000 : 1000;
+        const intervalMs = isLowPerf || isCompactViewport ? 10000 : 1000;
         const stop = () => {
           if (window.__flyRuntimeTicker) {
             window.clearInterval(window.__flyRuntimeTicker);
@@ -858,10 +859,18 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
       document.addEventListener("astro:page-load", boot);
       if (!window.__flyLayoutOffsetBound) {
         window.__flyLayoutOffsetBound = true;
-        window.addEventListener("resize", () => {
-          initLayoutOffsets();
-          initFloatingSafeArea();
-        });
+        let resizeTicking = false;
+        const handleResize = () => {
+          if (resizeTicking) return;
+          resizeTicking = true;
+          window.requestAnimationFrame(() => {
+            resizeTicking = false;
+            initLayoutOffsets();
+            initFloatingSafeArea();
+          });
+        };
+        window.addEventListener("resize", handleResize, { passive: true });
+        window.visualViewport?.addEventListener("resize", handleResize, { passive: true });
       }
       boot();
     </script>
@@ -1125,6 +1134,19 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
 
   .global-copy-toast.bottom-center.is-visible {
     transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 900px) {
+    .site-footer {
+      backdrop-filter: none;
+      background: color-mix(in oklab, var(--surface-2) 97%, var(--bg) 3%);
+    }
+
+    .site-bg-image,
+    .site-bg-overlay,
+    .aurora-bg {
+      display: none !important;
+    }
   }
 
   @media (max-width: 760px) {

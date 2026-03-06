@@ -822,6 +822,47 @@ img {
   }
 }
 
+@media (max-width: 900px) {
+  body {
+    background: var(--bg);
+  }
+
+  body::before,
+  body::after {
+    display: none;
+  }
+
+  .surface {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--surface-1) 97%, transparent 3%),
+        color-mix(in oklab, var(--surface-2) 96%, transparent 4%)
+      );
+    box-shadow: var(--card-shadow);
+  }
+
+  .surface:hover {
+    box-shadow: var(--card-shadow);
+  }
+
+  .fade-up {
+    animation: none;
+  }
+}
+
+@media (hover: none) {
+  .surface:hover,
+  .pager-btn:hover,
+  .chip:hover,
+  a:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

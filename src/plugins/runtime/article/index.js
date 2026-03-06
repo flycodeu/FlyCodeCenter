@@ -49,6 +49,8 @@
     codeHighlightProvider || root.dataset.codeHighlightProvider || "prism"
   ).toLowerCase();
   const isExpressiveProvider = activeHighlightProvider === "expressive";
+  const isLowPerf = root.dataset.perf === "low";
+  const isCompactViewport = window.matchMedia("(max-width: 1024px)").matches;
 
     const BOT_UA_PATTERN = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
     const antiCrawlEvents = [];
@@ -1412,7 +1414,7 @@
 
     const stabilizeCodeUi = (article) => {
       if (!(article instanceof HTMLElement)) return;
-      const passes = [0, 90, 260, 520, 980, 1400];
+      const passes = isLowPerf || isCompactViewport ? [0, 320, 960] : [0, 90, 260, 520, 980, 1400];
       passes.forEach((delay) => {
         window.setTimeout(() => {
           enhanceExpressiveCodeHeader(article, true);
@@ -1554,6 +1556,7 @@
     };
 
     const bindReadingState = () => {
+      if (isLowPerf || isCompactViewport) return;
       let timer = 0;
       let lastProgress = -1;
       const write = () => {

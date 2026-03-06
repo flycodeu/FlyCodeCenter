@@ -36,9 +36,14 @@ const progressConfig = siteConfig.article.ui.readingProgress;
     article: null,
     circumference: 0,
     ticking: false,
-    bound: false
+    bound: false,
+    disabled: false
   };
   window.__flyReadingProgressState = state;
+
+  const shouldDisable = () =>
+    document.documentElement.dataset.perf === "low" ||
+    window.matchMedia("(max-width: 1024px)").matches;
 
   const bindTargets = () => {
     state.fab = document.getElementById("reading-progress-fab");
@@ -82,6 +87,12 @@ const progressConfig = siteConfig.article.ui.readingProgress;
 
   const render = () => {
     if (!isReady()) return;
+    if (shouldDisable()) {
+      state.disabled = true;
+      state.fab.classList.remove("visible");
+      return;
+    }
+    state.disabled = false;
     if (!isScrollableEnough()) {
       state.fab.classList.remove("visible");
       return;
@@ -104,6 +115,14 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   };
 
   const init = () => {
+    if (shouldDisable()) {
+      state.disabled = true;
+      const fab = document.getElementById("reading-progress-fab");
+      if (fab instanceof HTMLElement) {
+        fab.classList.remove("visible");
+      }
+      return;
+    }
     const ok = bindTargets();
     if (!ok || !isReady()) return;
     requestRender();
@@ -199,8 +218,7 @@ const progressConfig = siteConfig.article.ui.readingProgress;
 
   @media (max-width: 1024px) {
     .reading-progress-fab {
-      right: 1rem;
-      bottom: calc(0.8rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+      display: none;
     }
   }
 </style>

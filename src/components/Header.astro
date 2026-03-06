@@ -136,6 +136,11 @@ import CodeThemeToggle from "@/components/CodeThemeToggle.astro";
     }
   }
   @media (max-width: 900px) {
+    .site-header {
+      backdrop-filter: none;
+      background: color-mix(in oklab, var(--bg-elev) 97%, var(--bg) 3%);
+      box-shadow: none;
+    }
     .header-inner {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
