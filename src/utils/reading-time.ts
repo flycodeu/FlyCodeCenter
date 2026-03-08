@@ -1,5 +1,11 @@
 import siteConfig from "@/site.config";
 
+function normalizeText(input: unknown): string {
+  if (typeof input === "string") return input;
+  if (input === null || input === undefined) return "";
+  return String(input);
+}
+
 function countCjkCharacters(text: string): number {
   const matches = text.match(/[\u3400-\u9fff]/g);
   return matches ? matches.length : 0;
@@ -11,19 +17,20 @@ function countLatinWords(text: string): number {
   return words ? words.length : 0;
 }
 
-export function estimateWordCount(text: string): number {
-  const cjk = countCjkCharacters(text);
-  const latin = countLatinWords(text);
+export function estimateWordCount(text: unknown): number {
+  const normalized = normalizeText(text);
+  const cjk = countCjkCharacters(normalized);
+  const latin = countLatinWords(normalized);
   return cjk + latin;
 }
 
-export function estimateReadingMinutes(text: string): number {
+export function estimateReadingMinutes(text: unknown): number {
   const wordCount = estimateWordCount(text);
   const wpm = siteConfig.readingTime.wordsPerMinute;
   return Math.max(1, Math.ceil(wordCount / wpm));
 }
 
-export function summarizeReading(text: string): { wordCount: number; minutes: number } {
+export function summarizeReading(text: unknown): { wordCount: number; minutes: number } {
   return {
     wordCount: estimateWordCount(text),
     minutes: estimateReadingMinutes(text)

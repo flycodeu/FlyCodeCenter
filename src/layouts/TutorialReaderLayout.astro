@@ -7,6 +7,7 @@ import ReadingProgress from "@/components/ReadingProgress.astro";
 import EncryptGate from "@/components/EncryptGate.astro";
 import TutorialSidebar from "@/components/TutorialSidebar.astro";
 import { formatDate } from "@/utils/date";
+import { toSeriesRouteKey } from "@/utils/tutorial-series";
 
 interface Heading {
   depth: number;
@@ -114,6 +115,7 @@ const tocWidth = Number(toc.width ?? layoutPreset?.tutorialTocWidth ?? 280);
 const contentMaxWidth = Number(content.maxWidth ?? layoutPreset?.tutorialContentMaxWidth ?? 780);
 const showPrevNext = content.showPrevNext ?? true;
 const showSeriesBreadcrumb = content.showSeriesBreadcrumb ?? true;
+const seriesRouteKey = toSeriesRouteKey(seriesKey);
 const readerClass = [
   "tutorial-reader",
   sidebarEnable ? `has-sidebar sidebar-${sidebarPosition}` : "no-sidebar",
@@ -209,7 +211,7 @@ const articleRuntimeConfig = {
                 <nav class="tutorial-breadcrumb" aria-label="面包屑">
                   <a href="/tutorials">教程</a>
                   <span>/</span>
-                  <a href={`/tutorials/${encodeURIComponent(seriesKey)}`}>{seriesLabel}</a>
+                  <a href={`/tutorials/${encodeURIComponent(seriesRouteKey)}`}>{seriesLabel}</a>
                   <span>/</span>
                   <span>{title}</span>
                 </nav>

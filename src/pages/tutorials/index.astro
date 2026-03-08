@@ -2,7 +2,7 @@
 import ListLayout from "@/layouts/ListLayout.astro";
 import siteConfig from "@/site.config";
 import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
-import { buildTutorialSeriesBuckets } from "@/utils/tutorial-series";
+import { buildTutorialSeriesBuckets, toSeriesRouteKey } from "@/utils/tutorial-series";
 import { formatDate } from "@/utils/date";
 
 interface TutorialsPageConfig {
@@ -63,7 +63,7 @@ const seriesList = [...seriesMap.values()]
   >
     {
       seriesList.map((bucket) => {
-        const href = `/tutorials/${encodeURIComponent(bucket.key)}`;
+        const href = `/tutorials/${encodeURIComponent(toSeriesRouteKey(bucket.key))}`;
         const metaParts = [];
         if (showEntryCount) metaParts.push(`${bucket.entries.length} 篇`);
         if (showLastUpdated) metaParts.push(`更新于 ${formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")}`);

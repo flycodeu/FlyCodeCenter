@@ -13,6 +13,7 @@ import { resolveArticleMeta } from "@/utils/article-meta";
 import {
   buildTutorialSeriesBuckets,
   isTutorialReadmeEntry,
+  fromSeriesRouteKey,
   normalizeSeriesKey as normalizeSeriesKeyInternal,
   resolveSeriesKeyFromTutorialEntry,
   resolveTutorialSlug as resolveTutorialSlugInternal
@@ -76,7 +77,7 @@ export async function fetchReadingEntries(): Promise<CollectionEntry<"reading">[
 }
 
 export function normalizeSeriesKey(series: string): string {
-  return normalizeSeriesKeyInternal(series);
+  return fromSeriesRouteKey(series);
 }
 
 export function resolveTutorialSlug(entry: CollectionEntry<"tutorial">): string {
