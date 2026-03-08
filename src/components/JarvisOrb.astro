@@ -15,25 +15,6 @@ const defaultState = orbConfig?.defaultState ?? interaction?.defaultState ?? "id
 const defaultText = orbConfig?.defaultText ?? "已待命";
 const activeText = orbConfig?.activeText ?? "连接中";
 
-const wallpaperConfig = ((siteConfig.theme as {
-  backgroundImage?: {
-    wallpapers?: Array<{ id?: string; name?: string; url?: string; thumbnail?: string }>;
-  };
-}).backgroundImage?.wallpapers ?? []) as Array<{ id?: string; name?: string; url?: string; thumbnail?: string }>;
-
-const wallpapers = wallpaperConfig
-  .map((item, index) => {
-    const id = String(item?.id || `wallpaper-${index + 1}`).trim();
-    const name = String(item?.name || `壁纸 ${index + 1}`).trim();
-    const url = String(item?.url || "").trim();
-    if (!id || !url) return null;
-    return {
-      id,
-      name,
-      thumbnail: String(item?.thumbnail || url).trim() || url
-    };
-  })
-  .filter((item): item is { id: string; name: string; thumbnail: string } => Boolean(item));
 ---
 
 {
@@ -74,30 +55,6 @@ const wallpapers = wallpaperConfig
         <button type="button" class="menu-item" data-action="start-chat" role="menuitem">开始对话</button>
         <button type="button" class="menu-item" data-action="toggle-music" role="menuitem">播放音乐（模拟）</button>
         <button type="button" class="menu-item" data-action="wallpaper-next" role="menuitem">切换壁纸（下一张）</button>
-        <p class="menu-title">动作</p>
-        <button type="button" class="menu-item" data-action="action-wave" role="menuitem">挥手</button>
-        <button type="button" class="menu-item" data-action="action-nod" role="menuitem">点头</button>
-        <button type="button" class="menu-item" data-action="action-shake" role="menuitem">摇头</button>
-        <button type="button" class="menu-item" data-action="action-scan" role="menuitem">扫描</button>
-        <p class="menu-title">表情</p>
-        <button type="button" class="menu-item" data-action="expression-next" role="menuitem">切换下一种表情</button>
-        <button type="button" class="menu-item" data-action="expression-random" role="menuitem">随机表情</button>
-        <button type="button" class="menu-item" data-action="reset-idle" role="menuitem">恢复待机</button>
-        <p class="menu-title">壁纸列表</p>
-        {
-          wallpapers.length ? (
-            <div class="menu-wallpaper-list">
-              {wallpapers.map((wallpaper) => (
-                <button type="button" class="menu-item is-wallpaper" data-action="wallpaper-set" data-wallpaper-id={wallpaper.id} data-wallpaper-name={wallpaper.name} role="menuitem">
-                  <span class="wallpaper-thumb" style={`background-image:url('${wallpaper.thumbnail}')`}></span>
-                  <span>{wallpaper.name}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <button type="button" class="menu-item is-disabled" disabled role="menuitem">未配置壁纸</button>
-          )
-        }
       </div>
     </section>
   )
@@ -203,14 +160,6 @@ const wallpapers = wallpaperConfig
           emit("action", { actionId, source: "orb" });
         };
 
-        const syncWallpaperActive = (id) => {
-          const targetId = String(id || "").trim();
-          menu.querySelectorAll('button[data-action="wallpaper-set"]').forEach((button) => {
-            if (!(button instanceof HTMLButtonElement)) return;
-            button.classList.toggle("is-active", button.dataset.wallpaperId === targetId);
-          });
-        };
-
         const openMenu = (x, y) => {
           const rect = menu.getBoundingClientRect();
           const left = Math.max(10, Math.min(x, window.innerWidth - (rect.width || 260) - 10));
@@ -241,18 +190,6 @@ const wallpapers = wallpaperConfig
             window.dispatchEvent(new CustomEvent("jarvis:wallpaper-next", { detail: { source: "orb" } }));
             setStatus("已切换到下一张壁纸", 1200);
           },
-          "wallpaper-set": ({ wallpaperId, wallpaperName }) => {
-            if (!wallpaperId) return;
-            window.dispatchEvent(new CustomEvent("jarvis:wallpaper-set", { detail: { id: wallpaperId, source: "orb" } }));
-            setStatus(wallpaperName ? `已切换到壁纸：${wallpaperName}` : "已切换壁纸", 1300);
-          },
-          "action-wave": () => { setExpression("wink"); runAction("wave"); setStatus("执行动作：挥手", 1200); },
-          "action-nod": () => { setExpression("focus"); runAction("nod"); setStatus("执行动作：点头", 1200); },
-          "action-shake": () => { setExpression("angry"); runAction("shake"); setStatus("执行动作：摇头", 1200); },
-          "action-scan": () => { setExpression("loading"); runAction("scan"); setStatus("执行动作：扫描", 1200); },
-          "expression-next": () => { nextExpression(); setStatus(`表情：${host.dataset.expression || "dot"}`, 900); },
-          "expression-random": () => { randomExpression(); setStatus(`随机表情：${host.dataset.expression || "dot"}`, 900); },
-          "reset-idle": () => { clearActions(); setExpression("dot"); setState("idle", "orb"); setStatus("已恢复待机", 900); }
         };
 
         const runPrimary = () => {
@@ -308,9 +245,7 @@ const wallpapers = wallpaperConfig
         };
         const onWallpaperUpdated = (event) => {
           if (!(event instanceof CustomEvent)) return;
-          const id = String(event.detail?.id || "").trim();
           const name = String(event.detail?.name || "").trim();
-          syncWallpaperActive(id);
           if (name) setStatus(`壁纸已切换：${name}`, 1400);
         };
 
@@ -326,7 +261,6 @@ const wallpapers = wallpaperConfig
         window.addEventListener(`${eventNs}:speak`, onSpeak);
         window.addEventListener("jarvis:wallpaper-updated", onWallpaperUpdated);
 
-        syncWallpaperActive(document.documentElement.dataset.wallpaperId || "");
         setState(defaultState, "orb-init");
         scheduleBlink();
 
@@ -421,12 +355,9 @@ const wallpapers = wallpaperConfig
   .jarvis-bot.is-active .bot-status { color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%); }
   .jarvis-bot-menu { position: fixed; width: min(290px, calc(100vw - 20px)); max-height: min(68vh, 460px); overflow: auto; border-radius: 14px; border: 1px solid color-mix(in oklab, var(--line) 56%, var(--brand) 44%); background: linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 96%, transparent 4%), color-mix(in oklab, var(--bg-elev) 96%, transparent 4%)); backdrop-filter: blur(12px); padding: 0.5rem; z-index: 93; }
   .menu-title { margin: 0.38rem 0.22rem 0.18rem; font-size: 0.62rem; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; }
-  .menu-wallpaper-list { display: grid; gap: 0.18rem; }
   .menu-item { width: 100%; border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%); background: color-mix(in oklab, var(--bg) 90%, transparent 10%); color: var(--text); border-radius: 10px; padding: 0.45rem 0.52rem; display: flex; align-items: center; gap: 0.55rem; cursor: pointer; font-size: 0.82rem; text-align: left; }
   .menu-item:hover { border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%); background: color-mix(in oklab, var(--brand-soft) 68%, transparent 32%); }
   .menu-item.is-disabled { opacity: 0.5; cursor: not-allowed; }
-  .menu-item.is-wallpaper.is-active { border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%); background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%); color: var(--brand); }
-  .wallpaper-thumb { width: 34px; height: 20px; border-radius: 6px; background-size: cover; background-position: center; border: 1px solid color-mix(in oklab, #fff 26%, transparent 74%); flex: 0 0 auto; }
   @keyframes bot-wave { 0% { transform: rotate(-32deg); } 20% { transform: rotate(-6deg); } 40% { transform: rotate(-50deg); } 60% { transform: rotate(14deg); } 80% { transform: rotate(-36deg); } 100% { transform: rotate(-32deg); } }
   @keyframes bot-nod { 0% { transform: translateY(0); } 40% { transform: translateY(2px); } 100% { transform: translateY(0); } }
   @keyframes bot-shake { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
