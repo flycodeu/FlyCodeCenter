@@ -815,40 +815,206 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
         const success =
           '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5"/></svg>';
 
+        const normalizeLanguageLabel = (rawLanguage) => {
+          const raw = String(rawLanguage || "").trim().toLowerCase();
+          const match = raw.match(/language-([a-z0-9-]+)/i);
+          const lang = (match?.[1] || raw).trim();
+          if (!lang) return "txt";
+          if (lang === "plaintext" || lang === "plain" || lang === "text") return "txt";
+          return lang;
+        };
+        const resolveLanguageLabel = (pre, code) => {
+          if (!(pre instanceof HTMLElement)) return "";
+          const raw =
+            pre.getAttribute("data-language") ||
+            code?.getAttribute("data-language") ||
+            pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+            "";
+          return normalizeLanguageLabel(raw);
+        };
+
         const copy = async (button, text) => {
           try {
             await navigator.clipboard.writeText(text);
             button.innerHTML = success;
             button.classList.add("copied");
-            emitCopySuccessToast("代码已复制");
+            emitCopySuccessToast("复制成功");
             window.setTimeout(() => {
               button.innerHTML = icon;
               button.classList.remove("copied");
-            }, 1400);
+            }, 1800);
           } catch (error) {
             console.error("global pre copy failed", error);
+          }
+        };
+
+        const ensureCodeBlockMeta = (header) => {
+          let meta = header.querySelector(":scope > .code-block-meta");
+          if (!(meta instanceof HTMLElement)) {
+            meta = document.createElement("div");
+            meta.className = "code-block-meta";
+            header.appendChild(meta);
+          }
+          return meta;
+        };
+
+        const ensureCodeBlockTitle = (header) => {
+          let title = header.querySelector(":scope > .code-block-title");
+          if (!(title instanceof HTMLElement)) {
+            title = document.createElement("div");
+            title.className = "code-block-title";
+            header.insertBefore(title, header.firstChild);
+          }
+          return title;
+        };
+
+        const findDirectCopyWrap = (frame) => {
+          for (const child of Array.from(frame.children)) {
+            if (child instanceof HTMLElement && child.classList.contains("copy")) return child;
+          }
+          return null;
+        };
+
+        const getExpressiveCodeText = (pre) => {
+          const codeNode = pre.querySelector("code");
+          return (codeNode?.textContent || pre.textContent || "").trim();
+        };
+
+        const enhanceExpressiveCodeFrames = () => {
+          const frames = [...document.querySelectorAll(".expressive-code figure.frame")].filter(
+            (frame) => frame instanceof HTMLElement
+          );
+          for (const frame of frames) {
+            if (!(frame instanceof HTMLElement)) continue;
+            if (frame.closest(".article-body")) continue;
+            if (frame.dataset.langLabelInitialized === "1") continue;
+
+            const caption = frame.querySelector("figcaption.header");
+            const pre = frame.querySelector("pre");
+            if (!(caption instanceof HTMLElement) || !(pre instanceof HTMLElement)) continue;
+
+            const headerMeta = ensureCodeBlockMeta(caption);
+            const headerTitle = ensureCodeBlockTitle(caption);
+
+            const preLang =
+              pre.getAttribute("data-language") ||
+              pre.dataset.language ||
+              pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+              "";
+            const languageLabel = normalizeLanguageLabel(preLang);
+
+            let titleNode =
+              headerMeta.querySelector(":scope > .title, :scope > .code-block-lang") || caption.querySelector(":scope > .title");
+            if (!(titleNode instanceof HTMLElement)) {
+              titleNode = document.createElement("span");
+              titleNode.className = "title";
+              headerTitle.appendChild(titleNode);
+            }
+            titleNode.textContent = languageLabel;
+            titleNode.classList.add("code-block-lang");
+            titleNode.classList.remove("sr-only");
+            titleNode.removeAttribute("hidden");
+            if (titleNode.parentElement !== headerTitle) {
+              headerTitle.appendChild(titleNode);
+            }
+            frame.classList.add("has-title");
+
+            let copyWrap =
+              findDirectCopyWrap(frame) ||
+              caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .code-block-copy-wrap, :scope .copy");
+            let copyReady = false;
+
+            if (!(copyWrap instanceof HTMLElement)) {
+              copyWrap = document.createElement("div");
+              copyWrap.className = "copy code-block-copy-wrap";
+              const live = document.createElement("div");
+              live.setAttribute("aria-live", "polite");
+              copyWrap.appendChild(live);
+
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = "code-block-copy";
+              button.title = "复制代码";
+              button.setAttribute("aria-label", "复制代码");
+              button.innerHTML = icon;
+              button.addEventListener("click", () => {
+                const text = getExpressiveCodeText(pre);
+                if (!text) return;
+                copy(button, text);
+              });
+              copyWrap.appendChild(button);
+              copyReady = true;
+            } else {
+              copyReady = true;
+              copyWrap.classList.add("code-block-copy-wrap");
+              copyWrap.classList.add("copy");
+              const copyButton = copyWrap.querySelector("button");
+              if (copyButton instanceof HTMLButtonElement) {
+                copyButton.classList.add("code-block-copy");
+                copyButton.title = "复制代码";
+                copyButton.setAttribute("aria-label", "复制代码");
+              }
+            }
+
+            if (copyWrap instanceof HTMLElement && copyWrap.parentElement !== headerMeta) {
+              headerMeta.appendChild(copyWrap);
+            }
+            if (titleNode instanceof HTMLElement && titleNode.parentElement === headerMeta) {
+              headerTitle.appendChild(titleNode);
+            }
+            if (headerTitle.childElementCount === 0) {
+              headerTitle.remove();
+            }
+
+            frame.dataset.langLabelInitialized = copyReady ? "1" : "0";
           }
         };
 
         document.querySelectorAll("main pre").forEach((pre) => {
           if (!(pre instanceof HTMLElement)) return;
           if (pre.closest(".article-body")) return;
-          if (pre.querySelector(".global-pre-copy")) return;
+          if (pre.closest(".expressive-code")) return;
+          if (pre.closest(".code-block-wrapper")) return;
 
           const code = pre.querySelector("code");
           const text = (code?.textContent || pre.textContent || "").trim();
           if (!text) return;
 
-          pre.classList.add("has-global-copy");
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+          wrapper.dataset.window = "mac";
+          wrapper.dataset.provider = String(document.documentElement.dataset.codeHighlightProvider || "prism").toLowerCase();
+          pre.parentNode?.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const header = document.createElement("div");
+          header.className = "code-block-header";
+          const headerTitle = document.createElement("div");
+          headerTitle.className = "code-block-title";
+          const headerMeta = document.createElement("div");
+          headerMeta.className = "code-block-meta";
+
+          const lang = resolveLanguageLabel(pre, code);
+          const langSpan = document.createElement("span");
+          langSpan.className = "code-block-lang";
+          langSpan.textContent = lang;
+          headerTitle.appendChild(langSpan);
+          header.appendChild(headerTitle);
+
           const button = document.createElement("button");
           button.type = "button";
-          button.className = "global-pre-copy";
+          button.className = "code-block-copy";
           button.title = "复制代码";
-          button.ariaLabel = "复制代码";
+          button.setAttribute("aria-label", "复制代码");
           button.innerHTML = icon;
           button.addEventListener("click", () => copy(button, text));
-          pre.appendChild(button);
+          headerMeta.appendChild(button);
+
+          header.appendChild(headerMeta);
+          wrapper.insertBefore(header, pre);
         });
+
+        enhanceExpressiveCodeFrames();
       };
 
       const boot = () => {

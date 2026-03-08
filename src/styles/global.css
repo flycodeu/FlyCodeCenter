@@ -1158,6 +1158,13 @@ main pre.has-global-copy {
   overflow: hidden;
 }
 
+.code-block-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .code-block-meta {
   margin-left: auto;
   display: inline-flex;
@@ -1206,9 +1213,9 @@ main pre.has-global-copy {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(1px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
   transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
@@ -1324,9 +1331,9 @@ main pre.has-global-copy {
 }
 
 .prose .expressive-code .frame > figcaption.header .code-block-copy {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(1px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .prose .expressive-code .frame:hover > figcaption.header .code-block-copy,

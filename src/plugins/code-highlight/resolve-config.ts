@@ -48,6 +48,19 @@ const resolveThemePair = (siteConfig: any) => {
   };
 };
 
+const normalizeLanguages = (input: unknown): string[] => {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of input) {
+    const lang = String(item || "").trim().toLowerCase();
+    if (!lang || seen.has(lang)) continue;
+    seen.add(lang);
+    result.push(lang);
+  }
+  return result;
+};
+
 export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightConfig => {
   const isFastDev = process.env.FLY_FAST_DEV_ACTIVE === "1";
   if (isFastDev) {
@@ -62,13 +75,21 @@ export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightCo
   const provider = readProvider(siteConfig);
   const { light, dark } = resolveThemePair(siteConfig);
   const langs = Array.isArray(siteConfig?.codeHighlight?.languages) ? siteConfig.codeHighlight.languages : [];
+  const normalizedLangs = normalizeLanguages(langs);
+  const langAlias = {
+    sh: "shellscript"
+  };
 
   if (provider === "expressive") {
     return {
       provider,
       integrations: [
         expressiveCode({
-          themes: [light, dark]
+          themes: [light, dark],
+          shiki: {
+            langs: normalizedLangs,
+            langAlias
+          }
         })
       ],
       syntaxHighlight: false,
@@ -84,7 +105,8 @@ export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightCo
       shikiConfig: {
         themes: { light, dark },
         wrap: true,
-        langs
+        langs: normalizedLangs,
+        langAlias
       },
       extraRehypePlugins: []
     };
