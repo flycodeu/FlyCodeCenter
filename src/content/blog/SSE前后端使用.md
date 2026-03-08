@@ -1,10 +1,12 @@
 ---
 title: SSE使用
-createTime: 2025/09/23 14:09:31
+createTime: '2025/09/23 14:09:31'
+code: rs6s6k3o
 permalink: /article/4ov1a8ye/
 tags:
   - SSE
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg
 ---
 <ImageCard
 image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg"

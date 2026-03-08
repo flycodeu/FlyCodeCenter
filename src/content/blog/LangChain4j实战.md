@@ -1,10 +1,12 @@
 ---
 title: LangChain4j实战
-createTime: 2025/08/04 13:58:45
+createTime: '2025/08/04 13:58:45'
+code: r5p6sgzt
 permalink: /article/zuw6obif/
 tags:
   - LangChain4j
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/639a06e3e1aef9dc0eead20503100577.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/639a06e3e1aef9dc0eead20503100577.jpg
 ---
 
 ## 官方文档

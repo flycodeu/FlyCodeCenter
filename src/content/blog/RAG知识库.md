@@ -1,10 +1,12 @@
 ---
 title: RAG知识库
-createTime: 2025/05/12 09:23:44
+createTime: '2025/05/12 09:23:44'
+code: rfy97tev
 permalink: /article/2hl965ic/
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250512165933.jpg
 tags:
-- AI
+  - AI
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250512165933.jpg
 ---
 
 # AI知识问答场景

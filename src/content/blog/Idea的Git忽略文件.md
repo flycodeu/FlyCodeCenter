@@ -1,6 +1,7 @@
 ---
 title: Idea的Git忽略文件
-createTime: 2025/03/04 09:49:05
+createTime: '2025/03/04 09:49:05'
+code: r0mqxigk
 permalink: /article/r82mjmsn/
 tags:
   - Git

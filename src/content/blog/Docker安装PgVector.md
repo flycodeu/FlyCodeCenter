@@ -1,10 +1,12 @@
 ---
 title: Docker安装PgVector
-createTime: 2025/06/05 16:50:51
+createTime: '2025/06/05 16:50:51'
+code: rb9hatw3
 permalink: /article/pfatn7xa/
 tags:
   - Docker
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165958.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165958.jpg
 ---
 
 ## 安装步骤

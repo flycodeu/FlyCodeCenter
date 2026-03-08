@@ -1,6 +1,7 @@
 ---
 title: git忽略提交文件集合
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: rk485c05
 permalink: /article/3mhedlkk/
 tags:
   - Git

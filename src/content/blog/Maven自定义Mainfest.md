@@ -1,10 +1,12 @@
 ---
 title: Maven自定义Mainfest
-createTime: 2025/03/26 08:43:19
+createTime: '2025/03/26 08:43:19'
+code: rilqs5kk
 permalink: /article/97dde51x/
 tags:
-   - Maven
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d01a33e1a55ca078dc78d963e907308.jpg
+  - Maven
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d01a33e1a55ca078dc78d963e907308.jpg
 ---
 
 

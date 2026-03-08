@@ -1,6 +1,7 @@
 ---
 title: Centos7安装Docker
 createTime: '2025/06/05 09:50:20'
+code: r0w9un9y
 permalink: /article/5fqygf47/
 tags:
   - CentOS7

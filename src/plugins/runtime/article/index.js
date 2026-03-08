@@ -1000,21 +1000,39 @@
           frame.classList.remove("has-title");
         }
 
-        const copyWrap =
-          findDirectCopyWrap(frame) || caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .copy");
+        let copyWrap =
+          findDirectCopyWrap(frame) ||
+          caption.querySelector(":scope .copy.code-block-copy-wrap, :scope .code-block-copy-wrap, :scope .copy");
         let copyReady = !enableCodeCopy;
-        if (copyWrap instanceof HTMLElement) {
+
+        if (!(copyWrap instanceof HTMLElement) && enableCodeCopy) {
+          copyWrap = document.createElement("div");
+          copyWrap.className = "copy code-block-copy-wrap";
+          const live = document.createElement("div");
+          live.setAttribute("aria-live", "polite");
+          copyWrap.appendChild(live);
+
+          const codeNode = pre.querySelector("code");
+          const btn = createCopyBtn("code-block-copy", "复制代码", () => {
+            if (codeNode instanceof HTMLElement) return extractCodeRaw(codeNode);
+            return stripFencedCode(pre.textContent || "");
+          });
+          copyWrap.appendChild(btn);
+          copyReady = true;
+        } else if (copyWrap instanceof HTMLElement) {
           copyReady = true;
           copyWrap.classList.add("code-block-copy-wrap");
-          if (copyWrap.parentElement !== headerMeta) {
-            headerMeta.appendChild(copyWrap);
-          }
+          copyWrap.classList.add("copy");
           const copyButton = copyWrap.querySelector("button");
           if (copyButton instanceof HTMLButtonElement) {
             copyButton.classList.add("code-block-copy");
             copyButton.title = "复制代码";
             copyButton.setAttribute("aria-label", "复制代码");
           }
+        }
+
+        if (copyWrap instanceof HTMLElement && copyWrap.parentElement !== headerMeta) {
+          headerMeta.appendChild(copyWrap);
         }
         if (titleNode instanceof HTMLElement && titleNode.parentElement === headerMeta) {
           if (copyWrap instanceof HTMLElement && copyWrap.parentElement === headerMeta) {

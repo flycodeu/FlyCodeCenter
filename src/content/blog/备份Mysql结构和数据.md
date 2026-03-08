@@ -1,6 +1,7 @@
 ---
 title: 备份Mysql结构和数据
 createTime: '2025/03/04 09:28:52'
+code: r9oe497m
 permalink: /article/07khmkn2/
 tags:
   - MySQL

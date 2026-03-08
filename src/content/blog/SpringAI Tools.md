@@ -1,10 +1,12 @@
 ---
 title: SpringAI Tools
-createTime: 2025/05/20 14:36:27
+createTime: '2025/05/20 14:36:27'
+code: r1v87xef
 permalink: /article/wb3rh8gx/
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250521154058.jpg
 tags:
   - AI
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250521154058.jpg
 ---
 
 

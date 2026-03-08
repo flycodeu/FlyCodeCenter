@@ -1,6 +1,7 @@
 ---
 title: 使用oshi监控java运行
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: runtobsh
 permalink: /article/3vzpzz57/
 tags:
   - SpringBoot

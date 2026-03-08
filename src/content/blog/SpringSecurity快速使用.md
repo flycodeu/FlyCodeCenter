@@ -1,6 +1,7 @@
 ---
 title: SpringSecurity快速使用
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: rk43ybo8
 permalink: /article/ek4lkft8/
 tags:
   - SpringBoot

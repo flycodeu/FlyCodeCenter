@@ -1,10 +1,12 @@
 ---
 title: AI智能体
-createTime: 2025/05/29 09:40:59
+createTime: '2025/05/29 09:40:59'
+code: ruzoehqk
 permalink: /article/r57x3pt2/
 tags:
   - AI
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250603151822.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250603151822.jpg
 ---
 
 ## 什么是智能体

@@ -1,9 +1,10 @@
 ---
 title: Vercel部署ChatGpt
-createTime: 2025/03/04 10:05:38
+createTime: '2025/03/04 10:05:38'
+code: rcobxvjc
 permalink: /article/60xnu0lv/
 tags:
- - AI
+  - AI
 ---
 # Vercel 部署ChatGpt
 

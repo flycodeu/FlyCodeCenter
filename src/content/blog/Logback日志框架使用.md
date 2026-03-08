@@ -1,10 +1,12 @@
 ---
 title: Logback日志框架使用
-createTime: 2025/07/25 09:38:54
+createTime: '2025/07/25 09:38:54'
+code: hv789bq2
 permalink: /article/01nansv0/
 tags:
   - 日志
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250725103647244.png
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250725103647244.png
 ---
 # 🚀 深入解读 Logback 日志配置，优化你的 Java 应用性能！
 

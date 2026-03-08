@@ -1,11 +1,12 @@
 ---
 title: MCP实现CSDN自动发帖
-createTime: 2025/06/27 14:51:40
+createTime: '2025/06/27 14:51:40'
+code: wkywv48p
 permalink: /article/uxcawlql/
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg05.jpg
 tags:
   - MCP
   - AI
+cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg05.jpg'
 ---
 
 # CSDN 自动发帖功能完整实现指南

@@ -1,3 +1,7 @@
+---
+createTime: '2026/03/01 19:23:46'
+code: r1jj1jvf
+---
 # Ubuntu 部署 MinIO（API:8071 / Console:8070）与 Python 接入实战：自启动、上传、下载、图片在线访问
 
 本文按“能落地、可复现”的标准，把 MinIO 在 Ubuntu 上的安装部署、systemd 后台自启动、`mc` 管理以及 Python SDK 上传/下载/在线访问（预签名与公开读）走一遍。示例目录结构与端口配置与你当前环境一致：

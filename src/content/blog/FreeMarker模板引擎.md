@@ -1,9 +1,10 @@
 ---
 title: FreeMarker模板引擎
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: rb8118k9
 permalink: /article/3li9kv1d/
 tags:
-   - FreeMarker
+  - FreeMarker
 ---
 > 本文作者：程序员飞云
 >

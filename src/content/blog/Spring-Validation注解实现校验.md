@@ -1,9 +1,10 @@
 ---
 title: Spring-Validation注解实现校验
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: rsrkyacw
 permalink: /article/6cc7o80q/
 tags:
-   - SpringBoot
+  - SpringBoot
 ---
 > 本文作者：程序员飞云
 >

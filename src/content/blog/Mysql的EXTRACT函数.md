@@ -1,6 +1,7 @@
 ---
 title: Mysql的EXTRACT函数
 createTime: '2025/03/04 09:28:52'
+code: rauuc406
 permalink: /article/qkrqgo2t/
 tags:
   - MySQL

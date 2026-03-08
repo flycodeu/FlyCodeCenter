@@ -1,10 +1,11 @@
 ---
 title: Jenkins常见构建方式
-createTime: 2025/03/05 09:04:01
+createTime: '2025/03/05 09:04:01'
+code: rcg7qcvs
 permalink: /article/kmkxergu/
 tags:
   - Jenkins
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/logo.png
+cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/logo.png'
 coverStyle:
   layout: right
 ---

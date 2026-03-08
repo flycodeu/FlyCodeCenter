@@ -1,10 +1,12 @@
 ---
 title: SpringBoot实现接口防抖
-createTime: 2025/07/29 09:38:09
+createTime: '2025/07/29 09:38:09'
+code: rnw9mjgj
 permalink: /article/mlmaqg7m/
 tags:
-   - 防抖
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a15bc0b828d64f8b45299f80d4208d.jpg
+  - 防抖
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a15bc0b828d64f8b45299f80d4208d.jpg
 ---
 # 防抖机制详解：原理、场景与实现方案
 

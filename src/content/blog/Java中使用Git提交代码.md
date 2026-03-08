@@ -1,10 +1,12 @@
 ---
 title: Java中使用Git提交代码
-createTime: 2025/03/27 08:46:44
+createTime: '2025/03/27 08:46:44'
+code: g6emja83
 permalink: /article/37pml0o0/
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/22678c319934c0e968b1ef06041698b.jpg
 tags:
-- Git
+  - Git
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/22678c319934c0e968b1ef06041698b.jpg
 ---
 ## 创建空仓库
 

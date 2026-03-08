@@ -1,11 +1,13 @@
 ---
 title: VoidTab浏览器标签主页
-createTime: 2026/02/03 08:54:37
+createTime: '2026/02/03 08:54:37'
+code: riascapt
 permalink: /article/jufsy0qb/
 tags:
   - 浏览器插件
   - 独立项目
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3d4c176ee540551925d5c6271f3db040.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3d4c176ee540551925d5c6271f3db040.jpg
 ---
 
 <ImageCard

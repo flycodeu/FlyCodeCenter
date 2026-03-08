@@ -1,11 +1,12 @@
 ---
 title: Docker安装Ollama
-createTime: 2025/06/05 15:13:39
+createTime: '2025/06/05 15:13:39'
+code: wuwy1h62
 permalink: /article/bl0b1bd0/
 tags:
   - Docker
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165730.jpg
-
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165730.jpg
 ---
 
 ## Ollama 官网

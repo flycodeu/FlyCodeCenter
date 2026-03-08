@@ -1,6 +1,7 @@
 ---
 title: 项目快速接入AI调用获取数据
-createTime: 2026/02/24 14:42:51
+createTime: '2026/02/24 14:42:51'
+code: rk410s73
 permalink: /article/9slaraza/
 ---
 # 1. 目标与约束

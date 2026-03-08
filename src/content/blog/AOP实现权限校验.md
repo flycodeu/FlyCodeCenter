@@ -1,10 +1,12 @@
 ---
 title: AOP实现权限校验
-createTime: 2025/07/31 13:19:43
+createTime: '2025/07/31 13:19:43'
+code: rro2c0ud
 permalink: /article/mo15146q/
 tags:
   - AOP
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/71fee2c9e637523ffccafa3a45d0c968.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/71fee2c9e637523ffccafa3a45d0c968.jpg
 ---
 在实际开发中，我们常常需要对接口进行权限控制。传统做法是在方法内部进行权限判断，这样做不仅代码冗余、耦合度高，还违背了单一职责原则。为了解耦权限逻辑与业务代码，我们可以借助 AOP（面向切面编程） 实现权限校验，搭配自定义注解，使权限控制更加灵活优雅。
 

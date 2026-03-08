@@ -1,6 +1,7 @@
 ---
 title: Centos7安装Mysql8
 createTime: '2025/03/04 09:28:52'
+code: rkxrb1sq
 permalink: /article/5loibxw5/
 tags:
   - CentOS7

@@ -1,11 +1,13 @@
 ---
 title: Tesseract使用
-createTime: 2025/11/10 09:49:00
+createTime: '2025/11/10 09:49:00'
+code: rusbd7gn
 permalink: /article/4p9ygxdp/
 tags:
-   - Tesseract
-   - 图片文字识别
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d634d9a015b2cfa093c95a33a30e6237.jpg
+  - Tesseract
+  - 图片文字识别
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d634d9a015b2cfa093c95a33a30e6237.jpg
 ---
 
 # 🧠 Tesseract OCR 技术详解

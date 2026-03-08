@@ -1,9 +1,10 @@
 ---
 title: 复制List对象
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: rzsdy9dh
 permalink: /article/b1m8cmxx/
 tags:
-  - SpringBoot 
+  - SpringBoot
 ---
 > 本文作者：程序员飞云
 >

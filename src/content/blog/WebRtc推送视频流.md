@@ -1,11 +1,13 @@
 ---
 title: WebRtc推送视频流
-createTime: 2025/10/22 11:05:04
+createTime: '2025/10/22 11:05:04'
+code: rdcsckkx
 permalink: /article/r698dizq/
 tags:
-   - 视频流
-   - WebRTC
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/6f75f8e2b0df3e00dfd65ad98dfda1ed.jpg
+  - 视频流
+  - WebRTC
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/6f75f8e2b0df3e00dfd65ad98dfda1ed.jpg
 ---
 # 使用 MediaMTX 搭建 WebRTC 实时视频流服务器（对接大华相机）
 

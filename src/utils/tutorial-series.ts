@@ -70,6 +70,17 @@ export function normalizeSeriesKey(series: string): string {
 }
 
 export function resolveSeriesKeyFromTutorialEntry(entry: TutorialEntry): string {
+  const filePath = String((entry as { filePath?: string }).filePath || "").replace(/\\/g, "/");
+  if (filePath) {
+    const match =
+      filePath.match(/(?:^|\/)src\/content\/tutorial\/([^/]+)/i) ||
+      filePath.match(/(?:^|\/)content\/tutorial\/([^/]+)/i);
+    if (match?.[1]) {
+      const key = normalizeSeriesKey(match[1]);
+      if (key) return key;
+    }
+  }
+
   const segments = getEntrySegments(entry.id);
   return normalizeSeriesKey(segments[0] || "");
 }
@@ -78,7 +89,7 @@ function prettifySeriesKey(key: string): string {
   const raw = normalizeSeriesKey(key);
   if (!raw) return "Uncategorized Tutorials";
   const normalized = raw.replace(/[-_]+/g, " ").trim();
-  if (/^[a-z0-9 ]+$/i.test(normalized)) {
+  if (/^[a-z0-9 +#]+$/i.test(normalized)) {
     return normalized.replace(/\b[a-z]/g, (char) => char.toUpperCase());
   }
   return normalized;
@@ -131,7 +142,7 @@ function resolveSeriesMetaFromReadme(readme: TutorialEntry) {
   const data = (readme.data ?? {}) as TutorialSeriesFrontmatter;
   const article = resolveArticleMeta(readme);
   return {
-    label: pickText(data.title, article.title),
+    label: pickText(data.title),
     description: pickText(data.description, data.summary, article.summary),
     category: pickText(data.category),
     cover: pickText(data.cover, article.cover),

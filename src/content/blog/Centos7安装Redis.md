@@ -1,6 +1,7 @@
 ---
 title: Centos7安装Redis
 createTime: '2025/03/04 09:28:52'
+code: r9qar84y
 permalink: /article/bcdfdwr3/
 tags:
   - CentOS7

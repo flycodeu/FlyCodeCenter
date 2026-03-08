@@ -1295,7 +1295,7 @@ main pre.has-global-copy {
   z-index: 2;
 }
 
-.prose .expressive-code .frame > .copy:not(.code-block-copy-wrap) {
+.prose .expressive-code .frame[data-lang-label-initialized="1"] > .copy:not(.code-block-copy-wrap) {
   display: none !important;
 }
 
@@ -1335,6 +1335,15 @@ main pre.has-global-copy {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+@media (hover: none) {
+  .code-block-wrapper .code-block-copy,
+  .prose .expressive-code .frame > figcaption.header .code-block-copy {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
 }
 
 .prose .expressive-code .frame > pre {

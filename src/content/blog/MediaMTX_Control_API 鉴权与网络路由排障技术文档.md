@@ -1,11 +1,13 @@
 ---
 title: MediaMTX Control API 鉴权与网络路由排障技术文档
-createTime: 2026/01/16 10:58:22
+createTime: '2026/01/16 10:58:22'
+code: r7sy0hnc
 permalink: /article/hcbji7n5/
 tags:
   - MediaMTX
   - 视频
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efae30bcdf26bfdec9f4bb0326457e75.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efae30bcdf26bfdec9f4bb0326457e75.jpg
 ---
 
 <ImageCard

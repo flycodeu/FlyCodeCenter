@@ -1,15 +1,16 @@
 ---
-title: "数据结构教程"
-description: "常用数据结构与算法实战"
-createTime: "2026/03/05 20:30:00"
-permalink: "/article/ds0000/"
-category: "计算机基础"
-icon: "datastruct"
+title: 数据结构教程
+createTime: '2026/03/05 20:30:00'
+code: zv9s8nuz
+permalink: /article/ds0000/
+description: 常用数据结构与算法实战
+tags:
+  - tutorial
+  - datastruct
+category: 计算机基础
+icon: datastruct
 order: 2
 showOnHome: false
-tags:
-  - "tutorial"
-  - "datastruct"
 ---
 
 本系列用于系统学习常见数据结构，并结合实战题目强化理解。

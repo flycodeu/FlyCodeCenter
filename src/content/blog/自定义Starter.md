@@ -1,6 +1,7 @@
 ---
 title: 自定义Starter
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: ru5g4chp
 permalink: /article/3td6t8k5/
 tags:
   - SpringBoot

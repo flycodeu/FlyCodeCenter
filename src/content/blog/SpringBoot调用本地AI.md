@@ -1,10 +1,12 @@
 ---
 title: SpringBoot调用本地AI
-createTime: 2025/05/06 13:32:45
+createTime: '2025/05/06 13:32:45'
+code: rmfrw5p3
 permalink: /article/ag1sjqlc/
 tags:
   - AI
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250506145712.jpg
+cover: >-
+  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250506145712.jpg
 ---
 
 

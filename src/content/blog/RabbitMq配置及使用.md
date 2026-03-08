@@ -1,6 +1,7 @@
 ---
 title: RabbitMq配置及使用
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: jf5f5vbh
 permalink: /article/49lvtx91/
 tags:
   - RabbitMq

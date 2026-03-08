@@ -1,6 +1,7 @@
 ---
 title: XXL-JOB简单实战
-createTime: 2025/03/04 09:28:52
+createTime: '2025/03/04 09:28:52'
+code: r1e2m161
 permalink: /article/7gwbpyo6/
 tags:
   - XXL-JOB
