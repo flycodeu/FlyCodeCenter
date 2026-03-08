@@ -130,10 +130,10 @@ const layoutPresets = {
     postMainWidth: 860,
     postTocWidth: 332,
     postGap: 27,
-    tutorialShellWidth: 1360,
-    tutorialSidebarWidth: 320,
-    tutorialTocWidth: 280,
-    tutorialContentMaxWidth: 780,
+    tutorialShellWidth: 1560,
+    tutorialSidebarWidth: 300,
+    tutorialTocWidth: 260,
+    tutorialContentMaxWidth: 900,
     cardBorderWidth: 2,
     radiusScale: 1
   },
@@ -872,7 +872,7 @@ const siteConfig = defineSiteConfig({
       activeText: "连接中",
       modelPresetKey: "gpt-4o-mini",
       actionId: "open-settings",
-      excludeRoutes: ["/jarvis"]
+      excludeRoutes: ["/jarvis", "/article/*", "/tutorials/*/*"]
     },
     personaPresets: [
       {

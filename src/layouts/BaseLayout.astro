@@ -32,8 +32,20 @@ const defaultOrbExcluded = siteConfig.jarvis?.route ?? "/jarvis";
 const orbExcludeRoutes = (Array.isArray(orbConfig.excludeRoutes) && orbConfig.excludeRoutes.length
   ? orbConfig.excludeRoutes
   : [defaultOrbExcluded]
-).map(normalizePath);
-const showJarvisOrb = !orbExcludeRoutes.includes(normalizePath(Astro.url.pathname));
+).map((value) => String(value || "").trim());
+const currentPath = normalizePath(Astro.url.pathname);
+const matchRoutePattern = (pattern: string, path: string) => {
+  const normalizedPattern = normalizePath(pattern);
+  if (!normalizedPattern) return false;
+  if (!normalizedPattern.includes("*")) {
+    return path === normalizedPattern || path.startsWith(`${normalizedPattern}/`);
+  }
+  const patternParts = normalizedPattern.split("/").filter(Boolean);
+  const pathParts = normalizePath(path).split("/").filter(Boolean);
+  if (patternParts.length !== pathParts.length) return false;
+  return patternParts.every((part, index) => part === "*" || part === pathParts[index]);
+};
+const showJarvisOrb = !orbExcludeRoutes.some((route) => matchRoutePattern(route, currentPath));
 const footerConfig = siteConfig.theme.footer as {
   message: string;
   copyright: string;

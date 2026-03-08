@@ -125,13 +125,11 @@ function setupSearchModal() {
             <a href="${safeUrl}">
               <div class="result-title-row">
                 <h4>${escapeHtml(String(item.title || "Untitled"))}</h4>
-                <span class="result-rank">#${idx + 1}</span>
               </div>
               <div class="result-meta">
                 <span class="result-domain">${escapeHtml(domain)}</span>
                 <span class="result-path">${escapeHtml(pathText)}</span>
               </div>
-              <div class="result-divider"></div>
               <p class="result-snippet">${item.snippet || ""}</p>
             </a>
           </li>`;

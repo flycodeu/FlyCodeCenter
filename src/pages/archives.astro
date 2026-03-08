@@ -56,14 +56,24 @@ const stats = [
         return (
           <article class={`timeline-item side-${side}`} data-day={item.dayKey}>
             <div class="timeline-column timeline-col-left">
-              {side === "left" && <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />}
+              {side === "left" && (
+                <>
+                  {item.showDate && <span class="timeline-date-inline">{item.dateLabel}</span>}
+                  <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />
+                </>
+              )}
             </div>
             <div class="timeline-axis">
               {item.showDate && <span class="timeline-date">{item.dateLabel}</span>}
               <span class="timeline-dot" aria-hidden="true"></span>
             </div>
             <div class="timeline-column timeline-col-right">
-              {side === "right" && <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />}
+              {side === "right" && (
+                <>
+                  {item.showDate && <span class="timeline-date-inline">{item.dateLabel}</span>}
+                  <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />
+                </>
+              )}
             </div>
           </article>
         );
@@ -201,6 +211,23 @@ const stats = [
     white-space: nowrap;
   }
 
+  .timeline-date-inline {
+    display: none;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: flex-start;
+    width: fit-content;
+    margin: 0 0 0.45rem;
+    padding: 0.16rem 0.56rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
   .timeline-dot {
     width: 10px;
     height: 10px;
@@ -260,23 +287,24 @@ const stats = [
 
   @media (max-width: 980px) {
     .timeline-line {
-      left: 14px;
+      left: 10px;
+      width: 1px;
       transform: none;
     }
 
     .timeline-item {
-      grid-template-columns: 28px minmax(0, 1fr);
-      gap: 0.62rem;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 0.5rem;
     }
 
     .timeline-axis {
       grid-column: 1;
       justify-items: start;
-      padding-top: 0.5rem;
+      padding-top: 0.4rem;
     }
 
     .timeline-date {
-      margin-left: 0.8rem;
+      display: none;
     }
 
     .timeline-col-left,
@@ -289,6 +317,16 @@ const stats = [
     .side-left .timeline-col-right,
     .side-right .timeline-col-left {
       display: none;
+    }
+
+    .timeline-date-inline {
+      display: inline-flex;
+    }
+
+    .timeline-dot {
+      width: 7px;
+      height: 7px;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-soft) 55%, transparent 45%);
     }
   }
 </style>

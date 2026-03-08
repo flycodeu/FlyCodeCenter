@@ -36,7 +36,7 @@ const {
 
 <div
   class={`tutorial-sidebar-wrap ${defaultCollapsed ? "is-collapsed" : ""}`}
-  style={`--tutorial-sidebar-width:${width}px;`}
+  style={`--tutorial-sidebar-width-base:${width}px;`}
   data-tutorial-sidebar-root
   data-series-key={seriesKey}
   data-current-slug={currentSlug}
@@ -210,23 +210,29 @@ const {
 
 <style>
   .tutorial-sidebar-wrap {
-    width: var(--tutorial-sidebar-width);
-    flex: 0 0 var(--tutorial-sidebar-width);
+    width: var(--tutorial-sidebar-width, var(--tutorial-sidebar-width-base, 300px));
+    flex: 0 0 var(--tutorial-sidebar-width, var(--tutorial-sidebar-width-base, 300px));
     min-width: 0;
     position: sticky;
-    top: 84px;
-    height: calc(100vh - 98px - var(--floating-safe-bottom, 0px));
+    top: calc(var(--layout-header-height, 68px) + 0.75rem);
+    height: calc(
+      100vh - var(--layout-header-height, 68px) - var(--layout-footer-height, 54px) - 1.5rem -
+        var(--floating-safe-bottom, 0px)
+    );
     align-self: flex-start;
+    display: flex;
   }
 
   .tutorial-sidebar {
-    border-radius: var(--radius-md);
-    border: 1px solid var(--line);
-    background: color-mix(in oklab, var(--surface-1) 86%, transparent 14%);
+    border-radius: calc(var(--radius-lg) * var(--layout-radius-scale, 1));
+    border: 1px solid color-mix(in oklab, var(--line) 78%, var(--brand) 22%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 92%, transparent 8%), color-mix(in oklab, var(--surface-2) 94%, transparent 6%));
+    box-shadow: 0 12px 28px color-mix(in oklab, var(--bg) 82%, transparent 18%);
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.72rem;
-    padding: 0.86rem 0.84rem;
+    gap: 0.8rem;
+    padding: 0.95rem 0.92rem;
   }
 
   .desktop-rail {
@@ -239,11 +245,13 @@ const {
     align-items: center;
     justify-content: space-between;
     gap: 0.58rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px dashed color-mix(in oklab, var(--line) 70%, transparent 30%);
   }
 
   .tutorial-sidebar-head h3 {
     margin: 0;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     color: var(--text);
   }
 
@@ -252,10 +260,10 @@ const {
   .tutorial-sidebar-mobile-open {
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
     color: var(--text-soft);
     font-size: 0.76rem;
-    padding: 0.24rem 0.62rem;
+    padding: 0.26rem 0.66rem;
     cursor: pointer;
   }
 
@@ -286,13 +294,13 @@ const {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.56rem;
     text-decoration: none;
     color: var(--text-soft);
-    border: 1px solid color-mix(in oklab, var(--line) 86%, transparent 14%);
+    border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
     border-left: 3px solid transparent;
-    border-radius: 12px;
-    padding: 0.52rem 0.56rem;
+    border-radius: 14px;
+    padding: 0.58rem 0.62rem;
     transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
   }
 
@@ -304,23 +312,23 @@ const {
 
   .tutorial-sidebar-list a.is-active {
     color: var(--brand);
-    border-color: color-mix(in oklab, var(--brand) 56%, var(--line) 44%);
-    border-left-color: color-mix(in oklab, var(--brand) 88%, #fff 12%);
-    background: color-mix(in oklab, var(--brand-soft) 64%, transparent 36%);
+    border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
+    border-left-color: color-mix(in oklab, var(--brand) 92%, #fff 8%);
+    background: color-mix(in oklab, var(--brand-soft) 68%, transparent 32%);
     box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 24%, transparent 76%);
   }
 
   .tutorial-sidebar-list .order {
     min-width: 1.45rem;
     text-align: center;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-family: var(--font-tech);
     color: var(--text-muted);
   }
 
   .tutorial-sidebar-list .title {
-    font-size: 0.84rem;
-    line-height: 1.4;
+    font-size: 0.85rem;
+    line-height: 1.45;
   }
 
   .progress-mark {
