@@ -250,6 +250,7 @@ const sites = defineCollection({
           badge: z.string().default(""),
           cover: z.string().default(""),
           icon: z.string().default(""),
+          iconFetch: z.boolean().default(true),
           category: z.string().default(""),
           order: z.number().int().default(999),
           pinned: z.boolean().default(false)
