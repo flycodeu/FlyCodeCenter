@@ -186,17 +186,62 @@
         code.getAttribute("data-language") ||
         code.className ||
         "";
-      const match = raw.match(/language-([a-z0-9-]+)/i);
+      const match = raw.match(/language-([a-z0-9+_#-]+)/i);
       return (match?.[1] || raw).toLowerCase();
     };
     const isInsideDemoSource = (code) => code instanceof HTMLElement && Boolean(code.closest(".md-demo-source"));
     const normalizeLanguageLabel = (rawLanguage) => {
       const raw = String(rawLanguage || "").trim().toLowerCase();
-      const match = raw.match(/language-([a-z0-9-]+)/i);
-      const lang = (match?.[1] || raw).trim();
+      if (!raw) return "txt";
+      const tokens = raw.split(/\s+/);
+      const looksLikeClassList = raw.includes("language-") || tokens.length > 1;
+      let lang = "";
+      if (looksLikeClassList) {
+        for (const token of tokens) {
+          const match = token.match(/^language-([a-z0-9+_#-]+)$/i);
+          if (match?.[1]) {
+            lang = match[1];
+            break;
+          }
+        }
+      } else {
+        lang = raw;
+      }
+      lang = lang.trim();
       if (!lang) return "txt";
       if (lang === "plaintext" || lang === "plain" || lang === "text") return "txt";
       return lang;
+    };
+    const ensureLangLabel = (headerTitle, label, owner) => {
+      if (!(headerTitle instanceof HTMLElement)) return;
+      const languageLabel = normalizeLanguageLabel(label);
+      const existingLabels = [...headerTitle.querySelectorAll(".code-block-lang")];
+      if (existingLabels.length === 1 && existingLabels[0].textContent === languageLabel) {
+        existingLabels[0].setAttribute("data-lang-label", "1");
+        if (owner instanceof HTMLElement) {
+          owner.dataset.langLabel = languageLabel;
+        }
+        return;
+      }
+      existingLabels.forEach((node) => node.remove());
+      const langSpan = document.createElement("span");
+      langSpan.className = "code-block-lang";
+      langSpan.setAttribute("data-lang-label", "1");
+      langSpan.textContent = languageLabel;
+      headerTitle.appendChild(langSpan);
+      if (owner instanceof HTMLElement) {
+        owner.dataset.langLabel = languageLabel;
+      }
+    };
+    const removeLangLabel = (headerTitle, owner) => {
+      if (!(headerTitle instanceof HTMLElement)) return;
+      headerTitle.querySelectorAll(".code-block-lang").forEach((node) => node.remove());
+      if (owner instanceof HTMLElement) {
+        delete owner.dataset.langLabel;
+      }
+      if (headerTitle.childElementCount === 0) {
+        headerTitle.remove();
+      }
     };
     const decodeHtmlEntities = (raw) => {
       const text = String(raw || "");
@@ -333,7 +378,7 @@
       if (raw) return normalizeLanguageLabel(raw);
       const code = pre.querySelector("code");
       if (code instanceof HTMLElement) {
-        const match = String(code.className || "").match(/language-([a-z0-9-]+)/i);
+        const match = String(code.className || "").match(/language-([a-z0-9+_#-]+)/i);
         if (match?.[1]) return normalizeLanguageLabel(match[1]);
       }
       return "text";
@@ -864,7 +909,7 @@
       const rawLanguage =
         pre.getAttribute("data-language") ||
         codeNode?.getAttribute("data-language") ||
-        pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+        pre.className.match(/language-([a-z0-9+_#-]+)/i)?.[1] ||
         "";
       const language = normalizeLanguageLabel(rawLanguage);
       if (["mermaid", "drawio", "chart"].some((name) => language.includes(name))) return;
@@ -884,10 +929,7 @@
       headerMeta.className = "code-block-meta";
 
       if (codeWindowTitleMode !== "none") {
-        const langSpan = document.createElement("span");
-        langSpan.className = "code-block-lang";
-        langSpan.textContent = language;
-        headerTitle.appendChild(langSpan);
+        ensureLangLabel(headerTitle, language, wrapper);
         header.appendChild(headerTitle);
       }
 
@@ -971,7 +1013,6 @@
       );
       for (const frame of frames) {
         if (!(frame instanceof HTMLElement)) continue;
-        if (!force && frame.dataset.langLabelInitialized === "1") continue;
 
         const caption = frame.querySelector("figcaption.header");
         const pre = frame.querySelector("pre");
@@ -979,33 +1020,22 @@
           continue;
         }
         const headerMeta = ensureCodeBlockMeta(caption);
+        const headerTitle = ensureCodeBlockTitle(caption);
 
         const preLang =
           pre.getAttribute("data-language") ||
           pre.dataset.language ||
-          pre.className.match(/language-([a-z0-9-]+)/i)?.[1] ||
+          pre.className.match(/language-([a-z0-9+_#-]+)/i)?.[1] ||
           "";
         const languageLabel = normalizeLanguageLabel(preLang);
-        let titleNode = headerMeta.querySelector(":scope > .title, :scope > .code-block-lang") || caption.querySelector(":scope > .title");
-        const headerTitle = ensureCodeBlockTitle(caption);
+
+        headerMeta.querySelectorAll(":scope > .code-block-lang").forEach((node) => node.remove());
 
         if (codeWindowTitleMode !== "none") {
-          if (!(titleNode instanceof HTMLElement)) {
-            titleNode = document.createElement("span");
-            titleNode.className = "title";
-            headerTitle.appendChild(titleNode);
-          }
-          titleNode.textContent = languageLabel;
-          titleNode.classList.add("code-block-lang");
-          titleNode.classList.remove("sr-only");
-          titleNode.removeAttribute("hidden");
-          if (titleNode.parentElement !== headerTitle) {
-            headerTitle.appendChild(titleNode);
-          }
+          ensureLangLabel(headerTitle, languageLabel, frame);
           frame.classList.add("has-title");
-        } else if (titleNode instanceof HTMLElement) {
-          titleNode.textContent = "";
-          titleNode.setAttribute("hidden", "true");
+        } else {
+          removeLangLabel(headerTitle, frame);
           frame.classList.remove("has-title");
         }
 
@@ -1042,9 +1072,6 @@
 
         if (copyWrap instanceof HTMLElement && copyWrap.parentElement !== headerMeta) {
           headerMeta.appendChild(copyWrap);
-        }
-        if (titleNode instanceof HTMLElement && titleNode.parentElement === headerMeta) {
-          headerTitle.appendChild(titleNode);
         }
         if (headerTitle.childElementCount === 0) {
           headerTitle.remove();
