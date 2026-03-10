@@ -224,19 +224,7 @@ const articleRuntimeConfig = {
 
   <script id="article-runtime-config" type="application/json" set:html={JSON.stringify(articleRuntimeConfig)} />
   <script>
-    import { initArticleRuntime } from "@/plugins/runtime/article/index.js";
-
-    let runtimeConfig = {};
-    const runtimeConfigNode = document.getElementById("article-runtime-config");
-    if (runtimeConfigNode?.textContent) {
-      try {
-        runtimeConfig = JSON.parse(runtimeConfigNode.textContent);
-      } catch (error) {
-        console.error("failed to parse article runtime config", error);
-      }
-    }
-
-    initArticleRuntime(runtimeConfig);
+    import "@/scripts/article-runtime-entry.js";
   </script>
 </BaseLayout>
 

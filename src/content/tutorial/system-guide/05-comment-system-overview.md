@@ -2,7 +2,7 @@
 title: 评论系统总览：provider 机制、选型与接入路径
 createTime: '2026/03/05 12:57:01'
 code: t2iaxy5l0
-permalink: /article/t2iaxy5l0/
+permalink: /tutorials/t2iaxy5l0/
 summary: 从统一 provider 入口理解评论系统的工作方式，明确为什么本项目默认推荐 giscus，以及新手应该按什么顺序完成接入、部署与排错。
 series: system-guide
 order: 5

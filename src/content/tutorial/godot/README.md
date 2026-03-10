@@ -2,7 +2,7 @@
 title: godot
 createTime: '2026/03/08 15:17:37'
 code: t1zpoagnb
-permalink: /article/t1zpoagnb/
+permalink: /tutorials/godot/
 ---
 # Godot入门
 

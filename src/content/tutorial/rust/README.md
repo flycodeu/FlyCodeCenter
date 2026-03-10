@@ -2,7 +2,7 @@
 title: Rust
 createTime: '2026/03/08 15:17:37'
 code: t1lcr5mzj
-permalink: /article/t1lcr5mzj/
+permalink: /tutorials/rust/
 ---
 
 # Rust 从入门到入土

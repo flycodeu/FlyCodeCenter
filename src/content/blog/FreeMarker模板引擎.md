@@ -2,7 +2,7 @@
 title: FreeMarker模板引擎
 createTime: '2026/03/01 19:23:46'
 code: b1k80mxda
-permalink: /article/b1k80mxda/
+permalink: /blog/b1k80mxda/
 tags:
   - FreeMarker
 ---

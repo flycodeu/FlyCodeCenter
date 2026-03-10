@@ -2,7 +2,7 @@
 title: Avue实现表格指定行样式
 createTime: '2026/03/01 19:23:46'
 code: bu5uxcnkk
-permalink: /article/bu5uxcnkk/
+permalink: /blog/bu5uxcnkk/
 tags:
   - 前端
 ---

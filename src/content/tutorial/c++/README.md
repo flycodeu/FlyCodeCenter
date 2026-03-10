@@ -2,7 +2,7 @@
 title: c++
 createTime: '2026/03/08 15:17:37'
 code: t1kznc3jq
-permalink: /article/t1kznc3jq/
+permalink: /tutorials/cpp/
 ---
 # C++学习总览
 > 本文作者：程序员飞云

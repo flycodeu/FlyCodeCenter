@@ -2,7 +2,7 @@
 title: wangEditor实现图片上传
 createTime: '2026/03/01 19:23:46'
 code: bhehiqz9b
-permalink: /article/bhehiqz9b/
+permalink: /blog/bhehiqz9b/
 tags:
   - 前端
 ---

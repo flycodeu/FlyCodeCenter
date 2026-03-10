@@ -2,7 +2,7 @@
 title: Shortcode 与行内增强：可复用内容块实践
 createTime: '2026/03/05 12:58:50'
 code: tb81dei55
-permalink: /article/tb81dei55/
+permalink: /tutorials/tb81dei55/
 summary: 系统讲解 video、checkbox、hidden、admonition、mark/icon 的写法与效果。
 series: system-guide
 order: 15

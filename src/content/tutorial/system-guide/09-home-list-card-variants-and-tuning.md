@@ -2,7 +2,7 @@
 title: 首页与列表卡片联动：模式、密度与可读性调优
 createTime: '2026/03/05 12:57:49'
 code: t1d9dfd3h
-permalink: /article/t1d9dfd3h/
+permalink: /tutorials/t1d9dfd3h/
 summary: 将卡片策略应用到首页与分页，建立统一的信息层级与视觉节奏。
 series: system-guide
 order: 9

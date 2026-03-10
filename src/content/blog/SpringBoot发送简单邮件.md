@@ -2,7 +2,7 @@
 title: SpringBoot发送简单邮件
 createTime: '2026/03/01 19:23:46'
 code: b1dkdwda0
-permalink: /article/b1dkdwda0/
+permalink: /blog/b1dkdwda0/
 tags:
   - SpringBoot
   - 邮件

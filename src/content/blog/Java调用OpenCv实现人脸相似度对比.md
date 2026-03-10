@@ -2,7 +2,7 @@
 title: Java调用OpenCv实现人脸相似度对比
 createTime: '2026/03/01 19:23:46'
 code: b3ldoapuj
-permalink: /article/b3ldoapuj/
+permalink: /blog/b3ldoapuj/
 tags:
   - OpenCv
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/f4005b755563b4f1159e0b98f749683c.jpg

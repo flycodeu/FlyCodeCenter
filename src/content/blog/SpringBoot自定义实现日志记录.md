@@ -2,7 +2,7 @@
 title: SpringBoot自定义实现日志记录
 createTime: '2026/03/01 19:23:46'
 code: bt05wy98x
-permalink: /article/bt05wy98x/
+permalink: /blog/bt05wy98x/
 tags:
   - SpringBoot
 ---

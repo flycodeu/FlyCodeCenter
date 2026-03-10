@@ -2,7 +2,7 @@
 title: XXL-JOB简单实战
 createTime: '2026/03/01 19:23:46'
 code: b28iw045n
-permalink: /article/b28iw045n/
+permalink: /blog/b28iw045n/
 tags:
   - XXL-JOB
 ---

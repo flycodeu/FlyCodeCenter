@@ -1,10 +1,17 @@
 import { getCollection, type CollectionEntry } from "astro:content";
+import siteConfig from "@/site.config";
+import { resolveEntryCode } from "@/utils/content-code";
+import { trimPath, withBase } from "@/utils/url";
 
 export type InterviewEntry = CollectionEntry<"interview">;
 export type InterviewDifficulty = "easy" | "medium" | "hard";
 
+const interviewMetaCache = new WeakMap<InterviewEntry, ResolvedInterviewMeta>();
+
 export interface ResolvedInterviewMeta {
   title: string;
+  code: string;
+  permalink: string;
   summary: string;
   description: string;
   tags: string[];
@@ -161,7 +168,24 @@ export function formatInterviewDifficultyLabel(difficulty: InterviewDifficulty):
   return "中等";
 }
 
+export function buildInterviewQuestionPermalink(code: string): string {
+  const route = String(siteConfig.pages.interviewCenter.route || "/interview").replace(/\/$/, "");
+  return `${route}/${code}/`;
+}
+
+export function buildInterviewSpacePermalink(spaceKey: string): string {
+  const route = String(siteConfig.pages.interviewCenter.route || "/interview").replace(/\/$/, "");
+  return `${route}/${encodeURIComponent(toInterviewSpaceRouteKey(spaceKey))}/`;
+}
+
+export function resolveInterviewCode(entry: InterviewEntry): string {
+  return resolveEntryCode(entry);
+}
+
 export function resolveInterviewMeta(entry: InterviewEntry): ResolvedInterviewMeta {
+  const cached = interviewMetaCache.get(entry);
+  if (cached) return cached;
+
   const data = entry.data as Record<string, unknown>;
   const stem = getEntryStem(entry.id);
   const space = resolveInterviewSpaceKey(entry) || "general";
@@ -170,9 +194,13 @@ export function resolveInterviewMeta(entry: InterviewEntry): ResolvedInterviewMe
   const description = pickText(data.description, summary, title);
   const difficulty = (pickText(data.difficulty, "medium") as InterviewDifficulty) || "medium";
   const createTime = parseDateTime(data.createTime) ?? new Date("2026-01-01T00:00:00.000Z");
+  const code = resolveInterviewCode(entry);
+  const permalink = isInterviewReadmeEntry(entry) ? buildInterviewSpacePermalink(space) : buildInterviewQuestionPermalink(code);
 
-  return {
+  const resolved: ResolvedInterviewMeta = {
     title,
+    code,
+    permalink,
     summary,
     description,
     tags: normalizeTags(data.tags),
@@ -187,6 +215,9 @@ export function resolveInterviewMeta(entry: InterviewEntry): ResolvedInterviewMe
     icon: pickText(data.icon),
     space
   };
+
+  interviewMetaCache.set(entry, resolved);
+  return resolved;
 }
 
 function sortInterviewEntries(entries: InterviewEntry[]): InterviewEntry[] {
@@ -222,6 +253,22 @@ export async function fetchInterviewSpaceEntries(space: string): Promise<Intervi
   const all = await fetchInterviewEntries();
   const normalized = normalizeInterviewSpaceKey(space);
   return all.filter((entry) => resolveInterviewSpaceKey(entry) === normalized);
+}
+
+export async function findInterviewEntryByCode(code: string): Promise<InterviewEntry | null> {
+  const normalized = String(code || "").trim().toLowerCase();
+  if (!normalized) return null;
+
+  const entries = await fetchInterviewEntries();
+  return entries.find((entry) => !isInterviewReadmeEntry(entry) && resolveInterviewMeta(entry).code === normalized) ?? null;
+}
+
+export function getInterviewEntryUrl(entry: InterviewEntry): string {
+  return trimPath(withBase(resolveInterviewMeta(entry).permalink));
+}
+
+export function getInterviewSpaceUrl(spaceKey: string): string {
+  return trimPath(withBase(buildInterviewSpacePermalink(spaceKey)));
 }
 
 export function buildInterviewSpaceBuckets(entries: InterviewEntry[]): Map<string, InterviewSpaceBucket> {

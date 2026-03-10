@@ -2,7 +2,7 @@
 title: Vercel部署ChatGpt
 createTime: '2026/03/01 19:23:46'
 code: bos2d0vsi
-permalink: /article/bos2d0vsi/
+permalink: /blog/bos2d0vsi/
 tags:
   - AI
 ---

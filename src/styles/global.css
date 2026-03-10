@@ -28,11 +28,11 @@
   --space-5: 32px;
   --space-6: 48px;
   --floating-safe-bottom: 0px;
-  --font-regular-sans: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-serif: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-display: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-tech: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-mono: "IBM Plex Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+  --font-regular-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-regular-serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --font-regular-display: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-regular-tech: "Bahnschrift", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --font-regular-mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "Consolas", monospace;
   --font-pixel-sans: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-serif: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-display: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
@@ -646,6 +646,22 @@ img {
   flex-wrap: wrap;
 }
 
+.pager-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.34rem;
+  padding: 0 0.3rem;
+  color: var(--text-soft);
+  font-family: var(--font-tech);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.pager-meta strong {
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
 .pager-btn {
   display: inline-flex;
   align-items: center;
@@ -679,6 +695,16 @@ img {
   padding: 0 0.56rem;
 }
 
+.pager-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--text-muted);
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+}
+
 .pager-btn.is-active,
 .pager-btn.active {
   color: var(--brand);
@@ -697,6 +723,43 @@ img {
   opacity: 0.48;
   pointer-events: none;
   cursor: not-allowed;
+}
+
+.pager-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  flex-wrap: wrap;
+  margin-left: 0.2rem;
+}
+
+.pager-jump-label {
+  color: var(--text-muted);
+  font-family: var(--font-tech);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+}
+
+.pager-jump-input {
+  width: 72px;
+  height: var(--pager-height);
+  padding: 0 0.7rem;
+  border-radius: var(--pager-radius);
+  border: 1px solid color-mix(in oklab, var(--line) 86%, transparent 14%);
+  background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.pager-jump-input:focus {
+  border-color: color-mix(in oklab, var(--brand) 46%, var(--line) 54%);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-soft) 34%, transparent 66%);
+}
+
+.pager-go {
+  white-space: nowrap;
 }
 
 @media (max-width: 760px) {
@@ -729,6 +792,16 @@ img {
     height: 34px;
     min-width: 34px;
     padding: 0 0.58rem;
+  }
+
+  .pager-jump {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
+  .pager-jump-input {
+    width: 64px;
   }
 }
 

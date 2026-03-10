@@ -2,7 +2,7 @@
 title: MediaMTX Control API 鉴权与网络路由排障技术文档
 createTime: '2026/03/01 19:23:46'
 code: b228ia7yu
-permalink: /article/b228ia7yu/
+permalink: /blog/b228ia7yu/
 tags:
   - MediaMTX
   - 视频

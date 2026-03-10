@@ -2,7 +2,7 @@
 title: 自定义Docker镜像
 createTime: '2026/03/01 19:23:46'
 code: bbnmvqhup
-permalink: /article/bbnmvqhup/
+permalink: /blog/bbnmvqhup/
 tags:
   - Docker
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg06.jpg'

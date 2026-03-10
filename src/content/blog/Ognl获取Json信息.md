@@ -2,7 +2,7 @@
 title: Ognl获取Json信息
 createTime: '2026/03/01 19:23:46'
 code: b1jqg0ngw
-permalink: /article/b1jqg0ngw/
+permalink: /blog/b1jqg0ngw/
 tags:
   - Ognl
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e90499388ddc78bb57d46b73ea09260.jpg

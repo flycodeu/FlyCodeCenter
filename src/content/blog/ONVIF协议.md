@@ -2,7 +2,7 @@
 title: ONVIF协议
 createTime: '2026/03/01 19:23:46'
 code: b1cqxk55k
-permalink: /article/b1cqxk55k/
+permalink: /blog/b1cqxk55k/
 tags:
   - MediaMTX
   - 视频

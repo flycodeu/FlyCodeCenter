@@ -78,4 +78,4 @@ about:
 - GitHub：<https://github.com/flycodeu>
 - 博客：<https://www.flycode.icu/>
 
-> 以日拱一卒的坚持，打磨真正能落地的软件。
+> 真正的礼物，是把今天手上的事做到更好。

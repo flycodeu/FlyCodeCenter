@@ -2,7 +2,7 @@
 title: AOP实现权限校验
 createTime: '2026/03/01 19:23:46'
 code: b95ilnego
-permalink: /article/b95ilnego/
+permalink: /blog/b95ilnego/
 tags:
   - AOP
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/71fee2c9e637523ffccafa3a45d0c968.jpg

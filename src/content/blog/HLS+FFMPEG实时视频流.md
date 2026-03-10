@@ -2,7 +2,7 @@
 title: HLS+FFMPEG实时视频流
 createTime: '2026/03/01 19:23:46'
 code: b2ow0cdtq
-permalink: /article/b2ow0cdtq/
+permalink: /blog/b2ow0cdtq/
 tags:
   - 视频流
   - HLS

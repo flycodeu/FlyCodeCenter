@@ -2,7 +2,7 @@
 title: LangChain4j实战
 createTime: '2026/03/01 19:23:46'
 code: br6an5kff
-permalink: /article/br6an5kff/
+permalink: /blog/br6an5kff/
 tags:
   - LangChain4j
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/639a06e3e1aef9dc0eead20503100577.jpg

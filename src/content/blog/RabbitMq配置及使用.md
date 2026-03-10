@@ -2,7 +2,7 @@
 title: RabbitMq配置及使用
 createTime: '2026/03/01 19:23:46'
 code: b1h3ja4fg
-permalink: /article/b1h3ja4fg/
+permalink: /blog/b1h3ja4fg/
 tags:
   - RabbitMq
 ---

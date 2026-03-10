@@ -2,7 +2,7 @@
 title: Java命令行开发
 createTime: '2026/03/01 19:23:46'
 code: bvtr0vhe5
-permalink: /article/bvtr0vhe5/
+permalink: /blog/bvtr0vhe5/
 tags:
   - SpringBoot
 ---

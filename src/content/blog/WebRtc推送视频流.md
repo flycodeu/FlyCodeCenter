@@ -2,7 +2,7 @@
 title: WebRtc推送视频流
 createTime: '2026/03/01 19:23:46'
 code: bnucpsnao
-permalink: /article/bnucpsnao/
+permalink: /blog/bnucpsnao/
 tags:
   - 视频流
   - WebRTC

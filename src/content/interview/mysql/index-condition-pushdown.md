@@ -1,11 +1,13 @@
 ---
 title: 什么是索引下推
+createTime: '2026/03/10 20:22:00'
+code: i29b46fo0
+permalink: /interview/i29b46fo0/
 summary: SQL 优化和执行计划面试里经常追问，重点是减少回表次数。
 description: 解释 ICP 的执行时机、作用条件以及它为什么能提升查询效率。
+order: 1
 type: mysql
 difficulty: hard
-order: 1
-createTime: 2026/03/10 20:22:00
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false

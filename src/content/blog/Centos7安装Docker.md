@@ -2,7 +2,7 @@
 title: Centos7安装Docker
 createTime: '2026/03/01 19:23:46'
 code: b4zgqt4b1
-permalink: /article/b4zgqt4b1/
+permalink: /blog/b4zgqt4b1/
 tags:
   - CentOS7
   - Docker

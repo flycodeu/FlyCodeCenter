@@ -2,7 +2,7 @@
 title: 字体系统与预设：regular / pixel 的切换机制
 createTime: '2026/03/05 12:57:49'
 code: t1ymnkmrw
-permalink: /article/t1ymnkmrw/
+permalink: /tutorials/t1ymnkmrw/
 summary: 掌握字体预设定义、默认值设置、运行时切换与页面一致性。
 series: system-guide
 order: 10

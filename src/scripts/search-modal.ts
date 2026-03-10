@@ -26,9 +26,9 @@ function normalizeUrl(url: string): string {
 
 function inferDomainLabel(url: string): string {
   const value = normalizeUrl(url);
-  if (value.startsWith("/article/")) return "文章";
   if (value.startsWith("/blog")) return "博客";
-  if (value.startsWith("/tutorial")) return "教程";
+  if (value.startsWith("/tutorials")) return "教程";
+  if (value.startsWith("/interview")) return "面试";
   if (value.startsWith("/projects")) return "项目";
   if (value.startsWith("/sites")) return "收藏";
   if (value.startsWith("/reading")) return "推荐";
@@ -360,11 +360,3 @@ export function bootSearchModal() {
   }
   window.__flySearchCleanup = setupSearchModal();
 }
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootSearchModal, { once: true });
-} else {
-  bootSearchModal();
-}
-
-document.addEventListener("astro:page-load", bootSearchModal);

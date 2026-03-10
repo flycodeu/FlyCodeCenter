@@ -2,7 +2,7 @@
 title: Vertx监听指定端口
 createTime: '2026/03/01 19:23:46'
 code: bjxy9ywwm
-permalink: /article/bjxy9ywwm/
+permalink: /blog/bjxy9ywwm/
 tags:
   - SpringBoot
   - vertx

@@ -2,7 +2,7 @@
 title: SQL优化
 createTime: '2026/03/01 19:23:46'
 code: b27ktw98a
-permalink: /article/b27ktw98a/
+permalink: /blog/b27ktw98a/
 tags:
   - 优化
 ---

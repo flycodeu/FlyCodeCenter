@@ -209,7 +209,7 @@ const siteConfig = defineSiteConfig({
       ]
     }
   },
-  shouldPrefetch: false,
+  shouldPrefetch: true,
   ui: {
     date: {
       format: "YYYY-MM-DD",
@@ -422,9 +422,10 @@ const siteConfig = defineSiteConfig({
       avatar: "https://avatars.githubusercontent.com/flycodeu",
       shape: "rectangle" as "circle" | "rectangle",
       name: "程序员飞云（Flycode）",
-      desc: "后端开发程序员｜Java · Spring Boot · Python · Rust · MySQL · Redis · React · AI",
+      desc: "后端开发程序员，关注工程效率、系统设计与 AI 落地。",
+      tags: ["Java", "Spring Boot", "Python", "Rust", "MySQL", "Redis", "React", "AI"],
       location: "Shenzhen, China",
-      quote: "以日拱一卒的坚持，打磨真正能落地的软件。",
+      quote: "真正的礼物，是把今天手上的事做到更好。",
       socials: [
         { name: "GitHub", icon: "github", link: "https://github.com/flycodeu" },
         { name: "Email", icon: "email", link: "mailto:flycode@flycode.icu" },
@@ -436,6 +437,27 @@ const siteConfig = defineSiteConfig({
       url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
       fallbackUrl:
         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
+      excludeRoutes: [
+        "/blog",
+        "/blog/*",
+        "/article/*",
+        "/tutorial",
+        "/tutorial/*",
+        "/tutorials",
+        "/tutorials/*",
+        "/interview",
+        "/interview/*",
+        "/projects",
+        "/projects/*",
+        "/tags",
+        "/tags/*",
+        "/archives",
+        "/reading",
+        "/sites",
+        "/gallery"
+      ],
+      initialWidth: 640,
+      displayWidth: 1600,
       wallpapers: [
         {
           id: "default-01",
@@ -872,7 +894,7 @@ const siteConfig = defineSiteConfig({
       activeText: "连接中",
       modelPresetKey: "gpt-4o-mini",
       actionId: "open-settings",
-      excludeRoutes: ["/jarvis", "/article/*", "/tutorials/*/*"]
+      excludeRoutes: ["/jarvis", "/blog/*", "/projects/*", "/tutorial/*", "/tutorials/*", "/interview/*"]
     },
     personaPresets: [
       {

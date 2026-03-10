@@ -2,7 +2,7 @@
 title: ArrayList 入门：动态数组的扩容策略
 createTime: '2026/02/28 16:21:20'
 code: t28k9xljt
-permalink: /article/t28k9xljt/
+permalink: /tutorials/t28k9xljt/
 summary: 从结构特性到复杂度分析，快速建立动态数组的实战认知。
 tags:
   - tutorial

@@ -2,7 +2,7 @@
 title: 数据结构
 createTime: '2026/03/08 15:17:37'
 code: twgcx1jif
-permalink: /article/twgcx1jif/
+permalink: /tutorials/数据结构/
 ---
 这里将会记录笔者对于一些数据结构的学习以及相应的总结
 > 由于笔者水平有限，所以有些地方可能会存在问题，欢迎指正

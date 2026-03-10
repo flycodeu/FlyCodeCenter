@@ -2,14 +2,15 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import type { CollectionEntry } from "astro:content";
 
-export type ArticleCollection = "blog" | "tutorial" | "projects";
+export type ArticleCollection = "blog" | "tutorial" | "projects" | "interview";
 export type ArticleEntry = CollectionEntry<ArticleCollection>;
 
 const ROOT_DIR = process.cwd();
 const CONTENT_BASE_DIR: Record<ArticleCollection, string> = {
   blog: path.join(ROOT_DIR, "src", "content", "blog"),
   tutorial: path.join(ROOT_DIR, "src", "content", "tutorial"),
-  projects: path.join(ROOT_DIR, "src", "content", "projects")
+  projects: path.join(ROOT_DIR, "src", "content", "projects"),
+  interview: path.join(ROOT_DIR, "src", "content", "interview")
 };
 
 const TITLE_ACRONYM_MAP: Record<string, string> = {

@@ -1,0 +1,89 @@
+---
+import { getEntry, render } from "astro:content";
+import siteConfig from "@/site.config";
+import PostLayout from "@/layouts/PostLayout.astro";
+import { fetchProjectEntries } from "@/utils/query";
+import { getProjectEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import { summarizeReading } from "@/utils/reading-time";
+import { getEntryRepoRelativePath } from "@/utils/content-source";
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface RouteProps {
+  entryId: string;
+  prev?: Neighbor;
+  next?: Neighbor;
+}
+
+export async function getStaticPaths() {
+  const projectEntries = await fetchProjectEntries();
+  const codeSet = new Set<string>();
+
+  return projectEntries.map((entry, index) => {
+    const meta = resolveArticleMeta(entry);
+    if (codeSet.has(meta.code)) {
+      throw new Error(`Duplicate project code detected: /projects/${meta.code}`);
+    }
+    codeSet.add(meta.code);
+    const prev = projectEntries[index - 1];
+    const next = projectEntries[index + 1];
+
+    return {
+      params: { code: meta.code },
+      props: {
+        entryId: entry.id,
+        prev: prev ? { title: resolveArticleMeta(prev).title, url: getProjectEntryUrl(prev) } : undefined,
+        next: next ? { title: resolveArticleMeta(next).title, url: getProjectEntryUrl(next) } : undefined
+      }
+    };
+  });
+}
+
+const { entryId, prev, next } = Astro.props as RouteProps;
+const entry = await getEntry("projects", entryId);
+
+if (!entry) {
+  throw new Error(`Project entry not found: ${entryId}`);
+}
+
+const entryMeta = resolveArticleMeta(entry);
+const encrypted = entryMeta.encrypted && siteConfig.encrypt.enable;
+let Content: any = null;
+let headings: any[] = [];
+if (!encrypted) {
+  const rendered = await render(entry);
+  Content = rendered.Content;
+  headings = rendered.headings;
+}
+
+const reading = summarizeReading(entry.body);
+const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, "")}/blob/main/${getEntryRepoRelativePath(entry) || `src/content/projects/${entry.id}`}`;
+---
+
+<PostLayout
+  title={entryMeta.title}
+  summary={entryMeta.summary}
+  description={entryMeta.description || entryMeta.title}
+  tags={entryMeta.tags}
+  pubDate={entryMeta.createTime}
+  updatedDate={entryMeta.updatedTime}
+  headings={headings}
+  wordCount={reading.wordCount}
+  readingMinutes={reading.minutes}
+  articleUrl={getProjectEntryUrl(entry)}
+  code={entryMeta.code}
+  githubEditUrl={githubEditUrl}
+  encrypted={encrypted}
+  encryptedFile={entryMeta.encryptedFile}
+  passwordHint={entryMeta.passwordHint}
+  prev={prev}
+  next={next}
+  cover={entryMeta.cover}
+  hideCover={!entryMeta.showCover}
+>
+  {Content && <Content />}
+</PostLayout>

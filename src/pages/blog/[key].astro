@@ -1,0 +1,170 @@
+---
+import { getEntry, render, type CollectionEntry } from "astro:content";
+import siteConfig from "@/site.config";
+import ListLayout from "@/layouts/ListLayout.astro";
+import PostLayout from "@/layouts/PostLayout.astro";
+import PostCard from "@/components/PostCard.astro";
+import Pagination from "@/components/Pagination.astro";
+import { getBlogEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import { fetchAllEntries, fetchBlogEntries, makeTagItems } from "@/utils/query";
+import { paginatePageMode } from "@/utils/pagination";
+import { summarizeReading } from "@/utils/reading-time";
+import { getEntryRepoRelativePath } from "@/utils/content-source";
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface PageRouteProps {
+  kind: "page";
+  page: number;
+  total: number;
+}
+
+interface EntryRouteProps {
+  kind: "entry";
+  entryId: string;
+  prev?: Neighbor;
+  next?: Neighbor;
+}
+
+type RouteProps = PageRouteProps | EntryRouteProps;
+
+export async function getStaticPaths() {
+  const entries = await fetchBlogEntries();
+  const paths: Array<{ params: { key: string }; props: RouteProps }> = [];
+  const routeKeySet = new Set<string>();
+
+  if (siteConfig.blog.pagination.mode === "page") {
+    const pageSize = siteConfig.blog.pagination.pageSize;
+    const total = Math.max(1, Math.ceil(entries.length / pageSize));
+    for (let page = 2; page <= total; page += 1) {
+      const key = String(page);
+      routeKeySet.add(key);
+      paths.push({
+        params: { key },
+        props: {
+          kind: "page",
+          page,
+          total
+        }
+      });
+    }
+  }
+
+  for (const [index, entry] of entries.entries()) {
+    const code = resolveArticleMeta(entry).code;
+    if (routeKeySet.has(code)) {
+      throw new Error(`Blog route conflict: /blog/${code} is used by both pagination and article "${entry.id}"`);
+    }
+    routeKeySet.add(code);
+    const prev = entries[index - 1];
+    const next = entries[index + 1];
+    paths.push({
+      params: { key: code },
+      props: {
+        kind: "entry",
+        entryId: entry.id,
+        prev: prev ? { title: resolveArticleMeta(prev).title, url: getBlogEntryUrl(prev) } : undefined,
+        next: next ? { title: resolveArticleMeta(next).title, url: getBlogEntryUrl(next) } : undefined
+      }
+    });
+  }
+
+  return paths;
+}
+
+const props = Astro.props as RouteProps;
+const isPageRoute = props.kind === "page";
+const pageNumber = isPageRoute ? props.page : 0;
+const totalPages = isPageRoute ? props.total : 0;
+const prev = isPageRoute ? undefined : props.prev;
+const next = isPageRoute ? undefined : props.next;
+
+let pageEntries: CollectionEntry<"blog">[] = [];
+let pageTags: Array<{ name: string; count: number; href: string }> = [];
+let pageBlogCount = 0;
+
+let entry: CollectionEntry<"blog"> | undefined;
+let entryMeta: ReturnType<typeof resolveArticleMeta> | undefined;
+let encrypted = false;
+let Content: any = null;
+let headings: any[] = [];
+let reading = { wordCount: 0, minutes: 0 };
+let githubEditUrl = "";
+
+if (isPageRoute) {
+  const [entries, allEntries] = await Promise.all([fetchBlogEntries(), fetchAllEntries()]);
+  pageEntries = paginatePageMode(entries, props.page, siteConfig.blog.pagination.pageSize).items;
+  pageTags = makeTagItems(allEntries);
+  pageBlogCount = allEntries.filter((item) => item.collection === "blog").length;
+} else {
+  entry = await getEntry("blog", props.entryId);
+  if (!entry) {
+    throw new Error(`Blog entry not found: ${props.entryId}`);
+  }
+
+  entryMeta = resolveArticleMeta(entry);
+  encrypted = entryMeta.encrypted && siteConfig.encrypt.enable;
+  if (!encrypted) {
+    const rendered = await render(entry);
+    Content = rendered.Content;
+    headings = rendered.headings;
+  }
+
+  reading = summarizeReading(entry.body);
+  githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, "")}/blob/main/${getEntryRepoRelativePath(entry) || `src/content/blog/${entry.id}`}`;
+}
+---
+
+{
+  isPageRoute ? (
+    <ListLayout
+      title={`博客 - 第 ${pageNumber} 页`}
+      description="工程化实践、性能优化与 Astro 插件化架构。"
+      stats={[
+        { title: "博客文章", value: pageBlogCount },
+        { title: "标签总数", value: pageTags.length, href: "/tags" }
+      ]}
+      tags={pageTags}
+    >
+      <div class="list">
+        {pageEntries.map((pageEntry) => <PostCard entry={pageEntry} kind="blog" />)}
+      </div>
+      <Pagination currentPage={pageNumber} lastPage={totalPages} basePath="/blog" mode="page" />
+    </ListLayout>
+  ) : (
+    <PostLayout
+      title={entryMeta!.title}
+      summary={entryMeta!.summary}
+      description={entryMeta!.description || entryMeta!.title}
+      tags={entryMeta!.tags}
+      pubDate={entryMeta!.createTime}
+      updatedDate={entryMeta!.updatedTime}
+      headings={headings}
+      wordCount={reading.wordCount}
+      readingMinutes={reading.minutes}
+      articleUrl={getBlogEntryUrl(entry!)}
+      code={entryMeta!.code}
+      githubEditUrl={githubEditUrl}
+      encrypted={encrypted}
+      encryptedFile={entryMeta!.encryptedFile}
+      passwordHint={entryMeta!.passwordHint}
+      prev={prev}
+      next={next}
+      cover={entryMeta!.cover}
+      hideCover={!entryMeta!.showCover}
+    >
+      {Content && <Content />}
+    </PostLayout>
+  )
+}
+
+<style>
+  .list {
+    display: grid;
+    gap: var(--space-4);
+  }
+</style>

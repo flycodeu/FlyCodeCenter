@@ -2,7 +2,7 @@
 title: SpringBoot实现接口防抖
 createTime: '2026/03/01 19:23:46'
 code: b1f5ko1pm
-permalink: /article/b1f5ko1pm/
+permalink: /blog/b1f5ko1pm/
 tags:
   - 防抖
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a15bc0b828d64f8b45299f80d4208d.jpg

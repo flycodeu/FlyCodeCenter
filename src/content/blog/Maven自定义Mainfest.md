@@ -2,7 +2,7 @@
 title: Maven自定义Mainfest
 createTime: '2026/03/01 19:23:46'
 code: b1qfi4jgz
-permalink: /article/b1qfi4jgz/
+permalink: /blog/b1qfi4jgz/
 tags:
   - Maven
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d01a33e1a55ca078dc78d963e907308.jpg

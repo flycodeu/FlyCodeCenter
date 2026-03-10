@@ -2,7 +2,7 @@
 title: 封面与列表卡片：全局策略与单篇控制
 createTime: '2026/03/05 12:57:49'
 code: tg7mlbp9q
-permalink: /article/tg7mlbp9q/
+permalink: /tutorials/tg7mlbp9q/
 summary: 讲清列表卡片封面策略、尺寸比例、单篇覆盖优先级和验证方法。
 series: system-guide
 order: 8

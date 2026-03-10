@@ -2,7 +2,7 @@
 title: 前端file-saver保存文件
 createTime: '2026/03/01 19:23:46'
 code: b28rg4wna
-permalink: /article/b28rg4wna/
+permalink: /blog/b28rg4wna/
 tags:
   - 前端
 ---

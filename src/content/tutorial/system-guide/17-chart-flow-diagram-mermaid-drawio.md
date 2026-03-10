@@ -2,7 +2,7 @@
 title: 图表与流程图：Mermaid、Draw.io、ECharts、Chart.js
 createTime: '2026/03/05 12:58:50'
 code: t1b7hqq5l
-permalink: /article/t1b7hqq5l/
+permalink: /tutorials/t1b7hqq5l/
 summary: 覆盖流程图与数据图常用方案，给出配置、写法与验证路径。
 series: system-guide
 order: 17

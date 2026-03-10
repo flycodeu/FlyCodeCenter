@@ -2,7 +2,7 @@
 title: 像素风主题包：如何切换与落地
 createTime: '2026/03/05 12:57:49'
 code: t10iemle9
-permalink: /article/t10iemle9/
+permalink: /tutorials/t10iemle9/
 summary: 基于主题包机制，完成像素风视觉的全站切换与细节校准。
 series: system-guide
 order: 11

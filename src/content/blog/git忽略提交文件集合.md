@@ -2,7 +2,7 @@
 title: git忽略提交文件集合
 createTime: '2026/03/01 19:23:46'
 code: b2n5c43s0
-permalink: /article/b2n5c43s0/
+permalink: /blog/b2n5c43s0/
 tags:
   - Git
 ---

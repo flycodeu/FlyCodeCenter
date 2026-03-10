@@ -1,6 +1,14 @@
-﻿import type { CollectionEntry } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
 import { resolveArticleMeta } from "@/utils/article-meta";
+import { getEntrySourceStem } from "@/utils/content-source";
+import {
+  fromSeriesRouteKey,
+  isTutorialReadmeEntryId,
+  normalizeSeriesKey,
+  resolveSeriesKeyFromTutorialEntryId,
+  toSeriesRouteKey
+} from "@/utils/tutorial-route";
 
 type TutorialEntry = CollectionEntry<"tutorial">;
 
@@ -51,43 +59,7 @@ function pickText(...values: Array<unknown>): string {
   return "";
 }
 
-function normalizeEntryId(entryId: string): string {
-  return String(entryId || "").replace(/\\/g, "/").trim();
-}
-
-function getEntrySegments(entryId: string): string[] {
-  return normalizeEntryId(entryId).split("/").filter(Boolean);
-}
-
-function getEntryStem(entryId: string): string {
-  const segments = getEntrySegments(entryId);
-  const last = segments.at(-1) || "";
-  return last.replace(/\.(md|mdx)$/i, "").trim();
-}
-
-export function normalizeSeriesKey(series: string): string {
-  return String(series || "").trim();
-}
-
-const SERIES_ROUTE_ALIASES: Record<string, string> = {
-  "c++": "cpp"
-};
-
-const SERIES_ROUTE_ALIAS_INVERSE: Record<string, string> = Object.fromEntries(
-  Object.entries(SERIES_ROUTE_ALIASES).map(([key, value]) => [value, key])
-);
-
-export function toSeriesRouteKey(seriesKey: string): string {
-  const normalized = normalizeSeriesKey(seriesKey);
-  if (!normalized) return normalized;
-  return SERIES_ROUTE_ALIASES[normalized] ?? normalized;
-}
-
-export function fromSeriesRouteKey(routeKey: string): string {
-  const normalized = normalizeSeriesKey(routeKey);
-  if (!normalized) return normalized;
-  return SERIES_ROUTE_ALIAS_INVERSE[normalized] ?? normalized;
-}
+export { fromSeriesRouteKey, normalizeSeriesKey, toSeriesRouteKey };
 
 export function resolveSeriesKeyFromTutorialEntry(entry: TutorialEntry): string {
   const filePath = String((entry as { filePath?: string }).filePath || "").replace(/\\/g, "/");
@@ -101,8 +73,7 @@ export function resolveSeriesKeyFromTutorialEntry(entry: TutorialEntry): string 
     }
   }
 
-  const segments = getEntrySegments(entry.id);
-  return normalizeSeriesKey(segments[0] || "");
+  return resolveSeriesKeyFromTutorialEntryId(entry.id);
 }
 
 function prettifySeriesKey(key: string): string {
@@ -134,13 +105,18 @@ function resolveLegacySeriesConfig(key: string) {
 }
 
 export function isTutorialReadmeEntry(entry: TutorialEntry): boolean {
-  return /^readme$/i.test(getEntryStem(entry.id));
+  return isTutorialReadmeEntryId(entry.id);
 }
 
 export function resolveTutorialSlug(entry: TutorialEntry): string {
-  const stem = getEntryStem(entry.id);
-  if (/^readme$/i.test(stem)) return "index";
+  if (isTutorialReadmeEntry(entry)) return "index";
+  const stem = getEntrySourceStem(entry);
   return stem || resolveArticleMeta(entry).code;
+}
+
+export function resolveTutorialRouteKey(entry: TutorialEntry): string {
+  if (isTutorialReadmeEntry(entry)) return "index";
+  return resolveArticleMeta(entry).code;
 }
 
 function sortByArticleOrder(entries: TutorialEntry[]): TutorialEntry[] {

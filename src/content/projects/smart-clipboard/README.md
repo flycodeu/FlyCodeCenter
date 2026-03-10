@@ -2,7 +2,7 @@
 title: 智能剪切板（多端）
 createTime: '2026/03/02 20:20:04'
 code: pu20ylgo5
-permalink: /article/pu20ylgo5/
+permalink: /projects/pu20ylgo5/
 summary: 多端智能剪切板，支持内容识别、本地归类存储、快速检索与分享。
 tags:
   - 工具

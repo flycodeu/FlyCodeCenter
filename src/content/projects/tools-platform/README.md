@@ -2,7 +2,7 @@
 title: 工具类网站 / APP
 createTime: '2026/03/02 20:20:04'
 code: phsnwhpe1
-permalink: /article/phsnwhpe1/
+permalink: /projects/phsnwhpe1/
 summary: 聚合常用开发与内容处理工具的站点/应用平台，提升日常效率。
 tags:
   - 工具平台

@@ -2,7 +2,7 @@
 title: LangChain4j学习
 createTime: '2026/03/01 19:23:46'
 code: b620e8cuv
-permalink: /article/b620e8cuv/
+permalink: /blog/b620e8cuv/
 tags:
   - LangChain4j
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/0a234e4682107e18d9eba574bc12c263.jpg

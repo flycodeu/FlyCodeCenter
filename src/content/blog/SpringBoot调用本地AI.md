@@ -2,7 +2,7 @@
 title: SpringBoot调用本地AI
 createTime: '2026/03/01 19:23:46'
 code: b2rlufcv7
-permalink: /article/b2rlufcv7/
+permalink: /blog/b2rlufcv7/
 tags:
   - AI
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250506145712.jpg

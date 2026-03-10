@@ -2,7 +2,7 @@
 title: VoidTab浏览器标签主页
 createTime: '2026/03/01 19:23:46'
 code: b1ip0dvly
-permalink: /article/b1ip0dvly/
+permalink: /blog/b1ip0dvly/
 tags:
   - 浏览器插件
   - 独立项目

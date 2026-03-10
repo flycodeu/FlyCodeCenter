@@ -2,7 +2,7 @@
 title: SpringBoot结合七牛云
 createTime: '2026/03/01 19:23:46'
 code: bzjza4ilr
-permalink: /article/bzjza4ilr/
+permalink: /blog/bzjza4ilr/
 tags:
   - SpringBoot
   - 对象存储

@@ -2,7 +2,7 @@
 title: C++快速入门
 createTime: '2026/03/08 15:17:37'
 code: t1iynjrx3
-permalink: /article/t1iynjrx3/
+permalink: /tutorials/t1iynjrx3/
 tags:
   - C++
 ---

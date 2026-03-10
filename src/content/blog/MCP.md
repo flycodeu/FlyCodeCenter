@@ -2,7 +2,7 @@
 title: MCP
 createTime: '2026/03/01 19:23:46'
 code: b1an21p05
-permalink: /article/b1an21p05/
+permalink: /blog/b1an21p05/
 tags:
   - AI
   - MCP

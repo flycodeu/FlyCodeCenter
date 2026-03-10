@@ -2,7 +2,7 @@
 title: HashTable 实战：冲突处理与装载因子
 createTime: '2026/02/28 13:10:43'
 code: t21xofhtg
-permalink: /article/t21xofhtg/
+permalink: /tutorials/t21xofhtg/
 summary: 结合冲突场景和装载因子，掌握哈希表扩容与性能取舍。
 tags:
   - tutorial

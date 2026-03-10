@@ -2,7 +2,7 @@
 title: 手写Myabtis
 createTime: '2026/03/01 19:23:46'
 code: b1ofmqvc7
-permalink: /article/b1ofmqvc7/
+permalink: /blog/b1ofmqvc7/
 tags:
   - Mybatis
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250423155643.jpg

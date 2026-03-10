@@ -2,7 +2,7 @@
 title: FlyCodeCenter 个人博客
 createTime: '2026/03/02 20:20:04'
 code: p13k5rxij
-permalink: /article/p13k5rxij/
+permalink: /projects/p13k5rxij/
 summary: 程序员飞云（flycode）的个人技术博客，沉淀后端、AI 与工程实践经验。
 tags:
   - 博客

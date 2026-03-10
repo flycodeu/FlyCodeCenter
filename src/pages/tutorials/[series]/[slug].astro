@@ -1,7 +1,5 @@
 ---
-import { render } from "astro:content";
-import siteConfig from "@/site.config";
-import TutorialReaderLayout from "@/layouts/TutorialReaderLayout.astro";
+import { getTutorialEntryUrl } from "@/utils/content";
 import {
   fetchTutorialEntries,
   fetchTutorialSeriesEntries,
@@ -9,8 +7,6 @@ import {
   resolveTutorialSlug
 } from "@/utils/query";
 import { buildTutorialSeriesBuckets, toSeriesRouteKey } from "@/utils/tutorial-series";
-import { resolveArticleMeta } from "@/utils/article-meta";
-import { summarizeReading } from "@/utils/reading-time";
 
 interface RouteProps {
   series: string;
@@ -59,70 +55,10 @@ if (!entries.length) {
   throw new Error(`Tutorial series not found: ${seriesKey}`);
 }
 
-const seriesBucket = buildTutorialSeriesBuckets(entries).get(seriesKey);
 const currentEntry = entries.find((entry) => entry.id === currentEntryId);
 if (!currentEntry) {
   throw new Error(`Tutorial entry not found: ${seriesKey}/${slug}`);
 }
 
-const currentMeta = resolveArticleMeta(currentEntry);
-const currentSlug = resolveTutorialSlug(currentEntry);
-if (currentSlug === "index") {
-  throw new Error(`Tutorial entry not found: ${seriesKey}/${slug}`);
-}
-
-const rendered = await render(currentEntry);
-const Content = rendered.Content;
-const headings = rendered.headings;
-const reading = summarizeReading(currentEntry.body);
-
-const seriesRouteKey = toSeriesRouteKey(seriesKey);
-const seriesBase = `/tutorials/${encodeURIComponent(seriesRouteKey)}`;
-const navItems = entries.map((entry) => {
-  const meta = resolveArticleMeta(entry);
-  const entrySlug = resolveTutorialSlug(entry);
-  const displayOrder = entrySlug === "index" ? 0 : meta.order;
-  return {
-    id: entry.id,
-    slug: entrySlug,
-    title: meta.title,
-    order: displayOrder,
-    url: entrySlug === "index" ? seriesBase : `${seriesBase}/${encodeURIComponent(entrySlug)}`
-  };
-});
-
-const currentIndex = navItems.findIndex((item) => item.id === currentEntry.id);
-const prev = currentIndex > 0 ? { title: navItems[currentIndex - 1].title, url: navItems[currentIndex - 1].url } : undefined;
-const next =
-  currentIndex >= 0 && currentIndex < navItems.length - 1
-    ? { title: navItems[currentIndex + 1].title, url: navItems[currentIndex + 1].url }
-    : undefined;
-
-const seriesLabel = seriesBucket?.label ?? seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
-
-const articleUrl = `${seriesBase}/${encodeURIComponent(currentSlug)}`;
+return Astro.redirect(getTutorialEntryUrl(currentEntry), 301);
 ---
-
-<TutorialReaderLayout
-  title={currentMeta.title}
-  summary={currentMeta.summary}
-  description={currentMeta.description || currentMeta.title}
-  tags={currentMeta.tags}
-  articleUrl={articleUrl}
-  seriesKey={seriesKey}
-  seriesLabel={seriesLabel}
-  currentSlug={currentSlug}
-  items={navItems}
-  headings={headings}
-  pubDate={currentMeta.createTime}
-  updatedDate={currentMeta.updatedTime}
-  wordCount={reading.wordCount}
-  readingMinutes={reading.minutes}
-  prev={prev}
-  next={next}
-  encrypted={currentMeta.encrypted && siteConfig.encrypt.enable}
-  encryptedFile={currentMeta.encryptedFile}
-  passwordHint={currentMeta.passwordHint}
->
-  <Content />
-</TutorialReaderLayout>

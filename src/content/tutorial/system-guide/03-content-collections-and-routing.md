@@ -2,7 +2,7 @@
 title: 内容集合与路由机制：教程页面如何生成
 createTime: '2026/03/05 12:57:01'
 code: t200wos5d
-permalink: /article/t200wos5d/
+permalink: /tutorials/t200wos5d/
 summary: 从内容 schema 到 getStaticPaths，理解教程页是怎样被自动构建出来的。
 series: system-guide
 order: 3

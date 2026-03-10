@@ -2,7 +2,7 @@
 title: Centos7安装Java8
 createTime: '2026/03/01 19:23:46'
 code: b1tgjq42m
-permalink: /article/b1tgjq42m/
+permalink: /blog/b1tgjq42m/
 tags:
   - CentOS7
 ---

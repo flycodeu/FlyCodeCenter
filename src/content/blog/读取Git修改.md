@@ -2,7 +2,7 @@
 title: 读取Git修改
 createTime: '2026/03/01 19:23:46'
 code: b1ymnjbdi
-permalink: /article/b1ymnjbdi/
+permalink: /blog/b1ymnjbdi/
 tags:
   - Java
   - Git

@@ -2,7 +2,7 @@
 title: SpringSecurity快速使用
 createTime: '2026/03/01 19:23:46'
 code: b19w55cur
-permalink: /article/b19w55cur/
+permalink: /blog/b19w55cur/
 tags:
   - SpringBoot
 ---

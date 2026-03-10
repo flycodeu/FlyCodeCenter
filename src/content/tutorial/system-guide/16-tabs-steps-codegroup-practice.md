@@ -2,7 +2,7 @@
 title: Tabs 与 Steps：结构化教程的表达方式
 createTime: '2026/03/05 12:58:50'
 code: t2nt5h4mo
-permalink: /article/t2nt5h4mo/
+permalink: /tutorials/t2nt5h4mo/
 summary: 用 Tabs、Steps 和 Demo 模块构建更易读的多方案教程。
 series: system-guide
 order: 16

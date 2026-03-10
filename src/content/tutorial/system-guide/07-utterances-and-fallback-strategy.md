@@ -2,7 +2,7 @@
 title: Utterances 与回退策略：评论能力的第二条路径
 createTime: '2026/03/05 12:57:01'
 code: t2cdz8kv2
-permalink: /article/t2cdz8kv2/
+permalink: /tutorials/t2cdz8kv2/
 summary: 掌握 utterances 的配置与主题联动，并建立评论系统的回退策略。
 series: system-guide
 order: 7

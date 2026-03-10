@@ -1,0 +1,34 @@
+---
+import { fetchTutorialEntries } from "@/utils/query";
+import { getTutorialEntryUrl } from "@/utils/content";
+import { isTutorialReadmeEntry } from "@/utils/tutorial-series";
+import { resolveArticleMeta } from "@/utils/article-meta";
+
+interface RouteProps {
+  targetUrl: string;
+}
+
+export async function getStaticPaths() {
+  const tutorials = await fetchTutorialEntries();
+  const codeSet = new Set<string>();
+
+  return tutorials
+    .filter((entry) => !isTutorialReadmeEntry(entry))
+    .map((entry) => {
+      const code = resolveArticleMeta(entry).code;
+      if (codeSet.has(code)) {
+        throw new Error(`Duplicate tutorial code detected: /tutorial/${code}`);
+      }
+      codeSet.add(code);
+      return {
+        params: { code },
+        props: {
+          targetUrl: getTutorialEntryUrl(entry)
+        }
+      };
+    });
+}
+
+const { targetUrl } = Astro.props as RouteProps;
+return Astro.redirect(targetUrl, 301);
+---

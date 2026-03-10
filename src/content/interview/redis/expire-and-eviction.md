@@ -1,11 +1,13 @@
 ---
 title: Redis 的过期删除和内存淘汰策略
+createTime: '2026/03/10 20:18:00'
+code: i1qau5s6t
+permalink: /interview/i1qau5s6t/
 summary: Redis 面试高频综合题，通常会和缓存雪崩、击穿、穿透一起问。
 description: 先说过期删除，再说淘汰策略，最后补充生产上的配置建议。
+order: 1
 type: redis
 difficulty: medium
-order: 1
-createTime: 2026/03/10 20:18:00
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false

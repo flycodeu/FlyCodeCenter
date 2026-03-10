@@ -2,7 +2,7 @@
 title: SSE使用
 createTime: '2026/03/01 19:23:46'
 code: b26kcoq0k
-permalink: /article/b26kcoq0k/
+permalink: /blog/b26kcoq0k/
 tags:
   - SSE
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg

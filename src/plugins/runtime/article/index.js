@@ -1531,6 +1531,7 @@
     }
 
     const VIEW_CLIENT_KEY = "fly-view-client-id";
+    const VIEW_COUNT_CACHE_KEY = "fly-view-count-cache-v1";
     const HISTORY_KEY = "fly-reading-history-v1";
     const STATE_KEY = "fly-reading-state-v1";
 
@@ -1549,6 +1550,33 @@
       chip.textContent = `阅读 ${Number(count || 0).toLocaleString("zh-CN")}`;
     };
 
+    const readViewCountCache = (slug) => {
+      if (!slug) return null;
+      try {
+        const raw = sessionStorage.getItem(VIEW_COUNT_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+        const count = Number(parsed[slug]);
+        return Number.isFinite(count) && count >= 0 ? count : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const writeViewCountCache = (slug, count) => {
+      if (!slug) return;
+      const normalizedCount = Number(count);
+      if (!Number.isFinite(normalizedCount) || normalizedCount < 0) return;
+      try {
+        const raw = sessionStorage.getItem(VIEW_COUNT_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const next = parsed && typeof parsed === "object" ? parsed : {};
+        next[slug] = normalizedCount;
+        sessionStorage.setItem(VIEW_COUNT_CACHE_KEY, JSON.stringify(next));
+      } catch {}
+    };
+
     const syncViewStats = async () => {
       if (!viewStatsEnabled || !viewStatsEndpoint) return;
       const chip = document.getElementById("post-view-count");
@@ -1556,19 +1584,12 @@
       const slug = chip.dataset.viewSlug || location.pathname;
       if (!slug) return;
 
-      const clientId = getClientId();
-
-      try {
-        const getResp = await fetch(`${viewStatsEndpoint}?slug=${encodeURIComponent(slug)}`, {
-          headers: { "X-Client-Id": clientId }
-        });
-        if (getResp.ok) {
-          const payload = await getResp.json();
-          updateViewChip(payload?.count || 0);
-        }
-      } catch (error) {
-        console.warn("view count get failed", error);
+      const cachedCount = readViewCountCache(slug);
+      if (cachedCount !== null) {
+        updateViewChip(cachedCount);
       }
+
+      const clientId = getClientId();
 
       try {
         const postResp = await fetch(viewStatsEndpoint, {
@@ -1577,11 +1598,14 @@
             "Content-Type": "application/json",
             "X-Client-Id": clientId
           },
+          keepalive: true,
           body: JSON.stringify({ slug })
         });
         if (postResp.ok) {
           const payload = await postResp.json();
-          updateViewChip(payload?.count || 0);
+          const nextCount = Number(payload?.count || 0);
+          updateViewChip(nextCount);
+          writeViewCountCache(slug, nextCount);
         }
       } catch (error) {
         console.warn("view count post failed", error);
@@ -1634,7 +1658,9 @@
     };
 
     runArticleEnhancements();
-    syncViewStats().catch(console.error);
+    scheduleIdle(() => {
+      syncViewStats().catch(console.error);
+    });
     bindReadingState();
 }
 

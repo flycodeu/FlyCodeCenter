@@ -1,196 +1,54 @@
 ---
-import siteConfig from "@/site.config";
-import { getEntry, render, type CollectionEntry } from "astro:content";
-import PostLayout from "@/layouts/PostLayout.astro";
-import { fetchBlogEntries, fetchProjectEntries, fetchTutorialEntries } from "@/utils/query";
-import { getBlogEntryUrl, getProjectEntryUrl, getTutorialEntryUrl } from "@/utils/content";
-import { summarizeReading } from "@/utils/reading-time";
+import { fetchBlogEntries, fetchProjectEntries } from "@/utils/query";
+import { getBlogEntryUrl, getProjectEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
-import { getEntryRepoRelativePath } from "@/utils/content-source";
 import { stripSlashes } from "@/utils/url";
 
-interface Neighbor {
-  title: string;
-  url: string;
-}
-
 interface RouteProps {
-  collection: "blog" | "tutorial" | "projects";
-  entryId: string;
-  prev?: Neighbor;
-  next?: Neighbor;
+  targetUrl: string;
 }
 
 export async function getStaticPaths() {
-  const [blogEntries, tutorialEntries, projectEntries] = await Promise.all([
-    fetchBlogEntries(),
-    fetchTutorialEntries(),
-    fetchProjectEntries()
-  ]);
-
-  const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
-  const codeMap = new Map<string, string>();
-  const permalinkMap = new Map<string, string>();
-  const ensureUniqueCode = (code: string, identity: string) => {
-    const existing = codeMap.get(code);
-    if (!existing) {
-      codeMap.set(code, identity);
-      return;
-    }
-    throw new Error(`Duplicate article code "${code}" for "${identity}" and "${existing}"`);
-  };
-  const ensureUniquePermalink = (permalink: string, identity: string) => {
-    const existing = permalinkMap.get(permalink);
-    if (!existing) {
-      permalinkMap.set(permalink, identity);
-      return;
-    }
-    throw new Error(`Duplicate article permalink "${permalink}" for "${identity}" and "${existing}"`);
-  };
+  const [blogEntries, projectEntries] = await Promise.all([fetchBlogEntries(), fetchProjectEntries()]);
+  const legacyPrefix = "article";
   const paths: Array<{ params: { prefix: string; code: string }; props: RouteProps }> = [];
+  const routeKeySet = new Set<string>();
 
-  for (const [index, entry] of blogEntries.entries()) {
-    const meta = resolveArticleMeta(entry);
-    ensureUniqueCode(meta.code, `blog:${entry.id}`);
-    ensureUniquePermalink(meta.permalink, `blog:${entry.id}`);
-    const prev = blogEntries[index - 1];
-    const next = blogEntries[index + 1];
-    paths.push({
-      params: { prefix, code: meta.code },
-      props: {
-        collection: "blog",
-        entryId: entry.id,
-        prev: prev ? { title: resolveArticleMeta(prev).title, url: getBlogEntryUrl(prev) } : undefined,
-        next: next ? { title: resolveArticleMeta(next).title, url: getBlogEntryUrl(next) } : undefined
-      }
-    });
-  }
-
-  const tutorialSeries = new Map<string, CollectionEntry<"tutorial">[]>();
-  const tutorialMeta = new Map<string, ReturnType<typeof resolveArticleMeta>>();
-  const getTutorialMeta = (entry: CollectionEntry<"tutorial">) => {
-    const cache = tutorialMeta.get(entry.id);
-    if (cache) return cache;
-    const meta = resolveArticleMeta(entry);
-    tutorialMeta.set(entry.id, meta);
-    return meta;
-  };
-
-  for (const entry of tutorialEntries) {
-    const list = tutorialSeries.get(getTutorialMeta(entry).series) ?? [];
-    list.push(entry);
-    tutorialSeries.set(getTutorialMeta(entry).series, list);
-  }
-
-  for (const seriesEntries of tutorialSeries.values()) {
-    const sorted = [...seriesEntries].sort((a, b) => {
-      const metaA = getTutorialMeta(a);
-      const metaB = getTutorialMeta(b);
-      if (metaA.order === metaB.order) return metaA.createTime.getTime() - metaB.createTime.getTime();
-      return metaA.order - metaB.order;
-    });
-    for (const [index, entry] of sorted.entries()) {
-      const meta = getTutorialMeta(entry);
-      ensureUniqueCode(meta.code, `tutorial:${entry.id}`);
-      ensureUniquePermalink(meta.permalink, `tutorial:${entry.id}`);
-      const prev = sorted[index - 1];
-      const next = sorted[index + 1];
-      paths.push({
-        params: { prefix, code: meta.code },
-        props: {
-          collection: "tutorial",
-          entryId: entry.id,
-          prev: prev ? { title: resolveArticleMeta(prev).title, url: getTutorialEntryUrl(prev) } : undefined,
-          next: next ? { title: resolveArticleMeta(next).title, url: getTutorialEntryUrl(next) } : undefined
-        }
-      });
+  for (const entry of blogEntries) {
+    const code = resolveArticleMeta(entry).code;
+    const routeKey = `${legacyPrefix}/${code}`;
+    if (routeKeySet.has(routeKey)) {
+      throw new Error(`Duplicate legacy article route detected: /${routeKey}`);
     }
+    routeKeySet.add(routeKey);
+    paths.push({
+      params: { prefix: legacyPrefix, code },
+      props: { targetUrl: getBlogEntryUrl(entry) }
+    });
   }
 
-  for (const [index, entry] of projectEntries.entries()) {
-    const meta = resolveArticleMeta(entry);
-    ensureUniqueCode(meta.code, `projects:${entry.id}`);
-    ensureUniquePermalink(meta.permalink, `projects:${entry.id}`);
-    const prev = projectEntries[index - 1];
-    const next = projectEntries[index + 1];
+  for (const entry of projectEntries) {
+    const code = resolveArticleMeta(entry).code;
+    const routeKey = `${legacyPrefix}/${code}`;
+    if (routeKeySet.has(routeKey)) {
+      throw new Error(`Duplicate legacy article route detected: /${routeKey}`);
+    }
+    routeKeySet.add(routeKey);
     paths.push({
-      params: { prefix, code: meta.code },
-      props: {
-        collection: "projects",
-        entryId: entry.id,
-        prev: prev ? { title: resolveArticleMeta(prev).title, url: getProjectEntryUrl(prev) } : undefined,
-        next: next ? { title: resolveArticleMeta(next).title, url: getProjectEntryUrl(next) } : undefined
-      }
+      params: { prefix: legacyPrefix, code },
+      props: { targetUrl: getProjectEntryUrl(entry) }
     });
   }
 
   return paths;
 }
 
-const { collection, entryId, prev, next } = Astro.props as RouteProps;
-let entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects"> | undefined;
-if (collection === "blog") {
-  entry = await getEntry("blog", entryId);
-} else if (collection === "tutorial") {
-  entry = await getEntry("tutorial", entryId);
-} else {
-  entry = await getEntry("projects", entryId);
+const { prefix } = Astro.params;
+const { targetUrl } = Astro.props as RouteProps;
+
+if (stripSlashes(prefix || "") !== "article") {
+  throw new Error(`Unsupported legacy article prefix: ${prefix}`);
 }
 
-if (!entry) {
-  throw new Error(`Entry not found: ${collection}:${entryId}`);
-}
-
-const entryMeta = resolveArticleMeta(
-  entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">
-);
-const encrypted = entryMeta.encrypted && siteConfig.encrypt.enable;
-let Content: any = null;
-let headings: any[] = [];
-if (!encrypted) {
-  const rendered = await render(entry);
-  Content = rendered.Content;
-  headings = rendered.headings;
-}
-
-const reading = summarizeReading(entry.body);
-const articleUrl =
-  collection === "blog"
-    ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
-    : collection === "tutorial"
-      ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
-      : getProjectEntryUrl(entry as CollectionEntry<"projects">);
-const summary = entryMeta.summary;
-const description = entryMeta.description || entryMeta.title;
-const tags = entryMeta.tags;
-const createTime = entryMeta.createTime;
-const updatedTime = entryMeta.updatedTime;
-const hideCover = !entryMeta.showCover;
-const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, "")}/blob/main/${getEntryRepoRelativePath(
-  entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">
-) || `src/content/${collection}/${entry.id}`}`;
+return Astro.redirect(targetUrl, 301);
 ---
-
-<PostLayout
-  title={entryMeta.title}
-  summary={summary}
-  description={description}
-  tags={tags}
-  pubDate={createTime}
-  updatedDate={updatedTime}
-  headings={headings}
-  wordCount={reading.wordCount}
-  readingMinutes={reading.minutes}
-  articleUrl={articleUrl}
-  code={entryMeta.code}
-  githubEditUrl={githubEditUrl}
-  encrypted={encrypted}
-  encryptedFile={entryMeta.encryptedFile}
-  passwordHint={entryMeta.passwordHint}
-  prev={prev}
-  next={next}
-  cover={entryMeta.cover}
-  hideCover={hideCover}
->
-  {Content && <Content />}
-</PostLayout>

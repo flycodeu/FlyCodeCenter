@@ -2,7 +2,7 @@
 title: 查询redis运行信息
 createTime: '2026/03/01 19:23:46'
 code: bdahju0w6
-permalink: /article/bdahju0w6/
+permalink: /blog/bdahju0w6/
 tags:
   - SpringBoot
 ---

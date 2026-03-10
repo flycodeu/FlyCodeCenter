@@ -2,7 +2,7 @@
 title: 数学公式复制与行内图标：技术文档表达增强
 createTime: '2026/03/05 12:58:50'
 code: t8np4gy84
-permalink: /article/t8np4gy84/
+permalink: /tutorials/t8np4gy84/
 summary: 配置并验证数学公式复制能力与行内 icon 渲染能力。
 series: system-guide
 order: 18

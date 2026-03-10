@@ -2,7 +2,7 @@
 title: Centos7安装Redis
 createTime: '2026/03/01 19:23:46'
 code: b1gypqcdg
-permalink: /article/b1gypqcdg/
+permalink: /blog/b1gypqcdg/
 tags:
   - CentOS7
 ---

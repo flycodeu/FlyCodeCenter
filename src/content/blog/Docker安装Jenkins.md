@@ -2,7 +2,7 @@
 title: Docker安装Jenkins
 createTime: '2026/03/01 19:23:46'
 code: b2fwa14jz
-permalink: /article/b2fwa14jz/
+permalink: /blog/b2fwa14jz/
 tags:
   - Docker
   - Jenkins

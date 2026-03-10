@@ -2,7 +2,7 @@
 title: 备份Mysql结构和数据
 createTime: '2026/03/01 19:23:46'
 code: bare47qnm
-permalink: /article/bare47qnm/
+permalink: /blog/bare47qnm/
 tags:
   - MySQL
 ---

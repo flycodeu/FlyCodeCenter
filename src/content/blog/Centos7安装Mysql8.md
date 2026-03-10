@@ -2,7 +2,7 @@
 title: Centos7安装Mysql8
 createTime: '2026/03/01 19:23:46'
 code: bd5g8h9tf
-permalink: /article/bd5g8h9tf/
+permalink: /blog/bd5g8h9tf/
 tags:
   - CentOS7
 ---

@@ -2,7 +2,7 @@
 title: 自定义Starter
 createTime: '2026/03/01 19:23:46'
 code: b89kow8hv
-permalink: /article/b89kow8hv/
+permalink: /blog/b89kow8hv/
 tags:
   - SpringBoot
 ---

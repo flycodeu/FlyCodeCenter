@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import {
   CREATE_TIME_RE,
   createGeneratedCode,
+  describePermalinkPattern,
   getRelativeContentPath,
   getSourceStemFromRelativePath,
   isValidArticlePermalink,
@@ -72,9 +73,9 @@ for (const target of targets) {
       continue;
     }
 
-    const permalink = normalizePermalink(data.permalink, code);
-    if (!isValidArticlePermalink(permalink)) {
-      errors.push(`${rel}: invalid permalink "${permalink}", expected /article/{slug}/`);
+    const permalink = normalizePermalink(target.collection, data.permalink, code, relativePath);
+    if (!isValidArticlePermalink(target.collection, relativePath, permalink)) {
+      errors.push(`${rel}: invalid permalink "${permalink}", expected ${describePermalinkPattern(target.collection, relativePath)}`);
     }
 
     const codeOwner = codeMap.get(code);

@@ -1,11 +1,13 @@
 ---
 title: HashMap 为什么线程不安全
+createTime: '2026/03/10 20:14:00'
+code: imd6p1ffd
+permalink: /interview/imd6p1ffd/
 summary: 这道题常见于集合和并发交叉面试，重点是并发写导致的数据错乱。
 description: 从 JDK 1.7 和 1.8 两代实现角度解释 HashMap 的线程安全问题。
+order: 2
 type: java
 difficulty: medium
-order: 2
-createTime: 2026/03/10 20:14:00
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false

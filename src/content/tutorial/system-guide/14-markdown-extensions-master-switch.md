@@ -2,7 +2,7 @@
 title: Markdown 扩展总开关：extended.enable 与 parserMode
 createTime: '2026/03/05 12:57:49'
 code: tjxwqbvk9
-permalink: /article/tjxwqbvk9/
+permalink: /tutorials/tjxwqbvk9/
 summary: 从总开关视角理解扩展 Markdown 的启停策略与构建时解析模式。
 series: system-guide
 order: 14

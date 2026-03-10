@@ -2,7 +2,7 @@
 title: 使用oshi监控java运行
 createTime: '2026/03/01 19:23:46'
 code: bjnavexot
-permalink: /article/bjnavexot/
+permalink: /blog/bjnavexot/
 tags:
   - SpringBoot
 ---

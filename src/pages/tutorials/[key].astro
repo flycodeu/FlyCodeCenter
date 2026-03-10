@@ -1,0 +1,161 @@
+---
+import { render } from "astro:content";
+import siteConfig from "@/site.config";
+import TutorialReaderLayout from "@/layouts/TutorialReaderLayout.astro";
+import { getTutorialEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
+import {
+  buildTutorialSeriesBuckets,
+  isTutorialReadmeEntry,
+  resolveSeriesKeyFromTutorialEntry,
+  resolveTutorialRouteKey,
+  toSeriesRouteKey
+} from "@/utils/tutorial-series";
+import { fetchTutorialEntries, fetchTutorialSeriesEntries } from "@/utils/query";
+import { summarizeReading } from "@/utils/reading-time";
+
+interface SeriesRouteProps {
+  kind: "series";
+  seriesKey: string;
+  currentEntryId: string;
+}
+
+interface EntryRouteProps {
+  kind: "entry";
+  currentEntryId: string;
+}
+
+type RouteProps = SeriesRouteProps | EntryRouteProps;
+
+export async function getStaticPaths() {
+  const tutorials = await fetchTutorialEntries();
+  const seriesMap = buildTutorialSeriesBuckets(tutorials);
+  const paths: Array<{ params: { key: string }; props: RouteProps }> = [];
+  const routeKeySet = new Set<string>();
+
+  for (const bucket of seriesMap.values()) {
+    const first = bucket.readmeEntry ?? bucket.entries[0];
+    if (!first) continue;
+
+    const routeKey = toSeriesRouteKey(bucket.key);
+    if (routeKeySet.has(routeKey)) {
+      throw new Error(`Duplicate tutorial route detected: /tutorials/${routeKey}`);
+    }
+    routeKeySet.add(routeKey);
+    paths.push({
+      params: { key: routeKey },
+      props: {
+        kind: "series",
+        seriesKey: bucket.key,
+        currentEntryId: first.id
+      }
+    });
+  }
+
+  for (const entry of tutorials) {
+    if (isTutorialReadmeEntry(entry)) continue;
+
+    const code = resolveArticleMeta(entry).code;
+    if (routeKeySet.has(code)) {
+      throw new Error(`Tutorial route conflict: /tutorials/${code} is used by both a series and article "${entry.id}"`);
+    }
+    routeKeySet.add(code);
+    paths.push({
+      params: { key: code },
+      props: {
+        kind: "entry",
+        currentEntryId: entry.id
+      }
+    });
+  }
+
+  return paths;
+}
+
+const props = Astro.props as RouteProps;
+
+let seriesKey = "";
+let entries = await fetchTutorialEntries();
+let currentEntry = entries[0];
+
+if (props.kind === "series") {
+  seriesKey = props.seriesKey;
+  entries = await fetchTutorialSeriesEntries(seriesKey);
+  if (!entries.length) {
+    throw new Error(`Tutorial series not found: ${seriesKey}`);
+  }
+
+  const seriesBucket = buildTutorialSeriesBuckets(entries).get(seriesKey);
+  currentEntry = entries.find((entry) => entry.id === props.currentEntryId) ?? seriesBucket?.readmeEntry ?? entries[0];
+  if (!seriesBucket?.readmeEntry) {
+    return Astro.redirect(getTutorialEntryUrl(currentEntry), 301);
+  }
+} else {
+  const foundEntry = entries.find((entry) => entry.id === props.currentEntryId);
+  if (!foundEntry || isTutorialReadmeEntry(foundEntry)) {
+    throw new Error(`Tutorial entry not found: ${props.currentEntryId}`);
+  }
+  currentEntry = foundEntry;
+
+  seriesKey = resolveSeriesKeyFromTutorialEntry(currentEntry);
+  entries = await fetchTutorialSeriesEntries(seriesKey);
+  if (!entries.length) {
+    throw new Error(`Tutorial series not found: ${seriesKey}`);
+  }
+}
+
+const seriesBucket = buildTutorialSeriesBuckets(entries).get(seriesKey);
+const currentMeta = resolveArticleMeta(currentEntry);
+const rendered = await render(currentEntry);
+const Content = rendered.Content;
+const headings = rendered.headings;
+const reading = summarizeReading(currentEntry.body);
+
+const navItems = entries.map((entry) => {
+  const meta = resolveArticleMeta(entry);
+  const routeKey = resolveTutorialRouteKey(entry);
+  return {
+    id: entry.id,
+    slug: routeKey,
+    title: meta.title,
+    order: routeKey === "index" ? 0 : meta.order,
+    url: getTutorialEntryUrl(entry)
+  };
+});
+
+const currentRouteKey = props.kind === "series" ? "index" : resolveTutorialRouteKey(currentEntry);
+const currentIndex = navItems.findIndex((item) => item.id === currentEntry.id);
+const prev = currentIndex > 0 ? { title: navItems[currentIndex - 1].title, url: navItems[currentIndex - 1].url } : undefined;
+const next =
+  currentIndex >= 0 && currentIndex < navItems.length - 1
+    ? { title: navItems[currentIndex + 1].title, url: navItems[currentIndex + 1].url }
+    : undefined;
+
+const seriesLabel = seriesBucket?.label ?? seriesKey.replace(/[-_]+/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
+const articleUrl =
+  props.kind === "series" ? `/tutorials/${encodeURIComponent(toSeriesRouteKey(seriesKey))}` : getTutorialEntryUrl(currentEntry);
+---
+
+<TutorialReaderLayout
+  title={currentMeta.title}
+  summary={currentMeta.summary}
+  description={currentMeta.description || currentMeta.title}
+  tags={currentMeta.tags}
+  articleUrl={articleUrl}
+  seriesKey={seriesKey}
+  seriesLabel={seriesLabel}
+  currentSlug={currentRouteKey}
+  items={navItems}
+  headings={headings}
+  pubDate={currentMeta.createTime}
+  updatedDate={currentMeta.updatedTime}
+  wordCount={reading.wordCount}
+  readingMinutes={reading.minutes}
+  prev={prev}
+  next={next}
+  encrypted={currentMeta.encrypted && siteConfig.encrypt.enable}
+  encryptedFile={currentMeta.encryptedFile}
+  passwordHint={currentMeta.passwordHint}
+>
+  <Content />
+</TutorialReaderLayout>

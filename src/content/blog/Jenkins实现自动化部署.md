@@ -2,7 +2,7 @@
 title: Jenkins实现自动化部署
 createTime: '2026/03/01 19:23:46'
 code: bdfp3s2lz
-permalink: /article/bdfp3s2lz/
+permalink: /blog/bdfp3s2lz/
 tags:
   - Jenkins
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/logo.png'

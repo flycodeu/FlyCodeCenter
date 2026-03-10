@@ -2,7 +2,7 @@
 title: Uniapp小程序转换为h5网页请求后端
 createTime: '2026/03/01 19:23:46'
 code: b2k501gg8
-permalink: /article/b2k501gg8/
+permalink: /blog/b2k501gg8/
 tags:
   - 前端
 ---

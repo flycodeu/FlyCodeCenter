@@ -2,7 +2,7 @@
 title: Rust 模块系统（上）：Package / Crate / Module / Path / use / pub
 createTime: '2026/03/08 15:17:37'
 code: t1wp1yyjm
-permalink: /article/t1wp1yyjm/
+permalink: /tutorials/t1wp1yyjm/
 ---
 ## 0. 你要记住的一个心智模型
 

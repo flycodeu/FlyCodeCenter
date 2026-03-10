@@ -2,7 +2,7 @@
 title: 获取图片URL格式
 createTime: '2026/03/01 19:23:46'
 code: b1j4fulor
-permalink: /article/b1j4fulor/
+permalink: /blog/b1j4fulor/
 tags:
   - SpringBoot
 ---

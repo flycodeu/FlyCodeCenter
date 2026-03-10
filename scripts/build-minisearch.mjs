@@ -5,11 +5,11 @@ import {
   createGeneratedCode,
   deriveTitleFromSourceStem,
   getSourceStemFromRelativePath,
+  normalizePermalink,
   sanitizeManualCode
 } from "./frontmatter-maintenance.mjs";
 
 const root = process.cwd();
-const articlePrefix = "article";
 const siteBase = "";
 const articleDefaults = {
   summary: "",
@@ -92,7 +92,7 @@ function resolveCode(domain, relativeFile, data) {
 
 function resolvePermalink(domain, relativeFile, data) {
   const code = resolveCode(domain, relativeFile, data);
-  return ensureWithBase(`/${articlePrefix}/${code}/`);
+  return ensureWithBase(normalizePermalink(domain, data.permalink, code, relativeFile));
 }
 
 function getCollectionBases() {

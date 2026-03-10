@@ -1,11 +1,13 @@
 ---
 title: JDK、JRE、JVM 的区别
+createTime: '2026/03/10 20:12:00'
+code: i1g57jcv0
+permalink: /interview/i1g57jcv0/
 summary: 这是 Java 基础必问题，回答重点在于三者层级关系和开发运行场景。
 description: 理清 JDK、JRE、JVM 的概念边界，并给出适合面试表达的回答结构。
+order: 1
 type: java
 difficulty: easy
-order: 1
-createTime: 2026/03/10 20:12:00
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false

@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import { getPageWindow } from "@/utils/pagination";
 
@@ -21,6 +21,7 @@ const {
 } = Astro.props;
 
 const pageWindow = getPageWindow(currentPage, lastPage, siteConfig.blog.pagination.maxPageNumbers);
+const jumpInputId = `pager-jump-${basePath.replace(/[^a-z0-9]+/gi, "-")}-${currentPage}-${lastPage}`;
 
 function pageUrl(page: number) {
   if (page <= 1) return basePath;
@@ -38,17 +39,25 @@ function pageUrl(page: number) {
       >
         上一页
       </a>
+      <div class="pager-meta" aria-hidden="true">
+        <strong>{currentPage}</strong>
+        <span>/ {lastPage}</span>
+      </div>
       <div class="pager-pages">
         {
-          pageWindow.map((page) => (
-            <a
-              href={pageUrl(page)}
-              class={`pager-btn pager-btn-num ${page === currentPage ? "is-active" : ""}`}
-              aria-current={page === currentPage ? "page" : undefined}
-            >
-              {page}
-            </a>
-          ))
+          pageWindow.map((item) =>
+            typeof item === "number" ? (
+              <a
+                href={pageUrl(item)}
+                class={`pager-btn pager-btn-num ${item === currentPage ? "is-active" : ""}`}
+                aria-current={item === currentPage ? "page" : undefined}
+              >
+                {item}
+              </a>
+            ) : (
+              <span class="pager-ellipsis" aria-hidden="true">…</span>
+            )
+          )
         }
       </div>
       <a
@@ -58,6 +67,19 @@ function pageUrl(page: number) {
       >
         下一页
       </a>
+      <form class="pager-jump" data-base-path={basePath} data-last-page={String(lastPage)}>
+        <label class="pager-jump-label" for={jumpInputId}>跳至</label>
+        <input
+          id={jumpInputId}
+          class="pager-jump-input"
+          type="number"
+          min="1"
+          max={lastPage}
+          value={currentPage}
+          inputmode="numeric"
+        />
+        <button class="pager-btn pager-go" type="submit">前往</button>
+      </form>
     </nav>
   )
 }
@@ -69,6 +91,33 @@ function pageUrl(page: number) {
         加载更多
       </button>
     </div>
+  )
+}
+
+{
+  mode === "page" && lastPage > 1 && (
+    <script is:inline>
+      const buildPageUrl = (basePath, page) => {
+        const nextPage = Math.max(1, Number.parseInt(String(page || "1"), 10) || 1);
+        return nextPage <= 1 ? basePath : `${basePath}/${nextPage}`;
+      };
+
+      document.querySelectorAll(".pager-jump").forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.dataset.bound === "1") return;
+        form.dataset.bound = "1";
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const input = form.querySelector(".pager-jump-input");
+          if (!(input instanceof HTMLInputElement)) return;
+          const basePath = String(form.dataset.basePath || "/blog").trim() || "/blog";
+          const lastPage = Math.max(1, Number.parseInt(form.dataset.lastPage || "1", 10) || 1);
+          const nextPage = Math.max(1, Math.min(lastPage, Number.parseInt(input.value || "1", 10) || 1));
+          window.location.href = buildPageUrl(basePath, nextPage);
+        });
+      });
+    </script>
   )
 }
 

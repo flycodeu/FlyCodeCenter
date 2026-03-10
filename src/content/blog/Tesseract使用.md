@@ -2,7 +2,7 @@
 title: Tesseract使用
 createTime: '2026/03/01 19:23:46'
 code: bck4j6uzb
-permalink: /article/bck4j6uzb/
+permalink: /blog/bck4j6uzb/
 tags:
   - Tesseract
   - 图片文字识别

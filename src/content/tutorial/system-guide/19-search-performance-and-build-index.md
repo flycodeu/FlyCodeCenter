@@ -2,7 +2,7 @@
 title: 搜索与性能：构建索引、按需加载与质量守卫
 createTime: '2026/03/05 12:58:50'
 code: talah2cgx
-permalink: /article/talah2cgx/
+permalink: /tutorials/talah2cgx/
 summary: 掌握 pagefind/minisearch 配置与构建链路中的性能关键点。
 series: system-guide
 order: 19

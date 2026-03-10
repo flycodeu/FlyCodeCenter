@@ -2,7 +2,7 @@
 title: 吃药记录与提醒
 createTime: '2026/03/02 20:20:04'
 code: p2avsfevn
-permalink: /article/p2avsfevn/
+permalink: /projects/p2avsfevn/
 summary: 支持定制吃药计划、家人共享、定时提醒与服药记录追踪的健康工具。
 tags:
   - 健康

@@ -2,7 +2,7 @@
 title: shiro密码加密工具
 createTime: '2026/03/01 19:23:46'
 code: b1zkj0k3j
-permalink: /article/b1zkj0k3j/
+permalink: /blog/b1zkj0k3j/
 tags:
   - shiro
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/54a61c380016520913632d86c850a39.jpg

@@ -2,7 +2,7 @@
 title: 像素角色与动作帧生成器
 createTime: '2026/03/02 20:20:04'
 code: p165cnwsq
-permalink: /article/p165cnwsq/
+permalink: /projects/p165cnwsq/
 summary: 生成像素风人物与抽卡式动作动画帧（如静止、砍树）的创作工具。
 tags:
   - 像素风

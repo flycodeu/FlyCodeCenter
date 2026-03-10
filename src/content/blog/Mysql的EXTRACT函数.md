@@ -2,7 +2,7 @@
 title: Mysql的EXTRACT函数
 createTime: '2026/03/01 19:23:46'
 code: b11p7gf8a
-permalink: /article/b11p7gf8a/
+permalink: /blog/b11p7gf8a/
 tags:
   - MySQL
 ---

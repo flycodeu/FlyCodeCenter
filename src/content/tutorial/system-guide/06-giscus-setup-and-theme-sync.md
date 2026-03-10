@@ -2,7 +2,7 @@
 title: Giscus 从零配置到上线：GitHub Discussions 评论系统完整指南
 createTime: '2026/03/05 12:57:01'
 code: t1ggztolg
-permalink: /article/t1ggztolg/
+permalink: /tutorials/t1ggztolg/
 summary: 站在第一次接触 giscus 的用户角度，完成从 GitHub 仓库准备、官方配置页生成参数、项目字段填写、主题同步到上线验证与排错的完整闭环。
 series: system-guide
 order: 6

@@ -2,7 +2,7 @@
 title: 代码主题映射：随站点明暗自动同步
 createTime: '2026/03/05 12:57:49'
 code: t2bnrb2vi
-permalink: /article/t2bnrb2vi/
+permalink: /tutorials/t2bnrb2vi/
 summary: 建立 site theme -> code theme 映射，让高亮风格与全站主题联动。
 series: system-guide
 order: 13

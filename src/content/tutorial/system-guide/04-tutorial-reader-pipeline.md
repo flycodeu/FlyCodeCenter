@@ -2,7 +2,7 @@
 title: 教程阅读页渲染链路：Sidebar、Content、TOC 如何协作
 createTime: '2026/03/05 12:57:01'
 code: t1iqrr8gk
-permalink: /article/t1iqrr8gk/
+permalink: /tutorials/t1iqrr8gk/
 summary: 深入 TutorialReaderLayout 的数据流：目录高亮、正文渲染、TOC 同步的完整流程。
 series: system-guide
 order: 4

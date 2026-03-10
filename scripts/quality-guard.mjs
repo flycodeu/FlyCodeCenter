@@ -6,7 +6,8 @@ const root = process.cwd();
 const targets = [
   path.join(root, "src", "content", "blog"),
   path.join(root, "src", "content", "tutorial"),
-  path.join(root, "src", "content", "projects")
+  path.join(root, "src", "content", "projects"),
+  path.join(root, "src", "content", "interview")
 ];
 
 const ATTR_RE = /([a-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=]+))/gi;

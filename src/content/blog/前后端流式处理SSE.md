@@ -2,7 +2,7 @@
 title: 前后端流式处理SSE
 createTime: '2026/03/01 19:23:46'
 code: b27sekvrt
-permalink: /article/b27sekvrt/
+permalink: /blog/b27sekvrt/
 tags:
   - SSE
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/2f2fb80273762e672c81a240c67f7cda.jpg

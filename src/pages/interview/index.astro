@@ -7,8 +7,8 @@ import { createInterviewPasswordHash, createInterviewStorageSecret } from "@/uti
 import {
   buildInterviewSpaceBuckets,
   fetchInterviewEntries,
+  getInterviewSpaceUrl,
   isInterviewReadmeEntry,
-  toInterviewSpaceRouteKey
 } from "@/utils/interview";
 
 if (!siteConfig.pages.interviewCenter.enable) {
@@ -34,7 +34,7 @@ const spaces = [...buildInterviewSpaceBuckets(entries).values()]
       ...bucket,
       questions,
       latestDate,
-      href: `${interviewConfig.route}/${encodeURIComponent(toInterviewSpaceRouteKey(bucket.key))}`
+      href: getInterviewSpaceUrl(bucket.key)
     };
   });
 const totalQuestions = spaces.reduce((sum, space) => sum + space.questions.length, 0);

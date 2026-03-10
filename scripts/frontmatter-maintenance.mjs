@@ -6,11 +6,16 @@ import path from "node:path";
 import matter from "gray-matter";
 
 export const root = process.cwd();
-export const articlePrefix = "article";
+export const blogPrefix = "blog";
+export const projectPrefix = "projects";
+export const tutorialPrefix = "tutorials";
+export const tutorialSeriesPrefix = "tutorials";
+export const interviewPrefix = "interview";
 export const targets = [
   { collection: "blog", dir: path.join(root, "src", "content", "blog") },
   { collection: "tutorial", dir: path.join(root, "src", "content", "tutorial") },
-  { collection: "projects", dir: path.join(root, "src", "content", "projects") }
+  { collection: "projects", dir: path.join(root, "src", "content", "projects") },
+  { collection: "interview", dir: path.join(root, "src", "content", "interview") }
 ];
 
 export const CREATE_TIME_RE = /^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/;
@@ -61,6 +66,14 @@ const TAG_ALIAS_MAP = {
   astro: "Astro",
   typescript: "TypeScript",
   javascript: "JavaScript"
+};
+
+const TUTORIAL_SERIES_ROUTE_ALIASES = {
+  "c++": "cpp"
+};
+
+const INTERVIEW_SPACE_ROUTE_ALIASES = {
+  "c++": "cpp"
 };
 
 function normalizeSlashes(value) {
@@ -190,14 +203,117 @@ export function createGeneratedCode(collection, relativePath, fallback) {
   return createShortHashCode(seed, String(collection || "a").slice(0, 1).toLowerCase() || "a");
 }
 
-export function normalizePermalink(_input, code) {
-  return `/${articlePrefix}/${code}/`;
+function getRawSourceStem(relativePath) {
+  const normalized = normalizeSlashes(relativePath);
+  const last = normalized.split("/").filter(Boolean).at(-1) || "";
+  return stripMarkdownExtension(last).trim();
 }
 
-export function isValidArticlePermalink(permalink) {
+function normalizeSeriesKey(value) {
+  return String(value || "").trim();
+}
+
+function normalizeInterviewSpaceKey(value) {
+  return String(value || "").trim();
+}
+
+function toTutorialSeriesRouteKey(seriesKey) {
+  const normalized = normalizeSeriesKey(seriesKey);
+  if (!normalized) return normalized;
+  return TUTORIAL_SERIES_ROUTE_ALIASES[normalized] || normalized;
+}
+
+function toInterviewSpaceRouteKey(spaceKey) {
+  const normalized = normalizeInterviewSpaceKey(spaceKey);
+  if (!normalized) return normalized;
+  return INTERVIEW_SPACE_ROUTE_ALIASES[normalized] || normalized;
+}
+
+function getTutorialSeriesKeyFromRelativePath(relativePath) {
+  const segments = normalizeSlashes(relativePath).split("/").filter(Boolean);
+  return normalizeSeriesKey(segments[0] || "");
+}
+
+function isTutorialReadmeRelativePath(relativePath) {
+  const segments = normalizeSlashes(relativePath).split("/").filter(Boolean);
+  return segments.length === 2 && /^readme$/i.test(getRawSourceStem(relativePath));
+}
+
+function getInterviewSpaceKeyFromRelativePath(relativePath) {
+  const segments = normalizeSlashes(relativePath).split("/").filter(Boolean);
+  return normalizeInterviewSpaceKey(segments[0] || "");
+}
+
+function isInterviewReadmeRelativePath(relativePath) {
+  const segments = normalizeSlashes(relativePath).split("/").filter(Boolean);
+  return segments.length === 2 && /^readme$/i.test(getRawSourceStem(relativePath));
+}
+
+export function describePermalinkPattern(collection, relativePath = "") {
+  if (collection === "blog") return `/${blogPrefix}/{code}/`;
+  if (collection === "tutorial") {
+    return isTutorialReadmeRelativePath(relativePath)
+      ? `/${tutorialSeriesPrefix}/{series}/`
+      : `/${tutorialPrefix}/{code}/`;
+  }
+  if (collection === "projects") return `/${projectPrefix}/{code}/`;
+  if (collection === "interview") {
+    return isInterviewReadmeRelativePath(relativePath)
+      ? `/${interviewPrefix}/{space}/`
+      : `/${interviewPrefix}/{code}/`;
+  }
+  return `/{collection}/{code}/`;
+}
+
+export function normalizePermalink(collection, _input, code, relativePath = "") {
+  if (collection === "blog") {
+    return `/${blogPrefix}/${code}/`;
+  }
+  if (collection === "tutorial") {
+    if (isTutorialReadmeRelativePath(relativePath)) {
+      const routeSeriesKey = toTutorialSeriesRouteKey(getTutorialSeriesKeyFromRelativePath(relativePath));
+      if (routeSeriesKey) return `/${tutorialSeriesPrefix}/${routeSeriesKey}/`;
+    }
+    return `/${tutorialPrefix}/${code}/`;
+  }
+
+  if (collection === "projects") {
+    return `/${projectPrefix}/${code}/`;
+  }
+
+  if (collection === "interview") {
+    if (isInterviewReadmeRelativePath(relativePath)) {
+      const routeSpaceKey = toInterviewSpaceRouteKey(getInterviewSpaceKeyFromRelativePath(relativePath));
+      if (routeSpaceKey) return `/${interviewPrefix}/${routeSpaceKey}/`;
+    }
+    return `/${interviewPrefix}/${code}/`;
+  }
+
+  return `/${code}/`;
+}
+
+export function isValidArticlePermalink(collection, relativePath, permalink) {
   const trimmed = String(permalink || "").replace(/^\/+|\/+$/g, "");
   const parts = trimmed.split("/").filter(Boolean);
-  return parts.length === 2 && parts[0] === articlePrefix && /^[a-z0-9-]+$/.test(parts[1]);
+  if (collection === "blog") {
+    return parts.length === 2 && parts[0] === blogPrefix && /^[a-z0-9-]+$/.test(parts[1]);
+  }
+  if (collection === "tutorial") {
+    if (isTutorialReadmeRelativePath(relativePath)) {
+      return parts.length === 2 && parts[0] === tutorialSeriesPrefix && Boolean(parts[1]);
+    }
+    return parts.length === 2 && parts[0] === tutorialPrefix && /^[a-z0-9-]+$/.test(parts[1]);
+  }
+  if (collection === "projects") {
+    return parts.length === 2 && parts[0] === projectPrefix && /^[a-z0-9-]+$/.test(parts[1]);
+  }
+  if (collection === "interview") {
+    if (isInterviewReadmeRelativePath(relativePath)) {
+      return parts.length === 2 && parts[0] === interviewPrefix && Boolean(parts[1]);
+    }
+    return parts.length === 2 && parts[0] === interviewPrefix && /^[a-z0-9-]+$/.test(parts[1]);
+  }
+  return false;
 }
 
 export function normalizeTagsValue(input) {
@@ -249,7 +365,22 @@ function extractLegacyMeta(content) {
 
   const meta = {};
   let found = false;
-  const knownKeys = new Set(["title", "createTime", "permalink", "summary", "description", "tags", "code"]);
+  const knownKeys = new Set([
+    "title",
+    "createTime",
+    "updatedTime",
+    "code",
+    "permalink",
+    "summary",
+    "description",
+    "tags",
+    "type",
+    "difficulty",
+    "encrypted",
+    "passwordHint",
+    "draft",
+    "space"
+  ]);
   while (cursor < lines.length) {
     const line = lines[cursor];
     if (!line.trim()) break;
@@ -285,6 +416,7 @@ export function reorderFrontmatter(data) {
   const keys = [
     "title",
     "createTime",
+    "updatedTime",
     "code",
     "permalink",
     "summary",
@@ -299,6 +431,11 @@ export function reorderFrontmatter(data) {
     "showOnHome",
     "coverMode",
     "coverPosition",
+    "type",
+    "difficulty",
+    "space",
+    "encrypted",
+    "passwordHint",
     "draft",
     "pinned"
   ];
@@ -410,7 +547,7 @@ export function syncArticleFrontmatter(target, file, raw) {
     dirty = true;
   }
 
-  const permalink = normalizePermalink(data.permalink, code);
+  const permalink = normalizePermalink(target.collection, data.permalink, code, relativePath);
   if (data.permalink !== permalink) {
     data.permalink = permalink;
     dirty = true;
@@ -431,7 +568,7 @@ export function syncArticleFrontmatter(target, file, raw) {
     dirty = true;
   }
 
-  for (const key of ["summary", "description", "outline", "series", "cover", "category", "icon"]) {
+  for (const key of ["summary", "description", "outline", "series", "cover", "category", "icon", "type", "passwordHint", "space"]) {
     if (deleteEmptyScalar(data, key)) {
       dirty = true;
     }

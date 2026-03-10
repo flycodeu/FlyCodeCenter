@@ -2,7 +2,7 @@
 title: MCP新版实现
 createTime: '2026/03/01 19:23:46'
 code: b2awd9f6e
-permalink: /article/b2awd9f6e/
+permalink: /blog/b2awd9f6e/
 tags:
   - MCP
   - AI

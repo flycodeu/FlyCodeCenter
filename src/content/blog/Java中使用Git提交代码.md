@@ -2,7 +2,7 @@
 title: Java中使用Git提交代码
 createTime: '2026/03/01 19:23:46'
 code: bvyycunzy
-permalink: /article/bvyycunzy/
+permalink: /blog/bvyycunzy/
 tags:
   - Git
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/22678c319934c0e968b1ef06041698b.jpg

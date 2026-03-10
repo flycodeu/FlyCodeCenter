@@ -2,7 +2,7 @@
 title: Astro 性能手册：把 JS 预算花在刀刃上
 createTime: '2026/02/28 13:10:00'
 code: b276f0ps3
-permalink: /article/b276f0ps3/
+permalink: /blog/b276f0ps3/
 summary: 聚焦构建期优化与运行时按需加载，建立可持续的性能基线。
 tags:
   - Astro

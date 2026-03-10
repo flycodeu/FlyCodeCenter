@@ -2,7 +2,7 @@
 title: Astro 插件化架构：Provider 工厂与配置中心
 createTime: '2026/02/28 13:10:14'
 code: b1qr2y274
-permalink: /article/b1qr2y274/
+permalink: /blog/b1qr2y274/
 summary: 统一配置 + Provider 工厂，构建可维护且可扩展的内容站底座。
 tags:
   - Astro

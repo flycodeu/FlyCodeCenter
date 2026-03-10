@@ -2,7 +2,7 @@
 title: STL标准模板库
 createTime: '2026/03/08 15:17:37'
 code: tbmktvkyr
-permalink: /article/tbmktvkyr/
+permalink: /tutorials/tbmktvkyr/
 tags:
   - C++
 ---

@@ -2,7 +2,7 @@
 title: logrotate日志使用
 createTime: '2026/03/08 15:17:37'
 code: t2lj69xo0
-permalink: /article/t2lj69xo0/
+permalink: /tutorials/t2lj69xo0/
 tags:
   - Linux
 ---

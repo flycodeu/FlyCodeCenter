@@ -6,7 +6,7 @@ import {
   sanitizeManualCode
 } from "@/utils/content-source";
 
-export type CodedCollection = "blog" | "tutorial" | "projects";
+export type CodedCollection = "blog" | "tutorial" | "projects" | "interview";
 export type CodedEntry = CollectionEntry<CodedCollection>;
 
 export function createGeneratedCode(input: {

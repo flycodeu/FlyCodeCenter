@@ -2,7 +2,7 @@
 title: 简单Java爬虫
 createTime: '2026/03/01 19:23:46'
 code: bjhex8h9z
-permalink: /article/bjhex8h9z/
+permalink: /blog/bjhex8h9z/
 tags:
   - SpringBoot
   - 爬虫

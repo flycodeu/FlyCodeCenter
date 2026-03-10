@@ -2,7 +2,7 @@
 title: 项目快速接入AI调用获取数据
 createTime: '2026/03/01 19:23:46'
 code: bqw28c6g3
-permalink: /article/bqw28c6g3/
+permalink: /blog/bqw28c6g3/
 ---
 # 1. 目标与约束
 

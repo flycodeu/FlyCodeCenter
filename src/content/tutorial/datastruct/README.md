@@ -2,7 +2,7 @@
 title: 数据结构教程
 createTime: '2026/03/05 20:18:42'
 code: t1gzj0wvq
-permalink: /article/t1gzj0wvq/
+permalink: /tutorials/datastruct/
 description: 常用数据结构与算法实战
 order: 2
 tags:

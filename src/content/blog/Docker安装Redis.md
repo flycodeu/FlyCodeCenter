@@ -2,7 +2,7 @@
 title: Docker安装Redis
 createTime: '2026/03/01 19:23:46'
 code: b5v3zffdg
-permalink: /article/b5v3zffdg/
+permalink: /blog/b5v3zffdg/
 tags:
   - Docker
   - Redis

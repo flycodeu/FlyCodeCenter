@@ -2,7 +2,7 @@
 title: 构建企业级 Web NVR 回放系统：从底层流读取到 Canvas 时间轴
 createTime: '2026/03/01 19:23:46'
 code: bvaad5ll4
-permalink: /article/bvaad5ll4/
+permalink: /blog/bvaad5ll4/
 tags:
   - MediaMTX
   - 视频

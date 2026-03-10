@@ -2,7 +2,7 @@
 title: WSL使用
 createTime: '2026/03/01 19:23:46'
 code: b1pax2jcd
-permalink: /article/b1pax2jcd/
+permalink: /blog/b1pax2jcd/
 tags:
   - WSL
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090922.jpg

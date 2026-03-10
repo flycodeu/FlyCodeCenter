@@ -2,7 +2,7 @@
 title: 使用 MediaMTX 搭建实时 WebRTC 视频流服务
 createTime: '2026/03/01 19:23:46'
 code: b2cajl4xw
-permalink: /article/b2cajl4xw/
+permalink: /blog/b2cajl4xw/
 tags:
   - MediaMTX
   - 视频流

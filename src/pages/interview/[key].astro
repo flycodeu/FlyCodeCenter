@@ -1,0 +1,150 @@
+---
+import { render } from "astro:content";
+import siteConfig from "@/site.config";
+import InterviewReaderLayout from "@/layouts/InterviewReaderLayout.astro";
+import {
+  buildInterviewSpaceBuckets,
+  fetchInterviewEntries,
+  fetchInterviewSpaceEntries,
+  getInterviewEntryUrl,
+  getInterviewSpaceUrl,
+  isInterviewReadmeEntry,
+  resolveInterviewMeta,
+  resolveInterviewSpaceKey,
+  toInterviewSpaceRouteKey
+} from "@/utils/interview";
+
+interface SpaceRouteProps {
+  kind: "space";
+  spaceKey: string;
+  currentEntryId: string;
+}
+
+interface EntryRouteProps {
+  kind: "entry";
+  currentEntryId: string;
+}
+
+type RouteProps = SpaceRouteProps | EntryRouteProps;
+
+export async function getStaticPaths() {
+  if (!siteConfig.pages.interviewCenter.enable) return [];
+
+  const interviews = await fetchInterviewEntries();
+  const spaceMap = buildInterviewSpaceBuckets(interviews);
+  const paths: Array<{ params: { key: string }; props: RouteProps }> = [];
+  const routeKeySet = new Set<string>();
+
+  for (const bucket of spaceMap.values()) {
+    const questions = bucket.entries.filter((entry) => !isInterviewReadmeEntry(entry));
+    const first = questions[0] ?? bucket.readmeEntry ?? bucket.entries[0];
+    if (!first) continue;
+
+    const routeKey = toInterviewSpaceRouteKey(bucket.key);
+    if (routeKeySet.has(routeKey)) {
+      throw new Error(`Duplicate interview route detected: /interview/${routeKey}`);
+    }
+    routeKeySet.add(routeKey);
+    paths.push({
+      params: { key: routeKey },
+      props: {
+        kind: "space",
+        spaceKey: bucket.key,
+        currentEntryId: first.id
+      }
+    });
+  }
+
+  for (const entry of interviews) {
+    if (isInterviewReadmeEntry(entry)) continue;
+
+    const code = resolveInterviewMeta(entry).code;
+    if (routeKeySet.has(code)) {
+      throw new Error(`Interview route conflict: /interview/${code} is used by both a space and question "${entry.id}"`);
+    }
+    routeKeySet.add(code);
+    paths.push({
+      params: { key: code },
+      props: {
+        kind: "entry",
+        currentEntryId: entry.id
+      }
+    });
+  }
+
+  return paths;
+}
+
+const props = Astro.props as RouteProps;
+
+let spaceKey = "";
+let entries = await fetchInterviewEntries();
+let questionEntries = entries.filter((entry) => !isInterviewReadmeEntry(entry));
+let currentEntry = entries[0];
+
+if (props.kind === "space") {
+  spaceKey = props.spaceKey;
+  entries = await fetchInterviewSpaceEntries(spaceKey);
+  if (!entries.length) {
+    throw new Error(`Interview space not found: ${spaceKey}`);
+  }
+
+  const spaceBucket = buildInterviewSpaceBuckets(entries).get(spaceKey);
+  questionEntries = entries.filter((entry) => !isInterviewReadmeEntry(entry));
+  currentEntry = questionEntries.find((entry) => entry.id === props.currentEntryId) ?? spaceBucket?.readmeEntry ?? entries[0];
+} else {
+  const foundEntry = entries.find((entry) => entry.id === props.currentEntryId);
+  if (!foundEntry || isInterviewReadmeEntry(foundEntry)) {
+    throw new Error(`Interview entry not found: ${props.currentEntryId}`);
+  }
+  currentEntry = foundEntry;
+
+  spaceKey = resolveInterviewSpaceKey(currentEntry);
+  entries = await fetchInterviewSpaceEntries(spaceKey);
+  if (!entries.length) {
+    throw new Error(`Interview space not found: ${spaceKey}`);
+  }
+
+  questionEntries = entries.filter((entry) => !isInterviewReadmeEntry(entry));
+}
+
+const spaceBucket = buildInterviewSpaceBuckets(entries).get(spaceKey);
+const currentMeta = resolveInterviewMeta(currentEntry);
+const rendered = await render(currentEntry);
+const Content = rendered.Content;
+const headings = rendered.headings;
+const items = questionEntries.map((entry) => {
+  const meta = resolveInterviewMeta(entry);
+  return {
+    id: entry.id,
+    slug: meta.code,
+    title: meta.title,
+    difficulty: meta.difficulty,
+    order: meta.order,
+    url: getInterviewEntryUrl(entry)
+  };
+});
+const currentIndex = items.findIndex((item) => item.id === currentEntry.id);
+const currentSlug = currentIndex >= 0 ? currentMeta.code : "";
+const prev = currentIndex > 0 ? { title: items[currentIndex - 1].title, url: items[currentIndex - 1].url } : undefined;
+const next = currentIndex >= 0 && currentIndex < items.length - 1 ? { title: items[currentIndex + 1].title, url: items[currentIndex + 1].url } : undefined;
+const articleUrl = props.kind === "space" ? getInterviewSpaceUrl(spaceKey) : getInterviewEntryUrl(currentEntry);
+---
+
+<InterviewReaderLayout
+  title={currentMeta.title}
+  summary={currentMeta.summary}
+  description={currentMeta.description}
+  type={currentMeta.type}
+  difficulty={currentMeta.difficulty}
+  articleUrl={articleUrl}
+  spaceKey={spaceKey}
+  spaceLabel={spaceBucket?.label ?? spaceKey}
+  currentSlug={currentSlug}
+  items={items}
+  headings={headings}
+  prev={prev}
+  next={next}
+>
+  <Content />
+</InterviewReaderLayout>

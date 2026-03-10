@@ -2,7 +2,7 @@
 title: Zookeeper安装使用
 createTime: '2026/03/01 19:23:46'
 code: borpq037w
-permalink: /article/borpq037w/
+permalink: /blog/borpq037w/
 tags:
   - Zookeeper
 ---

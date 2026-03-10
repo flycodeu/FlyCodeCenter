@@ -2,7 +2,7 @@
 title: 复制List对象
 createTime: '2026/03/01 19:23:46'
 code: b2cj2nyy6
-permalink: /article/b2cj2nyy6/
+permalink: /blog/b2cj2nyy6/
 tags:
   - SpringBoot
 ---

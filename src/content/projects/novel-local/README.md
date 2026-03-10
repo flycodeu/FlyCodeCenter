@@ -2,7 +2,7 @@
 title: Novel Local 小说 AI 生成器
 createTime: '2026/03/02 20:20:04'
 code: p1svmqnv2
-permalink: /article/p1svmqnv2/
+permalink: /projects/p1svmqnv2/
 summary: 本地桌面端小说 AI 生成器，支持多小说管理、8 阶段分步生成与全量数据追溯。
 tags:
   - Electron

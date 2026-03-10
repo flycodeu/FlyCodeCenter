@@ -2,7 +2,7 @@
 title: Linux常用运维脚本
 createTime: '2026/03/01 19:23:46'
 code: blitcvgyg
-permalink: /article/blitcvgyg/
+permalink: /blog/blitcvgyg/
 tags:
   - Linux
 ---

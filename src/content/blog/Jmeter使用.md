@@ -2,7 +2,7 @@
 title: Jmeter使用
 createTime: '2026/03/01 19:23:46'
 code: b2eswgrcv
-permalink: /article/b2eswgrcv/
+permalink: /blog/b2eswgrcv/
 tags:
   - 压力测试
 ---

@@ -2,7 +2,7 @@
 title: Github Actions使用
 createTime: '2026/03/01 19:23:46'
 code: b1e46tgp0
-permalink: /article/b1e46tgp0/
+permalink: /blog/b1e46tgp0/
 tags:
   - Actions
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/990667183ad3256336a04340846abae.jpg

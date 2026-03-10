@@ -2,13 +2,14 @@
 import siteConfig from "@/site.config";
 import { normalizeTags as normalizeTagList } from "@/config/tag-normalize.config";
 import { resolveEntryCode } from "@/utils/content-code";
+import { buildCollectionCodePermalink, buildTutorialSeriesPermalink } from "@/utils/content-route";
 import { getEntrySourceRelativePath } from "@/utils/content-source";
 import {
   resolveDerivedCreateTimeText,
   resolveDerivedTags,
   resolveDerivedTitle
 } from "@/utils/content-derived";
-import { stripSlashes } from "@/utils/url";
+import { isTutorialReadmeEntryId, toSeriesRouteKey } from "@/utils/tutorial-route";
 
 type ArticleEntry =
   | CollectionEntry<"blog">
@@ -119,9 +120,16 @@ function normalizeTags(...values: Array<unknown>): string[] {
   return [];
 }
 
-function buildCodePermalink(code: string): string {
-  const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
-  return `/${prefix}/${code}/`;
+function buildCodePermalink(entry: ArticleEntry, code: string): string {
+  if (entry.collection === "tutorial") {
+    if (isTutorialReadmeEntryId(entry.id)) {
+      const routeSeriesKey = toSeriesRouteKey(deriveTutorialSeries(entry));
+      if (routeSeriesKey) return buildTutorialSeriesPermalink(deriveTutorialSeries(entry));
+    }
+    return buildCollectionCodePermalink("tutorial", code);
+  }
+
+  return buildCollectionCodePermalink(entry.collection, code);
 }
 
 function normalizeCoverMode(value: unknown): CoverMode | undefined {
@@ -197,7 +205,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     (entry.data as { order?: number }).order,
     deriveTutorialOrder(entry)
   );
-  const permalink = buildCodePermalink(code);
+  const permalink = buildCodePermalink(entry, code);
   const projectStage = pickText(override.projectStage, defaults.projectStage) as "completed" | "in-progress" | "planned";
   const stageFallbackCover =
     entry.collection === "projects"

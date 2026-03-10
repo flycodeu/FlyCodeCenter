@@ -1,10 +1,12 @@
 ---
 title: Java 面试题
+createTime: '2026/03/10 20:10:00'
+code: i2jc5y3b7
+permalink: /interview/java/
 summary: 面向 Java 核心基础、集合、并发与 JVM 的高频问答整理。
 description: 以真实面试对话为导向，聚焦概念辨析、底层原理和答题结构。
-type: java
 order: 1
-createTime: 2026/03/10 20:10:00
+type: java
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false

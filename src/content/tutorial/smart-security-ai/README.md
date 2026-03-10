@@ -2,7 +2,7 @@
 title: 智慧安防平台：企业级视频智能分析项目
 createTime: '2026/03/06 12:49:19'
 code: t16fveqbr
-permalink: /article/t16fveqbr/
+permalink: /tutorials/smart-security-ai/
 summary: 以 Python/Java 为主线，打通相机接入、RTSP 推流、实时检测、LLM 解释与告警闭环。
 description: 从相机接入、流媒体、实时推理到告警与AI总结，构建可规模化的视频智能分析平台。
 order: 0

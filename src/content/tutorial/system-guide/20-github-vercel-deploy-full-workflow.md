@@ -2,7 +2,7 @@
 title: GitHub + Vercel 部署全流程：把评论配置一起带上线
 createTime: '2026/03/05 12:58:50'
 code: t25e9rug5
-permalink: /article/t25e9rug5/
+permalink: /tutorials/t25e9rug5/
 summary: 围绕当前 Astro 内容站的真实部署方式，完成从仓库到 Vercel 上线的完整流程，并把 giscus 评论配置、环境变量和验收步骤一起打通。
 series: system-guide
 order: 20

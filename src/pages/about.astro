@@ -195,7 +195,17 @@ const aboutCommentsEnabled =
 
   .tech-chip {
     font-family: var(--font-mono);
-    font-size: 0.74rem;
+    font-size: 0.78rem;
+    padding: 0.38rem 0.72rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--brand) 34%, var(--line) 66%);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--brand-soft) 70%, transparent 30%),
+        color-mix(in oklab, var(--surface-1) 92%, transparent 8%)
+      );
+    box-shadow: inset 0 1px 0 color-mix(in oklab, #ffffff 28%, transparent);
   }
 
   .status-grid {
