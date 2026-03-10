@@ -1,12 +1,23 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
-import { createHash } from "node:crypto";
 import matter from "gray-matter";
-import siteConfig from "../src/site.config.ts";
-import articleMetaConfig from "../src/config/article-meta.config.ts";
+import {
+  createGeneratedCode,
+  deriveTitleFromSourceStem,
+  getSourceStemFromRelativePath,
+  sanitizeManualCode
+} from "./frontmatter-maintenance.mjs";
 
 const root = process.cwd();
-const articlePrefix = siteConfig.articlePrefix.replace(/^\/+|\/+$/g, "");
+const articlePrefix = "article";
+const siteBase = "";
+const articleDefaults = {
+  summary: "",
+  description: "",
+  tags: [],
+  draft: false,
+  encrypted: false
+};
 const outputPublic = path.join(root, "public", "search", "minisearch.json");
 const outputDist = path.join(root, "dist", "search", "minisearch.json");
 
@@ -44,8 +55,7 @@ function getHeadingText(markdown) {
 }
 
 function ensureWithBase(url) {
-  const base = siteConfig.site.base === "/" ? "" : siteConfig.site.base;
-  return `${base}${url}`.replace(/\/{2,}/g, "/");
+  return `${siteBase}${url}`.replace(/\/{2,}/g, "/");
 }
 
 function pickText(...values) {
@@ -73,59 +83,16 @@ function normalizeTags(...values) {
   return [];
 }
 
-function normalizeManualCode(input) {
-  if (typeof input !== "string") return "";
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-_]/g, "");
-}
-
-function createGeneratedCode(domain, entryId, createTime) {
-  const seed = `${domain}:${entryId}:${String(createTime || "").trim()}`;
-  const hex = createHash("sha256").update(seed).digest("hex").slice(0, 16);
-  const value = BigInt(`0x${hex}`).toString(36).slice(0, 8).padStart(8, "0");
-  return /^\d/.test(value) ? `r${value.slice(1)}` : value;
-}
-
 function resolveCode(domain, relativeFile, data) {
-  const manualCode = normalizeManualCode(data.code);
+  const manualCodeInput = typeof data.code === "string" ? data.code.trim() : "";
+  const manualCode = manualCodeInput ? sanitizeManualCode(manualCodeInput) : "";
   if (manualCode) return manualCode;
-
-  const normalized = relativeFile
-    .replace(/\\/g, "/")
-    .replace(/^\/+/, "")
-    .replace(/\.(md|mdx)$/i, "");
-  const entryId = domain === "projects" ? normalized.toLowerCase() : normalized;
-  return createGeneratedCode(domain, entryId, data.createTime);
-}
-
-function normalizePermalink(input) {
-  const raw = String(input || "").trim();
-  if (!raw) return "";
-  const value = /^https?:\/\//i.test(raw)
-    ? (() => {
-        try {
-          return new URL(raw).pathname;
-        } catch {
-          return raw;
-        }
-      })()
-    : raw;
-  let pathname = value.startsWith("/") ? value : `/${value}`;
-  pathname = pathname.replace(/\/{2,}/g, "/");
-  if (!pathname.endsWith("/")) pathname += "/";
-  return pathname;
+  return createGeneratedCode(domain, relativeFile, getSourceStemFromRelativePath(relativeFile));
 }
 
 function resolvePermalink(domain, relativeFile, data) {
-  const defaults = articleMetaConfig.defaults ?? {};
   const code = resolveCode(domain, relativeFile, data);
-  const override = articleMetaConfig.overridesByCode?.[code] ?? {};
-  const configured = pickText(override.permalink, data.permalink, defaults.permalink);
-  const fallback = `/${articlePrefix}/${code}/`;
-  return ensureWithBase(normalizePermalink(configured || fallback));
+  return ensureWithBase(`/${articlePrefix}/${code}/`);
 }
 
 function getCollectionBases() {
@@ -139,19 +106,18 @@ function getCollectionBases() {
 }
 
 function resolveUnifiedMeta(domain, relativeFile, data) {
-  const defaults = articleMetaConfig.defaults ?? {};
+  const defaults = articleDefaults;
   const code = resolveCode(domain, relativeFile, data);
-  const override = articleMetaConfig.overridesByCode?.[code] ?? {};
-  const summary = pickText(override.summary, data.summary, defaults.summary);
+  const summary = pickText(data.summary, defaults.summary);
 
   return {
     code,
     url: resolvePermalink(domain, relativeFile, data),
-    title: pickText(data.title, "Untitled"),
-    description: pickText(override.description, summary, defaults.description),
-    tags: normalizeTags(override.tags, data.tags, defaults.tags),
-    draft: pickBoolean(override.draft, defaults.draft),
-    encrypted: pickBoolean(override.encrypted, defaults.encrypted)
+    title: pickText(data.title, deriveTitleFromSourceStem(getSourceStemFromRelativePath(relativeFile)), "Untitled"),
+    description: pickText(data.description, summary, defaults.description),
+    tags: normalizeTags(data.tags, defaults.tags),
+    draft: pickBoolean(data.draft, defaults.draft),
+    encrypted: pickBoolean(data.encrypted, defaults.encrypted)
   };
 }
 
