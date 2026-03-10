@@ -1,17 +1,17 @@
-﻿---
-title: "Tabs 与 Steps：结构化教程的表达方式"
-createTime: "2026/03/05 15:00:00"
-code: "sg0116"
-permalink: "/article/sg0116/"
-summary: "用 Tabs、Steps 和 Demo 模块构建更易读的多方案教程。"
-series: "system-guide"
+---
+title: Tabs 与 Steps：结构化教程的表达方式
+createTime: '2026/03/05 12:58:50'
+code: t2nt5h4mo
+permalink: /article/t2nt5h4mo/
+summary: 用 Tabs、Steps 和 Demo 模块构建更易读的多方案教程。
+series: system-guide
 order: 16
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "tabs"
-  - "steps"
-cover: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - tabs
+  - steps
+cover: https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

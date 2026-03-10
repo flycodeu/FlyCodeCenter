@@ -1,12 +1,11 @@
 ---
 title: Html静态网页部署
-createTime: '2025/08/07 09:28:31'
-code: r5nzpm22
-permalink: /article/22w0q6zv/
+createTime: '2026/03/01 19:23:46'
+code: b18dwccux
+permalink: /article/b18dwccux/
 tags:
   - Nginx
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/68fbe71c1c82407e174652895ccab865.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/68fbe71c1c82407e174652895ccab865.jpg
 ---
 
 ## 部署方案

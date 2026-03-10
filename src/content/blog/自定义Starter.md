@@ -1,8 +1,8 @@
 ---
 title: 自定义Starter
-createTime: '2025/03/04 09:28:52'
-code: ru5g4chp
-permalink: /article/3td6t8k5/
+createTime: '2026/03/01 19:23:46'
+code: b89kow8hv
+permalink: /article/b89kow8hv/
 tags:
   - SpringBoot
 ---

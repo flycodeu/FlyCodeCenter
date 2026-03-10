@@ -1,6 +1,8 @@
 ---
+title: c++
 createTime: '2026/03/08 15:17:37'
-code: rfwvvv39
+code: t1kznc3jq
+permalink: /article/t1kznc3jq/
 ---
 # C++学习总览
 > 本文作者：程序员飞云

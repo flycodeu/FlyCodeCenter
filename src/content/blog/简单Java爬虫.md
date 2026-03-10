@@ -1,8 +1,8 @@
 ---
 title: 简单Java爬虫
-createTime: '2025/03/04 09:28:52'
-code: ru6zrlp9
-permalink: /article/vjjp6ywc/
+createTime: '2026/03/01 19:23:46'
+code: bjhex8h9z
+permalink: /article/bjhex8h9z/
 tags:
   - SpringBoot
   - 爬虫

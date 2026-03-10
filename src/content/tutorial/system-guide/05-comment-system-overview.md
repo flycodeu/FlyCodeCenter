@@ -1,16 +1,16 @@
 ---
-title: "评论系统总览：provider 机制、选型与接入路径"
-createTime: "2026/03/05 13:32:00"
-code: "sg0105"
-permalink: "/article/sg0105/"
-summary: "从统一 provider 入口理解评论系统的工作方式，明确为什么本项目默认推荐 giscus，以及新手应该按什么顺序完成接入、部署与排错。"
-series: "system-guide"
+title: 评论系统总览：provider 机制、选型与接入路径
+createTime: '2026/03/05 12:57:01'
+code: t2iaxy5l0
+permalink: /article/t2iaxy5l0/
+summary: 从统一 provider 入口理解评论系统的工作方式，明确为什么本项目默认推荐 giscus，以及新手应该按什么顺序完成接入、部署与排错。
+series: system-guide
 order: 5
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "comment"
-cover: "https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - comment
+cover: https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 这篇文章解决什么问题

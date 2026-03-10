@@ -1,17 +1,17 @@
-﻿---
-title: "搜索与性能：构建索引、按需加载与质量守卫"
-createTime: "2026/03/05 15:24:00"
-code: "sg0119"
-permalink: "/article/sg0119/"
-summary: "掌握 pagefind/minisearch 配置与构建链路中的性能关键点。"
-series: "system-guide"
+---
+title: 搜索与性能：构建索引、按需加载与质量守卫
+createTime: '2026/03/05 12:58:50'
+code: talah2cgx
+permalink: /article/talah2cgx/
+summary: 掌握 pagefind/minisearch 配置与构建链路中的性能关键点。
+series: system-guide
 order: 19
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "search"
-  - "performance"
-cover: "https://images.unsplash.com/photo-1556155092-8707de31f9c4?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - search
+  - performance
+cover: https://images.unsplash.com/photo-1556155092-8707de31f9c4?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

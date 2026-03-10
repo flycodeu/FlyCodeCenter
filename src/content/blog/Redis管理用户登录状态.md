@@ -1,12 +1,11 @@
 ---
 title: Redis管理用户登录状态
-createTime: '2025/08/19 09:26:27'
-code: mdzyxtd6
-permalink: /article/zs1pl0m4/
+createTime: '2026/03/01 19:23:46'
+code: bvz54msz2
+permalink: /article/bvz54msz2/
 tags:
   - Redis
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/496a940d9a8095dd63d22e97dd8a2a34.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/496a940d9a8095dd63d22e97dd8a2a34.jpg
 ---
 <ImageCard
 image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/496a940d9a8095dd63d22e97dd8a2a34.jpg"

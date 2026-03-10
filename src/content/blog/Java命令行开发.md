@@ -1,8 +1,8 @@
 ---
 title: Java命令行开发
-createTime: '2025/03/04 09:28:52'
-code: ra8rewpj
-permalink: /article/4bdqwgi4/
+createTime: '2026/03/01 19:23:46'
+code: bvtr0vhe5
+permalink: /article/bvtr0vhe5/
 tags:
   - SpringBoot
 ---

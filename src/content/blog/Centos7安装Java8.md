@@ -1,8 +1,8 @@
 ---
 title: Centos7安装Java8
-createTime: '2025/03/04 09:28:52'
-code: rq3yizvd
-permalink: /article/lyyk35fw/
+createTime: '2026/03/01 19:23:46'
+code: b1tgjq42m
+permalink: /article/b1tgjq42m/
 tags:
   - CentOS7
 ---

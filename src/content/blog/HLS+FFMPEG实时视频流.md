@@ -1,14 +1,13 @@
 ---
 title: HLS+FFMPEG实时视频流
-createTime: '2025/10/22 14:21:58'
-code: rkpp3zip
-permalink: /article/46z2fsx8/
+createTime: '2026/03/01 19:23:46'
+code: b2ow0cdtq
+permalink: /article/b2ow0cdtq/
 tags:
   - 视频流
   - HLS
   - FFmpeg
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/a496989751bfb3e14c29f07b9ec99116.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/a496989751bfb3e14c29f07b9ec99116.jpg
 ---
 # 使用 FFmpeg + Spring Boot 搭建大华摄像头 HLS 实时流服务（含自动重启与静态映射）
 

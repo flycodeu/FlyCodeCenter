@@ -1,8 +1,8 @@
 ---
 title: Mysql的EXTRACT函数
-createTime: '2025/03/04 09:28:52'
-code: rauuc406
-permalink: /article/qkrqgo2t/
+createTime: '2026/03/01 19:23:46'
+code: b11p7gf8a
+permalink: /article/b11p7gf8a/
 tags:
   - MySQL
 ---

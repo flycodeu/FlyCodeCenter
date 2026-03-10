@@ -1,8 +1,8 @@
 ---
 title: Vertx监听指定端口
-createTime: '2025/03/04 09:28:52'
-code: rpipolkg
-permalink: /article/twfyqhip/
+createTime: '2026/03/01 19:23:46'
+code: bjxy9ywwm
+permalink: /article/bjxy9ywwm/
 tags:
   - SpringBoot
   - vertx

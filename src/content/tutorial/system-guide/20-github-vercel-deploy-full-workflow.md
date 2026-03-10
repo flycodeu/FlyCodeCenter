@@ -1,17 +1,17 @@
 ---
-title: "GitHub + Vercel 部署全流程：把评论配置一起带上线"
-createTime: "2026/03/05 15:32:00"
-code: "sg0120"
-permalink: "/article/sg0120/"
-summary: "围绕当前 Astro 内容站的真实部署方式，完成从仓库到 Vercel 上线的完整流程，并把 giscus 评论配置、环境变量和验收步骤一起打通。"
-series: "system-guide"
+title: GitHub + Vercel 部署全流程：把评论配置一起带上线
+createTime: '2026/03/05 12:58:50'
+code: t25e9rug5
+permalink: /article/t25e9rug5/
+summary: 围绕当前 Astro 内容站的真实部署方式，完成从仓库到 Vercel 上线的完整流程，并把 giscus 评论配置、环境变量和验收步骤一起打通。
+series: system-guide
 order: 20
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "deploy"
-  - "vercel"
-cover: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - deploy
+  - vercel
+cover: https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 这篇文章重点解决什么问题

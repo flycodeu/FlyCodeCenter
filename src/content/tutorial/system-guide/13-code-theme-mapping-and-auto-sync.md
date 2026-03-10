@@ -1,17 +1,17 @@
-﻿---
-title: "代码主题映射：随站点明暗自动同步"
-createTime: "2026/03/05 14:36:00"
-code: "sg0113"
-permalink: "/article/sg0113/"
-summary: "建立 site theme -> code theme 映射，让高亮风格与全站主题联动。"
-series: "system-guide"
+---
+title: 代码主题映射：随站点明暗自动同步
+createTime: '2026/03/05 12:57:49'
+code: t2bnrb2vi
+permalink: /article/t2bnrb2vi/
+summary: 建立 site theme -> code theme 映射，让高亮风格与全站主题联动。
+series: system-guide
 order: 13
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "code"
-  - "theme"
-cover: "https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - code
+  - theme
+cover: https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

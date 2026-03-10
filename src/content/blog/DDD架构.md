@@ -1,8 +1,8 @@
 ---
 title: DDD架构
-createTime: '2025/07/10 15:34:06'
-code: r6iz0x8r
-permalink: /article/o06i4vq2/
+createTime: '2026/03/01 19:23:46'
+code: b2iupp5ec
+permalink: /article/b2iupp5ec/
 tags:
   - DDD
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg07.jpg'

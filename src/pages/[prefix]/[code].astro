@@ -6,6 +6,7 @@ import { fetchBlogEntries, fetchProjectEntries, fetchTutorialEntries } from "@/u
 import { getBlogEntryUrl, getProjectEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { summarizeReading } from "@/utils/reading-time";
 import { resolveArticleMeta } from "@/utils/article-meta";
+import { getEntryRepoRelativePath } from "@/utils/content-source";
 import { stripSlashes } from "@/utils/url";
 
 interface Neighbor {
@@ -29,19 +30,7 @@ export async function getStaticPaths() {
 
   const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
   const codeMap = new Map<string, string>();
-  const slugMap = new Map<string, string>();
   const permalinkMap = new Map<string, string>();
-  const parsePermalinkSlug = (permalink: string, identity: string, fallbackCode: string) => {
-    const normalized = stripSlashes(permalink);
-    const parts = normalized.split("/").filter(Boolean);
-    if (parts.length !== 2 || parts[0] !== prefix) {
-      console.warn(
-        `[route] Invalid permalink "${permalink}" for "${identity}". Fallback to /${prefix}/${fallbackCode}/`
-      );
-      return fallbackCode;
-    }
-    return parts[1];
-  };
   const ensureUniqueCode = (code: string, identity: string) => {
     const existing = codeMap.get(code);
     if (!existing) {
@@ -49,14 +38,6 @@ export async function getStaticPaths() {
       return;
     }
     throw new Error(`Duplicate article code "${code}" for "${identity}" and "${existing}"`);
-  };
-  const ensureUniqueSlug = (slug: string, identity: string) => {
-    const existing = slugMap.get(slug);
-    if (!existing) {
-      slugMap.set(slug, identity);
-      return;
-    }
-    throw new Error(`Duplicate article slug "${slug}" for "${identity}" and "${existing}"`);
   };
   const ensureUniquePermalink = (permalink: string, identity: string) => {
     const existing = permalinkMap.get(permalink);
@@ -70,14 +51,12 @@ export async function getStaticPaths() {
 
   for (const [index, entry] of blogEntries.entries()) {
     const meta = resolveArticleMeta(entry);
-    const slug = parsePermalinkSlug(meta.permalink, `blog:${entry.id}`, meta.code);
     ensureUniqueCode(meta.code, `blog:${entry.id}`);
-    ensureUniqueSlug(slug, `blog:${entry.id}`);
     ensureUniquePermalink(meta.permalink, `blog:${entry.id}`);
     const prev = blogEntries[index - 1];
     const next = blogEntries[index + 1];
     paths.push({
-      params: { prefix, code: slug },
+      params: { prefix, code: meta.code },
       props: {
         collection: "blog",
         entryId: entry.id,
@@ -112,14 +91,12 @@ export async function getStaticPaths() {
     });
     for (const [index, entry] of sorted.entries()) {
       const meta = getTutorialMeta(entry);
-      const slug = parsePermalinkSlug(meta.permalink, `tutorial:${entry.id}`, meta.code);
       ensureUniqueCode(meta.code, `tutorial:${entry.id}`);
-      ensureUniqueSlug(slug, `tutorial:${entry.id}`);
       ensureUniquePermalink(meta.permalink, `tutorial:${entry.id}`);
       const prev = sorted[index - 1];
       const next = sorted[index + 1];
       paths.push({
-        params: { prefix, code: slug },
+        params: { prefix, code: meta.code },
         props: {
           collection: "tutorial",
           entryId: entry.id,
@@ -132,14 +109,12 @@ export async function getStaticPaths() {
 
   for (const [index, entry] of projectEntries.entries()) {
     const meta = resolveArticleMeta(entry);
-    const slug = parsePermalinkSlug(meta.permalink, `projects:${entry.id}`, meta.code);
     ensureUniqueCode(meta.code, `projects:${entry.id}`);
-    ensureUniqueSlug(slug, `projects:${entry.id}`);
     ensureUniquePermalink(meta.permalink, `projects:${entry.id}`);
     const prev = projectEntries[index - 1];
     const next = projectEntries[index + 1];
     paths.push({
-      params: { prefix, code: slug },
+      params: { prefix, code: meta.code },
       props: {
         collection: "projects",
         entryId: entry.id,
@@ -191,7 +166,9 @@ const tags = entryMeta.tags;
 const createTime = entryMeta.createTime;
 const updatedTime = entryMeta.updatedTime;
 const hideCover = !entryMeta.showCover;
-const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, '')}/blob/main/src/content/${collection}/${entry.id}`;
+const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, "")}/blob/main/${getEntryRepoRelativePath(
+  entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">
+) || `src/content/${collection}/${entry.id}`}`;
 ---
 
 <PostLayout

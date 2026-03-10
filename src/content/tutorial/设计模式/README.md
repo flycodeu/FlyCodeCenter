@@ -1,6 +1,8 @@
 ---
+title: 设计模式
 createTime: '2026/03/08 15:17:37'
-code: r16ianii
+code: t96qk9n6b
+permalink: /article/t96qk9n6b/
 ---
 ## 软件开发原则
 - 单一职责原则(SRP)

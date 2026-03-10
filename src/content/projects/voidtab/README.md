@@ -1,15 +1,15 @@
-﻿---
+---
 title: VoidTab 浏览器起始页插件
-createTime: "2026/03/02 09:00:00"
-code: voidtab
-permalink: /article/voidtab/
+createTime: '2026/03/02 20:20:04'
+code: p2bd5ajn7
+permalink: /article/p2bd5ajn7/
 summary: 基于 Vue 3 + TypeScript 的极简赛博朋克风新标签页插件，聚焦视觉体验与效率。
 tags:
   - 浏览器插件
   - Vue3
   - TypeScript
   - AI
-cover: "https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084255.png"
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084255.png
 ---
 
 ## 项目简介

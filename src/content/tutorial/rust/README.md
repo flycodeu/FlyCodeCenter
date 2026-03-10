@@ -1,7 +1,8 @@
 ---
 title: Rust
-createTime: '2026/02/03 08:00:00'
-code: rukn5tn5
+createTime: '2026/03/08 15:17:37'
+code: t1lcr5mzj
+permalink: /article/t1lcr5mzj/
 ---
 
 # Rust 从入门到入土

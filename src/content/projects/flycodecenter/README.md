@@ -1,14 +1,14 @@
-﻿---
+---
 title: FlyCodeCenter 个人博客
-createTime: "2026/03/02 09:30:00"
-code: flycodecenter
-permalink: /article/flycodecenter/
+createTime: '2026/03/02 20:20:04'
+code: p13k5rxij
+permalink: /article/p13k5rxij/
 summary: 程序员飞云（flycode）的个人技术博客，沉淀后端、AI 与工程实践经验。
 tags:
   - 博客
   - Astro
   - 全栈
-cover: "https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260302202827624.png"
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260302202827624.png
 ---
 
 ## 项目简介

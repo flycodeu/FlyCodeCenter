@@ -1,8 +1,8 @@
 ---
 title: Avue实现表格指定行样式
-createTime: '2025/03/04 09:28:52'
-code: roh460qx
-permalink: /article/ioqb8jfx/
+createTime: '2026/03/01 19:23:46'
+code: bu5uxcnkk
+permalink: /article/bu5uxcnkk/
 tags:
   - 前端
 ---

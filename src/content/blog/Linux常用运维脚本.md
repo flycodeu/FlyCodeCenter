@@ -1,8 +1,8 @@
 ---
 title: Linux常用运维脚本
-createTime: '2025/03/04 09:28:52'
-code: rk12vc38
-permalink: /article/rd6vk0lr/
+createTime: '2026/03/01 19:23:46'
+code: blitcvgyg
+permalink: /article/blitcvgyg/
 tags:
   - Linux
 ---

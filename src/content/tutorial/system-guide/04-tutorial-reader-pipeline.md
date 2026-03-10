@@ -1,16 +1,16 @@
-﻿---
-title: "教程阅读页渲染链路：Sidebar、Content、TOC 如何协作"
-createTime: "2026/03/05 13:24:00"
-code: "sg0104"
-permalink: "/article/sg0104/"
-summary: "深入 TutorialReaderLayout 的数据流：目录高亮、正文渲染、TOC 同步的完整流程。"
-series: "system-guide"
+---
+title: 教程阅读页渲染链路：Sidebar、Content、TOC 如何协作
+createTime: '2026/03/05 12:57:01'
+code: t1iqrr8gk
+permalink: /article/t1iqrr8gk/
+summary: 深入 TutorialReaderLayout 的数据流：目录高亮、正文渲染、TOC 同步的完整流程。
+series: system-guide
 order: 4
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "reader"
-cover: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - reader
+cover: https://images.unsplash.com/photo-1516116216624-53e697fedbea?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

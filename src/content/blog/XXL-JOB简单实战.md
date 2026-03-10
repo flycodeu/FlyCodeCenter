@@ -1,8 +1,8 @@
 ---
 title: XXL-JOB简单实战
-createTime: '2025/03/04 09:28:52'
-code: r1e2m161
-permalink: /article/7gwbpyo6/
+createTime: '2026/03/01 19:23:46'
+code: b28iw045n
+permalink: /article/b28iw045n/
 tags:
   - XXL-JOB
 ---

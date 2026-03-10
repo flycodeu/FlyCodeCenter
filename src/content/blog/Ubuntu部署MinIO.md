@@ -1,6 +1,8 @@
 ---
+title: Ubuntu部署MinIO
 createTime: '2026/03/01 19:23:46'
-code: r1jj1jvf
+code: b14not3qw
+permalink: /article/b14not3qw/
 ---
 # Ubuntu 部署 MinIO（API:8071 / Console:8070）与 Python 接入实战：自启动、上传、下载、图片在线访问
 

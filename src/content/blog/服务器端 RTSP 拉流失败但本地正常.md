@@ -1,12 +1,11 @@
 ---
 title: 服务器网卡问题
-createTime: '2026/02/13 11:01:57'
-code: rdxohcz8
-permalink: /article/obmqxx2y/
+createTime: '2026/03/01 19:23:46'
+code: b1i4kdb7w
+permalink: /article/b1i4kdb7w/
 tags:
   - MediaMTX
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f079a610d1dc90cc5a524d3414ed4ed.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f079a610d1dc90cc5a524d3414ed4ed.jpg
 ---
 <ImageCard
 image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f079a610d1dc90cc5a524d3414ed4ed.jpg"

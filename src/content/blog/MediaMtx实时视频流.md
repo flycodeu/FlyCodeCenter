@@ -1,13 +1,12 @@
 ---
 title: 使用 MediaMTX 搭建实时 WebRTC 视频流服务
-createTime: '2025/11/03 13:50:30'
-code: rcpeh9s7
-permalink: /article/rcpeh9s7/
+createTime: '2026/03/01 19:23:46'
+code: b2cajl4xw
+permalink: /article/b2cajl4xw/
 tags:
   - MediaMTX
   - 视频流
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/b7bafc5044f86c9ee183e5411c75974e.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/b7bafc5044f86c9ee183e5411c75974e.jpg
 ---
 
 MediaMTX（原名 `rtsp-simple-server`）是一个**零依赖、跨平台、高性能的实时流媒体服务器**，专为低延迟视频传输设计。它支持 RTSP、RTMP、WebRTC、HLS、SRT、MPEG-TS 等多种协议的**自动转换与中继**，可广泛应用于安防监控、远程巡检、无人机图传、直播推流等场景。

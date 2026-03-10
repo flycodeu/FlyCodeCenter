@@ -1,17 +1,17 @@
-﻿---
-title: "封面与列表卡片：全局策略与单篇控制"
-createTime: "2026/03/05 13:56:00"
-code: "sg0108"
-permalink: "/article/sg0108/"
-summary: "讲清列表卡片封面策略、尺寸比例、单篇覆盖优先级和验证方法。"
-series: "system-guide"
+---
+title: 封面与列表卡片：全局策略与单篇控制
+createTime: '2026/03/05 12:57:49'
+code: tg7mlbp9q
+permalink: /article/tg7mlbp9q/
+summary: 讲清列表卡片封面策略、尺寸比例、单篇覆盖优先级和验证方法。
+series: system-guide
 order: 8
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "card"
-  - "cover"
-cover: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - card
+  - cover
+cover: https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

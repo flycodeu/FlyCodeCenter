@@ -1,14 +1,14 @@
 ---
-title: "ArrayList 入门：动态数组的扩容策略"
-createTime: "2026/02/10 00:00:00"
-code: "r2a1d7kq"
-permalink: "/article/r2a1d7kq/"
-summary: "从结构特性到复杂度分析，快速建立动态数组的实战认知。"
+title: ArrayList 入门：动态数组的扩容策略
+createTime: '2026/02/28 16:21:20'
+code: t28k9xljt
+permalink: /article/t28k9xljt/
+summary: 从结构特性到复杂度分析，快速建立动态数组的实战认知。
 tags:
-  - "tutorial"
-  - "datastruct"
-  - "array"
-cover: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80"
+  - tutorial
+  - datastruct
+  - array
+cover: https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80
 ---
 
 ## 动态数组是什么

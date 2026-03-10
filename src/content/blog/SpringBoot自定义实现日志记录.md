@@ -1,8 +1,8 @@
 ---
 title: SpringBoot自定义实现日志记录
-createTime: '2025/03/04 09:28:52'
-code: rtpq06jo
-permalink: /article/crg94zm6/
+createTime: '2026/03/01 19:23:46'
+code: bt05wy98x
+permalink: /article/bt05wy98x/
 tags:
   - SpringBoot
 ---

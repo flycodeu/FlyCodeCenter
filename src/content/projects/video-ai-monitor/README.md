@@ -1,8 +1,8 @@
-﻿---
+---
 title: 实时视频流智能推理监控平台
-createTime: "2026/03/02 10:30:00"
-code: video-ai-monitor
-permalink: /article/video-ai-monitor/
+createTime: '2026/03/02 20:20:04'
+code: p2nj6p7fc
+permalink: /article/p2nj6p7fc/
 summary: 面向业务场景的实时视频流 AI 推理平台，支持按相机策略动态编排算法并触发飞书告警。
 tags:
   - 业务项目

@@ -6,22 +6,22 @@ import SidebarProfile from "@/components/SidebarProfile.astro";
 import StatsCard from "@/components/StatsCard.astro";
 import Watermark from "@/components/Watermark.astro";
 import {
-  fetchAllEntries,
   fetchBlogEntries,
-  fetchHomeFeedEntries,
+  filterHomeVisibleTutorialEntries,
   fetchTutorialEntries,
   makeTagItems
 } from "@/utils/query";
-import { getBlogEntryUrl } from "@/utils/content";
+import { getBlogEntryUrl, sortByDateDesc } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { formatDate } from "@/utils/date";
 
-const [blogs, tutorials, allEntries, homeFeedEntries] = await Promise.all([
+const [blogs, tutorials] = await Promise.all([
   fetchBlogEntries(),
-  fetchTutorialEntries(),
-  fetchAllEntries(),
-  fetchHomeFeedEntries()
+  fetchTutorialEntries()
 ]);
+const homeVisibleTutorials = filterHomeVisibleTutorialEntries(tutorials);
+const allEntries = sortByDateDesc([...blogs, ...tutorials]);
+const homeFeedEntries = sortByDateDesc([...blogs, ...homeVisibleTutorials]);
 const hero = siteConfig.home.hero;
 const heroImageConfig = (hero.image ?? {}) as { enable?: boolean; src?: string; fallbackSrc?: string; alt?: string };
 const heroImageSrc =

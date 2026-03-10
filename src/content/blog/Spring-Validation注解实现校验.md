@@ -1,8 +1,8 @@
 ---
 title: Spring-Validation注解实现校验
-createTime: '2025/03/04 09:28:52'
-code: rsrkyacw
-permalink: /article/6cc7o80q/
+createTime: '2026/03/01 19:23:46'
+code: b1abyg6dj
+permalink: /article/b1abyg6dj/
 tags:
   - SpringBoot
 ---

@@ -1,13 +1,12 @@
 ---
 title: Centos7安装Docker
-createTime: '2025/06/05 09:50:20'
-code: r0w9un9y
-permalink: /article/5fqygf47/
+createTime: '2026/03/01 19:23:46'
+code: b4zgqt4b1
+permalink: /article/b4zgqt4b1/
 tags:
   - CentOS7
   - Docker
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090917.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090917.jpg
 ---
 
 

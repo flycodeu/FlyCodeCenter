@@ -1,8 +1,8 @@
 ---
 title: logrotate日志使用
-createTime: '2025/03/20 08:39:22'
-code: r2d4vxml
-permalink: /article/bu68tt47/
+createTime: '2026/03/08 15:17:37'
+code: t2lj69xo0
+permalink: /article/t2lj69xo0/
 tags:
   - Linux
 ---

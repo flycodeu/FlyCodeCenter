@@ -1,17 +1,17 @@
-﻿---
-title: "Shortcode 与行内增强：可复用内容块实践"
-createTime: "2026/03/05 14:52:00"
-code: "sg0115"
-permalink: "/article/sg0115/"
-summary: "系统讲解 video、checkbox、hidden、admonition、mark/icon 的写法与效果。"
-series: "system-guide"
+---
+title: Shortcode 与行内增强：可复用内容块实践
+createTime: '2026/03/05 12:58:50'
+code: tb81dei55
+permalink: /article/tb81dei55/
+summary: 系统讲解 video、checkbox、hidden、admonition、mark/icon 的写法与效果。
+series: system-guide
 order: 15
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "shortcode"
-  - "markdown"
-cover: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - shortcode
+  - markdown
+cover: https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

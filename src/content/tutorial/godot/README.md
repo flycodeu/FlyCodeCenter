@@ -1,6 +1,8 @@
 ---
+title: godot
 createTime: '2026/03/08 15:17:37'
-code: rsuekt4r
+code: t1zpoagnb
+permalink: /article/t1zpoagnb/
 ---
 # Godot入门
 

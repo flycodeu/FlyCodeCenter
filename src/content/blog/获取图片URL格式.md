@@ -1,8 +1,8 @@
 ---
 title: 获取图片URL格式
-createTime: '2025/03/04 09:28:52'
-code: rvjd17g8
-permalink: /article/sucw4nkv/
+createTime: '2026/03/01 19:23:46'
+code: b1j4fulor
+permalink: /article/b1j4fulor/
 tags:
   - SpringBoot
 ---

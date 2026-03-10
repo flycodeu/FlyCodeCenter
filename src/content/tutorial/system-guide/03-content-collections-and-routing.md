@@ -1,16 +1,16 @@
-﻿---
-title: "内容集合与路由机制：教程页面如何生成"
-createTime: "2026/03/05 13:16:00"
-code: "sg0103"
-permalink: "/article/sg0103/"
-summary: "从内容 schema 到 getStaticPaths，理解教程页是怎样被自动构建出来的。"
-series: "system-guide"
+---
+title: 内容集合与路由机制：教程页面如何生成
+createTime: '2026/03/05 12:57:01'
+code: t200wos5d
+permalink: /article/t200wos5d/
+summary: 从内容 schema 到 getStaticPaths，理解教程页是怎样被自动构建出来的。
+series: system-guide
 order: 3
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "routing"
-cover: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - routing
+cover: https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

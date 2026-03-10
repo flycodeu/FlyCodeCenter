@@ -1,8 +1,8 @@
 ---
 title: Centos7安装Redis
-createTime: '2025/03/04 09:28:52'
-code: r9qar84y
-permalink: /article/bcdfdwr3/
+createTime: '2026/03/01 19:23:46'
+code: b1gypqcdg
+permalink: /article/b1gypqcdg/
 tags:
   - CentOS7
 ---

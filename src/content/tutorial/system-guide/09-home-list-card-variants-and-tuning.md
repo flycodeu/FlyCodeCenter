@@ -1,17 +1,17 @@
-﻿---
-title: "首页与列表卡片联动：模式、密度与可读性调优"
-createTime: "2026/03/05 14:04:00"
-code: "sg0109"
-permalink: "/article/sg0109/"
-summary: "将卡片策略应用到首页与分页，建立统一的信息层级与视觉节奏。"
-series: "system-guide"
+---
+title: 首页与列表卡片联动：模式、密度与可读性调优
+createTime: '2026/03/05 12:57:49'
+code: t1d9dfd3h
+permalink: /article/t1d9dfd3h/
+summary: 将卡片策略应用到首页与分页，建立统一的信息层级与视觉节奏。
+series: system-guide
 order: 9
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "home"
-  - "card"
-cover: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - home
+  - card
+cover: https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

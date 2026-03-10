@@ -44,15 +44,19 @@ function canTutorialShowOnHome(entry: CollectionEntry<"tutorial">): boolean {
   return Boolean(seriesMeta[rawSeries]?.showOnHome ?? seriesMeta[normalizedSeries]?.showOnHome);
 }
 
-export async function fetchHomeVisibleTutorialEntries(): Promise<CollectionEntry<"tutorial">[]> {
-  const all = await fetchTutorialEntries();
-  const buckets = buildTutorialSeriesBuckets(all);
-  return all.filter((entry) => {
+export function filterHomeVisibleTutorialEntries(entries: CollectionEntry<"tutorial">[]): CollectionEntry<"tutorial">[] {
+  const buckets = buildTutorialSeriesBuckets(entries);
+  return entries.filter((entry) => {
     const key = normalizeSeriesKey(resolveSeriesKeyFromTutorialEntry(entry));
     const bucket = buckets.get(key);
     if (bucket) return bucket.showOnHome;
     return canTutorialShowOnHome(entry);
   });
+}
+
+export async function fetchHomeVisibleTutorialEntries(): Promise<CollectionEntry<"tutorial">[]> {
+  const all = await fetchTutorialEntries();
+  return filterHomeVisibleTutorialEntries(all);
 }
 
 export async function fetchSitesEntries(): Promise<CollectionEntry<"sites">[]> {

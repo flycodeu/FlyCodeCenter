@@ -1,12 +1,11 @@
 ---
 title: Idea无法查看源码
-createTime: '2025/05/22 10:10:42'
-code: rp9kxybc
-permalink: /article/5ux90m7i/
+createTime: '2026/03/01 19:23:46'
+code: bwaykumyg
+permalink: /article/bwaykumyg/
 tags:
   - Bug
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250528102535.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250528102535.jpg
 ---
 
 

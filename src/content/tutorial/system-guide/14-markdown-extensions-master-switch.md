@@ -1,16 +1,16 @@
-﻿---
-title: "Markdown 扩展总开关：extended.enable 与 parserMode"
-createTime: "2026/03/05 14:44:00"
-code: "sg0114"
-permalink: "/article/sg0114/"
-summary: "从总开关视角理解扩展 Markdown 的启停策略与构建时解析模式。"
-series: "system-guide"
+---
+title: Markdown 扩展总开关：extended.enable 与 parserMode
+createTime: '2026/03/05 12:57:49'
+code: tjxwqbvk9
+permalink: /article/tjxwqbvk9/
+summary: 从总开关视角理解扩展 Markdown 的启停策略与构建时解析模式。
+series: system-guide
 order: 14
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "markdown"
-cover: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - markdown
+cover: https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

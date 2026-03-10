@@ -1,8 +1,8 @@
 ---
 title: 备份Mysql结构和数据
-createTime: '2025/03/04 09:28:52'
-code: r9oe497m
-permalink: /article/07khmkn2/
+createTime: '2026/03/01 19:23:46'
+code: bare47qnm
+permalink: /article/bare47qnm/
 tags:
   - MySQL
 ---

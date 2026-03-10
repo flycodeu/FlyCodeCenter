@@ -2,6 +2,7 @@
 import siteConfig from "@/site.config";
 import { normalizeTags as normalizeTagList } from "@/config/tag-normalize.config";
 import { resolveEntryCode } from "@/utils/content-code";
+import { getEntrySourceRelativePath } from "@/utils/content-source";
 import {
   resolveDerivedCreateTimeText,
   resolveDerivedTags,
@@ -17,6 +18,12 @@ type CoverMode = "left" | "right" | "top" | "none";
 
 type ArticleDefaults = typeof siteConfig.articleMeta.defaults;
 type ArticleOverride = Partial<ArticleDefaults>;
+const articleMetaCache = new WeakMap<ArticleEntry, ResolvedArticleMeta>();
+
+function resolveSourceOverrideKey(entry: ArticleEntry): string {
+  const sourcePath = getEntrySourceRelativePath(entry);
+  return `${entry.collection}/${String(sourcePath || entry.id || "").replace(/\\/g, "/")}`;
+}
 
 export interface ResolvedArticleMeta {
   title: string;
@@ -112,39 +119,9 @@ function normalizeTags(...values: Array<unknown>): string[] {
   return [];
 }
 
-function normalizePermalink(input: string, code: string): string {
+function buildCodePermalink(code: string): string {
   const prefix = stripSlashes(siteConfig.articlePrefix || "/article");
-  const fallback = `/${prefix}/${code}/`;
-  const raw = String(input || "").trim();
-  if (!raw) return fallback;
-
-  const value = /^https?:\/\//i.test(raw)
-    ? (() => {
-        try {
-          return new URL(raw).pathname;
-        } catch {
-          return raw;
-        }
-      })()
-    : raw;
-
-  let path = value.startsWith("/") ? value : `/${value}`;
-  path = path.replace(/\/{2,}/g, "/");
-  if (!path.endsWith("/")) path += "/";
-  const normalized = stripSlashes(path);
-  const parts = normalized.split("/").filter(Boolean);
-  if (!parts.length) return fallback;
-
-  if (parts[0] === prefix) {
-    const slug = parts[1] || code;
-    return `/${prefix}/${slug}/`;
-  }
-
-  if (parts.length === 1) {
-    return `/${prefix}/${parts[0]}/`;
-  }
-
-  return fallback;
+  return `/${prefix}/${code}/`;
 }
 
 function normalizeCoverMode(value: unknown): CoverMode | undefined {
@@ -174,9 +151,18 @@ function deriveTutorialOrder(entry: ArticleEntry): number | undefined {
 }
 
 export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
+  const cached = articleMetaCache.get(entry);
+  if (cached) return cached;
+
   const defaults: ArticleDefaults = siteConfig.articleMeta.defaults;
   const code = resolveEntryCode(entry);
-  const override = (siteConfig.articleMeta.overridesByCode[code] ?? {}) as ArticleOverride;
+  const overrideByCode = (siteConfig.articleMeta.overridesByCode?.[code] ?? {}) as ArticleOverride;
+  const overrideBySourcePath = (siteConfig.articleMeta.overridesBySourcePath?.[resolveSourceOverrideKey(entry)] ??
+    {}) as ArticleOverride;
+  const override = {
+    ...overrideByCode,
+    ...overrideBySourcePath
+  } satisfies ArticleOverride;
 
   const title = resolveDerivedTitle(entry);
   const derivedCreateTime = resolveDerivedCreateTimeText(entry);
@@ -211,10 +197,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     (entry.data as { order?: number }).order,
     deriveTutorialOrder(entry)
   );
-  const permalink = normalizePermalink(
-    pickText(override.permalink, entry.data.permalink, defaults.permalink),
-    code
-  );
+  const permalink = buildCodePermalink(code);
   const projectStage = pickText(override.projectStage, defaults.projectStage) as "completed" | "in-progress" | "planned";
   const stageFallbackCover =
     entry.collection === "projects"
@@ -228,7 +211,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
       ? pickBoolean(override.showCover, Boolean(cover), defaults.showCover)
       : pickBoolean(override.showCover, defaults.showCover);
 
-  return {
+  const resolved: ResolvedArticleMeta = {
     title,
     code,
     permalink,
@@ -259,4 +242,7 @@ export function resolveArticleMeta(entry: ArticleEntry): ResolvedArticleMeta {
     projectStage,
     priority: pickNumber(defaults.priority, override.priority)
   };
+
+  articleMetaCache.set(entry, resolved);
+  return resolved;
 }

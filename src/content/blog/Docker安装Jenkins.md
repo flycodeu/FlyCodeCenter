@@ -1,13 +1,12 @@
 ---
 title: Docker安装Jenkins
-createTime: '2025/06/05 13:51:31'
-code: rhor596n
-permalink: /article/oesk8ynz/
+createTime: '2026/03/01 19:23:46'
+code: b2fwa14jz
+permalink: /article/b2fwa14jz/
 tags:
   - Docker
   - Jenkins
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605170107.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605170107.jpg
 ---
 
 ## Jenkins安装

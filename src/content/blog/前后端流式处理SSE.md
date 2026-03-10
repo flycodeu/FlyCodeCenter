@@ -1,12 +1,11 @@
 ---
 title: 前后端流式处理SSE
-createTime: '2025/08/13 09:02:56'
-code: od6ns7kn
-permalink: /article/e5rou6x4/
+createTime: '2026/03/01 19:23:46'
+code: b27sekvrt
+permalink: /article/b27sekvrt/
 tags:
   - SSE
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/2f2fb80273762e672c81a240c67f7cda.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/2f2fb80273762e672c81a240c67f7cda.jpg
 ---
 <ImageCard
 image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/2f2fb80273762e672c81a240c67f7cda.jpg"

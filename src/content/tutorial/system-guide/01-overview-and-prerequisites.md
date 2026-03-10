@@ -1,16 +1,16 @@
-﻿---
-title: "系统运行与配置教程：总览与学习路径"
-createTime: "2026/03/05 13:00:00"
-code: "sg0101"
-permalink: "/article/sg0101/"
-summary: "先建立全局认知：项目如何运行、学习顺序是什么、每篇教程如何衔接。"
-series: "system-guide"
+---
+title: 系统运行与配置教程：总览与学习路径
+createTime: '2026/03/05 12:57:01'
+code: t2krhis50
+permalink: /article/t2krhis50/
+summary: 先建立全局认知：项目如何运行、学习顺序是什么、每篇教程如何衔接。
+series: system-guide
 order: 1
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "overview"
-cover: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - overview
+cover: https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

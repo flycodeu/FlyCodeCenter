@@ -1,12 +1,11 @@
 ---
 title: Github Actions使用
-createTime: '2025/03/24 14:59:06'
-code: rt03re85
-permalink: /article/2y9cldmw/
+createTime: '2026/03/01 19:23:46'
+code: b1e46tgp0
+permalink: /article/b1e46tgp0/
 tags:
   - Actions
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/990667183ad3256336a04340846abae.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/990667183ad3256336a04340846abae.jpg
 ---
 
 [Actions指南](https://docs.github.com/zh/actions/guides)

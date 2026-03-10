@@ -1,16 +1,16 @@
-﻿---
-title: "字体系统与预设：regular / pixel 的切换机制"
-createTime: "2026/03/05 14:12:00"
-code: "sg0110"
-permalink: "/article/sg0110/"
-summary: "掌握字体预设定义、默认值设置、运行时切换与页面一致性。"
-series: "system-guide"
+---
+title: 字体系统与预设：regular / pixel 的切换机制
+createTime: '2026/03/05 12:57:49'
+code: t1ymnkmrw
+permalink: /article/t1ymnkmrw/
+summary: 掌握字体预设定义、默认值设置、运行时切换与页面一致性。
+series: system-guide
 order: 10
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "font"
-cover: "https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - font
+cover: https://images.unsplash.com/photo-1456324504439-367cee3b3c32?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

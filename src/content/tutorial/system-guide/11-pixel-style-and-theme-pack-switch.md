@@ -1,17 +1,17 @@
-﻿---
-title: "像素风主题包：如何切换与落地"
-createTime: "2026/03/05 14:20:00"
-code: "sg0111"
-permalink: "/article/sg0111/"
-summary: "基于主题包机制，完成像素风视觉的全站切换与细节校准。"
-series: "system-guide"
+---
+title: 像素风主题包：如何切换与落地
+createTime: '2026/03/05 12:57:49'
+code: t10iemle9
+permalink: /article/t10iemle9/
+summary: 基于主题包机制，完成像素风视觉的全站切换与细节校准。
+series: system-guide
 order: 11
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "theme"
-  - "pixel"
-cover: "https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - theme
+  - pixel
+cover: https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

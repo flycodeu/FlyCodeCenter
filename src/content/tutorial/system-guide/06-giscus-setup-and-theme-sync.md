@@ -1,17 +1,17 @@
 ---
-title: "Giscus 从零配置到上线：GitHub Discussions 评论系统完整指南"
-createTime: "2026/03/05 13:40:00"
-code: "sg0106"
-permalink: "/article/sg0106/"
-summary: "站在第一次接触 giscus 的用户角度，完成从 GitHub 仓库准备、官方配置页生成参数、项目字段填写、主题同步到上线验证与排错的完整闭环。"
-series: "system-guide"
+title: Giscus 从零配置到上线：GitHub Discussions 评论系统完整指南
+createTime: '2026/03/05 12:57:01'
+code: t1ggztolg
+permalink: /article/t1ggztolg/
+summary: 站在第一次接触 giscus 的用户角度，完成从 GitHub 仓库准备、官方配置页生成参数、项目字段填写、主题同步到上线验证与排错的完整闭环。
+series: system-guide
 order: 6
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "comment"
-  - "giscus"
-cover: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - comment
+  - giscus
+cover: https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 先说结论：如果你是第一次接入，按这个默认方案走

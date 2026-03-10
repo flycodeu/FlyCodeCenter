@@ -1,8 +1,8 @@
 ---
 title: MCP实现CSDN自动发帖
-createTime: '2025/06/27 14:51:40'
-code: wkywv48p
-permalink: /article/uxcawlql/
+createTime: '2026/03/01 19:23:46'
+code: b1c38p4k4
+permalink: /article/b1c38p4k4/
 tags:
   - MCP
   - AI

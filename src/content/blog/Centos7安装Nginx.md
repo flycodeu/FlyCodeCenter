@@ -1,8 +1,8 @@
 ---
 title: Centos7安装Nginx
-createTime: '2025/03/04 09:28:52'
-code: sxizwywm
-permalink: /article/iznod68w/
+createTime: '2026/03/01 19:23:46'
+code: b1zpz9r49
+permalink: /article/b1zpz9r49/
 tags:
   - CentOS7
 ---

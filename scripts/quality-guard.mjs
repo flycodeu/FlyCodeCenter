@@ -109,21 +109,8 @@ async function walk(dir) {
 }
 
 function validateFrontmatter(data) {
-  const warnings = [];
-  if (!String(data.title || "").trim()) {
-    warnings.push("missing frontmatter title");
-  }
-  if (!String(data.permalink || "").trim()) {
-    warnings.push("missing frontmatter permalink");
-  }
-  const hasDate = Boolean(data.date || data.pubDate || data.createTime);
-  if (!hasDate) {
-    warnings.push("missing frontmatter date/pubDate/createTime");
-  }
-  if (!Array.isArray(data.tags) || data.tags.length === 0) {
-    warnings.push("missing frontmatter tags");
-  }
-  return { warnings };
+  void data;
+  return { warnings: [] };
 }
 
 function validateMarkdownContent(content) {

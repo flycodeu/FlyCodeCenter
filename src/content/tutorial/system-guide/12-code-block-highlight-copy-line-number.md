@@ -1,16 +1,16 @@
-﻿---
-title: "代码块能力：高亮、复制、行号、窗口条"
-createTime: "2026/03/05 14:28:00"
-code: "sg0112"
-permalink: "/article/sg0112/"
-summary: "配置与展示代码块核心能力，确保在教程与博客中稳定可用。"
-series: "system-guide"
+---
+title: 代码块能力：高亮、复制、行号、窗口条
+createTime: '2026/03/05 12:57:49'
+code: t2hu8li7u
+permalink: /article/t2hu8li7u/
+summary: 配置与展示代码块核心能力，确保在教程与博客中稳定可用。
+series: system-guide
 order: 12
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "code"
-cover: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - code
+cover: https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

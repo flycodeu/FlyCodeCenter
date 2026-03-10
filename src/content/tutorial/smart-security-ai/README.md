@@ -1,10 +1,11 @@
 ---
 title: 智慧安防平台：企业级视频智能分析项目
-createTime: '2026/03/06 13:00:00'
-code: ru4p8emy
-permalink: /article/ssa0000/
+createTime: '2026/03/06 12:49:19'
+code: t16fveqbr
+permalink: /article/t16fveqbr/
 summary: 以 Python/Java 为主线，打通相机接入、RTSP 推流、实时检测、LLM 解释与告警闭环。
 description: 从相机接入、流媒体、实时推理到告警与AI总结，构建可规模化的视频智能分析平台。
+order: 0
 tags:
   - tutorial
   - smart-security-ai
@@ -14,11 +15,9 @@ tags:
   - MediaMTX
   - FFmpeg
   - llm
-cover: >-
-  https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80
+cover: https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80
 category: 工程实践
 icon: camera
-order: 0
 showOnHome: false
 ---
 

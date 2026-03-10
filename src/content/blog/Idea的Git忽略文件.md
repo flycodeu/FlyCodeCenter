@@ -1,8 +1,8 @@
 ---
 title: Idea的Git忽略文件
-createTime: '2025/03/04 09:49:05'
-code: r0mqxigk
-permalink: /article/r82mjmsn/
+createTime: '2026/03/01 19:23:46'
+code: b1hv576m0
+permalink: /article/b1hv576m0/
 tags:
   - Git
 ---

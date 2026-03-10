@@ -1,17 +1,16 @@
 ---
 title: 系统运行与配置教程
-createTime: '2026/03/05 20:30:00'
-code: r3yo4uai
-permalink: /article/sg0000/
+createTime: '2026/03/05 20:18:38'
+code: t27j84w8u
+permalink: /article/t27j84w8u/
 description: 从配置入口到部署上线，系统化掌握 FlyCodeCenter 的完整运行机制。
+order: 0
 tags:
   - tutorial
   - system-guide
-cover: >-
-  https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80
+cover: https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80
 category: 工程实践
 icon: guide
-order: 0
 showOnHome: false
 ---
 

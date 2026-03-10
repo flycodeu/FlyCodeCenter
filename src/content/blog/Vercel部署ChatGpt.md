@@ -1,8 +1,8 @@
 ---
 title: Vercel部署ChatGpt
-createTime: '2025/03/04 10:05:38'
-code: rcobxvjc
-permalink: /article/60xnu0lv/
+createTime: '2026/03/01 19:23:46'
+code: bos2d0vsi
+permalink: /article/bos2d0vsi/
 tags:
   - AI
 ---

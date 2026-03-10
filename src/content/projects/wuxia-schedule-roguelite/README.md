@@ -1,8 +1,8 @@
-﻿---
+---
 title: 武侠 Roguelite 宗门经营独立游戏
-createTime: "2026/03/02 12:00:00"
-code: wuxia-schedule-roguelite
-permalink: /article/wuxia-schedule-roguelite/
+createTime: '2026/03/02 20:20:04'
+code: p2ll3c2mk
+permalink: /article/p2ll3c2mk/
 summary: 日程牌构筑 + 武侠 Roguelite + 宗门经营沙盒的独立游戏设计方案。
 tags:
   - 游戏

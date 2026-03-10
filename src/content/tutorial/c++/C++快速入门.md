@@ -1,8 +1,8 @@
 ---
 title: C++快速入门
-createTime: '2025/03/04 09:25:15'
-code: rqf8aoxh
-permalink: /article/bcow3ffh/
+createTime: '2026/03/08 15:17:37'
+code: t1iynjrx3
+permalink: /article/t1iynjrx3/
 tags:
   - C++
 ---

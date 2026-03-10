@@ -1,17 +1,17 @@
-﻿---
-title: "图表与流程图：Mermaid、Draw.io、ECharts、Chart.js"
-createTime: "2026/03/05 15:08:00"
-code: "sg0117"
-permalink: "/article/sg0117/"
-summary: "覆盖流程图与数据图常用方案，给出配置、写法与验证路径。"
-series: "system-guide"
+---
+title: 图表与流程图：Mermaid、Draw.io、ECharts、Chart.js
+createTime: '2026/03/05 12:58:50'
+code: t1b7hqq5l
+permalink: /article/t1b7hqq5l/
+summary: 覆盖流程图与数据图常用方案，给出配置、写法与验证路径。
+series: system-guide
 order: 17
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "diagram"
-  - "chart"
-cover: "https://images.unsplash.com/photo-1551281044-8a9f1f6b10b7?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - diagram
+  - chart
+cover: https://images.unsplash.com/photo-1551281044-8a9f1f6b10b7?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

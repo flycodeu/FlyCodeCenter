@@ -1,16 +1,16 @@
-﻿---
-title: "全局配置入口：site.config.ts 结构化解读"
-createTime: "2026/03/05 13:08:00"
-code: "sg0102"
-permalink: "/article/sg0102/"
-summary: "掌握全局配置入口：如何找到功能开关、如何安全修改并验证。"
-series: "system-guide"
+---
+title: 全局配置入口：site.config.ts 结构化解读
+createTime: '2026/03/05 12:57:01'
+code: t218mai2w
+permalink: /article/t218mai2w/
+summary: 掌握全局配置入口：如何找到功能开关、如何安全修改并验证。
+series: system-guide
 order: 2
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "config"
-cover: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - config
+cover: https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

@@ -1,12 +1,11 @@
 ---
 title: shiro密码加密工具
-createTime: '2025/07/29 08:36:33'
-code: rkphfmr7
-permalink: /article/azx2s94j/
+createTime: '2026/03/01 19:23:46'
+code: b1zkj0k3j
+permalink: /article/b1zkj0k3j/
 tags:
   - shiro
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/54a61c380016520913632d86c850a39.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/54a61c380016520913632d86c850a39.jpg
 ---
 # 🔐 基于 Apache Shiro 的密码加密与认证实现指南
 在 Spring Security 项目中集成密码加盐加密机制，能够有效提升用户账户的安全性。本文介绍如何通过引入 Apache Shiro 实现密码的 MD5 加盐 + 多次迭代加密，并结合自定义认证逻辑完成安全登录验证。

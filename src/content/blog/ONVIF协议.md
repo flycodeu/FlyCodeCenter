@@ -1,13 +1,12 @@
 ---
 title: ONVIF协议
-createTime: '2025/12/23 15:08:42'
-code: xzrp4q9a
-permalink: /article/0j8007ym/
+createTime: '2026/03/01 19:23:46'
+code: b1cqxk55k
+permalink: /article/b1cqxk55k/
 tags:
   - MediaMTX
   - 视频
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3e5bf05d61c2bf0f032bcf6a33568d4b.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3e5bf05d61c2bf0f032bcf6a33568d4b.jpg
 ---
 
 <ImageCard

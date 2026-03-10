@@ -1,8 +1,8 @@
 ---
 title: Jmeter使用
-createTime: '2025/03/21 08:25:57'
-code: rwxuue4b
-permalink: /article/ue2v7nsh/
+createTime: '2026/03/01 19:23:46'
+code: b2eswgrcv
+permalink: /article/b2eswgrcv/
 tags:
   - 压力测试
 ---

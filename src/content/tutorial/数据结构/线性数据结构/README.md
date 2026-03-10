@@ -1,8 +1,9 @@
 ---
+title: 线性数据结构
 createTime: '2026/03/08 15:17:37'
-code: rkk4ok1b
+code: t4c1tkhzd
+permalink: /article/t4c1tkhzd/
 ---
-
 [链表学习](链表学习.md)
 
 [数组学习](数组学习.md)

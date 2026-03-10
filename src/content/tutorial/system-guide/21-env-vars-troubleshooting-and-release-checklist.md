@@ -1,17 +1,17 @@
 ---
-title: "环境变量与评论系统排错：发布前最终清单"
-createTime: "2026/03/05 15:40:00"
-code: "sg0121"
-permalink: "/article/sg0121/"
-summary: "把 giscus、部署环境、构建期变量和 GitHub 仓库侧检查项合并成一套最终排错清单，帮助你在发布前后快速定位评论系统问题。"
-series: "system-guide"
+title: 环境变量与评论系统排错：发布前最终清单
+createTime: '2026/03/05 12:58:50'
+code: tp6h6dnk0
+permalink: /article/tp6h6dnk0/
+summary: 把 giscus、部署环境、构建期变量和 GitHub 仓库侧检查项合并成一套最终排错清单，帮助你在发布前后快速定位评论系统问题。
+series: system-guide
 order: 21
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "ops"
-  - "checklist"
-cover: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - ops
+  - checklist
+cover: https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 这篇文章为什么重要

@@ -1,17 +1,17 @@
-﻿---
-title: "Utterances 与回退策略：评论能力的第二条路径"
-createTime: "2026/03/05 13:48:00"
-code: "sg0107"
-permalink: "/article/sg0107/"
-summary: "掌握 utterances 的配置与主题联动，并建立评论系统的回退策略。"
-series: "system-guide"
+---
+title: Utterances 与回退策略：评论能力的第二条路径
+createTime: '2026/03/05 12:57:01'
+code: t2cdz8kv2
+permalink: /article/t2cdz8kv2/
+summary: 掌握 utterances 的配置与主题联动，并建立评论系统的回退策略。
+series: system-guide
 order: 7
 tags:
-  - "tutorial"
-  - "system-guide"
-  - "comment"
-  - "utterances"
-cover: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1600&q=80"
+  - tutorial
+  - system-guide
+  - comment
+  - utterances
+cover: https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1600&q=80
 ---
 
 ## 你将学到什么

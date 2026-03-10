@@ -1,8 +1,8 @@
 ---
 title: MCP新版实现
-createTime: '2025/06/26 15:43:40'
-code: rmfb7sck
-permalink: /article/9sx7h8xh/
+createTime: '2026/03/01 19:23:46'
+code: b2awd9f6e
+permalink: /article/b2awd9f6e/
 tags:
   - MCP
   - AI

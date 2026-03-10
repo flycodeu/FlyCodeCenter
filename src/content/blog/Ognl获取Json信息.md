@@ -1,12 +1,11 @@
 ---
 title: Ognl获取Json信息
-createTime: '2025/07/30 09:36:56'
-code: om56mat6
-permalink: /article/49s3ueem/
+createTime: '2026/03/01 19:23:46'
+code: b1jqg0ngw
+permalink: /article/b1jqg0ngw/
 tags:
   - Ognl
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e90499388ddc78bb57d46b73ea09260.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e90499388ddc78bb57d46b73ea09260.jpg
 ---
 ## 使用 OGNL 提取 JSON 字段
 

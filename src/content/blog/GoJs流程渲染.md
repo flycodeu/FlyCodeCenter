@@ -1,12 +1,11 @@
 ---
 title: GoJs流程渲染
-createTime: '2025/07/28 14:24:35'
-code: r0jal93x
-permalink: /article/ju343p8d/
+createTime: '2026/03/01 19:23:46'
+code: bxstrq3tw
+permalink: /article/bxstrq3tw/
 tags:
   - 前端
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250728145634409.png
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250728145634409.png
 ---
 
 ## GOJS

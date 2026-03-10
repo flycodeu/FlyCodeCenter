@@ -1,13 +1,12 @@
 ---
 title: Docker安装Redis
-createTime: '2025/06/05 16:22:17'
-code: re39ovx5
-permalink: /article/c6zr8n36/
+createTime: '2026/03/01 19:23:46'
+code: b5v3zffdg
+permalink: /article/b5v3zffdg/
 tags:
   - Docker
   - Redis
-cover: >-
-  https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165953.jpg
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165953.jpg
 ---
 
 ## 安装Redis

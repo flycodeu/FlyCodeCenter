@@ -1,8 +1,8 @@
 ---
 title: MP的getOne查询出多条数据
-createTime: '2025/03/04 09:28:52'
-code: a876419l
-permalink: /article/zwqyjkml/
+createTime: '2026/03/01 19:23:46'
+code: bp9br809l
+permalink: /article/bp9br809l/
 tags:
   - Mybatis Plus
 ---

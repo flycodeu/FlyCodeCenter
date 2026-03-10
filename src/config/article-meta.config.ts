@@ -63,19 +63,11 @@ const articleMetaConfig = {
     "in-progress": "/covers/project-in-progress.svg",
     planned: "/covers/project-planned.svg"
   } as Record<ProjectStage, string>,
-  overridesByCode: {
-    "roadmap2026": {
+  overridesBySourcePath: {
+    "blog/个人学习计划.md": {
       pinned: true
     },
-    "r2a1d7kq": {
-      series: "datastruct",
-      order: 1
-    },
-    "r3h9p5zw": {
-      series: "datastruct",
-      order: 2
-    },
-    voidtab: {
+    "projects/voidtab/README.md": {
       projectType: "browser-extension",
       repoUrl: "https://github.com/flycodeu/VoidTab",
       showCover: true,
@@ -84,7 +76,7 @@ const articleMetaConfig = {
       projectStage: "completed",
       priority: 95
     },
-    flycodecenter: {
+    "projects/flycodecenter/README.md": {
       projectType: "personal-blog",
       repoUrl: "https://github.com/flycodeu/FlyCodeCenter",
       demoUrl: "https://www.flycode.icu/",
@@ -94,7 +86,7 @@ const articleMetaConfig = {
       projectStage: "completed",
       priority: 90
     },
-    "novel-local": {
+    "projects/novel-local/README.md": {
       projectType: "desktop-ai-app",
       repoUrl: "https://github.com/flycodeu/novel-local",
       showCover: true,
@@ -103,48 +95,51 @@ const articleMetaConfig = {
       projectStage: "completed",
       priority: 88
     },
-    "video-ai-monitor": {
+    "projects/video-ai-monitor/README.md": {
       projectType: "business-ai-monitor",
       featured: true,
       weight: 120,
       projectStage: "planned",
       priority: 100
     },
-    "smart-clipboard": {
+    "projects/smart-clipboard/README.md": {
       projectType: "productivity-tool",
       featured: false,
       weight: 86,
       projectStage: "planned",
       priority: 85
     },
-    "tools-platform": {
+    "projects/tools-platform/README.md": {
       projectType: "tools-platform",
       featured: false,
       weight: 84,
       projectStage: "planned",
       priority: 80
     },
-    "medication-tracker": {
+    "projects/medication-tracker/README.md": {
       projectType: "healthcare-tool",
       featured: false,
       weight: 82,
       projectStage: "planned",
       priority: 76
     },
-    "wuxia-schedule-roguelite": {
+    "projects/wuxia-schedule-roguelite/README.md": {
       projectType: "indie-game",
       featured: false,
       weight: 80,
       projectStage: "planned",
       priority: 72
     },
-    "pixel-character-generator": {
+    "projects/pixel-character-generator/README.md": {
       projectType: "ai-creative-tool",
       featured: false,
       weight: 78,
       projectStage: "planned",
       priority: 70
     }
+  } as Record<string, ArticleMetaOverride>,
+  overridesByCode: {
+    // Backward-compatible hook for rare custom slugs/codes if needed later.
   } as Record<string, ArticleMetaOverride>
 };
 
