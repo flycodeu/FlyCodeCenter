@@ -1,0 +1,444 @@
+---
+import { formatInterviewDifficultyLabel, type InterviewDifficulty } from "@/utils/interview";
+
+interface InterviewSidebarItem {
+  id: string;
+  slug: string;
+  title: string;
+  order: number;
+  difficulty: InterviewDifficulty;
+  url: string;
+}
+
+interface Props {
+  spaceKey: string;
+  spaceLabel: string;
+  currentSlug: string;
+  items: InterviewSidebarItem[];
+  width?: number;
+  showProgress?: boolean;
+  showDifficulty?: boolean;
+  passwordHash: string;
+  storageSecret: string;
+}
+
+const {
+  spaceKey,
+  spaceLabel,
+  currentSlug,
+  items,
+  width = 360,
+  showProgress = true,
+  showDifficulty = true,
+  passwordHash,
+  storageSecret
+} = Astro.props;
+const itemCountLabel = `${items.length} 题`;
+---
+
+<aside
+  class="surface interview-sidebar"
+  style={`--interview-sidebar-width:${width}px;`}
+  data-interview-sidebar-root
+  data-space-key={spaceKey}
+  data-current-slug={currentSlug}
+  data-password-hash={passwordHash}
+  data-storage-secret={storageSecret}
+  aria-label={`${spaceLabel} 面试题导航`}
+>
+  <header class="interview-sidebar-head">
+    <div class="sidebar-head-copy">
+      <p class="sidebar-eyebrow">Question Track</p>
+      <div class="sidebar-title-row">
+        <h3>{spaceLabel}</h3>
+        <span class="sidebar-count">{itemCountLabel}</span>
+      </div>
+      <p class="sidebar-subtitle">按顺序回顾题目，掌握状态和最近进度会自动记录。</p>
+    </div>
+    {
+      showProgress && (
+        <div class="sidebar-progress">
+          <span class="sidebar-progress-label">当前进度</span>
+          <strong data-progress-text>{`0 / ${items.length} 已掌握`}</strong>
+          <span data-next-text>继续下一题</span>
+          <span class="sidebar-progress-bar"><span data-progress-bar></span></span>
+        </div>
+      )
+    }
+  </header>
+
+  <div class="sidebar-list-shell">
+    <ol class="interview-sidebar-list">
+      {
+        items.map((item) => (
+          <li class={item.slug === currentSlug ? "is-current" : ""} data-interview-item data-slug={item.slug}>
+            <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
+              <span class="item-leading">
+                <span class="order">{String(item.order).padStart(2, "0")}</span>
+              </span>
+              <span class="content">
+                <span class="item-topline">
+                  <span class="title">{item.title}</span>
+                  <span class="item-arrow" aria-hidden="true">→</span>
+                </span>
+                <span class="meta-row">
+                  {showDifficulty && (
+                    <span class={`difficulty-chip ${item.difficulty}`}>{formatInterviewDifficultyLabel(item.difficulty)}</span>
+                  )}
+                  {item.slug === currentSlug && <span class="current-chip">当前</span>}
+                </span>
+              </span>
+            </a>
+            <button type="button" class="remember-toggle" data-remember-toggle>
+              标记已掌握
+            </button>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</aside>
+
+<script>
+  import "../scripts/interview-sidebar";
+</script>
+
+<style>
+  .interview-sidebar {
+    width: min(100%, clamp(328px, var(--interview-sidebar-width), 384px));
+    position: sticky;
+    top: calc(var(--layout-header-height, 72px) + 0.75rem);
+    align-self: start;
+    height: calc(
+      100vh - var(--layout-header-height, 72px) - var(--layout-footer-height, 54px) - 1.5rem -
+        var(--floating-safe-bottom, 0px)
+    );
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.82rem;
+    padding: 0.88rem;
+    border-radius: 26px;
+    border: 1px solid color-mix(in oklab, var(--line) 74%, var(--brand) 26%);
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--brand-soft) 16%, transparent 84%), transparent 54%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 97%, transparent 3%), color-mix(in oklab, var(--surface-2) 95%, transparent 5%));
+    box-shadow: 0 20px 38px -30px rgb(15 23 42 / 0.34);
+  }
+
+  .interview-sidebar-head {
+    display: grid;
+    gap: 0.78rem;
+  }
+
+  .sidebar-head-copy {
+    display: grid;
+    gap: 0.32rem;
+  }
+
+  .sidebar-eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .sidebar-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.72rem;
+  }
+
+  .interview-sidebar-head h3 {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.2;
+  }
+
+  .sidebar-count {
+    flex: 0 0 auto;
+    min-height: 1.85rem;
+    padding: 0.2rem 0.62rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--brand) 22%, var(--line) 78%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+    color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  .sidebar-subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.52;
+    color: var(--text-soft);
+  }
+
+  .sidebar-progress {
+    display: grid;
+    gap: 0.34rem;
+    padding: 0.8rem 0.86rem;
+    border-radius: 18px;
+    border: 1px solid color-mix(in oklab, var(--line) 76%, var(--brand) 24%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 82%, transparent 18%), color-mix(in oklab, var(--brand-soft) 16%, transparent 84%));
+  }
+
+  .sidebar-progress-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .sidebar-progress strong {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .sidebar-progress > span:not(.sidebar-progress-label):not(.sidebar-progress-bar) {
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+
+  .sidebar-progress-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--line) 82%, transparent 18%);
+  }
+
+  .sidebar-progress-bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--brand) 78%, white 22%), color-mix(in oklab, var(--accent) 56%, var(--brand) 44%));
+    transition: width 180ms ease;
+  }
+
+  .sidebar-list-shell {
+    min-height: 0;
+    padding: 0.18rem;
+    border-radius: 20px;
+    border: 1px solid color-mix(in oklab, var(--line) 78%, transparent 22%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 72%, transparent 28%), color-mix(in oklab, var(--surface-2) 84%, transparent 16%));
+    overflow: hidden;
+  }
+
+  .interview-sidebar-list {
+    list-style: none;
+    margin: 0;
+    min-height: 0;
+    max-height: 100%;
+    padding: 0.04rem 0.12rem 0.04rem 0;
+    display: grid;
+    align-content: start;
+    gap: 0.48rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .interview-sidebar-list::-webkit-scrollbar {
+    width: 7px;
+  }
+
+  .interview-sidebar-list::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--line-strong) 62%, transparent 38%);
+  }
+
+  .interview-sidebar-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.68rem;
+    padding: 0.68rem 0.72rem;
+    border-radius: 18px;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 94%, transparent 6%), color-mix(in oklab, var(--surface-2) 90%, transparent 10%));
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+
+  .interview-sidebar-list li:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
+    box-shadow: 0 18px 34px -28px rgb(15 23 42 / 0.32);
+  }
+
+  .interview-sidebar-list li.is-current {
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--brand-soft) 22%, transparent 78%), transparent 52%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 95%, transparent 5%), color-mix(in oklab, var(--surface-2) 91%, transparent 9%));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brand) 16%, transparent 84%);
+  }
+
+  .interview-sidebar-list a {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.68rem;
+    align-items: center;
+    min-width: 0;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .item-leading {
+    display: inline-flex;
+  }
+
+  .order {
+    min-width: 2.02rem;
+    min-height: 2.02rem;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-family: var(--font-tech);
+    color: color-mix(in oklab, var(--brand) 78%, var(--text-muted) 22%);
+    border: 1px solid color-mix(in oklab, var(--brand) 20%, var(--line) 80%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 10%, transparent 90%);
+  }
+
+  .content {
+    display: grid;
+    gap: 0.36rem;
+    min-width: 0;
+  }
+
+  .item-topline {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.52rem;
+  }
+
+  .title {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.34rem;
+    align-items: center;
+  }
+
+  .difficulty-chip,
+  .current-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.36rem;
+    padding: 0.14rem 0.48rem;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    line-height: 1;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    background: color-mix(in oklab, var(--surface-1) 86%, transparent 14%);
+  }
+
+  .difficulty-chip.easy {
+    color: #0f9f6e;
+  }
+
+  .difficulty-chip.medium {
+    color: #b7791f;
+  }
+
+  .difficulty-chip.hard {
+    color: #c2410c;
+  }
+
+  .current-chip {
+    color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%);
+    border-color: color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+  }
+
+  .item-arrow {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1;
+    transition: transform 160ms ease, color 160ms ease;
+  }
+
+  .interview-sidebar-list li:hover .item-arrow,
+  .interview-sidebar-list li.is-current .item-arrow {
+    color: var(--text);
+    transform: translateX(2px);
+  }
+
+  .remember-toggle {
+    justify-self: end;
+    align-self: center;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 80%, transparent 20%), color-mix(in oklab, var(--surface-1) 72%, transparent 28%));
+    color: var(--text-soft);
+    font-size: 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0.36rem 0.62rem;
+    border-radius: 999px;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  }
+
+  .remember-toggle:hover {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 26%, var(--line) 74%);
+  }
+
+  .interview-sidebar-list li.is-remembered .title {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    text-decoration-color: color-mix(in oklab, var(--text-muted) 72%, transparent 28%);
+    opacity: 0.62;
+  }
+
+  .interview-sidebar-list li.is-remembered .remember-toggle {
+    color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%);
+    border-color: color-mix(in oklab, var(--brand) 28%, var(--line) 72%);
+    background: color-mix(in oklab, var(--brand-soft) 68%, transparent 32%);
+  }
+
+  @media (max-width: 1100px) {
+    .interview-sidebar {
+      position: static;
+      width: 100%;
+      height: auto;
+    }
+
+    .sidebar-list-shell {
+      max-height: clamp(360px, 48vh, 520px);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .sidebar-title-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .interview-sidebar-list li {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .remember-toggle {
+      justify-self: start;
+    }
+  }
+</style>

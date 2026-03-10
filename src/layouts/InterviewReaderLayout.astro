@@ -1,0 +1,779 @@
+---
+import siteConfig from "@/site.config";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TOC from "@/components/TOC.astro";
+import ReadingProgress from "@/components/ReadingProgress.astro";
+import InterviewAccessGate from "@/components/InterviewAccessGate.astro";
+import InterviewSidebar from "@/components/InterviewSidebar.astro";
+import {
+  createInterviewPasswordHash,
+  createInterviewStorageSecret
+} from "@/utils/interview-access";
+import { formatInterviewDifficultyLabel, toInterviewSpaceRouteKey, type InterviewDifficulty } from "@/utils/interview";
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface InterviewSidebarItem {
+  id: string;
+  slug: string;
+  title: string;
+  difficulty: InterviewDifficulty;
+  order: number;
+  url: string;
+}
+
+interface Neighbor {
+  title: string;
+  url: string;
+}
+
+interface Props {
+  title: string;
+  summary?: string;
+  description?: string;
+  type: string;
+  difficulty: InterviewDifficulty;
+  articleUrl: string;
+  spaceKey: string;
+  spaceLabel: string;
+  currentSlug: string;
+  items: InterviewSidebarItem[];
+  headings?: Heading[];
+  prev?: Neighbor;
+  next?: Neighbor;
+}
+
+const {
+  title,
+  summary = "",
+  description = summary || title,
+  type,
+  difficulty,
+  articleUrl,
+  spaceKey,
+  spaceLabel,
+  currentSlug,
+  items,
+  headings = [],
+  prev,
+  next
+} = Astro.props;
+
+const interviewConfig = siteConfig.pages.interviewCenter;
+const reader = interviewConfig.reader ?? {};
+const sidebar = reader.sidebar ?? {};
+const toc = reader.toc ?? {};
+const content = reader.content ?? {};
+const searchExclude = interviewConfig.search.exclude ?? true;
+const passwordHash = createInterviewPasswordHash(interviewConfig.unlock.password);
+const storageSecret = createInterviewStorageSecret(passwordHash);
+const detailHiddenByDefault = content.hideAnswerUntilReveal ?? true;
+const tocEnable = Boolean((toc.enable ?? false) && siteConfig.theme.toc.enable && headings.length > 0);
+const sidebarWidth = Number(sidebar.width ?? 360);
+const tocWidth = Number(toc.width ?? 280);
+const contentMaxWidth = Number(content.maxWidth ?? 920);
+const showPrevNext = content.showPrevNext ?? true;
+const difficultyLabel = formatInterviewDifficultyLabel(difficulty);
+const typeLabel = String(type || spaceKey || "").trim() || "general";
+const spaceRoute = `${interviewConfig.route}/${encodeURIComponent(toInterviewSpaceRouteKey(spaceKey))}`;
+const articleRuntimeConfig = {
+  isEncrypted: false,
+  enableMermaid: siteConfig.features.diagram.mermaid,
+  enableDrawio: siteConfig.features.diagram.drawio,
+  enableEcharts: siteConfig.features.diagram.echarts,
+  mermaidSource: siteConfig.diagram.mermaid.source ?? "cdn",
+  mermaidBundle: siteConfig.diagram.mermaid.bundleUrl,
+  mermaidLocalBundle: siteConfig.diagram.mermaid.localBundle ?? "",
+  mermaidTheme: siteConfig.diagram.mermaid.theme,
+  drawioViewerBase: siteConfig.diagram.drawio.viewerBase,
+  echartsSource: siteConfig.diagram.echarts.source ?? "cdn",
+  echartsBundle: siteConfig.diagram.echarts.bundleUrl,
+  echartsLocalBundle: siteConfig.diagram.echarts.localBundle ?? "",
+  diagramFallbackToCdn: Boolean((siteConfig.diagram as { fallbackToCdn?: boolean }).fallbackToCdn ?? true),
+  chartHeight: siteConfig.diagram.echarts.defaultHeight,
+  enableEchartsThemeSync: Boolean((siteConfig.diagram as { echarts?: { themeSync?: boolean } }).echarts?.themeSync ?? false),
+  enableCodeCopy: siteConfig.markdown.copy.code,
+  enableMathCopy: siteConfig.markdown.copy.math,
+  enableMermaidCopy: siteConfig.markdown.copy.mermaid,
+  enableExtendedMarkdown: Boolean((siteConfig.markdown as { extended?: { enable?: boolean } }).extended?.enable ?? false),
+  enableChartJs: Boolean((siteConfig.markdown as { extended?: { chartjs?: { enable?: boolean } } }).extended?.chartjs?.enable ?? false),
+  chartJsBundle:
+    (siteConfig.markdown as { extended?: { chartjs?: { bundleUrl?: string } } }).extended?.chartjs?.bundleUrl ??
+    "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js",
+  enableChartJsThemeSync: Boolean(
+    (siteConfig.markdown as { extended?: { chartjs?: { themeSync?: boolean } } }).extended?.chartjs?.themeSync ?? false
+  ),
+  enableCodeFold: Boolean((siteConfig.markdown as { extended?: { codeFold?: { enable?: boolean } } }).extended?.codeFold?.enable ?? false),
+  codeFoldDefaultLines: Number((siteConfig.markdown as { extended?: { codeFold?: { defaultLines?: number } } }).extended?.codeFold?.defaultLines ?? 18),
+  enableCodeGroup: Boolean((siteConfig.markdown as { extended?: { codeGroup?: { enable?: boolean } } }).extended?.codeGroup?.enable ?? false),
+  enableDiffEnhance: Boolean((siteConfig.markdown as { extended?: { diffEnhance?: { enable?: boolean } } }).extended?.diffEnhance?.enable ?? false),
+  enableAnchorCopy: false,
+  enableDiagramDiagnostics: Boolean((siteConfig.article as { diagnostics?: { enable?: boolean } }).diagnostics?.enable ?? true),
+  enableInlineIcon: Boolean((siteConfig.markdown as { extended?: { icon?: { enable?: boolean } } }).extended?.icon?.enable ?? false),
+  iconifyBundle:
+    (siteConfig.markdown as { extended?: { icon?: { bundleUrl?: string } } }).extended?.icon?.bundleUrl ??
+    "https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js",
+  codeHighlightProvider: String((siteConfig as { codeHighlight?: { provider?: string } }).codeHighlight?.provider ?? "prism"),
+  enableCodeLineNumbers: Boolean((siteConfig as { codeHighlight?: { lineNumbers?: boolean } }).codeHighlight?.lineNumbers ?? true),
+  codeWindowTitleMode: String((siteConfig as { codeHighlight?: { window?: { titleMode?: string } } }).codeHighlight?.window?.titleMode ?? "lang"),
+  articleTitle: title,
+  articleTags: [],
+  viewStatsEnabled: siteConfig.stats.enable,
+  viewStatsEndpoint: siteConfig.stats.endpoint,
+  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
+  antiCrawlLockOnSuspicious: Boolean((siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true),
+  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
+  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalPath={articleUrl}
+  robots="noindex, nofollow, noarchive"
+  pagefindIgnore={searchExclude}
+>
+  <ReadingProgress />
+  <InterviewAccessGate />
+
+  <div class="interview-reader-shell">
+    <div
+      class={`interview-reader ${tocEnable ? "has-toc" : "no-toc"}`}
+      data-interview-protected
+      style={`--interview-sidebar-width:${sidebarWidth}px;--interview-toc-width:${tocWidth}px;--interview-content-max:${contentMaxWidth}px;`}
+    >
+      <InterviewSidebar
+        spaceKey={spaceKey}
+        spaceLabel={spaceLabel}
+        currentSlug={currentSlug}
+        items={items}
+        width={sidebarWidth}
+        showProgress={sidebar.showProgress ?? true}
+        showDifficulty={sidebar.showDifficulty ?? true}
+        passwordHash={passwordHash}
+        storageSecret={storageSecret}
+      />
+
+      <section class="interview-main">
+        <section class="surface interview-sheet">
+          <div class="interview-sheet-head">
+            <nav class="interview-breadcrumb" aria-label="面包屑">
+              <a href={interviewConfig.route}>面试中心</a>
+              <span>/</span>
+              <a href={spaceRoute}>{spaceLabel}</a>
+              <span>/</span>
+              <span>{title}</span>
+            </nav>
+            <p class="interview-eyebrow">Interview Notes</p>
+            <div class="meta-strip">
+              <span class="meta-chip">{spaceLabel}</span>
+              <span class="meta-chip">{typeLabel}</span>
+              <span class={`meta-chip difficulty ${difficulty}`}>{difficultyLabel}</span>
+            </div>
+            <h1>{title}</h1>
+            {summary && <p class="interview-summary">{summary}</p>}
+          </div>
+
+          <div class="interview-answer-shell" data-interview-answer-shell>
+            {
+              detailHiddenByDefault && (
+                <button
+                  type="button"
+                  class="answer-toggle"
+                  data-answer-toggle
+                  data-expand-label="展开讲解"
+                  data-collapse-label="收起讲解"
+                  aria-expanded="false"
+                >
+                  <span>默认折叠，按需展开详细讲解与解析。</span>
+                  <strong data-answer-toggle-label>展开讲解</strong>
+                </button>
+              )
+            }
+
+            <div class="interview-answer-panel" data-answer-panel hidden={detailHiddenByDefault ? true : undefined}>
+              <article class="prose article-body">
+                <slot />
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {
+          showPrevNext && (prev || next) && (
+            <nav class="surface interview-switcher">
+              {prev ? <a href={prev.url}><span>上一题</span><strong>{prev.title}</strong></a> : <span class="switcher-empty" />}
+              {next ? <a href={next.url}><span>下一题</span><strong>{next.title}</strong></a> : <span class="switcher-empty" />}
+            </nav>
+          )
+        }
+      </section>
+
+      {tocEnable && <aside class="interview-toc-rail"><TOC headings={headings} /></aside>}
+    </div>
+  </div>
+
+  <script>
+    import "../scripts/interview-answer-toggle";
+  </script>
+
+  <script id="article-runtime-config" type="application/json" set:html={JSON.stringify(articleRuntimeConfig)} />
+  <script>
+    import { initArticleRuntime } from "@/plugins/runtime/article/index.js";
+
+    let runtimeConfig = {};
+    const runtimeConfigNode = document.getElementById("article-runtime-config");
+    if (runtimeConfigNode?.textContent) {
+      try {
+        runtimeConfig = JSON.parse(runtimeConfigNode.textContent);
+      } catch (error) {
+        console.error("failed to parse article runtime config", error);
+      }
+    }
+
+    initArticleRuntime(runtimeConfig);
+  </script>
+</BaseLayout>
+
+<style is:global>
+  @import "../styles/katex-local.css";
+</style>
+
+<style>
+  :global(main.container) {
+    width: min(1520px, calc(100% - var(--space-5)));
+  }
+
+  .interview-reader-shell {
+    width: min(100%, 1400px);
+    margin-inline: auto;
+  }
+
+  .interview-reader {
+    --interview-sidebar-width-effective: clamp(328px, var(--interview-sidebar-width), 384px);
+    --interview-toc-width-effective: clamp(220px, var(--interview-toc-width), 260px);
+    --interview-content-width: clamp(780px, var(--interview-content-max), 980px);
+    display: grid;
+    grid-template-columns: var(--interview-sidebar-width-effective) minmax(0, 1fr);
+    gap: clamp(1rem, 1.45vw, 1.45rem);
+    align-items: start;
+    min-width: 0;
+  }
+
+  .interview-reader.has-toc {
+    grid-template-columns:
+      var(--interview-sidebar-width-effective)
+      minmax(0, 1fr)
+      minmax(220px, var(--interview-toc-width-effective));
+  }
+
+  .interview-main {
+    width: min(100%, var(--interview-content-width));
+    min-width: 0;
+    justify-self: start;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .interview-sheet {
+    padding: clamp(1.5rem, 2vw, 2.05rem);
+    border-radius: 32px;
+    border: 1px solid color-mix(in oklab, var(--line) 76%, var(--brand) 24%);
+    background:
+      linear-gradient(90deg, color-mix(in oklab, var(--brand) 10%, transparent 90%) 0%, transparent 58%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 95%, transparent 5%), color-mix(in oklab, var(--surface-2) 94%, transparent 6%));
+    box-shadow: 0 18px 40px color-mix(in oklab, var(--bg) 78%, transparent 22%);
+  }
+
+  .interview-sheet-head {
+    display: grid;
+    gap: 0.86rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px dashed color-mix(in oklab, var(--line) 72%, transparent 28%);
+  }
+
+  .interview-breadcrumb {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: color-mix(in oklab, var(--text-muted) 88%, var(--text) 12%);
+  }
+
+  .interview-breadcrumb a {
+    color: var(--text-soft);
+    text-decoration: none;
+  }
+
+  .interview-breadcrumb a:hover {
+    color: var(--brand);
+  }
+
+  .interview-eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .meta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0.8rem 0.88rem;
+    border-radius: 18px;
+    border: 1px solid color-mix(in oklab, var(--line) 76%, var(--brand) 24%);
+    background: color-mix(in oklab, var(--surface-1) 84%, transparent 16%);
+  }
+
+  .meta-chip {
+    border-radius: 999px;
+    padding: 0.28rem 0.66rem;
+    font-size: 0.74rem;
+    border: 1px solid color-mix(in oklab, var(--brand) 18%, var(--line) 82%);
+    background: color-mix(in oklab, var(--brand-soft) 56%, var(--surface-2) 44%);
+    color: var(--text-soft);
+  }
+
+  .meta-chip.difficulty.easy {
+    color: #0f9f6e;
+  }
+
+  .meta-chip.difficulty.medium {
+    color: #b7791f;
+  }
+
+  .meta-chip.difficulty.hard {
+    color: #c2410c;
+  }
+
+  .interview-sheet h1 {
+    margin: 0;
+    font-size: clamp(2rem, 2.3vw + 1rem, 2.9rem);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+  }
+
+  .interview-summary {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--text-soft);
+    line-height: 1.74;
+  }
+
+  .interview-answer-shell {
+    display: grid;
+    gap: 1rem;
+    padding-top: 1.2rem;
+  }
+
+  .answer-toggle {
+    border: 1px solid color-mix(in oklab, var(--brand) 16%, var(--line) 84%);
+    border-radius: 22px;
+    padding: 1rem 1.05rem;
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 84%, transparent 16%), color-mix(in oklab, var(--brand-soft) 14%, transparent 86%)),
+      repeating-linear-gradient(
+        90deg,
+        color-mix(in oklab, var(--line) 8%, transparent 92%) 0,
+        color-mix(in oklab, var(--line) 8%, transparent 92%) 1px,
+        transparent 1px,
+        transparent 30px
+      );
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    text-align: left;
+  }
+
+  .answer-toggle:hover {
+    border-color: color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
+  }
+
+  .answer-toggle span {
+    color: var(--text-soft);
+  }
+
+  .answer-toggle strong {
+    color: var(--text);
+    white-space: nowrap;
+    font-weight: 650;
+  }
+
+  .interview-answer-panel {
+    min-width: 0;
+  }
+
+  .article-body {
+    min-width: 0;
+    overflow-wrap: break-word;
+    font-size: clamp(1rem, 0.2vw + 0.99rem, 1.08rem);
+    line-height: 1.78;
+    padding-bottom: 0.4rem;
+  }
+
+  .article-body :global(h2) {
+    margin-top: 2rem;
+    margin-bottom: 0.95rem;
+  }
+
+  .article-body :global(h3) {
+    margin-top: 1.3rem;
+    margin-bottom: 0.68rem;
+  }
+
+  .article-body :global(p) {
+    margin: 0.92em 0;
+  }
+
+  .article-body :global(img) {
+    border-radius: 12px;
+    border: 1px solid var(--line-soft);
+  }
+
+  .article-body :global(table) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .article-body :global(pre),
+  .article-body :global(.diagram-wrapper),
+  .article-body :global(.md-chartjs),
+  .article-body :global(.md-demo-body) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+    overflow-x: auto;
+  }
+
+  .article-body :global(.md-inline-icon) {
+    display: inline-flex;
+    width: 1.1em;
+    height: 1.1em;
+    margin: 0 0.08em;
+    vertical-align: -0.12em;
+  }
+
+  .article-body :global(.md-mark) {
+    border-radius: 0.35rem;
+    padding: 0.08em 0.42em;
+    border: 1px solid transparent;
+    color: inherit;
+    font-weight: 600;
+  }
+
+  .article-body :global(.md-mark-tip) {
+    background: color-mix(in oklab, #2f80ed 18%, transparent);
+    border-color: color-mix(in oklab, #2f80ed 34%, transparent);
+  }
+
+  .article-body :global(.md-mark-warning) {
+    background: color-mix(in oklab, #f59e0b 18%, transparent);
+    border-color: color-mix(in oklab, #f59e0b 34%, transparent);
+  }
+
+  .article-body :global(.md-mark-danger) {
+    background: color-mix(in oklab, #ef4444 17%, transparent);
+    border-color: color-mix(in oklab, #ef4444 33%, transparent);
+  }
+
+  .article-body :global(.md-mark-important) {
+    background: color-mix(in oklab, var(--brand) 20%, transparent);
+    border-color: color-mix(in oklab, var(--brand) 36%, transparent);
+  }
+
+  .article-body :global(.md-steps) {
+    list-style: none;
+    margin: 1.1rem 0;
+    padding: 0.2rem 0 0.2rem 0.2rem;
+    counter-reset: md-steps;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .article-body :global(.md-step-item) {
+    counter-increment: md-steps;
+    position: relative;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 0.75rem 0.8rem 0.75rem 3rem;
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+  }
+
+  .article-body :global(.md-step-item)::before {
+    content: counter(md-steps);
+    position: absolute;
+    left: 0.8rem;
+    top: 0.72rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--brand);
+    border: 1px solid color-mix(in oklab, var(--brand) 36%, transparent);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent);
+  }
+
+  .article-body :global(.md-tabs),
+  .article-body :global(.md-code-group) {
+    margin: 1.15rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+
+  .article-body :global(.md-tabs-nav),
+  .article-body :global(.md-code-group-nav) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.48rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+  }
+
+  .article-body :global(.md-tabs-tab),
+  .article-body :global(.md-code-group-tab) {
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0 0.7rem;
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  }
+
+  .article-body :global(.md-tabs-tab:hover),
+  .article-body :global(.md-code-group-tab:hover) {
+    color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    background: color-mix(in oklab, var(--brand-soft) 60%, transparent 40%);
+  }
+
+  .article-body :global(.md-tabs-tab[data-active="1"]),
+  .article-body :global(.md-code-group-tab[data-active="1"]) {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 44%, var(--line) 56%);
+    background: color-mix(in oklab, var(--brand-soft) 72%, transparent 28%);
+  }
+
+  .article-body :global(.md-tabs-panel),
+  .article-body :global(.md-code-group-panel) {
+    padding: 0.9rem 0.95rem;
+  }
+
+  .article-body :global(.md-demo) {
+    margin: 1.15rem 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+
+  .article-body :global(.md-demo-head) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.72rem 0.9rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+  }
+
+  .article-body :global(.md-demo-body) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .article-body :global(.md-demo-source),
+  .article-body :global(.md-demo-preview) {
+    min-width: 0;
+    padding: 0.95rem;
+  }
+
+  .article-body :global(.md-demo-source) {
+    border-right: 1px solid var(--line-soft);
+  }
+
+  .article-body :global(.md-chartjs) {
+    margin: 1.15rem 0;
+    padding: 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
+  }
+
+  .article-body :global(.md-chartjs-head) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .article-body :global(.md-chartjs-host) {
+    position: relative;
+    min-height: 280px;
+  }
+
+  .article-body :global(.mdx-admonition) {
+    margin: 1.1rem 0;
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+    border: 1px solid color-mix(in oklab, var(--line) 72%, transparent 28%);
+    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
+  }
+
+  .article-body :global(.mdx-admonition-head) {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.55rem;
+    font-weight: 700;
+  }
+
+  .interview-switcher {
+    padding: 1rem 1.08rem;
+    border-radius: 26px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 96%, transparent 4%), color-mix(in oklab, var(--surface-2) 94%, transparent 6%));
+  }
+
+  .interview-switcher a,
+  .switcher-empty {
+    min-width: 0;
+  }
+
+  .interview-switcher a {
+    display: grid;
+    gap: 0.2rem;
+    color: var(--text);
+    padding: 0.72rem 0.8rem;
+    border-radius: 18px;
+    border: 1px solid transparent;
+  }
+
+  .interview-switcher a:last-child {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .interview-switcher a:hover {
+    border-color: color-mix(in oklab, var(--brand) 20%, var(--line) 80%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--brand-soft) 22%, transparent 78%), color-mix(in oklab, var(--surface-1) 84%, transparent 16%));
+  }
+
+  .interview-switcher a span {
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .interview-switcher a strong {
+    font-size: 0.96rem;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  .interview-toc-rail {
+    width: var(--interview-toc-width-effective);
+    position: sticky;
+    top: calc(var(--layout-header-height, 72px) + 0.75rem);
+    height: calc(
+      100vh - var(--layout-header-height, 72px) - var(--layout-footer-height, 54px) - 1.5rem -
+        var(--floating-safe-bottom, 0px)
+    );
+    min-width: 0;
+  }
+
+  @media (max-width: 1280px) {
+    .interview-reader-shell {
+      width: min(100%, 1320px);
+    }
+
+    .interview-reader,
+    .interview-reader.has-toc {
+      --interview-sidebar-width-effective: min(clamp(328px, var(--interview-sidebar-width), 384px), 368px);
+      --interview-content-width: min(clamp(780px, var(--interview-content-max), 980px), 900px);
+      grid-template-columns: var(--interview-sidebar-width-effective) minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 1220px) {
+    .interview-toc-rail {
+      display: none;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .interview-reader,
+    .interview-reader.has-toc {
+      grid-template-columns: 1fr;
+    }
+
+    .interview-main {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 760px) {
+    :global(main.container) {
+      width: min(100%, calc(100% - var(--space-4)));
+    }
+
+    .interview-sheet {
+      padding: 1.1rem;
+    }
+
+    .interview-sheet h1 {
+      font-size: clamp(1.7rem, 8vw, 2.2rem);
+    }
+
+    .answer-toggle {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .article-body :global(.md-demo-body) {
+      grid-template-columns: 1fr;
+    }
+
+    .article-body :global(.md-demo-source) {
+      border-right: 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .interview-switcher {
+      grid-template-columns: 1fr;
+    }
+
+    .interview-switcher a:last-child {
+      justify-items: start;
+      text-align: left;
+    }
+  }
+</style>

@@ -170,9 +170,10 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
     position: relative;
     width: 72px;
     height: 36px;
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--bg-elev) 86%, transparent 14%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--bg-elev) 92%, transparent 8%), color-mix(in oklab, var(--surface-2) 82%, transparent 18%));
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     align-items: center;
@@ -193,7 +194,8 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
     height: calc(100% - 4px);
     border-radius: 999px;
     background: toggleThumbColor;
-    border: 1px solid color-mix(in oklab, var(--brand) 20%, var(--line) 80%);
+    border: 1px solid color-mix(in oklab, var(--brand) 18%, var(--line) 82%);
+    box-shadow: 0 10px 24px -20px color-mix(in oklab, var(--brand) 48%, transparent 52%);
     transition: transform calc((animationMs * 1ms)) ease;
     z-index: 0;
   }
@@ -208,7 +210,7 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
     border: 0;
     border-radius: 999px;
     background: transparent;
-    color: var(--text-muted);
+    color: color-mix(in oklab, var(--text-muted) 90%, transparent 10%);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -224,14 +226,15 @@ const animationMs = Number(siteConfig.theme.toggle?.animationMs ?? 220);
 
   .theme-option[data-active="1"] {
     color: var(--text);
+    text-shadow: 0 0 12px color-mix(in oklab, var(--brand) 16%, transparent 84%);
   }
 
   .theme-option-light {
-    color: toggleLightColor;
+    color: color-mix(in oklab, toggleLightColor 78%, var(--text-muted) 22%);
   }
 
   .theme-option-dark {
-    color: toggleDarkColor;
+    color: color-mix(in oklab, toggleDarkColor 78%, var(--text-muted) 22%);
   }
 
   .theme-switcher:focus-within {

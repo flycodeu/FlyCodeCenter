@@ -26,8 +26,8 @@ export type LayoutPresetId = "balanced" | "editorial" | "compact" | "showcase";
 export type PaginationMode = "page" | "loadMore";
 export type CoverMode = "right" | "left" | "top" | "none";
 export type CardStyle = "rounded" | "square" | "glass";
-import { defineSiteConfig } from "./config/define-site-config";
-import articleMetaConfig from "./config/article-meta.config";
+import { defineSiteConfig } from "./config/define-site-config.ts";
+import articleMetaConfig from "./config/article-meta.config.ts";
 
 const PUBLIC_ENV =
   ((import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}) as Record<
@@ -35,8 +35,8 @@ const PUBLIC_ENV =
     string | undefined
   >;
 
-const activeThemePack: ThemePackId = "aurora";
-const activeLayoutPreset: LayoutPresetId = "balanced";
+const activeThemePack: ThemePackId = "mono";
+const activeLayoutPreset: LayoutPresetId = "editorial";
 
 const themePresetPacks = {
   aurora: {
@@ -204,7 +204,7 @@ const siteConfig = defineSiteConfig({
     icon: "/favicon.svg",
     head: {
       meta: [
-        { name: "theme-color", content: "#f6f8ff" },
+        { name: "theme-color", content: "#e1e8f0" },
         { name: "apple-mobile-web-app-capable", content: "yes" }
       ]
     }
@@ -375,11 +375,11 @@ const siteConfig = defineSiteConfig({
       fontPresetDefault: "regular",
       fontPresets: {
         regular: {
-          sans: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          serif: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          display: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          tech: "\"Chakra Petch\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          mono: "\"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", \"SFMono-Regular\", \"Consolas\", \"Liberation Mono\", monospace"
+          sans: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          serif: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          display: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          tech: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          mono: "\"IBM Plex Mono\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace"
         },
         pixel: {
           sans: "\"Zpix\", \"Press Start 2P\", \"Fusion Pixel\", \"Pixelify Sans\", \"Microsoft YaHei\", sans-serif",
@@ -399,8 +399,8 @@ const siteConfig = defineSiteConfig({
         dark: "moon"
       },
       colors: {
-        light: "#f59e0b",
-        dark: "#60a5fa",
+        light: "#5c93d2",
+        dark: "#77a8df",
         thumb: "color-mix(in oklab, var(--brand-soft) 76%, transparent)"
       }
     },
@@ -444,11 +444,11 @@ const siteConfig = defineSiteConfig({
         }
       ],
       defaultWallpaperId: "default-01",
-      opacity: 0.14,
-      blur: 14,
-      overlayOpacity: 0.58,
-      saturate: 102,
-      grayscale: 0
+      opacity: 0.1,
+      blur: 20,
+      overlayOpacity: 0.78,
+      saturate: 82,
+      grayscale: 20
     },
     toc: {
       enable: true,
@@ -517,7 +517,7 @@ const siteConfig = defineSiteConfig({
     },
     robots: {
       enable: true,
-      disallow: ["/encrypted/", "/gallery/"]
+      disallow: ["/encrypted/", "/gallery/", "/interview/"]
     },
     rss: {
       enable: true,
@@ -846,7 +846,7 @@ const siteConfig = defineSiteConfig({
     }
   },
   encrypt: {
-    enable: false,
+    enable: true,
     outputDir: "public/encrypted",
     algorithm: "AES-GCM",
     manifestFile: "public/encrypted/manifest.json"
@@ -978,6 +978,52 @@ const siteConfig = defineSiteConfig({
           maxWidth: resolvedLayoutPreset.tutorialContentMaxWidth,
           showPrevNext: true,
           showSeriesBreadcrumb: true
+        }
+      }
+    },
+    interviewCenter: {
+      enable: true,
+      route: "/interview",
+      navLabel: "面试中心",
+      navInsertAfter: "/about",
+      title: "面试中心",
+      description: "用于个人复盘的面试题空间，按技术栈管理题目、进度与记忆状态。",
+      overview: {
+        columns: {
+          xl: 3,
+          lg: 2,
+          md: 1
+        },
+        gap: 18
+      },
+      unlock: {
+        password: "flycode",
+        title: "进入面试中心",
+        description: "输入密码后进入面试中心。"
+      },
+      search: {
+        exclude: true
+      },
+      stats: {
+        enable: false
+      },
+      comments: {
+        enable: false
+      },
+      reader: {
+        sidebar: {
+          width: 360,
+          showProgress: true,
+          showDifficulty: true
+        },
+        toc: {
+          enable: false,
+          width: resolvedLayoutPreset.tutorialTocWidth
+        },
+        content: {
+          maxWidth: 940,
+          hideAnswerUntilReveal: true,
+          showPrevNext: true
         }
       }
     },

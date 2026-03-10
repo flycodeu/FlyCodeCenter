@@ -28,11 +28,11 @@
   --space-5: 32px;
   --space-6: 48px;
   --floating-safe-bottom: 0px;
-  --font-regular-sans: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-serif: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-display: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-tech: "Chakra Petch", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-  --font-regular-mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-regular-sans: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-serif: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-display: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-tech: "Manrope", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-regular-mono: "IBM Plex Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
   --font-pixel-sans: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-serif: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-display: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
@@ -361,22 +361,12 @@ html {
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.004em;
   color: var(--text);
   background:
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--line) 10%, transparent 90%) 1px,
-      transparent 1px
-    ) 0 0 / var(--pixel-grid-size) var(--pixel-grid-size),
-    linear-gradient(
-      0deg,
-      color-mix(in oklab, var(--line) 10%, transparent 90%) 1px,
-      transparent 1px
-    ) 0 0 / var(--pixel-grid-size) var(--pixel-grid-size),
-    radial-gradient(920px 420px at -8% -20%, color-mix(in oklab, var(--bg-mesh-a) 70%, transparent 30%), transparent 78%),
-    radial-gradient(760px 340px at 112% -12%, color-mix(in oklab, var(--bg-mesh-b) 66%, transparent 34%), transparent 80%),
-    radial-gradient(860px 560px at 52% 130%, color-mix(in oklab, var(--brand) 3%, transparent), transparent 86%),
+    radial-gradient(920px 460px at -10% -12%, color-mix(in oklab, var(--bg-mesh-a) 68%, transparent 32%), transparent 74%),
+    radial-gradient(720px 300px at 100% -8%, color-mix(in oklab, var(--bg-mesh-b) 54%, transparent 46%), transparent 80%),
+    radial-gradient(960px 520px at 50% 120%, color-mix(in oklab, var(--brand) 2%, transparent), transparent 88%),
     var(--bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -400,8 +390,12 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, color-mix(in oklab, var(--brand) 4%, transparent), transparent 38%);
-  opacity: 0.06;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-1) 20%, transparent 80%),
+    transparent 32%
+  );
+  opacity: 0.09;
   z-index: -1;
 }
 
@@ -410,38 +404,51 @@ body::after {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in oklab, var(--brand) 6%, transparent 94%) 0,
-      color-mix(in oklab, var(--brand) 6%, transparent 94%) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-  mix-blend-mode: soft-light;
-  opacity: 0.18;
+  background: radial-gradient(circle at top, color-mix(in oklab, var(--brand) 2.5%, transparent 97.5%), transparent 58%);
+  opacity: 0.2;
   z-index: -1;
 }
 
 :root[data-theme-surface-style="plain"] body {
   background:
-    radial-gradient(760px 280px at 0% -5%, color-mix(in oklab, var(--bg-mesh-a) 60%, transparent 40%), transparent 78%),
-    radial-gradient(680px 280px at 100% -10%, color-mix(in oklab, var(--bg-mesh-b) 58%, transparent 42%), transparent 82%),
-    radial-gradient(900px 420px at 50% 130%, color-mix(in oklab, var(--brand) 2.5%, transparent), transparent 88%),
+    radial-gradient(760px 280px at 0% -5%, color-mix(in oklab, var(--bg-mesh-a) 56%, transparent 44%), transparent 78%),
+    radial-gradient(680px 280px at 100% -10%, color-mix(in oklab, var(--bg-mesh-b) 50%, transparent 50%), transparent 82%),
+    radial-gradient(900px 420px at 50% 130%, color-mix(in oklab, var(--brand) 2%, transparent), transparent 88%),
     var(--bg);
 }
 
 :root[data-theme-surface-style="plain"] body::after {
-  opacity: 0.08;
+  opacity: 0.05;
   background: linear-gradient(180deg, color-mix(in oklab, var(--brand) 4%, transparent), transparent 36%);
 }
 
 :root[data-theme-pack="mono"] body::before {
-  opacity: 0.03;
+  opacity: 0.12;
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in oklab, var(--brand) 7%, transparent 93%), transparent 28%),
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 16%, transparent 84%), transparent 36%),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--line) 7%, transparent 93%) 0,
+      color-mix(in oklab, var(--line) 7%, transparent 93%) 1px,
+      transparent 1px,
+      transparent 28px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in oklab, var(--line) 6%, transparent 94%) 0,
+      color-mix(in oklab, var(--line) 6%, transparent 94%) 1px,
+      transparent 1px,
+      transparent 28px
+    );
 }
 
 :root[data-theme-pack="mono"] body::after {
-  display: none;
+  display: block;
+  opacity: 0.14;
+  background:
+    radial-gradient(circle at top, color-mix(in oklab, var(--brand) 6%, transparent 94%), transparent 42%),
+    radial-gradient(circle at 85% 14%, color-mix(in oklab, var(--accent) 7%, transparent 93%), transparent 36%);
 }
 
 :root[data-theme-pack="nature"] {
@@ -559,16 +566,12 @@ img {
 }
 
 .surface {
-  background:
-    linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 90%, transparent 10%), color-mix(in oklab, var(--surface-2) 92%, transparent 8%)),
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in oklab, var(--brand) 6%, transparent 94%) 0,
-      color-mix(in oklab, var(--brand) 6%, transparent 94%) 1px,
-      transparent 1px,
-      transparent 12px
-    );
-  border: var(--layout-card-border-width, 2px) solid var(--line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-1) 97%, transparent 3%),
+    color-mix(in oklab, var(--surface-2) 95%, transparent 5%)
+  );
+  border: 1px solid color-mix(in oklab, var(--line) 88%, transparent 12%);
   border-radius: calc(var(--radius-md) * var(--layout-radius-scale, 1));
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(8px);
@@ -577,7 +580,7 @@ img {
 
 .surface:hover {
   box-shadow: var(--card-shadow-strong);
-  border-color: color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
+  border-color: color-mix(in oklab, var(--line-strong) 72%, transparent 28%);
 }
 
 :root[data-theme-surface-style="plain"] .surface {
@@ -599,19 +602,19 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.24rem 0.68rem;
+  padding: 0.26rem 0.64rem;
   border-radius: var(--radius-pill);
-  font-size: 0.79rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  border: 1px solid color-mix(in oklab, var(--line) 80%, var(--brand) 20%);
+  border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
   color: var(--text-soft);
-  background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
-  font-family: var(--font-tech);
+  background: color-mix(in oklab, var(--surface-1) 94%, transparent 6%);
+  font-family: var(--font-sans);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .chip:hover {
-  background: color-mix(in oklab, var(--brand-soft) 58%, var(--surface-1) 42%);
+  background: color-mix(in oklab, var(--brand-soft) 42%, var(--surface-1) 58%);
   color: var(--brand);
 }
 
@@ -735,8 +738,8 @@ img {
   font-size: clamp(1rem, 0.8vw + 0.92rem, 1.28rem);
   margin: 0;
   color: var(--text);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-transform: none;
 }
 
 :root[data-layout-preset="editorial"] .section-title {
@@ -880,19 +883,19 @@ img {
 .prose h4 {
   scroll-margin-top: calc(var(--layout-header-height, 68px) + 16px);
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 700;
+  line-height: 1.24;
   color: var(--text);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  text-transform: none;
 }
 
 .prose h1 {
-  font-size: clamp(1.3rem, 1.2vw + 1rem, 1.9rem);
+  font-size: clamp(1.72rem, 1.4vw + 1.2rem, 2.32rem);
 }
 
 .prose h2 {
-  font-size: clamp(1.05rem, 0.8vw + 0.9rem, 1.3rem);
+  font-size: clamp(1.24rem, 0.9vw + 0.98rem, 1.6rem);
   margin-top: 2.6rem;
   margin-bottom: 1.35rem;
   padding-bottom: 0.3em;
@@ -900,7 +903,7 @@ img {
 }
 
 .prose h3 {
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   margin-top: 1.75rem;
   margin-bottom: 0.9rem;
 }

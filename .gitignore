@@ -27,3 +27,4 @@ pnpm-debug.log*
 
 # generated search index
 public/search/minisearch.json
+public/encrypted/

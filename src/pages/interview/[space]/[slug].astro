@@ -1,0 +1,104 @@
+---
+import { render } from "astro:content";
+import siteConfig from "@/site.config";
+import InterviewReaderLayout from "@/layouts/InterviewReaderLayout.astro";
+import {
+  buildInterviewSpaceBuckets,
+  fetchInterviewEntries,
+  fetchInterviewSpaceEntries,
+  fromInterviewSpaceRouteKey,
+  isInterviewReadmeEntry,
+  resolveInterviewMeta,
+  resolveInterviewSlug,
+  toInterviewSpaceRouteKey
+} from "@/utils/interview";
+
+interface RouteProps {
+  space: string;
+  slug: string;
+  currentEntryId: string;
+}
+
+export async function getStaticPaths() {
+  if (!siteConfig.pages.interviewCenter.enable) return [];
+  const interviews = await fetchInterviewEntries();
+  const spaceMap = buildInterviewSpaceBuckets(interviews);
+  const paths: Array<{ params: { space: string; slug: string }; props: RouteProps }> = [];
+
+  for (const bucket of spaceMap.values()) {
+    for (const entry of bucket.entries) {
+      if (isInterviewReadmeEntry(entry)) continue;
+      const slug = resolveInterviewSlug(entry);
+      paths.push({
+        params: {
+          space: toInterviewSpaceRouteKey(bucket.key),
+          slug
+        },
+        props: {
+          space: bucket.key,
+          slug,
+          currentEntryId: entry.id
+        }
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { space, slug, currentEntryId } = Astro.props as RouteProps;
+const spaceKey = fromInterviewSpaceRouteKey(space);
+const entries = await fetchInterviewSpaceEntries(spaceKey);
+if (!entries.length) {
+  throw new Error(`Interview space not found: ${spaceKey}`);
+}
+
+const spaceBucket = buildInterviewSpaceBuckets(entries).get(spaceKey);
+const questionEntries = entries.filter((entry) => !isInterviewReadmeEntry(entry));
+const currentEntry = questionEntries.find((entry) => entry.id === currentEntryId);
+if (!currentEntry) {
+  throw new Error(`Interview entry not found: ${spaceKey}/${slug}`);
+}
+
+const currentMeta = resolveInterviewMeta(currentEntry);
+const rendered = await render(currentEntry);
+const Content = rendered.Content;
+const headings = rendered.headings;
+const routeSpaceKey = toInterviewSpaceRouteKey(spaceKey);
+const baseRoute = `${siteConfig.pages.interviewCenter.route}/${encodeURIComponent(routeSpaceKey)}`;
+const items = questionEntries.map((entry) => {
+  const meta = resolveInterviewMeta(entry);
+  const entrySlug = resolveInterviewSlug(entry);
+  return {
+    id: entry.id,
+    slug: entrySlug,
+    title: meta.title,
+    difficulty: meta.difficulty,
+    order: meta.order,
+    url: `${baseRoute}/${encodeURIComponent(entrySlug)}`
+  };
+});
+const currentSlug = resolveInterviewSlug(currentEntry);
+const currentIndex = items.findIndex((item) => item.id === currentEntry.id);
+const prev = currentIndex > 0 ? { title: items[currentIndex - 1].title, url: items[currentIndex - 1].url } : undefined;
+const next = currentIndex >= 0 && currentIndex < items.length - 1 ? { title: items[currentIndex + 1].title, url: items[currentIndex + 1].url } : undefined;
+const articleUrl = `${baseRoute}/${encodeURIComponent(currentSlug)}`;
+---
+
+<InterviewReaderLayout
+  title={currentMeta.title}
+  summary={currentMeta.summary}
+  description={currentMeta.description}
+  type={currentMeta.type}
+  difficulty={currentMeta.difficulty}
+  articleUrl={articleUrl}
+  spaceKey={spaceKey}
+  spaceLabel={spaceBucket?.label ?? spaceKey}
+  currentSlug={currentSlug}
+  items={items}
+  headings={headings}
+  prev={prev}
+  next={next}
+>
+  <Content />
+</InterviewReaderLayout>

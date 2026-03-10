@@ -12,12 +12,12 @@
     "rebuild:frontmatter": "node ./scripts/rebuild-frontmatter.mjs",
     "guard:quality": "node ./scripts/quality-guard.mjs",
     "prebuild": "node ./scripts/clean-astro-cache.mjs",
-    "build": "npm run sync:articles && npm run guard:quality && npm run build:minisearch && astro build",
+    "build": "npm run sync:articles && npm run guard:quality && npm run build:minisearch && npm run encrypt && astro build",
     "preview": "astro preview",
     "postbuild": "node ./scripts/pagefind-index.mjs",
     "build:minisearch": "node ./scripts/build-minisearch.mjs",
     "build:pagefind": "node ./scripts/pagefind-index.mjs",
-    "encrypt": "tsx ./scripts/encrypt.mjs"
+    "encrypt": "node ./scripts/encrypt.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",

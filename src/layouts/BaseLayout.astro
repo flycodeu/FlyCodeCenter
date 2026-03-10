@@ -12,13 +12,17 @@ interface Props {
   description?: string;
   image?: string;
   canonicalPath?: string;
+  robots?: string;
+  pagefindIgnore?: boolean;
 }
 
 const {
   title,
   description = siteConfig.site.description,
   image = siteConfig.seo.defaultOgImage,
-  canonicalPath = Astro.url.pathname
+  canonicalPath = Astro.url.pathname,
+  robots = "",
+  pagefindIgnore = false
 } = Astro.props;
 const pageTitle = makePageTitle(title);
 const canonical = siteConfig.seo.canonical ? resolveCanonical(canonicalPath) : "";
@@ -224,12 +228,13 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
     <link rel="icon" type="image/svg+xml" href={siteConfig.site.icon} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Press+Start+2P&display=swap"
     />
     {canonical && <link rel="canonical" href={canonical} />}
     <meta property="og:type" content="website" />
@@ -512,7 +517,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
       })();
     </script>
   </head>
-  <body>
+  <body data-pagefind-ignore={pagefindIgnore ? "all" : undefined}>
     <div
       id="site-bg-image"
       class="site-bg-image"
@@ -544,7 +549,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
     </div>
     {siteConfig.watermark.enable && siteConfig.watermark.scope === "global" && <Watermark scope="global" />}
     <Header />
-    <main class="container">
+    <main class="container" data-pagefind-ignore={pagefindIgnore ? "all" : undefined}>
       <slot />
     </main>
     <footer class="site-footer">
@@ -1077,8 +1082,8 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
 
 <style>
   :global(html) {
-    --layout-header-height: 68px;
-    --layout-footer-height: 54px;
+    --layout-header-height: 72px;
+    --layout-footer-height: 56px;
   }
 
   :global(body) {
@@ -1086,7 +1091,7 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
   }
 
   main {
-    padding: calc(var(--layout-header-height) + 1rem) 0 calc(var(--layout-footer-height) + 0.9rem);
+    padding: calc(var(--layout-header-height) + 1.05rem) 0 calc(var(--layout-footer-height) + 0.95rem);
     position: relative;
     z-index: 2;
   }
@@ -1095,28 +1100,20 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
     left: 0;
     right: 0;
     bottom: 0;
-    border-top: 2px solid color-mix(in oklab, var(--line) 72%, var(--brand) 28%);
+    border-top: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
     z-index: 58;
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--bg-elev) 88%, transparent 12%), color-mix(in oklab, var(--surface-2) 90%, transparent 10%)),
-      repeating-linear-gradient(
-        90deg,
-        color-mix(in oklab, var(--brand) 7%, transparent 93%) 0,
-        color-mix(in oklab, var(--brand) 7%, transparent 93%) 1px,
-        transparent 1px,
-        transparent 12px
-      );
-    backdrop-filter: blur(10px);
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    backdrop-filter: blur(12px);
   }
   .footer-inner {
-    min-height: 54px;
+    min-height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     color: var(--text-soft);
     font-size: 0.8rem;
-    font-family: var(--font-tech);
+    font-family: var(--font-sans);
     line-height: 1.25;
   }
   .footer-meta {
@@ -1165,9 +1162,13 @@ const backgroundImageSrcset = buildImageSrcset(backgroundImageUrl, [640, 960, 12
 
   .site-bg-overlay {
     background:
-      linear-gradient(180deg, color-mix(in oklab, var(--bg) 58%, transparent 42%), color-mix(in oklab, var(--bg) 86%, transparent 14%)),
-      radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--brand-soft) 20%, transparent 80%), transparent 72%);
-    opacity: var(--site-bg-overlay-opacity, 0.58);
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--bg) 54%, transparent 46%),
+        color-mix(in oklab, var(--bg) 86%, transparent 14%)
+      ),
+      radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--brand-soft) 10%, transparent 90%), transparent 74%);
+    opacity: var(--site-bg-overlay-opacity, 0.42);
   }
 
   .aurora-bg {

@@ -33,6 +33,22 @@ const tutorial = defineCollection({
   schema: articleSchema
 });
 
+const interview = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/interview" }),
+  schema: articleSchema.extend({
+    updatedTime: z
+      .string()
+      .regex(/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/, "updatedTime must be YYYY/MM/DD HH:mm:ss")
+      .optional(),
+    type: z.string().default(""),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+    encrypted: z.boolean().default(false),
+    passwordHint: z.string().default(""),
+    draft: z.boolean().default(false),
+    space: z.string().optional()
+  })
+});
+
 const projects = defineCollection({
   loader: glob({ pattern: "**/README.{md,mdx}", base: "./src/content/projects" }),
   schema: articleSchema
@@ -306,6 +322,7 @@ const reading = defineCollection({
 export const collections = {
   blog,
   tutorial,
+  interview,
   pages,
   projects,
   sites,

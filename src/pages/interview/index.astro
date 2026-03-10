@@ -1,0 +1,350 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import siteConfig from "@/site.config";
+import InterviewAccessGate from "@/components/InterviewAccessGate.astro";
+import { formatDate } from "@/utils/date";
+import { createInterviewPasswordHash, createInterviewStorageSecret } from "@/utils/interview-access";
+import {
+  buildInterviewSpaceBuckets,
+  fetchInterviewEntries,
+  isInterviewReadmeEntry,
+  toInterviewSpaceRouteKey
+} from "@/utils/interview";
+
+if (!siteConfig.pages.interviewCenter.enable) {
+  return Astro.redirect("/");
+}
+
+const interviewConfig = siteConfig.pages.interviewCenter;
+const overviewConfig = interviewConfig.overview ?? {};
+const overviewColumns = overviewConfig.columns ?? {};
+const overviewGap = Number(overviewConfig.gap ?? 18);
+const passwordHash = createInterviewPasswordHash(interviewConfig.unlock.password);
+const storageSecret = createInterviewStorageSecret(passwordHash);
+const entries = await fetchInterviewEntries();
+const spaces = [...buildInterviewSpaceBuckets(entries).values()]
+  .sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    return a.label.localeCompare(b.label, "zh-CN");
+  })
+  .map((bucket) => {
+    const questions = bucket.entries.filter((entry) => !isInterviewReadmeEntry(entry));
+    const latestDate = bucket.latestAt ? formatDate(new Date(bucket.latestAt), "YYYY-MM-DD") : "--";
+    return {
+      ...bucket,
+      questions,
+      latestDate,
+      href: `${interviewConfig.route}/${encodeURIComponent(toInterviewSpaceRouteKey(bucket.key))}`
+    };
+  });
+const totalQuestions = spaces.reduce((sum, space) => sum + space.questions.length, 0);
+---
+
+<BaseLayout
+  title={interviewConfig.title}
+  description={interviewConfig.description}
+  canonicalPath={interviewConfig.route}
+  robots="noindex, nofollow, noarchive"
+  pagefindIgnore={interviewConfig.search.exclude ?? true}
+>
+  <InterviewAccessGate />
+
+  <section
+    class="interview-overview"
+    data-interview-protected
+    data-interview-overview-root
+    data-password-hash={passwordHash}
+    data-storage-secret={storageSecret}
+    style={`--overview-columns-xl:${Number(overviewColumns.xl ?? 3)};--overview-columns-lg:${Number(overviewColumns.lg ?? 2)};--overview-columns-md:${Number(overviewColumns.md ?? 1)};--overview-gap:${overviewGap}px;`}
+  >
+    <header class="surface overview-hero">
+      <div class="overview-copy">
+        <p class="overview-eyebrow">Interview Center</p>
+        <h1>{interviewConfig.title}</h1>
+        <p>{interviewConfig.description}</p>
+      </div>
+      <div class="overview-metrics">
+        <article>
+          <strong>{spaces.length}</strong>
+          <span>技术题组</span>
+        </article>
+        <article>
+          <strong>{totalQuestions}</strong>
+          <span>题目总数</span>
+        </article>
+        <article>
+          <strong>Progress</strong>
+          <span>仅本地记录进度</span>
+        </article>
+      </div>
+    </header>
+
+    <section class="space-directory">
+      {
+        spaces.map((space) => (
+          <a
+            class="surface space-card"
+            href={space.href}
+            data-space-card
+            data-space-key={space.key}
+            data-total={space.questions.length}
+          >
+            <div class="space-card-body">
+              <h2>{space.label}</h2>
+              <div class="space-card-meta">
+                <div class="space-meta-item">
+                  <span>张数</span>
+                  <strong>{space.questions.length} 题</strong>
+                </div>
+                <div class="space-meta-item">
+                  <span>时间</span>
+                  <strong>{space.latestDate}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-card-footer">
+              <div class="space-card-progress">
+                <div class="space-progress-head">
+                  <span data-space-progress-text>{`0 / ${space.questions.length} 已掌握`}</span>
+                  <span data-space-next-text>当前进度 0%</span>
+                </div>
+                <span class="space-progress-bar"><span data-space-progress-bar></span></span>
+              </div>
+              <span class="space-card-enter">进入列表</span>
+            </div>
+          </a>
+        ))
+      }
+    </section>
+  </section>
+
+  <script>
+    import "../../scripts/interview-overview";
+  </script>
+</BaseLayout>
+
+<style>
+  :global(main.container) {
+    width: min(1280px, calc(100% - var(--space-5)));
+  }
+
+  .interview-overview {
+    display: grid;
+    gap: 1.2rem;
+  }
+
+  .overview-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+    gap: 1.4rem;
+    padding: 1.35rem 1.45rem;
+    border-radius: 32px;
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--brand-soft) 18%, transparent 82%), transparent 44%),
+      radial-gradient(circle at top right, color-mix(in oklab, var(--accent) 10%, transparent 90%), transparent 36%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 96%, transparent 4%), color-mix(in oklab, var(--surface-2) 94%, transparent 6%));
+  }
+
+  .overview-copy {
+    display: grid;
+    gap: 0.72rem;
+    max-width: 72ch;
+  }
+
+  .overview-eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .overview-hero h1 {
+    margin: 0;
+    font-size: clamp(2.2rem, 4.8vw, 3.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+  }
+
+  .overview-hero p:last-child {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.82;
+  }
+
+  .overview-metrics {
+    display: grid;
+    gap: 0.72rem;
+    align-content: start;
+  }
+
+  .overview-metrics article {
+    padding: 0.85rem 0.95rem;
+    border-radius: 22px;
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 82%, transparent 18%), color-mix(in oklab, var(--brand-soft) 12%, transparent 88%));
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .overview-metrics strong {
+    font-size: 1.25rem;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .overview-metrics span {
+    color: var(--text-soft);
+    font-size: 0.82rem;
+  }
+
+  .space-directory {
+    display: grid;
+    grid-template-columns: repeat(var(--overview-columns-xl), minmax(0, 1fr));
+    gap: var(--overview-gap);
+  }
+
+  .space-card {
+    min-width: 0;
+    min-height: 232px;
+    padding: 1.2rem 1.2rem 1.1rem;
+    border-radius: 28px;
+    border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--brand-soft) 14%, transparent 86%), transparent 52%),
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 96%, transparent 4%), color-mix(in oklab, var(--surface-2) 94%, transparent 6%));
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1.25rem;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .space-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--brand) 26%, var(--line) 74%);
+    box-shadow: 0 22px 42px -34px rgb(15 23 42 / 0.36);
+  }
+
+  .space-card-body {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  .space-card h2 {
+    margin: 0;
+    font-size: clamp(1.08rem, 0.7vw + 0.96rem, 1.34rem);
+    line-height: 1.28;
+  }
+
+  .space-card-meta {
+    display: grid;
+    gap: 0.72rem;
+  }
+
+  .space-meta-item {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .space-meta-item span {
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .space-meta-item strong {
+    font-size: 1rem;
+    line-height: 1.35;
+    color: var(--text-soft);
+    font-weight: 600;
+  }
+
+  .space-card-footer {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .space-card-progress {
+    display: grid;
+    gap: 0.42rem;
+  }
+
+  .space-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.72rem;
+    color: var(--text-soft);
+    font-size: 0.8rem;
+  }
+
+  .space-progress-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--line) 82%, transparent 18%);
+  }
+
+  .space-progress-bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--brand) 78%, white 22%), color-mix(in oklab, var(--accent) 56%, var(--brand) 44%));
+    transition: width 180ms ease;
+  }
+
+  .space-card-enter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0.65rem 0.9rem;
+    border-radius: 16px;
+    border: 1px solid color-mix(in oklab, var(--brand) 26%, var(--line) 74%);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--brand-soft) 72%, transparent 28%), color-mix(in oklab, var(--surface-1) 84%, transparent 16%));
+    color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%);
+    font-weight: 650;
+  }
+
+  @media (max-width: 1080px) {
+    .overview-hero {
+      grid-template-columns: 1fr;
+    }
+
+    .space-directory {
+      grid-template-columns: repeat(var(--overview-columns-lg), minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    :global(main.container) {
+      width: min(100%, calc(100% - var(--space-4)));
+    }
+
+    .overview-hero h1 {
+      font-size: clamp(1.9rem, 10vw, 2.8rem);
+    }
+
+    .space-directory {
+      grid-template-columns: repeat(var(--overview-columns-md), minmax(0, 1fr));
+    }
+
+    .space-card {
+      min-height: auto;
+    }
+
+    .space-progress-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

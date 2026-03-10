@@ -5,7 +5,7 @@ import matter from "gray-matter";
 import siteConfig from "../src/site.config.ts";
 
 const root = process.cwd();
-const password = process.env.ENCRYPT_PASSWORD ?? "";
+const password = process.env.ENCRYPT_PASSWORD ?? siteConfig.pages?.interviewCenter?.unlock?.password ?? "";
 
 if (!siteConfig.encrypt.enable) {
   console.log("[encrypt] disabled in site.config.ts, skip.");
@@ -23,9 +23,24 @@ async function walk(dir) {
   for (const item of items) {
     const absolute = path.join(dir, item.name);
     if (item.isDirectory()) files.push(...(await walk(absolute)));
-    if (item.isFile() && absolute.endsWith(".md")) files.push(absolute);
+    if (item.isFile() && (absolute.endsWith(".md") || absolute.endsWith(".mdx"))) files.push(absolute);
   }
   return files;
+}
+
+async function removeInterviewPayloads(dir) {
+  let items = [];
+  try {
+    items = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  await Promise.all(
+    items
+      .filter((item) => item.isFile() && /^interview-.*\.json$/i.test(item.name))
+      .map((item) => fs.unlink(path.join(dir, item.name)))
+  );
 }
 
 function encryptText(plainText) {
@@ -51,6 +66,7 @@ async function buildEncryptedPayload() {
   const manifest = {};
 
   await fs.mkdir(outputDir, { recursive: true });
+  await removeInterviewPayloads(outputDir);
 
   for (const target of targets) {
     const files = await walk(target.base);
@@ -59,7 +75,7 @@ async function buildEncryptedPayload() {
       const parsed = matter(raw);
       if (!parsed.data.encrypted) continue;
 
-      const relative = path.relative(target.base, file).replace(/\\/g, "/").replace(/\.md$/, "");
+      const relative = path.relative(target.base, file).replace(/\\/g, "/").replace(/\.(md|mdx)$/i, "");
       const outputName = `${target.collection}-${relative.replace(/\//g, "-")}.json`;
       const payload = encryptText(parsed.content);
       payload.version = 1;
