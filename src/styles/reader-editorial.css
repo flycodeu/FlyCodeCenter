@@ -129,21 +129,21 @@
 
 .reading-page .reading-title {
   margin: 0;
-  max-width: 18ch;
+  max-width: min(100%, 28ch);
   font-family: var(--font-display);
-  font-size: clamp(2.15rem, 2.9vw + 1rem, 3.6rem);
+  font-size: clamp(1.96rem, 2.3vw + 1rem, 3.18rem);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: -0.04em;
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .reading-page .reading-summary {
   margin: 0;
-  max-width: 60ch;
+  max-width: min(100%, 66ch);
   font-family: var(--font-sans);
-  font-size: clamp(1rem, 0.3vw + 0.98rem, 1.12rem);
-  line-height: 1.82;
+  font-size: clamp(0.96rem, 0.22vw + 0.94rem, 1.04rem);
+  line-height: 1.76;
   color: var(--text-soft);
 }
 
@@ -205,14 +205,14 @@
   max-width: 100%;
   padding: 0.15rem 0 1.25rem;
   font-family: var(--font-serif);
-  font-size: clamp(1.04rem, 0.34vw + 1rem, 1.16rem);
-  line-height: 1.92;
-  letter-spacing: 0.004em;
+  font-size: clamp(0.96rem, 0.18vw + 0.94rem, 1.04rem);
+  line-height: 1.84;
+  letter-spacing: 0.002em;
   color: var(--text);
 }
 
 .reading-page .reading-body > * {
-  max-width: min(100%, 68ch);
+  max-width: min(100%, 76ch);
 }
 
 .reading-page .reading-body > :is(pre, .diagram-wrapper, .md-tabs, .md-code-group, .md-demo, .md-chartjs, .mdx-admonition, .md-steps, .code-block-wrapper, .expressive-code, table, figure) {
@@ -220,11 +220,12 @@
 }
 
 .reading-page .reading-body :where(h1, h2, h3, h4) {
-  max-width: min(100%, 24ch);
+  max-width: min(100%, 34ch);
   margin-bottom: 0.8rem;
   font-family: var(--font-display);
   line-height: 1.18;
   letter-spacing: -0.03em;
+  text-wrap: pretty;
   color: var(--text);
 }
 
@@ -232,21 +233,21 @@
   margin-top: 3rem;
   padding-top: 1.3rem;
   border-top: 1px solid var(--reading-line-soft);
-  font-size: clamp(1.58rem, 0.9vw + 1.2rem, 2.06rem);
+  font-size: clamp(1.42rem, 0.72vw + 1.14rem, 1.88rem);
 }
 
 .reading-page .reading-body h3 {
   margin-top: 1.9rem;
-  font-size: clamp(1.22rem, 0.55vw + 1rem, 1.5rem);
+  font-size: clamp(1.14rem, 0.42vw + 0.98rem, 1.36rem);
 }
 
 .reading-page .reading-body h4 {
   margin-top: 1.4rem;
-  font-size: 1.06rem;
+  font-size: 1rem;
 }
 
 .reading-page .reading-body :where(p, ul, ol, blockquote, dl) {
-  max-width: min(100%, 66ch);
+  max-width: min(100%, 74ch);
 }
 
 .reading-page .reading-body p {
@@ -331,7 +332,7 @@
 }
 
 .reading-page .reading-body hr {
-  width: min(100%, 68ch);
+  width: min(100%, 76ch);
   height: 1px;
   margin: 2.7rem 0;
   border: 0;
@@ -492,7 +493,7 @@
   }
 
   .reading-page .reading-body.article-body {
-    font-size: 1rem;
-    line-height: 1.84;
+    font-size: 0.98rem;
+    line-height: 1.8;
   }
 }
