@@ -118,6 +118,7 @@ const showSeriesBreadcrumb = content.showSeriesBreadcrumb ?? true;
 const seriesRouteKey = toSeriesRouteKey(seriesKey);
 const readerClass = [
   "tutorial-reader",
+  "reading-page",
   sidebarEnable ? `has-sidebar sidebar-${sidebarPosition}` : "no-sidebar",
   tocEnable ? `has-toc toc-${tocPosition}` : "no-toc"
 ]
@@ -204,11 +205,11 @@ const articleRuntimeConfig = {
 
     <section class="tutorial-main-wrap">
       <section class="tutorial-main">
-        <section class="surface tutorial-sheet">
-          <div class="tutorial-sheet-head">
+        <section class="surface tutorial-sheet reading-sheet">
+          <div class="tutorial-sheet-head reading-head">
             {
               showSeriesBreadcrumb && (
-                <nav class="tutorial-breadcrumb" aria-label="面包屑">
+                <nav class="tutorial-breadcrumb reading-breadcrumb" aria-label="面包屑">
                   <a href="/tutorials">教程</a>
                   <span>/</span>
                   <a href={`/tutorials/${encodeURIComponent(seriesRouteKey)}`}>{seriesLabel}</a>
@@ -219,10 +220,11 @@ const articleRuntimeConfig = {
             }
 
             <header class="tutorial-head">
-              <h1>{title}</h1>
-              {summary && <p class="summary">{summary}</p>}
-              <div class="meta-strip">
-                <div class="meta-row">
+              <p class="reading-kicker">Series Tutorial</p>
+              <h1 class="reading-title">{title}</h1>
+              {summary && <p class="summary reading-summary">{summary}</p>}
+              <div class="meta-strip reading-meta-strip">
+                <div class="meta-row reading-meta-row">
                   <span class="chip">{wordCount} 字</span>
                   {siteConfig.readingTime.enable && <span class="chip">{readingMinutes} 分钟</span>}
                   {siteConfig.stats.enable && <span class="chip" id="post-view-count" data-view-slug={articleUrl}>阅读 --</span>}
@@ -231,7 +233,7 @@ const articleRuntimeConfig = {
                 </div>
                 {
                   tags.length > 0 && (
-                    <div class="tag-row-badge">
+                    <div class="tag-row-badge reading-tag-row">
                       {tags.map((tag) => <a class="tag-badge tag-link" href={`/tags/${encodeURIComponent(tag)}`}>{tag}</a>)}
                     </div>
                   )
@@ -241,7 +243,7 @@ const articleRuntimeConfig = {
           </div>
 
           <div class="tutorial-sheet-body">
-            <article class="prose article-body" data-article-encrypted={encrypted ? "1" : "0"}>
+            <article class="prose article-body reading-body" data-article-encrypted={encrypted ? "1" : "0"}>
               {encrypted && siteConfig.encrypt.enable ? <EncryptGate encryptedFile={encryptedFile} passwordHint={passwordHint} /> : <slot />}
             </article>
           </div>
@@ -249,8 +251,8 @@ const articleRuntimeConfig = {
 
         {
           showPrevNext && (prev || next) && (
-            <section class="surface tutorial-card tutorial-nav-card">
-              <nav class="prev-next">
+            <section class="surface tutorial-card tutorial-nav-card reading-panel">
+              <nav class="prev-next reading-switcher">
                 {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
                 {next ? <a href={next.url}>{next.title} →</a> : <span />}
               </nav>
@@ -258,7 +260,7 @@ const articleRuntimeConfig = {
           )
         }
 
-        <section class="surface tutorial-card tutorial-comment-card">
+        <section class="surface tutorial-card tutorial-comment-card reading-panel">
           <Comments deferUntilEvent={deferUntilEvent} />
         </section>
       </section>
@@ -510,13 +512,6 @@ const articleRuntimeConfig = {
     line-height: 1.78;
   }
 
-  .article-body :global(table) {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
   .article-body :global(pre),
   .article-body :global(.code-block-wrapper),
   .article-body :global(.code-block-wrapper pre),
@@ -676,13 +671,6 @@ const articleRuntimeConfig = {
       font-family: var(--font-regular-sans);
       letter-spacing: 0.01em;
       text-transform: none;
-    }
-
-    .article-body :global(table) {
-      display: block;
-      max-width: 100%;
-      overflow-x: auto;
-      white-space: nowrap;
     }
 
     .article-body :global(pre),

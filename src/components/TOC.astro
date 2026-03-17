@@ -269,32 +269,35 @@ const list: TocItem[] = filtered.map((item) => {
 
 <style>
   .toc {
-    padding: 0.88rem 0;
-    background: color-mix(in oklab, var(--surface-1) 84%, transparent 16%);
-    border: 1px solid var(--line);
-    box-shadow: none;
-    backdrop-filter: blur(8px);
+    padding: 0.95rem 0.92rem;
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 95%, transparent 5%), color-mix(in oklab, var(--surface-2) 92%, transparent 8%));
+    border: 1px solid color-mix(in oklab, var(--line) 72%, var(--brand) 28%);
+    box-shadow: 0 18px 44px -38px rgb(15 23 42 / 0.28);
+    backdrop-filter: blur(10px);
     height: 100%;
     display: flex;
     flex-direction: column;
-    border-radius: var(--radius-md);
+    border-radius: 24px;
   }
 
   .toc h3 {
-    margin: 0 0 0.75rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 650;
-    color: var(--text);
+    margin: 0 0 0.8rem 0;
+    font-family: var(--font-tech);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   .toc-list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 0 0 0.55rem;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--line-soft);
-    margin-left: 1rem;
+    border-left: 1px solid color-mix(in oklab, var(--line) 66%, transparent 34%);
     max-height: inherit;
   }
 
@@ -304,16 +307,16 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-list a {
     display: block;
-    padding: 0.28rem 0.4rem 0.28rem calc(0.86rem + (var(--toc-level, 1) - 1) * 0.62rem);
+    padding: 0.42rem 0.52rem 0.42rem calc(0.8rem + (var(--toc-level, 1) - 1) * 0.62rem);
     color: var(--text-muted);
-    font-size: 0.84rem;
+    font-size: 0.83rem;
     text-decoration: none;
-    transition: color 0.2s ease, background-color 0.2s ease, border-left-color 0.2s ease;
-    line-height: 1.38;
+    transition: color 0.2s ease, background-color 0.2s ease, border-left-color 0.2s ease, transform 0.2s ease;
+    line-height: 1.46;
     position: relative;
     left: -1px;
     border-left: 2px solid transparent;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 14px 14px 0;
   }
 
   .toc-text {
@@ -327,14 +330,15 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-list a:hover {
     color: var(--text);
+    background: color-mix(in oklab, var(--brand-soft) 34%, transparent 66%);
   }
 
   .toc-list a.active {
     color: var(--brand);
     border-left-color: var(--brand);
     font-weight: 600;
-    background: color-mix(in oklab, var(--brand-soft) 36%, transparent 64%);
-    box-shadow: none;
+    background: color-mix(in oklab, var(--brand-soft) 48%, transparent 52%);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 12%, transparent 88%);
   }
   .toc-desktop-wrap {
     display: none;
@@ -345,14 +349,16 @@ const list: TocItem[] = filtered.map((item) => {
     right: 1rem;
     bottom: calc(5rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     z-index: 78;
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
     color: var(--text);
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 0.4rem 0.72rem;
-    box-shadow: 0 8px 24px color-mix(in oklab, var(--text) 12%, transparent 88%);
+    font-family: var(--font-tech);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.48rem 0.86rem;
+    box-shadow: 0 18px 32px -26px rgb(15 23 42 / 0.34);
   }
 
   .toc-mobile-overlay {
@@ -391,7 +397,7 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile {
     height: 100%;
-    border-radius: 14px;
+    border-radius: 22px;
     display: flex;
     flex-direction: column;
   }
@@ -406,16 +412,16 @@ const list: TocItem[] = filtered.map((item) => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-right: 0.75rem;
+    padding-right: 0.1rem;
   }
 
   .toc-mobile-close {
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--bg) 88%, transparent 12%);
+    background: color-mix(in oklab, var(--bg) 84%, transparent 16%);
     color: var(--text-soft);
     font-size: 0.78rem;
-    padding: 0.2rem 0.56rem;
+    padding: 0.24rem 0.62rem;
   }
 
   :global(body.toc-drawer-open) {

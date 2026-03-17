@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const cacheDir = path.join(process.cwd(), ".astro");
+const cacheDirs = [path.join(process.cwd(), ".astro"), path.join(process.cwd(), "node_modules", ".astro")];
 
 async function main() {
-  await fs.rm(cacheDir, { recursive: true, force: true });
-  console.log("[prebuild] cleaned .astro cache");
+  await Promise.all(cacheDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  console.log("[prebuild] cleaned Astro caches");
 }
 
 main().catch((error) => {

@@ -376,8 +376,8 @@ const siteConfig = defineSiteConfig({
       fontPresets: {
         regular: {
           sans: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          serif: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
-          display: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
+          serif: "\"Source Han Serif SC\", \"Noto Serif SC\", \"Songti SC\", \"STSong\", serif",
+          display: "\"Source Han Serif SC\", \"Noto Serif SC\", \"Songti SC\", \"STSong\", serif",
           tech: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
           mono: "\"IBM Plex Mono\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace"
         },

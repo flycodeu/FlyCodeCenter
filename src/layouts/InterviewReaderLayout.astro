@@ -141,7 +141,7 @@ const articleRuntimeConfig = {
   <ReadingProgress />
   <InterviewAccessGate />
 
-  <div class="interview-reader-shell">
+  <div class="interview-reader-shell reading-page">
     <div
       class={`interview-reader ${tocEnable ? "has-toc" : "no-toc"}`}
       data-interview-protected
@@ -160,23 +160,23 @@ const articleRuntimeConfig = {
       />
 
       <section class="interview-main">
-        <section class="surface interview-sheet">
-          <div class="interview-sheet-head">
-            <nav class="interview-breadcrumb" aria-label="面包屑">
+        <section class="surface interview-sheet reading-sheet">
+          <div class="interview-sheet-head reading-head">
+            <nav class="interview-breadcrumb reading-breadcrumb" aria-label="面包屑">
               <a href={interviewConfig.route}>面试中心</a>
               <span>/</span>
               <a href={spaceRoute}>{spaceLabel}</a>
               <span>/</span>
               <span>{title}</span>
             </nav>
-            <p class="interview-eyebrow">Interview Notes</p>
-            <div class="meta-strip">
+            <p class="interview-eyebrow reading-kicker">Interview Notes</p>
+            <div class="meta-strip reading-meta-strip reading-meta-row">
               <span class="meta-chip">{spaceLabel}</span>
               <span class="meta-chip">{typeLabel}</span>
               <span class={`meta-chip difficulty ${difficulty}`}>{difficultyLabel}</span>
             </div>
-            <h1>{title}</h1>
-            {summary && <p class="interview-summary">{summary}</p>}
+            <h1 class="reading-title">{title}</h1>
+            {summary && <p class="interview-summary reading-summary">{summary}</p>}
           </div>
 
           <div class="interview-answer-shell" data-interview-answer-shell>
@@ -197,7 +197,7 @@ const articleRuntimeConfig = {
             }
 
             <div class="interview-answer-panel" data-answer-panel hidden={detailHiddenByDefault ? true : undefined}>
-              <article class="prose article-body">
+              <article class="prose article-body reading-body">
                 <slot />
               </article>
             </div>
@@ -206,7 +206,7 @@ const articleRuntimeConfig = {
 
         {
           showPrevNext && (prev || next) && (
-            <nav class="surface interview-switcher">
+            <nav class="surface interview-switcher reading-switcher">
               {prev ? <a href={prev.url}><span>上一题</span><strong>{prev.title}</strong></a> : <span class="switcher-empty" />}
               {next ? <a href={next.url}><span>下一题</span><strong>{next.title}</strong></a> : <span class="switcher-empty" />}
             </nav>
@@ -427,13 +427,6 @@ const articleRuntimeConfig = {
   .article-body :global(img) {
     border-radius: 12px;
     border: 1px solid var(--line-soft);
-  }
-
-  .article-body :global(table) {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
   }
 
   .article-body :global(pre),
