@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TOC from "@/components/TOC.astro";
@@ -8,6 +8,7 @@ import EncryptGate from "@/components/EncryptGate.astro";
 import TutorialSidebar from "@/components/TutorialSidebar.astro";
 import { formatDate } from "@/utils/date";
 import { toSeriesRouteKey } from "@/utils/tutorial-series";
+import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
 
 interface Heading {
   depth: number;
@@ -126,6 +127,9 @@ const readerClass = [
   .join(" ");
 
 const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
+const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
+  (siteConfig.article as { antiCrawl?: AntiCrawlConfigInput }).antiCrawl
+);
 const articleRuntimeConfig = {
   isEncrypted: encrypted,
   enableMermaid: siteConfig.features.diagram.mermaid,
@@ -170,10 +174,7 @@ const articleRuntimeConfig = {
   articleTags: tags,
   viewStatsEnabled: siteConfig.stats.enable,
   viewStatsEndpoint: siteConfig.stats.endpoint,
-  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
-  antiCrawlLockOnSuspicious: Boolean((siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true),
-  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
-  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+  ...antiCrawlRuntime
 };
 ---
 
@@ -302,7 +303,8 @@ const articleRuntimeConfig = {
   }
 
   .tutorial-reader {
-    --tutorial-sidebar-width: var(--tutorial-sidebar-width-base, 300px);
+    --tutorial-sidebar-width: clamp(272px, var(--tutorial-sidebar-width-base, 300px), 280px);
+    --tutorial-sidebar-track: var(--tutorial-sidebar-width);
     --tutorial-toc-width: var(--tutorial-toc-width-base, 260px);
     --tutorial-content-max: var(--tutorial-content-max-base, 900px);
     --tutorial-rail-gap: clamp(0.9rem, 1.4vw, 1.45rem);
@@ -315,33 +317,37 @@ const articleRuntimeConfig = {
   }
 
   .tutorial-reader.has-sidebar.sidebar-left.has-toc.toc-right {
-    grid-template-columns: minmax(220px, var(--tutorial-sidebar-width)) minmax(0, 1fr) minmax(200px, var(--tutorial-toc-width));
+    grid-template-columns: var(--tutorial-sidebar-track) minmax(0, 1fr) minmax(200px, var(--tutorial-toc-width));
     grid-template-areas: "sidebar main toc";
   }
 
   .tutorial-reader.has-sidebar.sidebar-left.has-toc.toc-left {
-    grid-template-columns: minmax(220px, var(--tutorial-sidebar-width)) minmax(200px, var(--tutorial-toc-width)) minmax(0, 1fr);
+    grid-template-columns: var(--tutorial-sidebar-track) minmax(200px, var(--tutorial-toc-width)) minmax(0, 1fr);
     grid-template-areas: "sidebar toc main";
   }
 
   .tutorial-reader.has-sidebar.sidebar-right.has-toc.toc-left {
-    grid-template-columns: minmax(200px, var(--tutorial-toc-width)) minmax(0, 1fr) minmax(220px, var(--tutorial-sidebar-width));
+    grid-template-columns: minmax(200px, var(--tutorial-toc-width)) minmax(0, 1fr) var(--tutorial-sidebar-track);
     grid-template-areas: "toc main sidebar";
   }
 
   .tutorial-reader.has-sidebar.sidebar-right.has-toc.toc-right {
-    grid-template-columns: minmax(0, 1fr) minmax(200px, var(--tutorial-toc-width)) minmax(220px, var(--tutorial-sidebar-width));
+    grid-template-columns: minmax(0, 1fr) minmax(200px, var(--tutorial-toc-width)) var(--tutorial-sidebar-track);
     grid-template-areas: "main toc sidebar";
   }
 
   .tutorial-reader.has-sidebar.sidebar-left.no-toc {
-    grid-template-columns: minmax(220px, var(--tutorial-sidebar-width)) minmax(0, 1fr);
+    grid-template-columns: var(--tutorial-sidebar-track) minmax(0, 1fr);
     grid-template-areas: "sidebar main";
   }
 
   .tutorial-reader.has-sidebar.sidebar-right.no-toc {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, var(--tutorial-sidebar-width));
+    grid-template-columns: minmax(0, 1fr) var(--tutorial-sidebar-track);
     grid-template-areas: "main sidebar";
+  }
+
+  .tutorial-reader.tutorial-reader-sidebar-collapsed {
+    --tutorial-sidebar-track: 68px;
   }
 
   .tutorial-reader.no-sidebar.has-toc.toc-right {

@@ -10,6 +10,7 @@ import {
   createInterviewStorageSecret
 } from "@/utils/interview-access";
 import { formatInterviewDifficultyLabel, toInterviewSpaceRouteKey, type InterviewDifficulty } from "@/utils/interview";
+import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
 
 interface Heading {
   depth: number;
@@ -71,6 +72,9 @@ const content = reader.content ?? {};
 const searchExclude = interviewConfig.search.exclude ?? true;
 const passwordHash = createInterviewPasswordHash(interviewConfig.unlock.password);
 const storageSecret = createInterviewStorageSecret(passwordHash);
+const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
+  (siteConfig.article as { antiCrawl?: AntiCrawlConfigInput }).antiCrawl
+);
 const detailHiddenByDefault = content.hideAnswerUntilReveal ?? true;
 const tocEnable = Boolean((toc.enable ?? false) && siteConfig.theme.toc.enable && headings.length > 0);
 const sidebarWidth = Number(sidebar.width ?? 360);
@@ -124,10 +128,7 @@ const articleRuntimeConfig = {
   articleTags: [],
   viewStatsEnabled: siteConfig.stats.enable,
   viewStatsEndpoint: siteConfig.stats.endpoint,
-  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
-  antiCrawlLockOnSuspicious: Boolean((siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true),
-  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
-  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+  ...antiCrawlRuntime
 };
 ---
 

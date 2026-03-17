@@ -254,7 +254,12 @@ const siteConfig = defineSiteConfig({
       enable: true,
       lockOnSuspicious: true,
       maxCopyActions: 8,
-      timeWindowMs: 20000
+      timeWindowMs: 20000,
+      warnThresholdScore: 10,
+      restrictThresholdScore: 18,
+      warnCooldownMs: 45000,
+      eventCooldownMs: 2500,
+      maxCopyBurst: 12
     },
     diagnostics: {
       enable: true
@@ -1073,7 +1078,12 @@ const siteConfig = defineSiteConfig({
         enable: true,
         lockOnSuspicious: true,
         maxActions: 10,
-        timeWindowMs: 20000
+        timeWindowMs: 20000,
+        warnThresholdScore: 12,
+        restrictThresholdScore: 20,
+        warnCooldownMs: 45000,
+        eventCooldownMs: 2500,
+        maxCopyBurst: 14
       }
     },
     tags: {

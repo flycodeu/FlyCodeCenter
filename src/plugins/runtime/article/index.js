@@ -1,4 +1,12 @@
-﻿export function initArticleRuntime(config = {}) {
+import {
+  bindAntiCrawlInteractions,
+  clearAntiCrawlBindings,
+  createAntiCrawlGuard,
+  formatAntiCrawlReason,
+  notifyAntiCrawl
+} from "../../../scripts/runtime/anti-crawl.js";
+
+export function initArticleRuntime(config = {}) {
   const {
     isEncrypted = false,
     enableMermaid = false,
@@ -40,11 +48,19 @@
     antiCrawlEnabled = false,
     antiCrawlLockOnSuspicious = true,
     antiCrawlMaxCopyActions = 8,
-    antiCrawlTimeWindowMs = 20000
+    antiCrawlTimeWindowMs = 20000,
+    antiCrawlWarnThresholdScore = 10,
+    antiCrawlRestrictThresholdScore = 18,
+    antiCrawlWarnCooldownMs = 45000,
+    antiCrawlEventCooldownMs = 2500,
+    antiCrawlMaxCopyBurst = 12
   } = config;
   const root = document.documentElement;
   root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
+  document.body.classList.remove("anti-crawl-locked");
   root.dataset.antiCrawlLocked = "0";
+  root.dataset.antiCrawlState = "normal";
+  root.dataset.antiCrawlReason = "normal";
   const activeHighlightProvider = String(
     codeHighlightProvider || root.dataset.codeHighlightProvider || "prism"
   ).toLowerCase();
@@ -52,80 +68,61 @@
   const isLowPerf = root.dataset.perf === "low";
   const isCompactViewport = window.matchMedia("(max-width: 1024px)").matches;
 
-    const BOT_UA_PATTERN = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
-    const antiCrawlEvents = [];
-    let antiCrawlLocked = false;
+  let antiCrawlLocked = false;
 
-    const lockByAntiCrawl = (reason) => {
-      if (!antiCrawlEnabled || antiCrawlLocked) return;
-      antiCrawlLocked = true;
-      root.dataset.antiCrawlLocked = "1";
-      document.body.classList.add("anti-crawl-locked");
+  const setAntiCrawlState = (state, reason = "normal") => {
+    root.dataset.antiCrawlState = state;
+    root.dataset.antiCrawlReason = reason;
+  };
 
-      const article = document.querySelector(".article-body");
-      if (article instanceof HTMLElement) {
-        article.innerHTML = `
-          <section class="anti-crawl-lock" role="alert">
-            <h2>访问已受限</h2>
-            <p>检测到异常抓取行为，本文已临时禁止访问。</p>
-            <p class="anti-crawl-reason">原因: ${reason}</p>
-          </section>
-        `;
-      }
-    };
+  const lockByAntiCrawl = (reason) => {
+    if (!antiCrawlEnabled || antiCrawlLocked) return;
+    antiCrawlLocked = true;
+    root.dataset.antiCrawlLocked = "1";
+    setAntiCrawlState("restricted", reason);
+    document.body.classList.add("anti-crawl-locked");
 
-    const markAntiCrawlAction = (name) => {
-      if (!antiCrawlEnabled || !antiCrawlLockOnSuspicious || antiCrawlLocked) return;
-      const now = Date.now();
-      antiCrawlEvents.push(now);
-      while (antiCrawlEvents.length && now - antiCrawlEvents[0] > antiCrawlTimeWindowMs) {
-        antiCrawlEvents.shift();
-      }
-      if (antiCrawlEvents.length >= antiCrawlMaxCopyActions) {
-        lockByAntiCrawl(`high-frequency-${name}`);
-      }
-    };
-
-    if (antiCrawlEnabled) {
-      const ua = navigator.userAgent || "";
-      const isWebdriver = Boolean(navigator.webdriver);
-      const isSuspiciousUa = BOT_UA_PATTERN.test(ua);
-
-      if (antiCrawlLockOnSuspicious && (isWebdriver || isSuspiciousUa)) {
-        lockByAntiCrawl(isWebdriver ? "webdriver" : "suspicious-ua");
-      }
-
-      const trackSensitiveAction = (event, action) => {
-        if (antiCrawlLocked) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        markAntiCrawlAction(action);
-      };
-
-      document.addEventListener("copy", (event) => trackSensitiveAction(event, "copy"), { capture: true });
-      document.addEventListener("cut", (event) => trackSensitiveAction(event, "cut"), { capture: true });
-      document.addEventListener("contextmenu", (event) => trackSensitiveAction(event, "contextmenu"), { capture: true });
-      document.addEventListener("selectstart", (event) => trackSensitiveAction(event, "selectstart"), { capture: true });
-
-      document.addEventListener(
-        "keydown",
-        (event) => {
-          if (antiCrawlLocked) {
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-          if (!event.ctrlKey && !event.metaKey) return;
-          const hotkey = event.key.toLowerCase();
-          if (hotkey === "c" || hotkey === "s" || hotkey === "u" || hotkey === "p") {
-            markAntiCrawlAction(`hotkey-${hotkey}`);
-          }
-        },
-        { capture: true }
-      );
+    const article = document.querySelector(".article-body");
+    const reasonLabel = formatAntiCrawlReason(reason);
+    if (article instanceof HTMLElement) {
+      article.dataset.enhanced = "0";
+      article.innerHTML = `
+        <section class="anti-crawl-lock" role="alert">
+          <h2>\u8bbf\u95ee\u5df2\u53d7\u9650</h2>
+          <p>\u68c0\u6d4b\u5230\u9ad8\u98ce\u9669\u63d0\u53d6\u884c\u4e3a\uff0c\u672c\u6587\u5df2\u4e34\u65f6\u9650\u5236\u8bbf\u95ee\u3002</p>
+          <p class="anti-crawl-reason">\u539f\u56e0: ${reasonLabel}</p>
+        </section>
+      `;
     }
+  };
+
+  clearAntiCrawlBindings();
+  if (antiCrawlEnabled) {
+    const antiCrawlGuard = createAntiCrawlGuard({
+      enabled: antiCrawlEnabled,
+      lockOnSuspicious: antiCrawlLockOnSuspicious,
+      maxCopyActions: antiCrawlMaxCopyActions,
+      timeWindowMs: antiCrawlTimeWindowMs,
+      warnThresholdScore: antiCrawlWarnThresholdScore,
+      restrictThresholdScore: antiCrawlRestrictThresholdScore,
+      warnCooldownMs: antiCrawlWarnCooldownMs,
+      eventCooldownMs: antiCrawlEventCooldownMs,
+      maxCopyBurst: antiCrawlMaxCopyBurst,
+      onWarn: ({ reason, reasonLabel }) => {
+        if (antiCrawlLocked) return;
+        setAntiCrawlState("warned", reason);
+        notifyAntiCrawl(`\u9605\u8bfb\u4fdd\u62a4\uff1a\u68c0\u6d4b\u5230${reasonLabel}\uff0c\u5df2\u8fdb\u5165\u89c2\u5bdf\u6a21\u5f0f\uff0c\u6b63\u5e38\u9605\u8bfb\u4e0d\u53d7\u5f71\u54cd\u3002`);
+      },
+      onRestrict: ({ reason }) => {
+        lockByAntiCrawl(reason);
+      }
+    });
+
+    antiCrawlGuard.inspectEnvironment();
+    if (!antiCrawlLocked) {
+      bindAntiCrawlInteractions({ guard: antiCrawlGuard });
+    }
+  }
 
     if (isEncrypted) {
       window.addEventListener("site:decrypted", () => {

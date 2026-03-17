@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TOC from "@/components/TOC.astro";
@@ -9,6 +9,7 @@ import EncryptGate from "@/components/EncryptGate.astro";
 import { formatDate } from "@/utils/date";
 import { absoluteUrl } from "@/utils/url";
 import { buildArticleJsonLd } from "@/utils/seo";
+import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
 
 interface Heading {
   depth: number;
@@ -66,6 +67,9 @@ const {
 } = Astro.props;
 
 const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
+const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
+  (siteConfig.article as { antiCrawl?: AntiCrawlConfigInput }).antiCrawl
+);
 const spacing = siteConfig.article.ui.spacing;
 const tocPosition = siteConfig.theme.toc.position === "left" ? "left" : "right";
 const tocWidth = Number(siteConfig.theme.toc.width ?? 332);
@@ -198,12 +202,7 @@ const articleRuntimeConfig = {
   articleTags: tags,
   viewStatsEnabled: siteConfig.stats.enable,
   viewStatsEndpoint: siteConfig.stats.endpoint,
-  antiCrawlEnabled: Boolean((siteConfig.article as { antiCrawl?: { enable?: boolean } }).antiCrawl?.enable ?? false),
-  antiCrawlLockOnSuspicious: Boolean(
-    (siteConfig.article as { antiCrawl?: { lockOnSuspicious?: boolean } }).antiCrawl?.lockOnSuspicious ?? true
-  ),
-  antiCrawlMaxCopyActions: Number((siteConfig.article as { antiCrawl?: { maxCopyActions?: number } }).antiCrawl?.maxCopyActions ?? 8),
-  antiCrawlTimeWindowMs: Number((siteConfig.article as { antiCrawl?: { timeWindowMs?: number } }).antiCrawl?.timeWindowMs ?? 20000)
+  ...antiCrawlRuntime
 };
 ---
 

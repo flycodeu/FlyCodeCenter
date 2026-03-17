@@ -54,19 +54,21 @@ const {
       }
     </header>
 
-    <ol class="tutorial-sidebar-list" data-sidebar-list>
-      {
-        items.map((item) => (
-          <li data-tutorial-item data-slug={item.slug}>
-            <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
-              {showOrder && <span class="order">{item.order}</span>}
-              <span class="title">{item.title}</span>
-              {showProgress && <span class="progress-mark" aria-hidden="true" />}
-            </a>
-          </li>
-        ))
-      }
-    </ol>
+    <div class="tutorial-sidebar-scroll" data-sidebar-scroll>
+      <ol class="tutorial-sidebar-list" data-sidebar-list>
+        {
+          items.map((item) => (
+            <li data-tutorial-item data-slug={item.slug}>
+              <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
+                {showOrder && <span class="order">{item.order}</span>}
+                <span class="title">{item.title}</span>
+                {showProgress && <span class="progress-mark" aria-hidden="true" />}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
   </aside>
 
   {
@@ -83,19 +85,21 @@ const {
               关闭
             </button>
           </header>
-          <ol class="tutorial-sidebar-list" data-sidebar-list>
-            {
-              items.map((item) => (
-                <li data-tutorial-item data-slug={item.slug}>
-                  <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
-                    {showOrder && <span class="order">{item.order}</span>}
-                    <span class="title">{item.title}</span>
-                    {showProgress && <span class="progress-mark" aria-hidden="true" />}
-                  </a>
-                </li>
-              ))
-            }
-          </ol>
+          <div class="tutorial-sidebar-scroll" data-sidebar-scroll>
+            <ol class="tutorial-sidebar-list" data-sidebar-list>
+              {
+                items.map((item) => (
+                  <li data-tutorial-item data-slug={item.slug}>
+                    <a href={item.url} class={item.slug === currentSlug ? "is-active" : ""}>
+                      {showOrder && <span class="order">{item.order}</span>}
+                      <span class="title">{item.title}</span>
+                      {showProgress && <span class="progress-mark" aria-hidden="true" />}
+                    </a>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
         </aside>
       </>
     )
@@ -135,6 +139,7 @@ const {
       const closeBtn = root.querySelector("[data-sidebar-mobile-close]");
       const mobilePanel = root.querySelector("[data-sidebar-mobile-panel]");
       const mobileOverlay = root.querySelector("[data-sidebar-mobile-overlay]");
+      const readerShell = root.closest(".tutorial-reader");
 
       const closeDrawer = () => {
         if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
@@ -158,8 +163,20 @@ const {
         });
       };
 
+      const syncCollapsedState = () => {
+        const isCollapsed = root.classList.contains("is-collapsed");
+        readerShell?.classList.toggle("tutorial-reader-sidebar-collapsed", isCollapsed);
+        if (toggleBtn instanceof HTMLButtonElement) {
+          toggleBtn.textContent = isCollapsed ? "展开" : "收起";
+          toggleBtn.setAttribute("aria-label", isCollapsed ? "展开章节导航" : "折叠章节导航");
+        }
+      };
+
+      syncCollapsedState();
+
       toggleBtn?.addEventListener("click", () => {
         root.classList.toggle("is-collapsed");
+        syncCollapsedState();
       });
       openBtn?.addEventListener("click", openDrawer);
       closeBtn?.addEventListener("click", closeDrawer);
@@ -168,20 +185,22 @@ const {
         if (window.innerWidth > 1024) closeDrawer();
       });
 
-      root.querySelectorAll(".tutorial-sidebar-list").forEach((listNode) => {
-        if (!(listNode instanceof HTMLElement)) return;
-        if (listNode.clientHeight < 2) return;
-        const activeLink = listNode.querySelector("a.is-active");
+      root.querySelectorAll("[data-sidebar-scroll]").forEach((scrollNode) => {
+        if (!(scrollNode instanceof HTMLElement)) return;
+        if (scrollNode.clientHeight < 2) return;
+        const activeLink = scrollNode.querySelector("a.is-active");
         if (!(activeLink instanceof HTMLElement)) return;
 
-        const activeTop = activeLink.offsetTop;
+        const activeRect = activeLink.getBoundingClientRect();
+        const scrollRect = scrollNode.getBoundingClientRect();
+        const activeTop = activeRect.top - scrollRect.top + scrollNode.scrollTop;
         const activeBottom = activeTop + activeLink.offsetHeight;
-        const viewTop = listNode.scrollTop;
-        const viewBottom = viewTop + listNode.clientHeight;
+        const viewTop = scrollNode.scrollTop;
+        const viewBottom = viewTop + scrollNode.clientHeight;
 
         if (activeTop >= viewTop && activeBottom <= viewBottom) return;
-        const targetTop = Math.max(0, activeTop - (listNode.clientHeight - activeLink.offsetHeight) / 2);
-        listNode.scrollTo({ top: targetTop, behavior: "auto" });
+        const targetTop = Math.max(0, activeTop - (scrollNode.clientHeight - activeLink.offsetHeight) / 2);
+        scrollNode.scrollTo({ top: targetTop, behavior: "auto" });
       });
 
       if (!showProgress || !seriesKey || !currentSlug) return;
@@ -210,8 +229,10 @@ const {
 
 <style>
   .tutorial-sidebar-wrap {
-    width: var(--tutorial-sidebar-width, var(--tutorial-sidebar-width-base, 300px));
-    flex: 0 0 var(--tutorial-sidebar-width, var(--tutorial-sidebar-width-base, 300px));
+    --tutorial-sidebar-width-effective: var(--tutorial-sidebar-width, clamp(272px, var(--tutorial-sidebar-width-base, 300px), 280px));
+    --tutorial-sidebar-collapsed-width: 68px;
+    width: var(--tutorial-sidebar-width-effective);
+    flex: 0 0 var(--tutorial-sidebar-width-effective);
     min-width: 0;
     position: sticky;
     top: calc(var(--layout-header-height, 68px) + 0.75rem);
@@ -224,6 +245,9 @@ const {
   }
 
   .tutorial-sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
     border-radius: 24px;
     border: 1px solid color-mix(in oklab, var(--line) 74%, var(--brand) 26%);
     background:
@@ -238,6 +262,7 @@ const {
 
   .desktop-rail {
     height: 100%;
+    min-width: 0;
     overflow: hidden;
   }
 
@@ -252,8 +277,11 @@ const {
 
   .tutorial-sidebar-head h3 {
     margin: 0;
+    min-width: 0;
     font-family: var(--font-display);
     font-size: 1.02rem;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
     color: var(--text);
   }
 
@@ -279,33 +307,54 @@ const {
     border-color: color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
   }
 
+  .tutorial-sidebar-scroll {
+    min-width: 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    padding-right: 0.12rem;
+  }
+
+  .tutorial-sidebar-scroll::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  .tutorial-sidebar-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--line-strong) 60%, transparent 40%);
+  }
+
   .tutorial-sidebar-list {
     margin: 0;
     padding: 0;
     list-style: none;
+    width: 100%;
+    min-width: 100%;
     display: grid;
     align-content: start;
     grid-auto-rows: min-content;
     gap: 0.4rem;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    min-height: 0;
-    padding-right: 0.2rem;
+  }
+
+  .tutorial-sidebar-list li {
+    min-width: 0;
   }
 
   .tutorial-sidebar-list a {
     display: grid;
     grid-template-columns: auto 1fr auto;
+    min-width: 0;
     align-items: center;
-    gap: 0.56rem;
+    gap: 0.48rem;
     text-decoration: none;
     color: var(--text-soft);
     border: 1px solid color-mix(in oklab, var(--line) 76%, transparent 24%);
     border-left: 3px solid transparent;
     border-radius: 18px;
-    padding: 0.7rem 0.72rem;
+    padding: 0.64rem 0.66rem;
     background: color-mix(in oklab, var(--surface-1) 74%, transparent 26%);
     transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
   }
@@ -326,7 +375,7 @@ const {
   }
 
   .tutorial-sidebar-list .order {
-    min-width: 1.45rem;
+    min-width: 1.3rem;
     text-align: center;
     font-size: 0.72rem;
     font-family: var(--font-tech);
@@ -334,8 +383,11 @@ const {
   }
 
   .tutorial-sidebar-list .title {
-    font-size: 0.88rem;
-    line-height: 1.5;
+    min-width: 0;
+    font-size: 0.84rem;
+    line-height: 1.46;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .progress-mark {
@@ -351,14 +403,14 @@ const {
     background: color-mix(in oklab, #16a34a 72%, transparent 28%);
   }
 
-  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-list,
+  .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-scroll,
   .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar-head h3 {
     display: none;
   }
 
   .tutorial-sidebar-wrap.is-collapsed {
-    flex-basis: 68px;
-    width: 68px;
+    flex-basis: var(--tutorial-sidebar-collapsed-width);
+    width: var(--tutorial-sidebar-collapsed-width);
   }
 
   .tutorial-sidebar-wrap.is-collapsed .tutorial-sidebar {
@@ -436,7 +488,7 @@ const {
       transform: translateX(0);
     }
 
-    .mobile-drawer .tutorial-sidebar-list {
+    .mobile-drawer .tutorial-sidebar-scroll {
       max-height: none;
       overflow: auto;
     }

@@ -4,6 +4,7 @@ import ListLayout from "@/layouts/ListLayout.astro";
 import ArchiveTimelineCard from "@/components/ArchiveTimelineCard.astro";
 import { fetchAllContentEntries, fetchAllEntries, makeTagItems } from "@/utils/query";
 import { buildArchiveTimeline } from "@/utils/archive";
+import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
 
 const entries = await fetchAllEntries();
 const allContent = await fetchAllContentEntries();
@@ -13,17 +14,13 @@ const years = buildArchiveTimeline(entries);
 const archivePageConfig = siteConfig.pages.archives as {
   showCover?: boolean;
   timeline?: { layoutMode?: "both" | "left" | "right" };
-  antiCrawl?: {
-    enable?: boolean;
-    lockOnSuspicious?: boolean;
-    maxActions?: number;
-    timeWindowMs?: number;
-  };
+  antiCrawl?: AntiCrawlConfigInput;
 };
 
 const showCover = archivePageConfig.showCover ?? true;
 const timelineLayout = archivePageConfig.timeline?.layoutMode ?? "both";
 const antiCrawlConfig = archivePageConfig.antiCrawl ?? {};
+const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(antiCrawlConfig, { legacyMaxActionsDefault: 10 });
 const archiveCoverMode = showCover ? undefined : "none";
 
 const timelineItems = years.flatMap((yearBucket) =>
@@ -87,78 +84,9 @@ const stats = [
   </section>
 </ListLayout>
 
-<script
-  is:inline
-  define:vars={{
-    antiCrawlEnabled: antiCrawlConfig.enable ?? true,
-    antiCrawlLockOnSuspicious: antiCrawlConfig.lockOnSuspicious ?? true,
-    antiCrawlMaxActions: antiCrawlConfig.maxActions ?? 10,
-    antiCrawlTimeWindowMs: antiCrawlConfig.timeWindowMs ?? 20000
-  }}
->
-  (() => {
-    const timeline = document.getElementById("archive-timeline");
-    const lockPanel = document.getElementById("archive-lock");
-    const lockReason = document.getElementById("archive-lock-reason");
-    if (!(timeline instanceof HTMLElement) || !antiCrawlEnabled) return;
-
-    const botUa = /(bot|crawler|spider|headless|puppeteer|playwright|selenium|phantom|scrapy|curl|wget)/i;
-    const records = [];
-    let locked = false;
-
-    const lock = (reason) => {
-      if (locked) return;
-      locked = true;
-      timeline.classList.add("is-locked");
-      document.documentElement.dataset.archivesLocked = "1";
-      if (lockPanel instanceof HTMLElement) lockPanel.hidden = false;
-      if (lockReason instanceof HTMLElement) lockReason.textContent = `原因: ${reason}`;
-    };
-
-    const mark = (name) => {
-      if (!antiCrawlLockOnSuspicious || locked) return;
-      const now = Date.now();
-      records.push(now);
-      while (records.length && now - records[0] > antiCrawlTimeWindowMs) {
-        records.shift();
-      }
-      if (records.length >= antiCrawlMaxActions) {
-        lock(`high-frequency-${name}`);
-      }
-    };
-
-    const ua = navigator.userAgent || "";
-    const suspiciousUa = botUa.test(ua);
-    const webdriver = Boolean(navigator.webdriver);
-    if (antiCrawlLockOnSuspicious && (webdriver || suspiciousUa)) {
-      lock(webdriver ? "webdriver" : "suspicious-ua");
-    }
-
-    const onSensitive = (event, name) => {
-      if (locked) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      mark(name);
-    };
-
-    document.addEventListener("copy", (event) => onSensitive(event, "copy"), { capture: true });
-    document.addEventListener("cut", (event) => onSensitive(event, "cut"), { capture: true });
-    document.addEventListener("contextmenu", (event) => onSensitive(event, "contextmenu"), { capture: true });
-    document.addEventListener("selectstart", (event) => onSensitive(event, "selectstart"), { capture: true });
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (!event.ctrlKey && !event.metaKey) return;
-        const key = event.key.toLowerCase();
-        if (key === "c" || key === "s" || key === "u") {
-          onSensitive(event, `hotkey-${key}`);
-        }
-      },
-      { capture: true }
-    );
-  })();
+<script id="archive-anti-crawl-config" type="application/json" set:html={JSON.stringify(antiCrawlRuntime)} />
+<script>
+  import "@/scripts/archive-anti-crawl-runtime.js";
 </script>
 
 <style>
