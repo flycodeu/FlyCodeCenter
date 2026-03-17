@@ -10,6 +10,7 @@ type: mysql
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false
+sortDirection: asc
 ---
 
 本分类主要整理 SQL 优化、索引原理和事务隔离等经典问题。

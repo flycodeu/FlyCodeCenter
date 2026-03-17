@@ -13,7 +13,7 @@ export async function getStaticPaths() {
     for (const tag of resolveArticleMeta(entry).tags) tags.add(tag);
   }
   return [...tags].map((tag) => ({
-    params: { tag: encodeURIComponent(tag) },
+    params: { tag },
     props: { tag }
   }));
 }

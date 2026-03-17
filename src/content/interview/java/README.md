@@ -10,6 +10,7 @@ type: java
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false
+sortDirection: asc
 ---
 
 本分类收录 Java 常见高频题，适合在复盘时按题目逐个击破。

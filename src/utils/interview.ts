@@ -5,6 +5,7 @@ import { trimPath, withBase } from "@/utils/url";
 
 export type InterviewEntry = CollectionEntry<"interview">;
 export type InterviewDifficulty = "easy" | "medium" | "hard";
+export type InterviewSortDirection = "asc" | "desc";
 
 const interviewMetaCache = new WeakMap<InterviewEntry, ResolvedInterviewMeta>();
 
@@ -35,6 +36,7 @@ export interface InterviewSpaceBucket {
   cover: string;
   icon: string;
   order: number;
+  sortDirection: InterviewSortDirection;
   entries: InterviewEntry[];
   readmeEntry?: InterviewEntry;
   latestAt: number;
@@ -48,6 +50,11 @@ interface InterviewSeriesFrontmatter {
   cover?: string;
   icon?: string;
   order?: number;
+  sortDirection?: InterviewSortDirection;
+}
+
+interface InterviewCenterFrontmatter {
+  spaceSortDirection?: InterviewSortDirection;
 }
 
 function pickText(...values: Array<unknown>): string {
@@ -117,6 +124,10 @@ export function normalizeInterviewSpaceKey(space: string): string {
   return String(space || "").trim();
 }
 
+function normalizeInterviewSortDirection(value: unknown, fallback: InterviewSortDirection = "asc"): InterviewSortDirection {
+  return value === "desc" ? "desc" : fallback;
+}
+
 const SPACE_ROUTE_ALIASES: Record<string, string> = {
   "c++": "cpp"
 };
@@ -138,6 +149,7 @@ export function fromInterviewSpaceRouteKey(routeKey: string): string {
 }
 
 export function resolveInterviewSpaceKey(entry: InterviewEntry): string {
+  if (isInterviewGlobalReadmeEntry(entry)) return "";
   const raw = String((entry.data as { space?: string }).space || "").trim();
   if (raw) return normalizeInterviewSpaceKey(raw);
   return normalizeInterviewSpaceKey(getEntrySegments(entry.id)[0] || "");
@@ -145,6 +157,14 @@ export function resolveInterviewSpaceKey(entry: InterviewEntry): string {
 
 export function isInterviewReadmeEntry(entry: InterviewEntry): boolean {
   return /^readme$/i.test(getEntryStem(entry.id));
+}
+
+export function isInterviewGlobalReadmeEntry(entry: InterviewEntry): boolean {
+  return isInterviewReadmeEntry(entry) && getEntrySegments(entry.id).length === 1;
+}
+
+export function isInterviewSpaceReadmeEntry(entry: InterviewEntry): boolean {
+  return isInterviewReadmeEntry(entry) && getEntrySegments(entry.id).length > 1;
 }
 
 export function resolveInterviewSlug(entry: InterviewEntry): string {
@@ -195,7 +215,7 @@ export function resolveInterviewMeta(entry: InterviewEntry): ResolvedInterviewMe
   const difficulty = (pickText(data.difficulty, "medium") as InterviewDifficulty) || "medium";
   const createTime = parseDateTime(data.createTime) ?? new Date("2026-01-01T00:00:00.000Z");
   const code = resolveInterviewCode(entry);
-  const permalink = isInterviewReadmeEntry(entry) ? buildInterviewSpacePermalink(space) : buildInterviewQuestionPermalink(code);
+  const permalink = isInterviewSpaceReadmeEntry(entry) ? buildInterviewSpacePermalink(space) : buildInterviewQuestionPermalink(code);
 
   const resolved: ResolvedInterviewMeta = {
     title,
@@ -220,18 +240,6 @@ export function resolveInterviewMeta(entry: InterviewEntry): ResolvedInterviewMe
   return resolved;
 }
 
-function sortInterviewEntries(entries: InterviewEntry[]): InterviewEntry[] {
-  return [...entries].sort((a, b) => {
-    if (Number(isInterviewReadmeEntry(a)) !== Number(isInterviewReadmeEntry(b))) {
-      return Number(isInterviewReadmeEntry(b)) - Number(isInterviewReadmeEntry(a));
-    }
-    const metaA = resolveInterviewMeta(a);
-    const metaB = resolveInterviewMeta(b);
-    if (metaA.order !== metaB.order) return metaA.order - metaB.order;
-    return metaA.createTime.getTime() - metaB.createTime.getTime();
-  });
-}
-
 function resolveBucketMetaFromReadme(readme: InterviewEntry) {
   const data = (readme.data ?? {}) as InterviewSeriesFrontmatter;
   return {
@@ -240,19 +248,79 @@ function resolveBucketMetaFromReadme(readme: InterviewEntry) {
     type: pickText(data.type),
     cover: pickText(data.cover),
     icon: pickText(data.icon),
-    order: typeof data.order === "number" && Number.isFinite(data.order) ? data.order : undefined
+    order: typeof data.order === "number" && Number.isFinite(data.order) ? data.order : undefined,
+    sortDirection: normalizeInterviewSortDirection(data.sortDirection, "asc")
   };
 }
 
+function resolveInterviewCenterSortDirection(entry?: InterviewEntry): InterviewSortDirection {
+  if (!entry) return "asc";
+  const data = (entry.data ?? {}) as InterviewCenterFrontmatter;
+  return normalizeInterviewSortDirection(data.spaceSortDirection, "asc");
+}
+
+function compareInterviewOrder(
+  orderA: number,
+  timeA: number,
+  orderB: number,
+  timeB: number,
+  direction: InterviewSortDirection
+): number {
+  if (orderA !== orderB) {
+    return direction === "desc" ? orderB - orderA : orderA - orderB;
+  }
+  return direction === "desc" ? timeB - timeA : timeA - timeB;
+}
+
+function sortInterviewEntriesByDirection(
+  entries: InterviewEntry[],
+  direction: InterviewSortDirection = "asc"
+): InterviewEntry[] {
+  return [...entries].sort((a, b) => {
+    if (Number(isInterviewReadmeEntry(a)) !== Number(isInterviewReadmeEntry(b))) {
+      return Number(isInterviewReadmeEntry(b)) - Number(isInterviewReadmeEntry(a));
+    }
+    const metaA = resolveInterviewMeta(a);
+    const metaB = resolveInterviewMeta(b);
+    return compareInterviewOrder(metaA.order, metaA.createTime.getTime(), metaB.order, metaB.createTime.getTime(), direction);
+  });
+}
+
+function sortInterviewSpaceBucketsByDirection(
+  buckets: InterviewSpaceBucket[],
+  direction: InterviewSortDirection = "asc"
+): InterviewSpaceBucket[] {
+  return [...buckets].sort((a, b) => {
+    if (a.order !== b.order) {
+      return direction === "desc" ? b.order - a.order : a.order - b.order;
+    }
+    return direction === "desc"
+      ? b.label.localeCompare(a.label, "zh-CN")
+      : a.label.localeCompare(b.label, "zh-CN");
+  });
+}
+
+async function fetchAllInterviewCollectionEntries(): Promise<InterviewEntry[]> {
+  return getCollection("interview", (entry) => !entry.data.draft);
+}
+
 export async function fetchInterviewEntries(): Promise<InterviewEntry[]> {
-  const all = await getCollection("interview", (entry) => !entry.data.draft);
-  return [...all].sort((a, b) => resolveInterviewMeta(b).createTime.getTime() - resolveInterviewMeta(a).createTime.getTime());
+  const all = await fetchAllInterviewCollectionEntries();
+  return all.filter((entry) => !isInterviewGlobalReadmeEntry(entry));
 }
 
 export async function fetchInterviewSpaceEntries(space: string): Promise<InterviewEntry[]> {
   const all = await fetchInterviewEntries();
   const normalized = normalizeInterviewSpaceKey(space);
-  return all.filter((entry) => resolveInterviewSpaceKey(entry) === normalized);
+  const bucket = buildInterviewSpaceBuckets(all).get(normalized);
+  return bucket?.entries ?? [];
+}
+
+export async function fetchInterviewSpaceBuckets(): Promise<InterviewSpaceBucket[]> {
+  const all = await fetchAllInterviewCollectionEntries();
+  const spaceSortDirection = resolveInterviewCenterSortDirection(all.find((entry) => isInterviewGlobalReadmeEntry(entry)));
+  const entries = all.filter((entry) => !isInterviewGlobalReadmeEntry(entry));
+  return sortInterviewSpaceBucketsByDirection([...buildInterviewSpaceBuckets(entries).values()], spaceSortDirection);
 }
 
 export async function findInterviewEntryByCode(code: string): Promise<InterviewEntry | null> {
@@ -275,6 +343,7 @@ export function buildInterviewSpaceBuckets(entries: InterviewEntry[]): Map<strin
   const map = new Map<string, InterviewSpaceBucket>();
 
   for (const entry of entries) {
+    if (isInterviewGlobalReadmeEntry(entry)) continue;
     const meta = resolveInterviewMeta(entry);
     const key = normalizeInterviewSpaceKey(meta.space || "general") || "general";
 
@@ -287,6 +356,7 @@ export function buildInterviewSpaceBuckets(entries: InterviewEntry[]): Map<strin
         cover: meta.cover,
         icon: meta.icon,
         order: Number.MAX_SAFE_INTEGER,
+        sortDirection: "asc",
         entries: [],
         latestAt: 0
       });
@@ -301,7 +371,6 @@ export function buildInterviewSpaceBuckets(entries: InterviewEntry[]): Map<strin
   }
 
   for (const bucket of map.values()) {
-    bucket.entries = sortInterviewEntries(bucket.entries);
     if (!bucket.readmeEntry) continue;
 
     const meta = resolveBucketMetaFromReadme(bucket.readmeEntry);
@@ -311,6 +380,11 @@ export function buildInterviewSpaceBuckets(entries: InterviewEntry[]): Map<strin
     if (meta.cover) bucket.cover = meta.cover;
     if (meta.icon) bucket.icon = meta.icon;
     if (meta.order !== undefined) bucket.order = meta.order;
+    bucket.sortDirection = meta.sortDirection;
+  }
+
+  for (const bucket of map.values()) {
+    bucket.entries = sortInterviewEntriesByDirection(bucket.entries, bucket.sortDirection);
   }
 
   return map;

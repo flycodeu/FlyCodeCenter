@@ -10,6 +10,7 @@ type: redis
 encrypted: true
 passwordHint: 默认密码同隐藏空间入口
 draft: false
+sortDirection: asc
 ---
 
 本分类适合搭配项目经验一起复盘，优先掌握缓存一致性、过期与淘汰策略。

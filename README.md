@@ -96,6 +96,39 @@ ENCRYPT_PASSWORD=
 
 说明：若启用 Giscus，必须配置 `PUBLIC_GISCUS_REPO_ID` 与 `PUBLIC_GISCUS_CATEGORY_ID`。
 
+## Interview Sorting / 面试中心排序
+
+面试中心支持两层排序控制，默认都按 `order` 正序 `asc`：
+
+- 分类首页卡片顺序：`src/content/interview/README.md`
+- 分类内题目列表顺序：`src/content/interview/<space>/README.md`
+
+全局分类顺序示例：
+
+```md
+---
+title: Interview Center
+spaceSortDirection: asc
+---
+```
+
+分类内题目顺序示例：
+
+```md
+---
+title: Java 面试题
+order: 1
+sortDirection: desc
+---
+```
+
+规则说明：
+
+- `spaceSortDirection: asc | desc` 控制面试中心首页分类卡片顺序
+- `sortDirection: asc | desc` 控制当前分类下题目列表顺序
+- 两层排序都先按 `order` 排，再按 `createTime` 作为同序号兜底
+- 未配置时默认使用 `asc`
+
 ## Docs / 文档
 
 - 总目录：`docs/README.md`

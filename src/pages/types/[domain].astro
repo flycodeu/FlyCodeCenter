@@ -10,18 +10,18 @@ export async function getStaticPaths() {
     for (const tag of resolveArticleMeta(entry).tags) tags.add(tag);
   }
   return [...tags].map((tag) => ({
-    params: { domain: encodeURIComponent(tag) }
+    params: { domain: tag }
   }));
 }
 
 const domain = Astro.params.domain ?? "";
-const target = `/tags/${domain}`;
+const target = `/tags/${encodeURIComponent(domain)}`;
 ---
 
 <BaseLayout title="标签详情" description="标签详情页已迁移到 /tags/:tag。">
   <section class="surface redirect-card">
     <h1>标签详情已迁移</h1>
-    <p>新的地址为 <a href={target}>{target}</a>，该页面将自动跳转。</p>
+    <p>新的地址为 <a href={target}>{`/tags/${domain}`}</a>，该页面将自动跳转。</p>
   </section>
 
   <meta http-equiv="refresh" content={`0; url=${target}`} />

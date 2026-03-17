@@ -363,14 +363,17 @@ const articleRuntimeConfig = {
 
   .tutorial-main-wrap {
     grid-area: main;
-    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    display: flex;
-    justify-content: center;
+    display: grid;
+    justify-items: center;
+    align-items: start;
   }
 
   .tutorial-main {
-    width: min(100%, var(--tutorial-content-max));
+    width: 100%;
+    max-width: min(100%, var(--tutorial-content-max));
     min-width: 0;
     display: grid;
     gap: var(--tutorial-sheet-gap);
@@ -385,6 +388,9 @@ const articleRuntimeConfig = {
 
   .tutorial-sheet {
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: var(--tutorial-sheet-padding);
     border-radius: calc(var(--radius-lg) * var(--layout-radius-scale, 1));
     border: 1px solid color-mix(in oklab, var(--line) 72%, var(--brand) 28%);
@@ -408,6 +414,7 @@ const articleRuntimeConfig = {
 
   .tutorial-sheet-body {
     min-width: 0;
+    max-width: 100%;
   }
 
   .tutorial-toc-rail {
@@ -497,9 +504,42 @@ const articleRuntimeConfig = {
 
   .article-body {
     min-width: 0;
+    max-width: 100%;
     overflow-wrap: break-word;
     font-size: clamp(1.02rem, 0.3vw + 0.98rem, 1.12rem);
     line-height: 1.78;
+  }
+
+  .article-body :global(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .article-body :global(pre),
+  .article-body :global(.code-block-wrapper),
+  .article-body :global(.code-block-wrapper pre),
+  .article-body :global(.expressive-code),
+  .article-body :global(.diagram-wrapper),
+  .article-body :global(.md-tabs-nav),
+  .article-body :global(.md-code-group-nav),
+  .article-body :global(.md-chartjs),
+  .article-body :global(.md-chartjs-host),
+  .article-body :global(.md-demo-body) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .article-body :global(.md-tabs-nav),
+  .article-body :global(.md-code-group-nav) {
+    flex-wrap: nowrap;
+  }
+
+  .article-body :global(.md-tabs-tab),
+  .article-body :global(.md-code-group-tab) {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .prev-next {

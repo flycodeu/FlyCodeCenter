@@ -5,8 +5,7 @@ import InterviewAccessGate from "@/components/InterviewAccessGate.astro";
 import { formatDate } from "@/utils/date";
 import { createInterviewPasswordHash, createInterviewStorageSecret } from "@/utils/interview-access";
 import {
-  buildInterviewSpaceBuckets,
-  fetchInterviewEntries,
+  fetchInterviewSpaceBuckets,
   getInterviewSpaceUrl,
   isInterviewReadmeEntry,
 } from "@/utils/interview";
@@ -21,22 +20,16 @@ const overviewColumns = overviewConfig.columns ?? {};
 const overviewGap = Number(overviewConfig.gap ?? 18);
 const passwordHash = createInterviewPasswordHash(interviewConfig.unlock.password);
 const storageSecret = createInterviewStorageSecret(passwordHash);
-const entries = await fetchInterviewEntries();
-const spaces = [...buildInterviewSpaceBuckets(entries).values()]
-  .sort((a, b) => {
-    if (a.order !== b.order) return a.order - b.order;
-    return a.label.localeCompare(b.label, "zh-CN");
-  })
-  .map((bucket) => {
-    const questions = bucket.entries.filter((entry) => !isInterviewReadmeEntry(entry));
-    const latestDate = bucket.latestAt ? formatDate(new Date(bucket.latestAt), "YYYY-MM-DD") : "--";
-    return {
-      ...bucket,
-      questions,
-      latestDate,
-      href: getInterviewSpaceUrl(bucket.key)
-    };
-  });
+const spaces = (await fetchInterviewSpaceBuckets()).map((bucket) => {
+  const questions = bucket.entries.filter((entry) => !isInterviewReadmeEntry(entry));
+  const latestDate = bucket.latestAt ? formatDate(new Date(bucket.latestAt), "YYYY-MM-DD") : "--";
+  return {
+    ...bucket,
+    questions,
+    latestDate,
+    href: getInterviewSpaceUrl(bucket.key)
+  };
+});
 const totalQuestions = spaces.reduce((sum, space) => sum + space.questions.length, 0);
 ---
 

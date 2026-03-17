@@ -40,6 +40,8 @@ const interview = defineCollection({
       .string()
       .regex(/^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}$/, "updatedTime must be YYYY/MM/DD HH:mm:ss")
       .optional(),
+    sortDirection: z.enum(["asc", "desc"]).optional(),
+    spaceSortDirection: z.enum(["asc", "desc"]).optional(),
     type: z.string().default(""),
     difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
     encrypted: z.boolean().default(false),
