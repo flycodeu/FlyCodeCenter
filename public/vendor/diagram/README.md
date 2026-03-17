@@ -2,7 +2,7 @@
 
 Place optional local diagram bundles here:
 
-- `mermaid.esm.min.mjs`
+- `mermaid.min.js`
 - `echarts.esm.min.js`
 
 When `src/site.config.ts` uses:
@@ -12,3 +12,6 @@ When `src/site.config.ts` uses:
 
 the article runtime will load these files first.
 If `diagram.fallbackToCdn = true`, runtime falls back to configured CDN URLs when local files are unavailable.
+
+Mermaid uses the classic `mermaid.min.js` bundle here because Vite does not allow
+dynamic `import()` from `/public` during development.

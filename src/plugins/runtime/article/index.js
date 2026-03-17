@@ -6,7 +6,7 @@
     enableEcharts = false,
     mermaidSource = "cdn",
     mermaidBundle = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
-    mermaidLocalBundle = "/vendor/diagram/mermaid.esm.min.mjs",
+    mermaidLocalBundle = "/vendor/diagram/mermaid.min.js",
     mermaidTheme = "default",
     drawioViewerBase = "https://viewer.diagrams.net",
     echartsSource = "cdn",
@@ -526,6 +526,24 @@
     };
     const mermaidSourceMode = normalizeSourceMode(mermaidSource);
     const echartsSourceMode = normalizeSourceMode(echartsSource);
+    const loadModuleFromUrl = (url) => import(/* @vite-ignore */ url).then((mod) => mod.default ?? mod);
+    const loadGlobalScript = async ({ url = "", label = "script", globalGetter = () => undefined }) => {
+      if (!url) throw new Error(`${label} local script is empty`);
+      const existingGlobal = globalGetter();
+      if (existingGlobal) return existingGlobal;
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.onload = () => {
+          const loadedGlobal = globalGetter();
+          if (loadedGlobal) resolve(loadedGlobal);
+          else reject(new Error(`${label} global missing after script load`));
+        };
+        script.onerror = () => reject(new Error(`${label} local script load failed`));
+        document.head.appendChild(script);
+      });
+    };
     const loadModuleBySource = async ({
       localMode = false,
       localUrl = "",
@@ -533,15 +551,14 @@
       allowFallback = true,
       label = "module"
     }) => {
-      const loadFrom = (url) => import(/* @vite-ignore */ url).then((mod) => mod.default ?? mod);
       if (localMode) {
         if (localUrl) {
           try {
-            return await loadFrom(localUrl);
+            return await loadModuleFromUrl(localUrl);
           } catch (localError) {
             if (!allowFallback || !cdnUrl) throw localError;
             try {
-              return await loadFrom(cdnUrl);
+              return await loadModuleFromUrl(cdnUrl);
             } catch (cdnError) {
               const merged = new Error(
                 `${label} local+cdn load failed: ${String(localError?.message || localError)} | ${String(
@@ -559,22 +576,71 @@
       if (!cdnUrl) {
         throw new Error(`${label} cdn bundle is empty`);
       }
-      return loadFrom(cdnUrl);
+      return loadModuleFromUrl(cdnUrl);
+    };
+    const loadGlobalScriptBySource = async ({
+      localUrl = "",
+      cdnUrl = "",
+      allowFallback = true,
+      label = "module",
+      globalGetter = () => undefined
+    }) => {
+      if (localUrl) {
+        try {
+          return await loadGlobalScript({ url: localUrl, label, globalGetter });
+        } catch (localError) {
+          if (!allowFallback || !cdnUrl) throw localError;
+          try {
+            return await loadModuleFromUrl(cdnUrl);
+          } catch (cdnError) {
+            const merged = new Error(
+              `${label} local+cdn load failed: ${String(localError?.message || localError)} | ${String(
+                cdnError?.message || cdnError
+              )}`
+            );
+            throw merged;
+          }
+        }
+      }
+      if (!cdnUrl) {
+        throw new Error(`${label} local script is empty and cdn bundle is empty`);
+      }
+      return loadModuleFromUrl(cdnUrl);
+    };
+
+    const resolveMermaidApi = (mermaid) => {
+      const api = mermaid?.default ?? mermaid;
+      if (api?.initialize && api?.render) return api;
+      throw new Error("mermaid api unavailable after load");
     };
 
     let mermaidRenderIndex = 0;
     let mermaidApiPromise = null;
     const getMermaidApi = async () => {
       if (!mermaidApiPromise) {
-        mermaidApiPromise = loadModuleBySource({
-          localMode: mermaidSourceMode === "local",
-          localUrl: mermaidLocalBundle,
-          cdnUrl: mermaidBundle,
-          allowFallback: Boolean(diagramFallbackToCdn),
-          label: "mermaid"
-        }).then((mermaid) => {
-          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
-          return mermaid;
+        const loadMermaid =
+          mermaidSourceMode === "local" && /\.js(?:[?#].*)?$/i.test(mermaidLocalBundle)
+            ? loadGlobalScriptBySource({
+                localUrl: mermaidLocalBundle,
+                cdnUrl: mermaidBundle,
+                allowFallback: Boolean(diagramFallbackToCdn),
+                label: "mermaid",
+                globalGetter: () =>
+                  globalThis.mermaid ??
+                  globalThis.__esbuild_esm_mermaid_nm?.mermaid?.default ??
+                  globalThis.__esbuild_esm_mermaid_nm?.mermaid
+              })
+            : loadModuleBySource({
+                localMode: mermaidSourceMode === "local",
+                localUrl: mermaidLocalBundle,
+                cdnUrl: mermaidBundle,
+                allowFallback: Boolean(diagramFallbackToCdn),
+                label: "mermaid"
+              });
+        mermaidApiPromise = loadMermaid.then((mermaid) => {
+          const api = resolveMermaidApi(mermaid);
+          api.initialize({ startOnLoad: false, theme: mermaidTheme });
+          return api;
         });
       }
       return mermaidApiPromise;

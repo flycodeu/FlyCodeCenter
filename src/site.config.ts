@@ -629,8 +629,8 @@ const siteConfig = defineSiteConfig({
   diagram: {
     fallbackToCdn: true,
     mermaid: {
-      source: "cdn" as "local" | "cdn",
-      localBundle: "/vendor/diagram/mermaid.esm.min.mjs",
+      source: "local" as "local" | "cdn",
+      localBundle: "/vendor/diagram/mermaid.min.js",
       bundleUrl: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
       theme: "default"
     },

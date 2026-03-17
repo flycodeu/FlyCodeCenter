@@ -69,7 +69,7 @@ sequenceDiagram
     CAM-->>-VMS: 200 OK + Session ID
     VMS->>+CAM: RTSP PLAY
     CAM-->>-VMS: 200 OK，开始发送 RTP 数据包
-    CAM-)VMS: RTP 视频数据流（持续）
+    CAM-->>VMS: RTP 视频数据流（持续）
 ```
 
 ---
