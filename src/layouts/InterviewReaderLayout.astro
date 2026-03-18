@@ -352,7 +352,7 @@ const articleRuntimeConfig = {
 
   .interview-summary {
     margin: 0;
-    max-width: 60ch;
+    max-width: var(--reading-summary-max-width, min(100%, 66ch));
     color: var(--text-soft);
     line-height: 1.74;
   }

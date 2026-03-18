@@ -16,6 +16,11 @@
 .reading-page {
   position: relative;
   isolation: isolate;
+  --reading-title-max-width: min(100%, 28ch);
+  --reading-summary-max-width: min(100%, 66ch);
+  --reading-body-block-max-width: min(100%, 76ch);
+  --reading-heading-max-width: min(100%, 34ch);
+  --reading-rule-max-width: min(100%, 76ch);
 }
 
 .reading-page::before,
@@ -24,6 +29,16 @@
   position: absolute;
   pointer-events: none;
   z-index: -1;
+}
+
+:root:lang(zh) .reading-page,
+:root:lang(ja) .reading-page,
+:root:lang(ko) .reading-page {
+  --reading-title-max-width: min(100%, 46rem);
+  --reading-summary-max-width: min(100%, 50rem);
+  --reading-body-block-max-width: min(100%, 54rem);
+  --reading-heading-max-width: min(100%, 48rem);
+  --reading-rule-max-width: min(100%, 54rem);
 }
 
 .reading-page::before {
@@ -129,7 +144,7 @@
 
 .reading-page .reading-title {
   margin: 0;
-  max-width: min(100%, 28ch);
+  max-width: var(--reading-title-max-width);
   font-family: var(--font-display);
   font-size: clamp(1.96rem, 2.3vw + 1rem, 3.18rem);
   font-weight: 700;
@@ -140,7 +155,7 @@
 
 .reading-page .reading-summary {
   margin: 0;
-  max-width: min(100%, 66ch);
+  max-width: var(--reading-summary-max-width);
   font-family: var(--font-sans);
   font-size: clamp(0.96rem, 0.22vw + 0.94rem, 1.04rem);
   line-height: 1.76;
@@ -212,7 +227,7 @@
 }
 
 .reading-page .reading-body > * {
-  max-width: min(100%, 76ch);
+  max-width: var(--reading-body-block-max-width);
 }
 
 .reading-page .reading-body > :is(pre, .diagram-wrapper, .md-tabs, .md-code-group, .md-demo, .md-chartjs, .mdx-admonition, .md-steps, .code-block-wrapper, .expressive-code, table, figure) {
@@ -220,7 +235,7 @@
 }
 
 .reading-page .reading-body :where(h1, h2, h3, h4) {
-  max-width: min(100%, 34ch);
+  max-width: var(--reading-heading-max-width);
   margin-bottom: 0.8rem;
   font-family: var(--font-display);
   line-height: 1.18;
@@ -247,7 +262,7 @@
 }
 
 .reading-page .reading-body :where(p, ul, ol, blockquote, dl) {
-  max-width: min(100%, 74ch);
+  max-width: var(--reading-body-block-max-width);
 }
 
 .reading-page .reading-body p {
@@ -332,7 +347,7 @@
 }
 
 .reading-page .reading-body hr {
-  width: min(100%, 76ch);
+  width: var(--reading-rule-max-width);
   height: 1px;
   margin: 2.7rem 0;
   border: 0;

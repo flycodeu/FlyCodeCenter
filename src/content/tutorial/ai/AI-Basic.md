@@ -4,6 +4,7 @@ createTime: '2026/03/17 21:02:43'
 code: t1isiswb9
 permalink: /tutorials/t1isiswb9/
 order: 1
+cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/Gemini_Generated_Image_w1rggow1rggow1rg.png
 ---
 # 懂这 14 个概念，AI 开发不再靠猜
 
