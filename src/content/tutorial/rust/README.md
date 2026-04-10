@@ -24,3 +24,5 @@ permalink: /tutorials/rust/
 [结构体](结构体.md)
 
 [枚举值](枚举值.md)
+
+[使用Rust学习AI](使用AI学习Rust.md)
