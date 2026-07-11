@@ -24,7 +24,17 @@ const giscusMissingFields = [
 const giscusReady = giscusMissingFields.length === 0;
 const utterancesReady = Boolean(utterances.repo && utterances.repo !== "owner/repo");
 const activeProvider = provider;
-const commentsEnabled = activeProvider !== "off";
+const isDev = import.meta.env.DEV;
+const providerReady =
+  activeProvider === "giscus"
+    ? giscusReady
+    : activeProvider === "waline"
+      ? Boolean(walineServer)
+      : activeProvider === "utterances"
+        ? utterancesReady
+        : true;
+// 配置不全时生产环境直接隐藏评论区，配置提示只在 dev 显示
+const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
 ---
 
 {

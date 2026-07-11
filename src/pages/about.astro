@@ -1,4 +1,4 @@
-﻿---
+---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import siteConfig from "@/site.config";
 import Comments from "@/components/Comments.astro";
@@ -22,6 +22,8 @@ if (!aboutConfig) {
 }
 
 const hero = aboutConfig.hero;
+const intro = (aboutConfig as { intro?: { direction: { title: string; paragraphs: string[] }; focus: { title: string; items: string[] }; goal: string } }).intro;
+const blogIntro = (aboutConfig as { blogIntro?: { title: string; lead: string; topics: string[]; hope: string } }).blogIntro;
 const showcase = aboutConfig.showcase;
 const gaming = aboutConfig.gaming;
 const linkLabels = showcase.labels;
@@ -43,24 +45,18 @@ const fallbackCards = [...projectMap.values()]
   .slice(0, 3);
 
 const cards = selectedCards.length > 0 ? selectedCards : fallbackCards;
-const aboutContent = aboutPage.Content;
-
-const allProjectMetas = [...projectMap.values()].map((item) => item.meta);
-const completedCount = allProjectMetas.filter((meta) => meta.projectStage === "completed").length;
-const plannedCount = allProjectMetas.filter((meta) => meta.projectStage === "planned").length;
-const topPriority = [...allProjectMetas].sort((a, b) => b.priority - a.priority)[0];
+const AboutContent = aboutPage.Content;
 const aboutCommentsEnabled =
   ((siteConfig.pages as { about?: { comments?: { enable?: boolean } } }).about?.comments?.enable ?? true) &&
   siteConfig.comment.provider !== "off";
 ---
 
 <BaseLayout title={aboutPage.entry.data.title} description={aboutPage.entry.data.description}>
-  <section class="profile-console surface">
-    <header class="hero-panel">
-      {hero.badge && <p class="hero-badge">{hero.badge}</p>}
+  <div class="about-page">
+    <header class="surface hero-panel">
+      {hero.badge && <p class="hero-kicker">{hero.badge}</p>}
       <h1>{hero.title || aboutPage.entry.data.title}</h1>
       {hero.subtitle && <p class="hero-subtitle">{hero.subtitle}</p>}
-
       {hero.chips.length > 0 && (
         <div class="tech-chips">
           {hero.chips.map((chip) => (
@@ -70,27 +66,37 @@ const aboutCommentsEnabled =
       )}
     </header>
 
-    <section class="status-grid" aria-label="profile-status">
-      <article class="surface status-card">
-        <p class="label">{hero.statLabels.completed}</p>
-        <p class="value">{completedCount}</p>
-      </article>
-      <article class="surface status-card">
-        <p class="label">{hero.statLabels.planned}</p>
-        <p class="value">{plannedCount}</p>
-      </article>
-      <article class="surface status-card priority">
-        <p class="label">{hero.statLabels.topPriority}</p>
-        <p class="value small">{topPriority?.title || "暂无"}</p>
-      </article>
-    </section>
+    {intro && (intro.direction.paragraphs.length > 0 || intro.focus.items.length > 0) && (
+      <section class="intro-grid">
+        {intro.direction.paragraphs.length > 0 && (
+          <article class="surface intro-card">
+            <h2 class="block-title">{intro.direction.title}</h2>
+            {intro.direction.paragraphs.map((paragraph) => (
+              <p class="intro-paragraph">{paragraph}</p>
+            ))}
+          </article>
+        )}
+        {intro.focus.items.length > 0 && (
+          <article class="surface intro-card">
+            <h2 class="block-title">{intro.focus.title}</h2>
+            <ul class="focus-list">
+              {intro.focus.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </article>
+        )}
+      </section>
+    )}
 
-    <section class="showcase-panel">
-      <div class="section-head">
-        <h2>{showcase.title}</h2>
-        {showcase.description && <p>{showcase.description}</p>}
-      </div>
+    {intro?.goal && (
+      <aside class="surface goal-band">
+        <p>{intro.goal}</p>
+      </aside>
+    )}
 
+    <section class="about-section">
+      <h2 class="section-heading">{showcase.title}</h2>
       {cards.length === 0 ? (
         <p class="empty-note">{showcase.emptyText}</p>
       ) : (
@@ -98,10 +104,7 @@ const aboutCommentsEnabled =
           {cards.map(({ entry, meta }) => (
             <article class="surface showcase-card">
               {meta.cover && <img class="cover" src={meta.cover} alt={meta.title} loading="lazy" decoding="async" />}
-              <div class="card-head">
-                <h3>{meta.title}</h3>
-                <span class="chip priority-chip">P{meta.priority}</span>
-              </div>
+              <h3>{meta.title}</h3>
               <p>{meta.description || meta.summary || linkLabels.noDescription}</p>
               <div class="links">
                 {meta.repoUrl && <a href={meta.repoUrl} target="_blank" rel="noreferrer">{linkLabels.repo}</a>}
@@ -115,11 +118,23 @@ const aboutCommentsEnabled =
       )}
     </section>
 
-    <section class="gaming-panel">
-      <div class="section-head">
-        <h2>{gaming.title}</h2>
-        {gaming.description && <p>{gaming.description}</p>}
-      </div>
+    {blogIntro && (blogIntro.lead || blogIntro.topics.length > 0) && (
+      <section class="surface blog-panel">
+        <h2 class="block-title">{blogIntro.title}</h2>
+        {blogIntro.lead && <p class="blog-lead">{blogIntro.lead}</p>}
+        {blogIntro.topics.length > 0 && (
+          <ul class="topic-grid">
+            {blogIntro.topics.map((topic) => (
+              <li>{topic}</li>
+            ))}
+          </ul>
+        )}
+        {blogIntro.hope && <p class="blog-hope">{blogIntro.hope}</p>}
+      </section>
+    )}
+
+    <section class="about-section">
+      <h2 class="section-heading">{gaming.title}</h2>
       <div class="gaming-grid">
         {gaming.groups.map((group) => (
           <article class="surface game-group">
@@ -134,142 +149,184 @@ const aboutCommentsEnabled =
       </div>
     </section>
 
-    <section class="surface prose narrative-panel">
-      <aboutContent />
+    <section class="prose narrative">
+      <AboutContent />
     </section>
 
     {aboutCommentsEnabled && <Comments />}
-  </section>
+  </div>
 </BaseLayout>
 
 <style>
-  .profile-console {
-    padding: 1rem;
+  .about-page {
+    max-width: 920px;
+    margin: 0 auto;
     display: grid;
-    gap: 1rem;
-    background:
-      radial-gradient(95% 120% at 8% -20%, color-mix(in oklab, var(--brand) 14%, transparent), transparent 70%),
-      radial-gradient(90% 110% at 102% 0%, color-mix(in oklab, var(--brand-soft) 28%, transparent), transparent 74%),
-      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 94%, transparent 6%), color-mix(in oklab, var(--surface-2) 96%, transparent 4%));
+    gap: var(--space-5);
   }
 
   .hero-panel {
+    padding: clamp(1.8rem, 3.4vw, 2.8rem);
     display: grid;
-    gap: 0.55rem;
+    gap: var(--space-2);
+    background:
+      radial-gradient(88% 150% at 100% 0%, color-mix(in oklab, var(--brand-soft) 40%, transparent 60%), transparent 62%),
+      var(--surface-1);
   }
 
-  .hero-badge {
+  .hero-kicker {
     margin: 0;
-    width: fit-content;
-    padding: 0.22rem 0.58rem;
-    border: 1px solid color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
-    border-radius: 999px;
-    font-family: var(--font-mono);
-    font-size: 0.74rem;
-    color: color-mix(in oklab, var(--text) 70%, var(--brand) 30%);
-  }
-
-  h1,
-  h2,
-  h3 {
-    margin: 0;
-    font-family: var(--font-serif);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brand);
   }
 
   .hero-panel h1 {
-    font-size: clamp(1.4rem, 2.8vw, 2rem);
-    line-height: 1.35;
+    margin: 0;
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
   }
 
   .hero-subtitle {
     margin: 0;
     color: var(--text-soft);
-    line-height: 1.65;
+    line-height: 1.75;
+    max-width: 46em;
   }
 
   .tech-chips {
+    margin-top: var(--space-1);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.38rem;
+    gap: 0.4rem;
   }
 
   .tech-chip {
-    font-family: var(--font-mono);
     font-size: 0.78rem;
-    padding: 0.38rem 0.72rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--brand) 34%, var(--line) 66%);
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--brand-soft) 70%, transparent 30%),
-        color-mix(in oklab, var(--surface-1) 92%, transparent 8%)
-      );
-    box-shadow: inset 0 1px 0 color-mix(in oklab, #ffffff 28%, transparent);
+    padding: 0.32rem 0.7rem;
   }
 
-  .status-grid {
+  .intro-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .intro-card {
+    padding: clamp(1.2rem, 2.4vw, 1.7rem);
+    display: grid;
+    gap: 0.8rem;
+    align-content: start;
+  }
+
+  .block-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    position: relative;
+    padding-left: 0.7rem;
+  }
+
+  .block-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.16em;
+    bottom: 0.16em;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--brand);
+  }
+
+  .intro-paragraph {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.85;
+  }
+
+  .focus-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
     gap: 0.62rem;
   }
 
-  .status-card {
-    padding: 0.78rem;
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .status-card .label {
-    margin: 0;
-    font-size: 0.8rem;
+  .focus-list li {
+    position: relative;
+    padding-left: 1.3rem;
     color: var(--text-soft);
+    line-height: 1.7;
   }
 
-  .status-card .value {
+  .focus-list li::before {
+    content: "";
+    position: absolute;
+    left: 0.2em;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand);
+    opacity: 0.75;
+  }
+
+  .goal-band {
+    padding: 1.15rem 1.4rem;
+    border-left: 3px solid var(--brand);
+    background: color-mix(in oklab, var(--brand-soft) 34%, var(--surface-1) 66%);
+  }
+
+  .goal-band p {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: 1.42rem;
+    color: var(--text);
+    line-height: 1.85;
+  }
+
+  .about-section {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .section-heading {
+    margin: 0;
+    font-size: 1.2rem;
     font-weight: 700;
+    position: relative;
+    padding-left: 0.7rem;
   }
 
-  .status-card .value.small {
-    font-size: 1rem;
-    line-height: 1.5;
+  .section-heading::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.16em;
+    bottom: 0.16em;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--brand);
   }
 
-  .status-card.priority {
-    border-color: color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
-  }
-
-  .showcase-panel,
-  .gaming-panel {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .section-head {
-    display: grid;
-    gap: 0.25rem;
-  }
-
-  .section-head p,
   .empty-note {
     margin: 0;
     color: var(--text-soft);
-    line-height: 1.6;
   }
 
   .showcase-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
-    gap: 0.72rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-3);
   }
 
   .showcase-card {
-    padding: 0.72rem;
+    padding: 1rem;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    align-content: start;
   }
 
   .showcase-card .cover {
@@ -280,54 +337,112 @@ const aboutCommentsEnabled =
     object-fit: cover;
   }
 
+  .showcase-card h3 {
+    margin: 0;
+    font-size: 1.02rem;
+  }
+
   .showcase-card p {
     margin: 0;
     color: var(--text-soft);
-    line-height: 1.6;
-  }
-
-  .card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .priority-chip {
-    font-family: var(--font-mono);
+    line-height: 1.7;
+    font-size: 0.92rem;
   }
 
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.44rem;
-    font-size: 0.87rem;
+    gap: 0.7rem;
+    font-size: 0.86rem;
+  }
+
+  .links a {
+    color: var(--brand);
+  }
+
+  .blog-panel {
+    padding: clamp(1.2rem, 2.4vw, 1.7rem);
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .blog-lead {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.85;
+    max-width: 52em;
+  }
+
+  .topic-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.55rem 1.2rem;
+  }
+
+  .topic-grid li {
+    position: relative;
+    padding-left: 1.2rem;
+    color: var(--text-soft);
+    line-height: 1.7;
+    font-size: 0.94rem;
+  }
+
+  .topic-grid li::before {
+    content: "";
+    position: absolute;
+    left: 0.15em;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand);
+    opacity: 0.75;
+  }
+
+  .blog-hope {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.92rem;
   }
 
   .gaming-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.65rem;
+    gap: var(--space-3);
   }
 
   .game-group {
-    padding: 0.72rem;
+    padding: 1rem;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.6rem;
+    align-content: start;
+  }
+
+  .game-group h3 {
+    margin: 0;
+    font-size: 0.95rem;
   }
 
   .game-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: 0.4rem;
   }
 
   .game-chip {
     font-size: 0.76rem;
   }
 
-  .narrative-panel {
-    padding: 0.85rem;
-    margin-top: 0.15rem;
+  .narrative {
+    color: var(--text-soft);
+  }
+
+  @media (max-width: 760px) {
+    .about-page {
+      gap: var(--space-4);
+    }
   }
 </style>

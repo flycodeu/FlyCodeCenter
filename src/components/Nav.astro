@@ -3,50 +3,74 @@ import siteConfig from "@/site.config";
 
 const pathname = Astro.url.pathname;
 const interviewConfig = siteConfig.pages.interviewCenter;
-const interviewInsertAfter = String(interviewConfig.navInsertAfter || "/about").trim();
-const navEntries: Array<
-  | { kind: "item"; item: (typeof siteConfig.theme.navbar)[number] }
-  | { kind: "interview" }
-> = [];
-let interviewInserted = false;
 
-for (const item of siteConfig.theme.navbar) {
-  navEntries.push({ kind: "item", item });
-  const matchesInsertTarget =
-    item.link === interviewInsertAfter || item.text === interviewInsertAfter || item.link === "/about";
+type NavItem = { text: string; link: string };
 
-  if (interviewConfig.enable && !interviewInserted && matchesInsertTarget) {
-    navEntries.push({ kind: "interview" });
-    interviewInserted = true;
-  }
+const mainItems: NavItem[] = [...siteConfig.theme.navbar];
+const moreItems: NavItem[] = [
+  ...(((siteConfig.theme as { navbarMore?: readonly NavItem[] }).navbarMore ?? []) as NavItem[])
+];
+
+if (interviewConfig.enable) {
+  moreItems.push({ text: interviewConfig.navLabel, link: interviewConfig.route });
 }
 
-if (interviewConfig.enable && !interviewInserted) {
-  navEntries.push({ kind: "interview" });
-}
+const isActive = (link: string) => pathname === link || (link !== "/" && pathname.startsWith(`${link}/`));
+const moreActive = moreItems.some((item) => isActive(item.link));
 ---
 
 <nav class="nav">
   {
-    navEntries.map((entry) => {
-      if (entry.kind === "interview") {
-        const active = pathname === interviewConfig.route || pathname.startsWith(`${interviewConfig.route}/`);
-        return (
-          <a class={`nav-link ${active ? "active" : ""}`} href={interviewConfig.route}>
-            {interviewConfig.navLabel}
-          </a>
-        );
-      }
-
-      const active = pathname === entry.item.link || pathname.startsWith(`${entry.item.link}/`);
-      return (
-        <a class={`nav-link ${active ? "active" : ""}`} href={entry.item.link}>
-          {entry.item.text}
-        </a>
-      );
-    })
+    mainItems.map((item) => (
+      <a class={`nav-link ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+        {item.text}
+      </a>
+    ))
   }
+
+  {moreItems.length > 0 && (
+    <details class={`nav-more ${moreActive ? "is-active" : ""}`} data-nav-more>
+      <summary class={`nav-link nav-more-btn ${moreActive ? "active" : ""}`}>
+        更多
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <div class="nav-more-menu">
+        {moreItems.map((item) => (
+          <a class={`nav-more-link ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+            {item.text}
+          </a>
+        ))}
+      </div>
+    </details>
+  )}
+
+  {moreItems.map((item) => (
+    <a class={`nav-link nav-inline-more ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+      {item.text}
+    </a>
+  ))}
 </nav>
+
+<script is:inline>
+  (() => {
+    const closeAll = (except) => {
+      document.querySelectorAll("details[data-nav-more][open]").forEach((el) => {
+        if (el !== except) el.removeAttribute("open");
+      });
+    };
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const owner = target ? target.closest("details[data-nav-more]") : null;
+      closeAll(owner);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeAll(null);
+    });
+    document.addEventListener("astro:page-load", () => closeAll(null));
+  })();
+</script>
 
 <style>
   .nav {
@@ -54,21 +78,13 @@ if (interviewConfig.enable && !interviewInserted) {
     align-items: center;
     gap: 0.18rem;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.08rem;
-  }
-
-  .nav::-webkit-scrollbar {
-    display: none;
   }
 
   :global(.nav-link) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.28rem;
     min-height: 38px;
     padding: 0.38rem 0.76rem;
     border-radius: 999px;
@@ -81,6 +97,7 @@ if (interviewConfig.enable && !interviewInserted) {
     letter-spacing: 0.01em;
     transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
     flex: 0 0 auto;
+    cursor: pointer;
   }
 
   :global(.nav-link:hover) {
@@ -100,9 +117,86 @@ if (interviewConfig.enable && !interviewInserted) {
     box-shadow: inset 0 1px 0 color-mix(in oklab, white 8%, transparent 92%);
   }
 
+  .nav-more {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .nav-more-btn {
+    list-style: none;
+    user-select: none;
+  }
+
+  .nav-more-btn::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-more-btn svg {
+    transition: transform 160ms ease;
+  }
+
+  .nav-more[open] .nav-more-btn svg {
+    transform: rotate(180deg);
+  }
+
+  .nav-more-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 80;
+    min-width: 148px;
+    display: grid;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    box-shadow: var(--card-shadow-strong);
+  }
+
+  .nav-more-link {
+    display: block;
+    padding: 0.46rem 0.72rem;
+    border-radius: 9px;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    white-space: nowrap;
+  }
+
+  .nav-more-link:hover {
+    color: var(--text);
+    background: color-mix(in oklab, var(--brand-soft) 40%, transparent 60%);
+  }
+
+  .nav-more-link.active {
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  .nav-inline-more {
+    display: none;
+  }
+
   @media (max-width: 900px) {
     .nav {
       width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.08rem;
+    }
+
+    .nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-more {
+      display: none;
+    }
+
+    .nav-inline-more {
+      display: inline-flex;
     }
 
     :global(.nav-link) {

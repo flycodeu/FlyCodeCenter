@@ -7,8 +7,8 @@
   --bg-elev: #15202b;
   --bg-mesh-a: color-mix(in oklab, #4f7da8 8%, transparent 92%);
   --bg-mesh-b: color-mix(in oklab, #39b8b4 5%, transparent 95%);
-  --text: #bcc8d6;
-  --text-soft: #94a6b9;
+  --text: #d2dce7;
+  --text-soft: #9cadc0;
   --text-muted: #708194;
   --line: #273544;
   --line-soft: #304355;

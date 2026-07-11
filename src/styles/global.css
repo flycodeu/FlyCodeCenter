@@ -22,6 +22,7 @@
 }
 
 :root {
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --space-1: 8px;
   --space-2: 12px;
   --space-3: 16px;
@@ -39,11 +40,11 @@
   --font-pixel-display: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-tech: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Microsoft YaHei", sans-serif;
   --font-pixel-mono: "Zpix", "Press Start 2P", "Fusion Pixel", "Pixelify Sans", "Cascadia Code", "JetBrains Mono", monospace;
-  --font-sans: var(--font-pixel-sans);
-  --font-serif: var(--font-pixel-serif);
-  --font-display: var(--font-pixel-display);
-  --font-tech: var(--font-pixel-tech);
-  --font-mono: var(--font-pixel-mono);
+  --font-sans: var(--font-regular-sans);
+  --font-serif: var(--font-regular-serif);
+  --font-display: var(--font-regular-display);
+  --font-tech: var(--font-regular-tech);
+  --font-mono: var(--font-regular-mono);
   --code-panel: #f6f8fc;
   --code-border: #d7dfec;
   --code-header: #eef3fb;
@@ -351,6 +352,12 @@ html {
   scrollbar-gutter: stable;
   scrollbar-width: auto;
   scrollbar-color: color-mix(in oklab, var(--line) 80%, transparent 20%) transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @supports not (scrollbar-gutter: stable) {
@@ -817,8 +824,8 @@ img {
 }
 
 :root[data-layout-preset="editorial"] .section-title {
-  font-family: var(--font-serif);
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 
@@ -907,7 +914,7 @@ img {
 }
 
 .fade-up {
-  animation: fade-up 400ms ease-out both;
+  animation: fade-up 280ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -960,7 +967,7 @@ img {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;

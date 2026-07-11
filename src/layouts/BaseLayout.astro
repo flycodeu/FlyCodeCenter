@@ -604,19 +604,16 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
   }
 
   main {
-    padding: calc(var(--layout-header-height) + 1.05rem) 0 calc(var(--layout-footer-height) + 0.95rem);
+    padding: calc(var(--layout-header-height) + 1.05rem) 0 var(--space-6);
     position: relative;
     z-index: 2;
+    min-height: calc(100dvh - var(--layout-header-height) - var(--layout-footer-height));
   }
   .site-footer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: relative;
     border-top: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
-    z-index: 58;
-    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
-    backdrop-filter: blur(12px);
+    z-index: 2;
+    background: transparent;
   }
   .footer-inner {
     min-height: 56px;
@@ -847,7 +844,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
   @media (max-width: 900px) {
     .site-footer {
       backdrop-filter: none;
-      background: color-mix(in oklab, var(--surface-2) 97%, var(--bg) 3%);
+      background: transparent;
     }
 
     .site-bg-image,

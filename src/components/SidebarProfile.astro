@@ -35,14 +35,22 @@ const mergedSocials = [
   ...profile.socials,
   ...(!hasEmailSocial && contactEmail ? [{ name: "Email", icon: "email", link: `mailto:${contactEmail}` }] : [])
 ];
+const profileRole = String((profile as { role?: string }).role || "").trim();
+const profileLocation = String((profile as { location?: string }).location || "").trim();
+const subline = [profileRole, profileLocation].filter(Boolean).join(" · ");
+// 微信等非链接账号：link 不是 URL/mailto 时视为“点击复制”的账号名
+const isCopyAccount = (social: { icon?: string; link?: string }) => {
+  const link = String(social.link || "").trim();
+  return Boolean(link) && !isHttpLink(link) && !link.toLowerCase().startsWith("mailto:") && link !== "#";
+};
 ---
 
 <section class="surface profile-card">
   <div class="avatar-wrap">
     <img src={profile.avatar} alt={profile.name} loading="lazy" class={avatarClass} />
   </div>
-  <h3 class="site-name">{siteConfig.site.title}</h3>
-  <h4 class="name">{profile.name}</h4>
+  <h3 class="site-name">{profile.name}</h3>
+  {subline && <p class="name">{subline}</p>}
   <p class="desc">{profile.desc}</p>
   {
     profileTags.length > 0 && (
@@ -65,6 +73,17 @@ const mergedSocials = [
           aria-label={`复制邮箱 ${contactEmail}`}
           data-copy-text={contactEmail}
           data-copy-label="邮箱"
+        >
+          <Fragment set:html={getIcon(social.icon)} />
+        </button>
+      ) : isCopyAccount(social) ? (
+        <button
+          type="button"
+          class="social-icon social-copy"
+          title={`${social.name}: ${social.link}（点击复制）`}
+          aria-label={`复制${social.name}账号 ${social.link}`}
+          data-copy-text={social.link}
+          data-copy-label={social.name}
         >
           <Fragment set:html={getIcon(social.icon)} />
         </button>

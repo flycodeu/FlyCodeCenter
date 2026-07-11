@@ -94,6 +94,35 @@ const pages = defineCollection({
               topPriority: "当前主战场"
             }
           }),
+        intro: z
+          .object({
+            direction: z
+              .object({
+                title: z.string().default(""),
+                paragraphs: z.array(z.string()).default([])
+              })
+              .default({ title: "", paragraphs: [] }),
+            focus: z
+              .object({
+                title: z.string().default(""),
+                items: z.array(z.string()).default([])
+              })
+              .default({ title: "", items: [] }),
+            goal: z.string().default("")
+          })
+          .default({
+            direction: { title: "", paragraphs: [] },
+            focus: { title: "", items: [] },
+            goal: ""
+          }),
+        blogIntro: z
+          .object({
+            title: z.string().default(""),
+            lead: z.string().default(""),
+            topics: z.array(z.string()).default([]),
+            hope: z.string().default("")
+          })
+          .default({ title: "", lead: "", topics: [], hope: "" }),
         showcase: z
           .object({
             title: z.string().default(""),

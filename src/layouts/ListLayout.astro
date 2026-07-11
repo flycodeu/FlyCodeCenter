@@ -1,7 +1,6 @@
 ﻿---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
-import StatsCard from "@/components/StatsCard.astro";
 
 interface TaxItem {
   name: string;
@@ -30,9 +29,6 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
       !hideSidebar && (
         <aside class="list-side" data-tag-count={String(tags.length)}>
           <SidebarProfile />
-          <div class="stats-grid">
-            {stats.map((item) => <StatsCard title={item.title} value={item.value} href={item.href} />)}
-          </div>
         </aside>
       )
     }
@@ -55,10 +51,6 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
     position: sticky;
     top: 84px;
     height: fit-content;
-  }
-  .stats-grid {
-    display: grid;
-    gap: var(--space-2);
   }
   .no-side {
     grid-template-columns: minmax(0, 1fr);

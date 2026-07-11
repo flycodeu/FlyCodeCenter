@@ -70,9 +70,13 @@ const seriesList = [...seriesMap.values()]
         const metaText = metaParts.join(" · ");
         return (
           <article class="surface series-card">
-            {bucket.cover && (
+            {bucket.cover ? (
               <a class="series-cover" href={href} aria-label={bucket.label}>
                 <img src={bucket.cover} alt={bucket.label} loading="lazy" decoding="async" />
+              </a>
+            ) : (
+              <a class="series-cover series-cover-fallback" href={href} aria-label={bucket.label}>
+                <span>{bucket.label.slice(0, 1).toUpperCase()}</span>
               </a>
             )}
 
@@ -84,10 +88,8 @@ const seriesList = [...seriesMap.values()]
                 {showCategory && bucket.category && <span class="category-chip">{bucket.category}</span>}
               </header>
 
-              {showDescription && (
-                <p class={`series-description${bucket.description ? "" : " is-empty"}`}>
-                  {bucket.description ?? ""}
-                </p>
+              {showDescription && bucket.description && (
+                <p class="series-description">{bucket.description}</p>
               )}
 
               <footer class="series-foot">
@@ -111,6 +113,7 @@ const seriesList = [...seriesMap.values()]
     display: grid;
     grid-template-columns: repeat(var(--series-col-xl), minmax(0, 1fr));
     gap: var(--series-grid-gap);
+    align-items: start;
   }
 
   .series-card {
@@ -173,6 +176,24 @@ const seriesList = [...seriesMap.values()]
     transform: scale(1.03);
   }
 
+  .series-cover-fallback {
+    aspect-ratio: var(--series-cover-ratio);
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(80% 120% at 18% 0%, color-mix(in oklab, var(--brand) 16%, transparent 84%), transparent 70%),
+      radial-gradient(90% 110% at 90% 10%, color-mix(in oklab, var(--accent) 12%, transparent 88%), transparent 72%),
+      var(--surface-2);
+  }
+
+  .series-cover-fallback span {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: color-mix(in oklab, var(--brand) 62%, var(--text-muted) 38%);
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+
   .series-body {
     padding: 0;
     display: grid;
@@ -191,7 +212,6 @@ const seriesList = [...seriesMap.values()]
     margin: 0;
     font-size: 1.12rem;
     line-height: 1.42;
-    min-height: calc(1.42em * var(--series-title-lines));
     min-width: 0;
   }
 
@@ -232,7 +252,6 @@ const seriesList = [...seriesMap.values()]
     color: var(--text-soft);
     font-size: 0.9rem;
     line-height: 1.6;
-    min-height: calc(1.6em * var(--series-desc-lines));
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;

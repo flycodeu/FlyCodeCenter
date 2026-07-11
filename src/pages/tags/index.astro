@@ -138,8 +138,26 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
         pager.hidden = true;
         return;
       }
-      const pageButtons = Array.from({ length: totalPages }, (_, idx) => idx + 1)
-        .map((pageNo) => `<button type="button" class="pager-btn pager-btn-num ${pageNo === currentPage ? "is-active" : ""}" data-page="${pageNo}">${pageNo}</button>`)
+      const windowPages = (current, total) => {
+        if (total <= 7) return Array.from({ length: total }, (_, idx) => idx + 1);
+        const picked = [...new Set([1, total, current - 1, current, current + 1])]
+          .filter((page) => page >= 1 && page <= total)
+          .sort((a, b) => a - b);
+        const out = [];
+        let prev = 0;
+        for (const page of picked) {
+          if (page - prev > 1) out.push("ellipsis");
+          out.push(page);
+          prev = page;
+        }
+        return out;
+      };
+      const pageButtons = windowPages(currentPage, totalPages)
+        .map((pageNo) =>
+          pageNo === "ellipsis"
+            ? `<span class="pager-ellipsis" aria-hidden="true">…</span>`
+            : `<button type="button" class="pager-btn pager-btn-num ${pageNo === currentPage ? "is-active" : ""}" data-page="${pageNo}">${pageNo}</button>`
+        )
         .join("");
       pager.innerHTML = `
         <button type="button" class="pager-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? "disabled" : ""}>上一页</button>

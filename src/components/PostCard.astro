@@ -104,26 +104,17 @@ const outlineLines = listCard.outlineLines ?? 2;
 
 <style>
   .post-card {
-    min-height: 152px;
     border-radius: var(--radius-md);
     overflow: hidden;
-    padding: 1rem;
+    padding: 1rem 1.1rem;
     display: grid;
-    gap: 0.9rem;
+    gap: 1rem;
     align-content: start;
-    align-items: stretch;
-    border: 2px solid color-mix(in oklab, var(--line) 76%, var(--brand) 24%);
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 92%, transparent 8%), color-mix(in oklab, var(--surface-2) 92%, transparent 8%)),
-      repeating-linear-gradient(
-        0deg,
-        color-mix(in oklab, var(--brand) 6%, transparent 94%) 0,
-        color-mix(in oklab, var(--brand) 6%, transparent 94%) 1px,
-        transparent 1px,
-        transparent 10px
-      );
+    align-items: center;
+    border: var(--layout-card-border-width, 1px) solid var(--line);
+    background: var(--surface-1);
     content-visibility: auto;
-    contain-intrinsic-size: 320px 220px;
+    contain-intrinsic-size: 320px 150px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
 
@@ -172,8 +163,8 @@ const outlineLines = listCard.outlineLines ?? 2;
     overflow: hidden;
     border: 1px solid color-mix(in oklab, var(--line) 78%, var(--brand) 22%);
     display: block;
-    background: color-mix(in oklab, var(--surface-2) 90%, transparent 10%);
-    align-self: stretch;
+    background: var(--surface-2);
+    align-self: center;
   }
 
   .post-card.mode-top .cover-wrap {
@@ -195,8 +186,8 @@ const outlineLines = listCard.outlineLines ?? 2;
 
   .meta {
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    gap: 0.55rem;
+    align-content: center;
+    gap: 0.5rem;
     min-height: 0;
   }
 
@@ -224,14 +215,11 @@ const outlineLines = listCard.outlineLines ?? 2;
   .title {
     margin: 0;
     color: var(--text);
-    line-height: 1.38;
+    line-height: 1.4;
     letter-spacing: -0.01em;
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1.02rem;
+    font-weight: 650;
     font-family: var(--font-display);
-    font-size: 0.95rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
     display: -webkit-box;
     -webkit-line-clamp: var(--title-lines);
     -webkit-box-orient: vertical;
@@ -267,7 +255,6 @@ const outlineLines = listCard.outlineLines ?? 2;
   }
 
   .date {
-    align-self: end;
     color: var(--text-muted);
     font-size: 0.78rem;
     white-space: nowrap;

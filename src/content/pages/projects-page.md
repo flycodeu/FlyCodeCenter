@@ -12,19 +12,19 @@ projects:
     in-progress: /covers/project-in-progress.svg
     planned: /covers/project-planned.svg
   highlights:
-    title: 指挥面板
-    subtitle: 当前最重要的业务方向与项目态势
-    topPriorityLabel: 当前最高优先级
+    title: 当前主线
+    subtitle: ""
+    topPriorityLabel: 最高优先级
   sections:
     completed:
       title: 已完成
-      description: 已交付或已上线项目，持续迭代优化。
+      description: ""
     in-progress:
       title: 进行中
-      description: 正在推进中的项目，按里程碑持续发布。
+      description: ""
     planned:
       title: 规划中
-      description: 已确定方向，按优先级逐步启动。
+      description: ""
   stats:
     total: 项目总数
     completed: 已完成

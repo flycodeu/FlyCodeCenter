@@ -329,10 +329,16 @@ const articleRuntimeConfig = {
   .post-layout.post-layout-left > aside.post-toc-rail {
     grid-column: 1;
   }
+  /* 文章主体合并为一张连续内容纸，避免标题/正文/版权/评论四层独立盒子 */
   .post-main {
     display: grid;
-    gap: 1rem;
+    gap: 1.35rem;
     min-width: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    padding: clamp(1.15rem, 2.2vw, 2rem);
   }
   .post-main > * {
     width: 100%;
@@ -340,11 +346,29 @@ const articleRuntimeConfig = {
     margin: 0;
   }
   .post-card-shell {
-    padding: 1.1rem 1.15rem;
-    background: color-mix(in oklab, var(--surface-1) 90%, transparent 10%);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    box-shadow: var(--card-shadow);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .post-meta-card,
+  .post-comment-card {
+    border-top: 1px solid var(--line-soft);
+    padding-top: 1.25rem;
+  }
+  .post-comment-card :global(.comment-section) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    backdrop-filter: none;
+  }
+  .post-meta-card :global(.copy-box) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
   }
   .post-layout > aside.post-toc-rail {
     position: sticky;
@@ -427,10 +451,9 @@ const articleRuntimeConfig = {
     font-size: var(--post-summary-size, 1.125rem);
   }
   .meta-strip {
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    background: color-mix(in oklab, var(--surface-1) 82%, transparent 18%);
-    padding: 0.65rem;
+    border: 0;
+    background: transparent;
+    padding: 0;
   }
   .meta-row {
     display: flex;
@@ -461,7 +484,6 @@ const articleRuntimeConfig = {
     gap: 0.2rem;
   }
   .post-body-card {
-    padding: 1.05rem 1.1rem;
     min-width: 0;
   }
   .article-body {
@@ -1097,12 +1119,8 @@ const articleRuntimeConfig = {
       width: min(100%, calc(100% - var(--space-4)));
     }
 
-    .post-card-shell {
-      padding: 0.85rem;
-    }
-
-    .post-body-card {
-      padding: 0.85rem;
+    .post-main {
+      padding: 0.95rem;
     }
 
     .post-head h1 {

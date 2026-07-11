@@ -283,12 +283,12 @@ const siteConfig = defineSiteConfig({
     },
     listCard: {
       defaultCoverMode: "right" as CoverMode,
-      coverInlineSize: 224,
+      coverInlineSize: 176,
       coverTopMaxHeight: 154,
-      coverAspectRatio: "16 / 9",
+      coverAspectRatio: "16 / 10",
       mobileCollapseToTop: true,
-      coverWidth: 224,
-      coverHeight: 154,
+      coverWidth: 176,
+      coverHeight: 110,
       coverRatio: "16 / 9",
       cardStyle: "rounded" as CardStyle,
       titleLines: 2,
@@ -355,7 +355,7 @@ const siteConfig = defineSiteConfig({
         { text: "关于我", link: "/about", type: "secondary" }
       ],
       image: {
-        enable: true,
+        enable: false,
         src: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80",
         fallbackSrc: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80",
         alt: "Hero Image"
@@ -382,7 +382,7 @@ const siteConfig = defineSiteConfig({
         regular: {
           sans: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
           serif: "\"Source Han Serif SC\", \"Noto Serif SC\", \"Songti SC\", \"STSong\", serif",
-          display: "\"Source Han Serif SC\", \"Noto Serif SC\", \"Songti SC\", \"STSong\", serif",
+          display: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
           tech: "\"Manrope\", \"PingFang SC\", \"Microsoft YaHei\", \"Segoe UI\", sans-serif",
           mono: "\"IBM Plex Mono\", \"Cascadia Code\", \"JetBrains Mono\", \"Fira Code\", monospace"
         },
@@ -415,30 +415,31 @@ const siteConfig = defineSiteConfig({
     },
     social: {
       github: "https://github.com/flycodeu",
-      email: "mailto:flycode@flycode.icu"
+      email: "mailto:flycodeu@zohomail.cn"
     },
     footer: {
       message: "Built with Astro. Static First.",
       copyright: "Copyright (c) 2026 飞云",
-      showRuntime: true,
+      showRuntime: false,
       runtimeSince: "2026-03-05T00:00:00+08:00"
     },
     profile: {
       avatar: "https://avatars.githubusercontent.com/flycodeu",
       shape: "rectangle" as "circle" | "rectangle",
-      name: "程序员飞云（Flycode）",
-      desc: "后端开发程序员，关注工程效率、系统设计与 AI 落地。",
+      name: "程序员飞云",
+      role: "Flycode · 后端开发",
+      desc: "关注工程效率、系统设计与 AI 落地。",
       tags: ["Java", "Spring Boot", "Python", "Rust", "MySQL", "Redis", "React", "AI"],
       location: "Shenzhen, China",
       quote: "真正的礼物，是把今天手上的事做到更好。",
       socials: [
         { name: "GitHub", icon: "github", link: "https://github.com/flycodeu" },
-        { name: "Email", icon: "email", link: "mailto:flycode@flycode.icu" },
-        { name: "Discord", icon: "discord", link: "#" }
+        { name: "Email", icon: "email", link: "mailto:flycodeu@zohomail.cn" },
+        { name: "WeChat", icon: "wechat", link: "flycodehub" }
       ]
     },
     backgroundImage: {
-      enable: true,
+      enable: false,
       url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
       fallbackUrl:
         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
@@ -488,17 +489,19 @@ const siteConfig = defineSiteConfig({
       { text: "首页", link: "/" },
       { text: "博客", link: "/blog" },
       { text: "教程", link: "/tutorials" },
+      { text: "项目", link: "/projects" },
+      { text: "关于", link: "/about" }
+    ],
+    navbarMore: [
       { text: "归档", link: "/archives" },
+      { text: "标签", link: "/tags" },
       { text: "收藏", link: "/sites" },
       { text: "摄影", link: "/gallery" },
       { text: "推荐", link: "/reading" },
-      { text: "项目", link: "/projects" },
-      { text: "Jarvis", link: "/jarvis" },
-      { text: "标签", link: "/tags" },
-      { text: "关于", link: "/about" }
+      { text: "Jarvis", link: "/jarvis" }
     ],
     transitions: {
-      page: false,
+      page: true,
       list: true,
       theme: true
     }
@@ -510,21 +513,6 @@ const siteConfig = defineSiteConfig({
     title: "站点公告",
     content:
       "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 推荐\n- 搜索支持高亮与模糊匹配"
-  },
-  themeConfig: {
-    nav: [
-      { text: "首页", link: "/" },
-      { text: "博客", link: "/blog" },
-      { text: "教程", link: "/tutorials" },
-      { text: "归档", link: "/archives" },
-      { text: "收藏", link: "/sites" },
-      { text: "摄影", link: "/gallery" },
-      { text: "推荐", link: "/reading" },
-      { text: "项目", link: "/projects" },
-      { text: "Jarvis", link: "/jarvis" },
-      { text: "标签", link: "/tags" },
-      { text: "关于", link: "/about" }
-    ]
   },
   copyright: {
     enable: true,
@@ -822,7 +810,7 @@ const siteConfig = defineSiteConfig({
     }
   },
   watermark: {
-    enable: true,
+    enable: false,
     text: "FlyCodeCenter",
     scope: "hero" as "hero" | "global",
     opacity: 0.04,
@@ -897,7 +885,7 @@ const siteConfig = defineSiteConfig({
       clickState: "active" as "idle" | "active",
       defaultText: "已待命",
       activeText: "连接中",
-      modelPresetKey: "gpt-4o-mini",
+      modelPresetKey: "deepseek-chat",
       actionId: "open-settings",
       excludeRoutes: ["/jarvis", "/blog/*", "/projects/*", "/tutorial/*", "/tutorials/*", "/interview/*"]
     },
@@ -922,10 +910,13 @@ const siteConfig = defineSiteConfig({
       }
     ],
     defaultModels: [
-      { id: "gpt-4o-mini", name: "GPT-4o mini", apiBase: "https://api.openai.com/v1" },
-      { id: "gpt-4o", name: "GPT-4o", apiBase: "https://api.openai.com/v1" },
-      { id: "deepseek-chat", name: "DeepSeek Chat", apiBase: "https://api.deepseek.com/v1" },
-      { id: "qwen-plus", name: "Qwen Plus", apiBase: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
+      { id: "deepseek-chat", name: "DeepSeek V3.2", apiBase: "https://api.deepseek.com/v1" },
+      { id: "deepseek-reasoner", name: "DeepSeek R1 推理", apiBase: "https://api.deepseek.com/v1" },
+      { id: "gpt-5.1", name: "GPT-5.1", apiBase: "https://api.openai.com/v1" },
+      { id: "gpt-5.1-mini", name: "GPT-5.1 mini", apiBase: "https://api.openai.com/v1" },
+      { id: "claude-sonnet-5", name: "Claude Sonnet 5", apiBase: "https://api.anthropic.com/v1" },
+      { id: "qwen3-max", name: "Qwen3 Max", apiBase: "https://dashscope.aliyuncs.com/compatible-mode/v1" },
+      { id: "glm-4.6", name: "GLM-4.6", apiBase: "https://open.bigmodel.cn/api/paas/v4" }
     ]
   },
   pages: {

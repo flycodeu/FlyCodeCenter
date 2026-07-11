@@ -1,9 +1,11 @@
 ---
+import type { CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
-import ArchiveTimelineCard from "@/components/ArchiveTimelineCard.astro";
 import { fetchAllContentEntries, fetchAllEntries, makeTagItems } from "@/utils/query";
 import { buildArchiveTimeline } from "@/utils/archive";
+import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { resolveArticleMeta } from "@/utils/article-meta";
 import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
 
 const entries = await fetchAllEntries();
@@ -12,69 +14,64 @@ const tags = makeTagItems(allContent);
 const years = buildArchiveTimeline(entries);
 
 const archivePageConfig = siteConfig.pages.archives as {
-  showCover?: boolean;
-  timeline?: { layoutMode?: "both" | "left" | "right" };
   antiCrawl?: AntiCrawlConfigInput;
 };
 
-const showCover = archivePageConfig.showCover ?? true;
-const timelineLayout = archivePageConfig.timeline?.layoutMode ?? "both";
 const antiCrawlConfig = archivePageConfig.antiCrawl ?? {};
 const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(antiCrawlConfig, { legacyMaxActionsDefault: 10 });
-const archiveCoverMode = showCover ? undefined : "none";
 
-const timelineItems = years.flatMap((yearBucket) =>
-  yearBucket.months.flatMap((monthBucket) =>
+type ArchiveEntry = CollectionEntry<"blog"> | CollectionEntry<"tutorial">;
+
+const getEntryLink = (entry: ArchiveEntry) =>
+  entry.collection === "blog"
+    ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
+    : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
+
+const yearGroups = years.map((yearBucket) => {
+  const items = yearBucket.months.flatMap((monthBucket) =>
     monthBucket.days.flatMap((dayBucket) =>
-      dayBucket.entries.map((entry, entryIdx) => ({
-        entry,
-        dateLabel: `${dayBucket.year}-${dayBucket.month}-${dayBucket.day}`,
-        showDate: entryIdx === 0,
-        dayKey: dayBucket.key
-      }))
+      dayBucket.entries.map((entry) => {
+        const meta = resolveArticleMeta(entry as ArchiveEntry);
+        return {
+          entry: entry as ArchiveEntry,
+          meta,
+          link: getEntryLink(entry as ArchiveEntry),
+          dateLabel: `${String(dayBucket.month).padStart(2, "0")}-${String(dayBucket.day).padStart(2, "0")}`,
+          dayKey: dayBucket.key
+        };
+      })
     )
-  )
-);
-
-const stats = [
-  { title: "总文章数", value: entries.length, href: "/archives" },
-  { title: "日期节点", value: years.reduce((sum, year) => sum + year.months.reduce((m, month) => m + month.days.length, 0), 0) },
-  { title: "博客数量", value: entries.filter((entry) => entry.collection === "blog").length, href: "/blog" },
-  { title: "教程数量", value: entries.filter((entry) => entry.collection === "tutorial").length, href: "/tutorials" }
-];
+  );
+  return { year: yearBucket.year, count: items.length, items };
+});
 ---
 
-<ListLayout title="归档" description="博客与教程统一归档，按日期倒序时间轴展示。" stats={stats} tags={tags}>
-  <section class="archive-timeline" id="archive-timeline">
-    <span class="timeline-line" aria-hidden="true"></span>
+<ListLayout title="归档" description="博客与教程统一归档，按年份倒序排列。" tags={tags}>
+  <section class="archive-list" id="archive-timeline">
     {
-      timelineItems.map((item, idx) => {
-        const side = timelineLayout === "left" ? "left" : timelineLayout === "right" ? "right" : idx % 2 === 0 ? "left" : "right";
-        return (
-          <article class={`timeline-item side-${side}`} data-day={item.dayKey}>
-            <div class="timeline-column timeline-col-left">
-              {side === "left" && (
-                <>
-                  {item.showDate && <span class="timeline-date-inline">{item.dateLabel}</span>}
-                  <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />
-                </>
-              )}
-            </div>
-            <div class="timeline-axis">
-              {item.showDate && <span class="timeline-date">{item.dateLabel}</span>}
-              <span class="timeline-dot" aria-hidden="true"></span>
-            </div>
-            <div class="timeline-column timeline-col-right">
-              {side === "right" && (
-                <>
-                  {item.showDate && <span class="timeline-date-inline">{item.dateLabel}</span>}
-                  <ArchiveTimelineCard entry={item.entry} kind={item.entry.collection === "blog" ? "blog" : "tutorial"} coverMode={archiveCoverMode} />
-                </>
-              )}
-            </div>
-          </article>
-        );
-      })
+      yearGroups.map((group) => (
+        <section class="archive-year">
+          <header class="year-head">
+            <h2>{group.year}</h2>
+            <span class="year-count">{group.count} 篇</span>
+          </header>
+          <ul class="year-list">
+            {group.items.map((item) => (
+              <li class="timeline-item" data-day={item.dayKey}>
+                <a class="entry-row" href={item.link}>
+                  <time class="entry-date" datetime={item.meta.createTime.toISOString()}>
+                    {item.dateLabel}
+                  </time>
+                  <span class="entry-title">{item.meta.title}</span>
+                  <span class={`entry-kind kind-${item.entry.collection}`}>
+                    {item.entry.collection === "blog" ? "博客" : "教程"}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
     }
     <section class="archive-lock" id="archive-lock" hidden>
       <h2>访问已受限</h2>
@@ -90,94 +87,91 @@ const stats = [
 </script>
 
 <style>
-  .archive-timeline {
-    position: relative;
+  .archive-list {
     display: grid;
-    gap: var(--space-3);
-    padding: 0.2rem 0;
+    gap: var(--space-5);
   }
 
-  .timeline-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    transform: translateX(-50%);
-    background: color-mix(in oklab, var(--line) 75%, transparent 25%);
-    pointer-events: none;
-  }
-
-  .timeline-item {
+  .archive-year {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr);
-    align-items: start;
-    gap: var(--space-3);
-    position: relative;
-    z-index: 1;
+    gap: var(--space-2);
   }
 
-  .timeline-column {
-    min-width: 0;
+  .year-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--line);
   }
 
-  .timeline-axis {
-    display: grid;
-    justify-items: center;
-    align-content: start;
-    gap: 0.32rem;
-    padding-top: 0.34rem;
+  .year-head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
   }
 
-  .timeline-date {
-    font-size: 0.76rem;
+  .year-count {
     color: var(--text-muted);
-    background: color-mix(in oklab, var(--surface-1) 94%, transparent 6%);
+    font-size: 0.82rem;
+  }
+
+  .year-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+  }
+
+  .entry-row {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: 0.52rem 0.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background-color 160ms ease;
+  }
+
+  .entry-row:hover {
+    background: color-mix(in oklab, var(--brand-soft) 36%, transparent 64%);
+  }
+
+  .entry-date {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .entry-title {
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .entry-row:hover .entry-title {
+    color: var(--brand);
+  }
+
+  .entry-kind {
+    font-size: 0.72rem;
+    color: var(--text-muted);
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-    padding: 0.12rem 0.48rem;
+    padding: 0.08rem 0.46rem;
     white-space: nowrap;
   }
 
-  .timeline-date-inline {
-    display: none;
-    align-items: center;
-    justify-content: flex-start;
-    align-self: flex-start;
-    width: fit-content;
-    margin: 0 0 0.45rem;
-    padding: 0.16rem 0.56rem;
-    border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
-    background: color-mix(in oklab, var(--surface-1) 92%, transparent 8%);
-    color: var(--text-muted);
-    font-size: 0.76rem;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-
-  .timeline-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 2px solid color-mix(in oklab, var(--brand) 52%, var(--line) 48%);
-    background: color-mix(in oklab, var(--surface-1) 96%, transparent 4%);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand-soft) 55%, transparent 45%);
-  }
-
-  .timeline-col-left {
-    grid-column: 1;
-  }
-
-  .timeline-col-right {
-    grid-column: 3;
-  }
-
-  .side-left .timeline-col-right,
-  .side-right .timeline-col-left {
-    opacity: 0;
-    pointer-events: none;
-    min-height: 1px;
+  .entry-kind.kind-tutorial {
+    color: color-mix(in oklab, var(--accent) 70%, var(--text-soft) 30%);
+    border-color: color-mix(in oklab, var(--accent) 34%, var(--line) 66%);
   }
 
   .archive-lock {
@@ -207,54 +201,28 @@ const stats = [
     color: var(--text-muted);
   }
 
-  .archive-timeline.is-locked .timeline-item {
+  .archive-list.is-locked .timeline-item,
+  .archive-list.is-locked .year-head {
     opacity: 0.25;
     pointer-events: none;
     filter: blur(1px);
   }
 
-  @media (max-width: 980px) {
-    .timeline-line {
-      left: 10px;
-      width: 1px;
-      transform: none;
+  @media (max-width: 760px) {
+    .entry-row {
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: var(--space-2);
     }
 
-    .timeline-item {
-      grid-template-columns: 18px minmax(0, 1fr);
-      gap: 0.5rem;
-    }
-
-    .timeline-axis {
-      grid-column: 1;
-      justify-items: start;
-      padding-top: 0.4rem;
-    }
-
-    .timeline-date {
+    .entry-kind {
       display: none;
     }
 
-    .timeline-col-left,
-    .timeline-col-right {
-      grid-column: 2;
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .side-left .timeline-col-right,
-    .side-right .timeline-col-left {
-      display: none;
-    }
-
-    .timeline-date-inline {
-      display: inline-flex;
-    }
-
-    .timeline-dot {
-      width: 7px;
-      height: 7px;
-      box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-soft) 55%, transparent 45%);
+    .entry-title {
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
   }
 </style>

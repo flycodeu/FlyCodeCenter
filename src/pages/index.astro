@@ -3,7 +3,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import siteConfig from "@/site.config";
 import PostCard from "@/components/PostCard.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
-import StatsCard from "@/components/StatsCard.astro";
 import Watermark from "@/components/Watermark.astro";
 import {
   fetchBlogEntries,
@@ -70,38 +69,37 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
 
 <BaseLayout>
   <div class="home-page">
-    {
-      hero.enable && (
-        <section class="hero surface fade-up">
-          {siteConfig.watermark.enable && siteConfig.watermark.scope === "hero" && <Watermark scope="hero" />}
-          {heroImageConfig.enable && heroImageSrc && (
-            <div class="hero-bg">
-              <img src={heroImageSrc} alt={heroImageAlt} loading="lazy" />
-            </div>
-          )}
-          <div class="hero-content">
-            <h1>{hero.title}</h1>
-            {hero.tagline && <p class="tagline">{hero.tagline}</p>}
-            <p class="description">{hero.description}</p>
-            <div class="hero-metrics" aria-label="site-overview">
-              <span class="chip">{blogs.length} 篇博客</span>
-              <span class="chip">{tutorials.length} 篇教程</span>
-              <span class="chip">{tagCount} 个标签</span>
-            </div>
-            {hero.actions?.length ? (
-              <div class="hero-actions">
-                {hero.actions.slice(0, 3).map((action) => (
-                  <a href={action.link} class={`btn ${action.type}`}>{action.text}</a>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )
-    }
-
     <div class="home-shell">
       <section class="home-main">
+        {
+          hero.enable && (
+            <section class="hero surface fade-up">
+              {siteConfig.watermark.enable && siteConfig.watermark.scope === "hero" && <Watermark scope="hero" />}
+              {heroImageConfig.enable && heroImageSrc && (
+                <div class="hero-bg">
+                  <img src={heroImageSrc} alt={heroImageAlt} loading="lazy" />
+                </div>
+              )}
+              <div class="hero-content">
+                <h1>{hero.title}</h1>
+                {hero.tagline && <p class="tagline">{hero.tagline}</p>}
+                <p class="description">{hero.description}</p>
+                <div class="hero-metrics" aria-label="site-overview">
+                  <span class="chip">{blogs.length} 篇博客</span>
+                  <span class="chip">{tutorials.length} 篇教程</span>
+                  <span class="chip">{tagCount} 个标签</span>
+                </div>
+                {hero.actions?.length ? (
+                  <div class="hero-actions">
+                    {hero.actions.slice(0, 3).map((action) => (
+                      <a href={action.link} class={`btn ${action.type}`}>{action.text}</a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          )
+        }
         {
           featuredMeta && (
             <article class={`surface featured-card mode-${hasFeaturedCover ? featuredMode : "none"} fade-up`}>
@@ -134,8 +132,11 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
         }
 
         <div class="stream-head">
-          <h2 class="section-title">Latest Posts</h2>
-          <a href="/archives">全部内容</a>
+          <div class="stream-title">
+            <p class="stream-kicker">Latest</p>
+            <h2 class="section-title">最新文章</h2>
+          </div>
+          <a href="/archives">全部内容 →</a>
         </div>
         <div class="recent-grid" id="home-feed-list">
           {
@@ -152,11 +153,6 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
 
       <aside class="home-side">
         <SidebarProfile />
-        <div class="stats-grid">
-          <StatsCard title="博客文章" value={blogs.length} href="/blog" />
-          <StatsCard title="教程数量" value={tutorials.length} href="/tutorials" />
-          <StatsCard title="标签总数" value={tagCount} href="/tags" />
-        </div>
       </aside>
     </div>
   </div>
@@ -192,8 +188,23 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
           if (totalPages <= 1) {
             pager.hidden = true;
           } else {
-            const pages = Array.from({ length: totalPages }, (_, idx) => idx + 1)
+            const windowPages = (current, total) => {
+              if (total <= 7) return Array.from({ length: total }, (_, idx) => idx + 1);
+              const picked = [...new Set([1, total, current - 1, current, current + 1])]
+                .filter((page) => page >= 1 && page <= total)
+                .sort((a, b) => a - b);
+              const out = [];
+              let prev = 0;
+              for (const page of picked) {
+                if (page - prev > 1) out.push("ellipsis");
+                out.push(page);
+                prev = page;
+              }
+              return out;
+            };
+            const pages = windowPages(currentPage, totalPages)
               .map((pageNo) => {
+                if (pageNo === "ellipsis") return `<span class="pager-ellipsis" aria-hidden="true">…</span>`;
                 const active = pageNo === currentPage ? "is-active" : "";
                 return `<button type="button" class="pager-btn pager-btn-num ${active}" data-page="${pageNo}">${pageNo}</button>`;
               })
@@ -287,16 +298,15 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
   .hero {
     position: relative;
     overflow: hidden;
-    min-height: clamp(280px, 40vh, 420px);
     border-radius: var(--radius-lg);
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: var(--space-5);
+    padding: clamp(2rem, 4vw, 3.4rem) clamp(1.4rem, 3.2vw, 2.8rem);
+    border: 1px solid var(--line);
     background:
-      radial-gradient(72% 90% at 50% 10%, color-mix(in oklab, var(--brand-soft) 58%, transparent 42%), transparent 72%),
-      color-mix(in oklab, var(--surface-1) 84%, transparent 16%);
-    text-align: center;
+      radial-gradient(88% 150% at 100% 0%, color-mix(in oklab, var(--brand-soft) 42%, transparent 58%), transparent 60%),
+      var(--surface-1);
+    text-align: left;
   }
 
   .hero-bg {
@@ -315,16 +325,16 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
   .hero-content {
     position: relative;
     z-index: 2;
-    max-width: 820px;
+    max-width: 720px;
     display: grid;
     gap: var(--space-2);
-    justify-items: center;
+    justify-items: start;
   }
 
   .hero h1 {
     margin: 0;
-    font-size: clamp(2rem, 2.4vw + 1.4rem, 2.75rem);
-    line-height: 1.2;
+    font-size: clamp(1.8rem, 1.8vw + 1.2rem, 2.4rem);
+    line-height: 1.22;
     letter-spacing: -0.02em;
     font-weight: 700;
   }
@@ -347,7 +357,7 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
   .hero-metrics {
     display: inline-flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-1);
   }
 
@@ -359,8 +369,9 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
   .hero-actions {
     display: inline-flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-2);
+    margin-top: var(--space-1);
   }
 
   .btn {
@@ -538,16 +549,52 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
 
   .stream-head {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--line);
+  }
+
+  .stream-title {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .stream-kicker {
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
+
+  .stream-title .section-title {
+    position: relative;
+    padding-left: 0.7rem;
+    font-size: clamp(1.15rem, 0.9vw + 1rem, 1.4rem);
+  }
+
+  .stream-title .section-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.18em;
+    bottom: 0.18em;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--brand);
   }
 
   .stream-head a {
     color: var(--brand);
     font-size: 0.88rem;
     font-weight: 600;
+    transition: transform 200ms var(--ease-out-soft), color 200ms ease;
+  }
+
+  .stream-head a:hover {
+    transform: translateX(2px);
   }
 
   .recent-grid {
@@ -613,11 +660,6 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
     color: var(--text);
   }
 
-  .stats-grid {
-    display: grid;
-    gap: var(--space-2);
-  }
-
   @media (max-width: 1120px) {
     .featured-card.mode-right,
     .featured-card.mode-left {
@@ -648,8 +690,26 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
 
   @media (max-width: 760px) {
     .hero {
-      min-height: clamp(260px, 36vh, 340px);
-      padding: var(--space-5) var(--space-3);
+      padding: var(--space-4) var(--space-3);
+    }
+
+    .hero h1 {
+      font-size: clamp(1.5rem, 6vw, 1.9rem);
+      overflow-wrap: anywhere;
+    }
+
+    .tagline {
+      font-size: 0.98rem;
+    }
+
+    .description {
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+
+    .hero-actions .btn {
+      padding: 0.5rem 0.9rem;
+      font-size: 0.84rem;
     }
   }
 </style>

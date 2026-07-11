@@ -20,6 +20,9 @@ pnpm-debug.log*
 .env
 .env.production
 
+# local todo / progress tracking
+todo/
+
 # macOS-specific files
 .DS_Store
 

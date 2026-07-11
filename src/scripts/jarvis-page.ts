@@ -232,10 +232,10 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   if (!fallbackModels.length) {
     fallbackModels.push({
       uid: "default-0",
-      name: "GPT-4o mini",
+      name: "DeepSeek V3.2",
       provider: "openai-compatible",
-      model: "gpt-4o-mini",
-      apiBase: "https://api.openai.com/v1",
+      model: "deepseek-chat",
+      apiBase: "https://api.deepseek.com/v1",
       temperature: 0.7,
       enabled: true,
       apiKeyCipher: "",

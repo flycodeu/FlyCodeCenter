@@ -60,7 +60,9 @@ const activeText = orbConfig?.activeText ?? "连接中";
 }
 
 <style>
-  .jarvis-bot { position: fixed; bottom: calc(var(--bot-offset-y) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px)); z-index: 81; width: 114px; display: grid; justify-items: center; gap: 0.3rem; }
+  .jarvis-bot { position: fixed; bottom: calc(var(--bot-offset-y) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px)); z-index: 81; width: 80px; display: grid; justify-items: center; gap: 0.3rem; }
+  /* 悬浮球缩小并隐藏常驻文字，降低对内容与页脚的干扰 */
+  .jarvis-bot-trigger { zoom: 0.7; }
   .jarvis-bot.is-left { left: var(--bot-offset-x); }
   .jarvis-bot.is-right { right: var(--bot-offset-x); }
   .jarvis-bot-trigger { border: 0; background: transparent; cursor: pointer; padding: 0; width: 100%; display: grid; justify-items: center; }
@@ -101,7 +103,7 @@ const activeText = orbConfig?.activeText ?? "连接中";
   .jarvis-bot.is-pulsing .bot-core { animation: bot-pulse 800ms ease; }
   .jarvis-bot.is-scanning .screen-scan { opacity: 1; animation: bot-scan 980ms ease; }
   .jarvis-bot.is-music-on .bot-core { animation: bot-bob 1.2s ease-in-out infinite; }
-  .bot-label, .bot-status { margin: 0; pointer-events: none; text-align: center; white-space: nowrap; }
+  .bot-label, .bot-status { display: none; margin: 0; pointer-events: none; text-align: center; white-space: nowrap; }
   .bot-label { font-size: 0.62rem; letter-spacing: 0.16em; color: color-mix(in oklab, var(--text-soft) 72%, var(--brand) 28%); font-weight: 700; }
   .bot-status { font-size: 0.58rem; color: var(--text-muted); letter-spacing: 0.02em; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; }
   .jarvis-bot.is-active .bot-status { color: color-mix(in oklab, var(--brand) 78%, var(--text) 22%); }
@@ -122,6 +124,6 @@ const activeText = orbConfig?.activeText ?? "连接中";
   :root[data-perf="low"] .jarvis-bot .bot-chest-strip { animation-duration: 4s; }
   :root[data-perf="low"] .jarvis-bot.is-music-on .bot-core { animation-duration: 2.4s; }
   :root[data-perf="low"] .jarvis-bot .screen-scan { animation-duration: 1.4s; }
-  @media (max-width: 960px) { .jarvis-bot { width: 102px; } .bot-core { width: 82px; height: 98px; } }
+  @media (max-width: 960px) { .jarvis-bot { width: 72px; } .bot-core { width: 82px; height: 98px; } }
   @media (max-width: 900px) { .jarvis-bot { display: none !important; } }
 </style>
