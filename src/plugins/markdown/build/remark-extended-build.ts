@@ -278,7 +278,7 @@ function resolveNodeOffsets(node: unknown, locator: SourceLocator | null): NodeO
   if (!isNode(node)) return null;
   const start = resolvePointOffset(node.position?.start, locator);
   const end = resolvePointOffset(node.position?.end, locator);
-  if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+  if (start === null || end === null) return null;
   if (start < 0 || end <= start || end > locator.text.length) return null;
   return { start, end };
 }
@@ -288,7 +288,7 @@ function getNodeSourceSlice(node: unknown, locator: SourceLocator | null): strin
   if (!isNode(node)) return "";
   const start = resolvePointOffset(node.position?.start, locator);
   const end = resolvePointOffset(node.position?.end, locator);
-  if (!Number.isInteger(start) || !Number.isInteger(end)) return "";
+  if (start === null || end === null) return "";
   if (start < 0 || end <= start || end > locator.text.length) return "";
   return locator.text.slice(start, end);
 }
@@ -354,6 +354,37 @@ function createElement(tag: string, props: Record<string, unknown> = {}, childre
     },
     children
   };
+}
+
+function isCheckboxElement(value: unknown): boolean {
+  if (!isNode(value) || value.type !== "extendedElement") return false;
+  if (String(value.data?.hName || "") !== "label") return false;
+  const properties = value.data?.hProperties as Record<string, unknown> | undefined;
+  const className = properties?.className;
+  return Array.isArray(className) ? className.includes("mdx-checkbox") : className === "mdx-checkbox";
+}
+
+function groupCheckboxRuns(children: unknown[]): unknown[] {
+  const grouped: unknown[] = [];
+  let run: unknown[] = [];
+
+  const flush = () => {
+    if (!run.length) return;
+    grouped.push(createElement("div", { className: ["mdx-checklist"] }, run));
+    run = [];
+  };
+
+  children.forEach((child) => {
+    if (isCheckboxElement(child)) {
+      run.push(child);
+      return;
+    }
+    flush();
+    grouped.push(child);
+  });
+
+  flush();
+  return grouped;
 }
 
 function createText(value: string) {
@@ -1368,6 +1399,8 @@ function processContainerBlocks(
       processContainerBlocks(current as { children?: unknown[] }, options, state, sourceLocator);
     }
   }
+
+  parent.children = groupCheckboxRuns(parent.children);
 }
 
 export function remarkExtendedBuild(options: ExtendedBuildOptions = {}) {

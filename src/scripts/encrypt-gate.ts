@@ -38,7 +38,7 @@ function initEncryptGate() {
       const payload = await res.json();
       const markdown = await decryptMarkdown(payload, password);
       const { marked } = await import("marked");
-      content.innerHTML = marked.parse(markdown);
+      content.innerHTML = await marked.parse(markdown);
       message.textContent = "解密成功。";
       window.dispatchEvent(new CustomEvent("site:decrypted"));
     } catch {

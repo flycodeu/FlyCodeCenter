@@ -34,7 +34,7 @@
 
 - `remark-include.ts`：Markdown include 语法
 - `remark-normalize-code-lang.ts`：代码块语言标准化
-- `remark-extended-build.ts(.mjs)`：tabs / steps / chartjs / demo / shortcode 等扩展解析
+- `remark-extended-build.ts`：tabs / steps / chartjs / demo / shortcode 等扩展解析
 - `rehype-image-enhance.ts`：图片增强（figure/lazyload/size/mark）
 
 ## 三、文章页运行时插件（Article Runtime）

@@ -1,6 +1,7 @@
 export interface AntiCrawlConfigInput {
   enable?: boolean;
   lockOnSuspicious?: boolean;
+  allowlistedUserAgents?: string[];
   maxCopyActions?: number;
   maxActions?: number;
   timeWindowMs?: number;
@@ -53,6 +54,9 @@ export const resolveAntiCrawlRuntimeConfig = (
   return {
     antiCrawlEnabled: Boolean(config?.enable ?? false),
     antiCrawlLockOnSuspicious: Boolean(config?.lockOnSuspicious ?? true),
+    antiCrawlAllowlistedUserAgents: Array.isArray(config?.allowlistedUserAgents)
+      ? config.allowlistedUserAgents.map((value) => String(value || "").trim()).filter(Boolean)
+      : [],
     antiCrawlMaxCopyActions: legacyMaxActions,
     antiCrawlTimeWindowMs: timeWindowMs,
     antiCrawlWarnThresholdScore: warnThresholdScore,

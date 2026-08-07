@@ -86,6 +86,19 @@ function prettifySeriesKey(key: string): string {
   return normalized;
 }
 
+const SERIES_LABEL_OVERRIDES: Record<string, string> = {
+  ai: "AI",
+  cpp: "C++",
+  "c++": "C++",
+  godot: "Godot"
+};
+
+export function normalizeSeriesLabel(label: string, key = label): string {
+  const normalizedKey = normalizeSeriesKey(key).toLowerCase();
+  const normalizedLabel = String(label || "").trim();
+  return SERIES_LABEL_OVERRIDES[normalizedKey] ?? normalizedLabel;
+}
+
 function resolveLegacySeriesConfig(key: string) {
   const tutorialsConfig = (siteConfig.pages.tutorials as LegacyTutorialsConfig | undefined) ?? {};
   const seriesMeta = tutorialsConfig.seriesMeta ?? {};
@@ -94,7 +107,10 @@ function resolveLegacySeriesConfig(key: string) {
   const meta = seriesMeta[key] ?? seriesMeta[legacyKey] ?? {};
 
   return {
-    label: pickText(meta.label, seriesLabels[key], seriesLabels[legacyKey], prettifySeriesKey(key)),
+    label: normalizeSeriesLabel(
+      pickText(meta.label, seriesLabels[key], seriesLabels[legacyKey], prettifySeriesKey(key)),
+      key
+    ),
     description: pickText(meta.description),
     category: pickText(meta.category),
     cover: pickText(meta.cover),
@@ -187,7 +203,7 @@ export function buildTutorialSeriesBuckets(entries: TutorialEntry[]): Map<string
     if (!bucket.readmeEntry) continue;
 
     const readmeMeta = resolveSeriesMetaFromReadme(bucket.readmeEntry);
-    if (readmeMeta.label) bucket.label = readmeMeta.label;
+    if (readmeMeta.label) bucket.label = normalizeSeriesLabel(readmeMeta.label, bucket.key);
     if (readmeMeta.description) bucket.description = readmeMeta.description;
     if (readmeMeta.category) bucket.category = readmeMeta.category;
     if (readmeMeta.icon) bucket.icon = readmeMeta.icon;

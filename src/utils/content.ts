@@ -132,5 +132,5 @@ export function getEntryLink(entry: AnyEntry): string {
   if (entry.collection === "blog") return getBlogEntryUrl(entry);
   if (entry.collection === "tutorial") return getTutorialEntryUrl(entry);
   if (entry.collection === "projects") return getProjectEntryUrl(entry);
-  return entry.data.url;
+  return entry.data.url ?? (entry.collection === "sites" ? "/sites" : "/reading");
 }

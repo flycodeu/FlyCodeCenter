@@ -84,18 +84,19 @@ function isHexSecret(secret: string): boolean {
   return /^[a-f0-9]+$/i.test(secret) && secret.length % 2 === 0;
 }
 
-function fromHex(hex: string): Uint8Array {
+function fromHex(hex: string): ArrayBuffer {
   const normalized = String(hex || "").trim();
-  const bytes = new Uint8Array(normalized.length / 2);
+  const buffer = new ArrayBuffer(normalized.length / 2);
+  const bytes = new Uint8Array(buffer);
 
   for (let i = 0; i < normalized.length; i += 2) {
     bytes[i / 2] = Number.parseInt(normalized.slice(i, i + 2), 16);
   }
 
-  return bytes;
+  return buffer;
 }
 
-async function secretToKeyBytes(secret: string): Promise<Uint8Array> {
+async function secretToKeyBytes(secret: string): Promise<ArrayBuffer> {
   const normalized = String(secret || "").trim();
   if (isHexSecret(normalized)) {
     const bytes = fromHex(normalized);
@@ -103,7 +104,7 @@ async function secretToKeyBytes(secret: string): Promise<Uint8Array> {
   }
 
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalized));
-  return new Uint8Array(digest);
+  return digest;
 }
 
 async function importStorageKey(secret: string): Promise<CryptoKey> {

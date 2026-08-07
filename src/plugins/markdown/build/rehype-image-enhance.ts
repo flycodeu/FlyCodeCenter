@@ -22,7 +22,7 @@ export function rehypeImageEnhance(options: ImageOptions = {}) {
   } = options;
 
   return (tree: any) => {
-    visit(tree, "element", (node: any, index: number, parent: any) => {
+    visit(tree, "element", (node: any, index: number | undefined, parent: any) => {
       if (!parent || typeof index !== "number") return;
       if (node.tagName !== "img") return;
 

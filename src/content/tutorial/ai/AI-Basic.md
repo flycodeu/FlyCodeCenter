@@ -1,14 +1,13 @@
 ---
-title: AI Basic
+title: AI 工程基础
 createTime: '2026/03/17 21:02:43'
 code: t1isiswb9
 permalink: /tutorials/t1isiswb9/
 order: 1
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/Gemini_Generated_Image_w1rggow1rggow1rg.png
 ---
-# 懂这 14 个概念，AI 开发不再靠猜
+# AI 工程基础：从模型到应用
 
-*最后更新：2026 年 3 月。面向希望系统了解 AI 工程基础的读者，从语言模型本身到工程应用层逐层拆解。所有数据均来自原始文档或论文，文末附参考来源。*
+*最后更新：2026 年 3 月。本文把语言模型、上下文、工具调用、RAG 和 Agent 放在同一条工程链路里说明，适合需要快速建立整体概念的开发者。*
 
 ---
 

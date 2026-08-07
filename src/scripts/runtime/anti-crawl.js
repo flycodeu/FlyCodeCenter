@@ -29,6 +29,9 @@ export const notifyAntiCrawl = (message) => {
 export const createAntiCrawlGuard = (config = {}) => {
   const enabled = Boolean(config.enabled);
   const lockOnSuspicious = config.lockOnSuspicious ?? true;
+  const allowlistedUserAgents = Array.isArray(config.allowlistedUserAgents)
+    ? config.allowlistedUserAgents.map((value) => String(value || "").trim().toLowerCase()).filter(Boolean)
+    : [];
   const legacyMaxCopyActions = ensureNumber(config.maxCopyActions, 8, 4);
   const timeWindowMs = ensureNumber(config.timeWindowMs, 20000, 8000);
   const warnThresholdScore = ensureNumber(
@@ -130,6 +133,11 @@ export const createAntiCrawlGuard = (config = {}) => {
   const inspectEnvironment = () => {
     if (!enabled || restricted || !lockOnSuspicious) return { state, reason: lastReason };
     const ua = navigator.userAgent || "";
+    const normalizedUa = ua.toLowerCase();
+    if (allowlistedUserAgents.some((pattern) => normalizedUa.includes(pattern))) {
+      lastReason = "allowlisted-user-agent";
+      return { state, reason: lastReason, allowlisted: true };
+    }
     if (navigator.webdriver) {
       restrict("webdriver");
       return { state, reason: "webdriver" };

@@ -24,7 +24,7 @@ function formatDateTime(date: Date): string {
 }
 
 function isValidDate(date: Date | undefined): date is Date {
-  return Boolean(date) && !Number.isNaN(date.getTime());
+  return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
 function resolveSourceFilePath(entry: ArticleEntry): string | undefined {
@@ -66,9 +66,7 @@ function resolveCreateTimeFromFile(absolutePath: string): Date {
       return stat.birthtime;
     }
     if (isValidDate(stat.mtime)) return stat.mtime;
-  } catch {
-    // ignore
-  }
+  } catch {}
   return new Date();
 }
 

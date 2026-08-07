@@ -22,6 +22,11 @@ const resolveEndpoint = (apiBase: string) => {
   return `${base.replace(/\/$/, "")}/chat/completions`;
 };
 
+const resolveTemperature = (value: unknown) => {
+  const temperature = Number(value ?? 0.7);
+  return Number.isFinite(temperature) ? Math.max(0, Math.min(2, temperature)) : 0.7;
+};
+
 const extractText = (payload: any): string => {
   const choiceText = payload?.choices?.[0]?.message?.content;
   if (typeof choiceText === "string" && choiceText.trim()) return choiceText;
@@ -82,7 +87,7 @@ export const POST: APIRoute = async ({ request }) => {
       body: JSON.stringify({
         model,
         messages,
-        temperature: Math.max(0, Math.min(2, Number(body?.temperature ?? 0.7))),
+        temperature: resolveTemperature(body?.temperature),
         stream: false
       })
     });

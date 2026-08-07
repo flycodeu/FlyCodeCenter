@@ -47,6 +47,7 @@ export function initArticleRuntime(config = {}) {
     viewStatsEndpoint = "/api/views",
     antiCrawlEnabled = false,
     antiCrawlLockOnSuspicious = true,
+    antiCrawlAllowlistedUserAgents = [],
     antiCrawlMaxCopyActions = 8,
     antiCrawlTimeWindowMs = 20000,
     antiCrawlWarnThresholdScore = 10,
@@ -101,6 +102,7 @@ export function initArticleRuntime(config = {}) {
     const antiCrawlGuard = createAntiCrawlGuard({
       enabled: antiCrawlEnabled,
       lockOnSuspicious: antiCrawlLockOnSuspicious,
+      allowlistedUserAgents: antiCrawlAllowlistedUserAgents,
       maxCopyActions: antiCrawlMaxCopyActions,
       timeWindowMs: antiCrawlTimeWindowMs,
       warnThresholdScore: antiCrawlWarnThresholdScore,

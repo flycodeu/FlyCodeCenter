@@ -253,6 +253,21 @@ const siteConfig = defineSiteConfig({
     antiCrawl: {
       enable: true,
       lockOnSuspicious: true,
+      allowlistedUserAgents: [
+        "googlebot",
+        "google-inspectiontool",
+        "adsbot-google",
+        "mediapartners-google",
+        "bingbot",
+        "duckduckbot",
+        "yandexbot",
+        "baiduspider",
+        "applebot",
+        "slurp",
+        "facebookexternalhit",
+        "twitterbot",
+        "linkedinbot"
+      ],
       maxCopyActions: 8,
       timeWindowMs: 20000,
       warnThresholdScore: 10,
@@ -346,13 +361,13 @@ const siteConfig = defineSiteConfig({
     hero: {
       enable: true,
       title: "程序员飞云 · Flycode",
-      tagline: "后端开发程序员，持续学习并持续交付",
+      tagline: "写代码，也记录代码如何落地",
       description:
-        "熟悉 Java、Spring Boot、Python、Rust、MySQL、Redis、React、AI 等核心技术，专注做出真正可落地的软件产品。",
+        "这里是飞云的个人技术档案：后端工程、AI 实践、工具与持续学习。",
       actions: [
-        { text: "浏览博客", link: "/blog", type: "primary" },
-        { text: "查看教程", link: "/tutorials", type: "secondary" },
-        { text: "关于我", link: "/about", type: "secondary" }
+        { text: "进入博客", link: "/blog", type: "primary" },
+        { text: "浏览教程", link: "/tutorials", type: "secondary" },
+        { text: "认识我", link: "/about", type: "secondary" }
       ],
       image: {
         enable: false,
@@ -418,7 +433,7 @@ const siteConfig = defineSiteConfig({
       email: "mailto:flycodeu@zohomail.cn"
     },
     footer: {
-      message: "Built with Astro. Static First.",
+      message: "记录代码，也记录问题的答案。",
       copyright: "Copyright (c) 2026 飞云",
       showRuntime: false,
       runtimeSince: "2026-03-05T00:00:00+08:00"
@@ -505,14 +520,6 @@ const siteConfig = defineSiteConfig({
       list: true,
       theme: true
     }
-  },
-  bulletin: {
-    enable: true,
-    id: "2026-spring-update",
-    contentType: "markdown" as const,
-    title: "站点公告",
-    content:
-      "欢迎来到 **飞云的编程宝典**。\n\n- 首页升级为置顶 + 时间流\n- 新增标签中心 / 收藏 / 推荐\n- 搜索支持高亮与模糊匹配"
   },
   copyright: {
     enable: true,
@@ -640,59 +647,6 @@ const siteConfig = defineSiteConfig({
   },
   codeHighlight: {
     provider: "expressive" as "expressive" | "shiki" | "prism" | "rehype-pretty-code",
-    languages: [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "javascript",
-      "typescript",
-      "java",
-      "kotlin",
-      "kt",
-      "kts",
-      "groovy",
-      "sql",
-      "bash",
-      "sh",
-      "shell",
-      "powershell",
-      "ps1",
-      "cmd",
-      "bat",
-      "python",
-      "py",
-      "go",
-      "c",
-      "cpp",
-      "csharp",
-      "cs",
-      "rust",
-      "json",
-      "json5",
-      "jsonc",
-      "md",
-      "markdown",
-      "yaml",
-      "yml",
-      "toml",
-      "ini",
-      "properties",
-      "dotenv",
-      "html",
-      "xml",
-      "vue",
-      "docker",
-      "dockerfile",
-      "nginx",
-      "makefile",
-      "diff",
-      "http",
-      "log",
-      "mermaid",
-      "txt",
-      "plaintext"
-    ],
     lineNumbers: true,
     showWhitespace: false,
     twoslash: false,
@@ -1068,6 +1022,21 @@ const siteConfig = defineSiteConfig({
       antiCrawl: {
         enable: true,
         lockOnSuspicious: true,
+        allowlistedUserAgents: [
+          "googlebot",
+          "google-inspectiontool",
+          "adsbot-google",
+          "mediapartners-google",
+          "bingbot",
+          "duckduckbot",
+          "yandexbot",
+          "baiduspider",
+          "applebot",
+          "slurp",
+          "facebookexternalhit",
+          "twitterbot",
+          "linkedinbot"
+        ],
         maxActions: 10,
         timeWindowMs: 20000,
         warnThresholdScore: 12,

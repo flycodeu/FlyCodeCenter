@@ -5,19 +5,18 @@ code: b2j9vavq2
 permalink: /blog/b2j9vavq2/
 tags:
   - AI
-cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250603151822.jpg
 ---
 
 ## 什么是智能体
 
-智能体是一个能够感知环境、进行推理、制定计划、做出决策并自主行动的AI系统，集成记忆、知识库和工具为一体。
+智能体是一个能够感知环境、进行推理、制定计划并调用工具的 AI 系统。记忆、知识库和工具都是可选能力，是否引入取决于任务边界。
 
-1. 感知环境：通过各种渠道理解用户的提问。
-2. 自主规划任务步骤：将复杂的任务分解成可执行的子任务。
-3. 主动调用工具：自主选择需要调用的工具。
-4. 进行多步推理：通过思维链逐步分析问题并推导解决方案。
-5. 持续学习和记忆过去的交互：保持上下文的连贯。
-6. 根据环境反馈调整行为：根据执行结果动态调整策略。
+1. 理解输入：从用户请求中提取目标、约束和可用上下文。
+2. 制定计划：把复杂任务拆成可执行、可检查的步骤。
+3. 调用工具：只使用被授权且与当前步骤相关的工具。
+4. 观察结果：读取工具返回值，并判断是否需要重试或修正。
+5. 保存必要状态：只保留后续任务确实需要的上下文。
+6. 返回结果：给出结论、证据和未完成项，而不是假装任务已经完成。
 
 
 
@@ -27,7 +26,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 有限规划智能体：能简单的多步执行，但是通常有预设和限制
 
-自主规划智能体：能够根据任务目标自主分解任务、指定计划、选择工具一步一步进行调用，例如[Open Manus](https://github.com/FoundationAgents/OpenManus)
+自主规划智能体：能够根据任务目标自主分解任务、制定计划、选择工具一步一步进行调用，例如 [Open Manus](https://github.com/FoundationAgents/OpenManus)
 
 这类智能体能够通过思考-行动-观察的循环模式工作，直到完成目标。
 
@@ -35,25 +34,21 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 ## 智能体关键技术
 
-### CoT思维链
+### 关于思维链
 
-CoT（chain of thought）思维链是一种让AI像人类一样思考的技术，帮助AI将复杂的问题拆解思考，逐步完成。可以在输入Prompt时候，给模型额外的提示或者引导
+CoT（Chain of Thought）描述的是把复杂问题分步处理的思路。工程上不应要求模型暴露完整的内部推理过程，更实用的做法是让它输出简短的计划、工具调用记录、关键依据和最终结论。这样既方便校验，也不会把无关的冗长文字当成答案。
 
-例如如下提示词
+工程上可以要求模型返回可核验的计划、工具调用、关键依据和最终结论。
 
 ```
-You are an assistant focused on Chain of Thought reasoning. For each question, please follow these steps:  
+请返回：
   
-1. Break down the problem: Divide complex problems into smaller, more manageable parts  
-2. Think step by step: Think through each part in detail, showing your reasoning process  
-3. Synthesize conclusions: Integrate the thinking from each part into a complete solution  
-4. Provide an answer: Give a final concise answer  
+1. 任务拆分
+2. 需要调用的工具
+3. 每一步的关键依据
+4. 最终结论与未完成项
   
-Your response should follow this format:  
-Thinking: [Detailed thought process, including problem decomposition, reasoning for each step, and analysis]  
-Answer: [Final answer based on the thought process, clear and concise]  
-  
-Remember, the thinking process is more important than the final answer, as it demonstrates how you reached your conclusion.
+
 ```
 
 ### Agent Loop执行循环
@@ -62,12 +57,12 @@ Remember, the thinking process is more important than the final answer, as it de
 
 ### ReAct
 
-ReAct（Reasoning + Acting）结合推理和行动的智能体架构，模仿人类解决问题时，“思考-行动-观察”循环，目的是通过交互式决策决策解决复杂任务。
+ReAct（Reasoning + Acting）结合推理和行动的智能体架构，通过“思考-行动-观察”循环处理复杂任务。
 
 - 思考（Reason）：将复杂任务拆分为多个步骤的任务，明确当前执行步骤
 - 行动（Act）：调用外部工具执行动作
 - 观察（Observe）：获取工具返回结果，反馈给智能体进行下一步决策
-- 循环迭代：不对重复以上步骤，直到任务完成或者达到终止条件。
+- 循环迭代：不断重复上述步骤，直到任务完成或者达到终止条件。
 
 
 
@@ -587,4 +582,3 @@ public SseEmitter doChatWithManus(String message) {
 ## A2A协议
 
 [A2A](https://google-a2a.github.io/A2A/)协议主要目的是让智能体之间能够直接交流与协作，相当于智能体直接通信的协议。
-

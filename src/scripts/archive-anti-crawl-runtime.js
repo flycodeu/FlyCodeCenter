@@ -40,6 +40,7 @@ const initArchiveAntiCrawl = () => {
   const guard = createAntiCrawlGuard({
     enabled: config.antiCrawlEnabled,
     lockOnSuspicious: config.antiCrawlLockOnSuspicious,
+    allowlistedUserAgents: config.antiCrawlAllowlistedUserAgents,
     maxCopyActions: config.antiCrawlMaxCopyActions,
     timeWindowMs: config.antiCrawlTimeWindowMs,
     warnThresholdScore: config.antiCrawlWarnThresholdScore,

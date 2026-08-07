@@ -1,4 +1,6 @@
+import { watch } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
+import path from "node:path";
 import process from "node:process";
 
 const rootDir = process.cwd();
@@ -14,6 +16,10 @@ const warmupPaths = String(process.env.FLY_DEV_WARMUP_PATHS || "/")
 
 let warmed = false;
 let childExited = false;
+let restarting = false;
+let shuttingDown = false;
+let child;
+let themeRestartTimer;
 
 const syncResult = spawnSync(nodeBin, ["./scripts/fix-frontmatter-normalization.mjs"], {
   cwd: rootDir,
@@ -24,13 +30,6 @@ const syncResult = spawnSync(nodeBin, ["./scripts/fix-frontmatter-normalization.
 if (syncResult.status !== 0) {
   process.exit(syncResult.status ?? 1);
 }
-
-const child = spawn(npmBin, args, {
-  cwd: rootDir,
-  env: process.env,
-  stdio: ["inherit", "pipe", "pipe"],
-  shell: process.platform === "win32"
-});
 
 function normalizeWarmupUrl(baseUrl, targetPath) {
   try {
@@ -80,22 +79,82 @@ function pipeOutput(stream, target) {
   });
 }
 
-pipeOutput(child.stdout, process.stdout);
-pipeOutput(child.stderr, process.stderr);
+function cleanAstroCache() {
+  const result = spawnSync(nodeBin, ["./scripts/clean-astro-cache.mjs"], {
+    cwd: rootDir,
+    env: process.env,
+    stdio: "inherit"
+  });
+  return result.status === 0;
+}
+
+function startAstro() {
+  const nextChild = spawn(npmBin, args, {
+    cwd: rootDir,
+    env: process.env,
+    stdio: ["inherit", "pipe", "pipe"],
+    shell: process.platform === "win32"
+  });
+
+  pipeOutput(nextChild.stdout, process.stdout);
+  pipeOutput(nextChild.stderr, process.stderr);
+
+  nextChild.on("exit", (code, signal) => {
+    if (shuttingDown) {
+      childExited = true;
+      if (signal) {
+        process.kill(process.pid, signal);
+        return;
+      }
+      process.exit(code ?? 0);
+    }
+
+    if (restarting) {
+      if (!cleanAstroCache()) {
+        restarting = false;
+        childExited = true;
+        process.exit(1);
+      }
+      restarting = false;
+      childExited = false;
+      child = startAstro();
+      return;
+    }
+
+    childExited = true;
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code ?? 0);
+  });
+
+  return nextChild;
+}
+
+function requestThemeRestart(filename) {
+  if (childExited || restarting) return;
+  if (themeRestartTimer) clearTimeout(themeRestartTimer);
+  themeRestartTimer = setTimeout(() => {
+    themeRestartTimer = undefined;
+    if (childExited || restarting) return;
+    restarting = true;
+    process.stdout.write(`\n[dev] theme changed (${filename || "theme css"}), restarting Astro and clearing cache...\n`);
+    child?.kill();
+  }, 240);
+}
 
 function forwardSignal(signal) {
   if (childExited) return;
+  shuttingDown = true;
   child.kill(signal);
 }
 
 process.on("SIGINT", () => forwardSignal("SIGINT"));
 process.on("SIGTERM", () => forwardSignal("SIGTERM"));
 
-child.on("exit", (code, signal) => {
-  childExited = true;
-  if (signal) {
-    process.kill(process.pid, signal);
-    return;
-  }
-  process.exit(code ?? 0);
+child = startAstro();
+const themeWatcher = watch(path.join(rootDir, "src", "themes"), { recursive: true }, (_eventType, filename) => {
+  if (!filename || /\.css$/i.test(String(filename))) requestThemeRestart(String(filename || ""));
 });
+process.on("exit", () => themeWatcher.close());

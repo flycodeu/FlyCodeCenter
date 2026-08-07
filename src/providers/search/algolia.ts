@@ -3,6 +3,17 @@ import siteConfig from "../../site.config";
 import { makeSnippet } from "./shared";
 import type { SearchEngine, SearchResult } from "./types";
 
+interface AlgoliaRecord {
+  title?: string;
+  description?: string;
+  content?: string;
+  url?: string;
+  permalink?: string;
+  path?: string;
+  _highlightResult?: { title?: { value?: string } };
+  _rankingInfo?: { nbTypos?: number };
+}
+
 export async function createAlgoliaEngine(): Promise<SearchEngine> {
   const { appId, apiKey, indexName } = siteConfig.search.algolia;
   if (!appId || !apiKey || !indexName) {
@@ -13,18 +24,16 @@ export async function createAlgoliaEngine(): Promise<SearchEngine> {
 
   return {
     async search(query: string): Promise<SearchResult[]> {
-      const response: any = await client.search([
-        {
+      const response = await client.searchForHits<AlgoliaRecord>({
+        requests: [{
           indexName,
           query,
-          params: {
-            hitsPerPage: siteConfig.search.topK
-          }
-        }
-      ]);
+          hitsPerPage: siteConfig.search.topK
+        }]
+      });
 
-      const hits = response?.results?.[0]?.hits ?? [];
-      return hits.map((hit: any) => {
+      const hits = response.results[0]?.hits ?? [];
+      return hits.map((hit) => {
         const url = hit.url ?? hit.permalink ?? hit.path ?? "/";
         const title = hit.title ?? hit._highlightResult?.title?.value ?? "Untitled";
         const summary = hit.description ?? hit.content ?? "";

@@ -1,5 +1,5 @@
 ---
-title: c++
+title: C++
 createTime: '2026/03/08 15:17:37'
 code: t1kznc3jq
 permalink: /tutorials/cpp/

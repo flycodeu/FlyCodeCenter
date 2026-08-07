@@ -1,4 +1,5 @@
 import expressiveCode from "astro-expressive-code";
+import type { BundledShikiTheme } from "astro-expressive-code";
 import rehypePrettyCode from "rehype-pretty-code";
 
 type HighlightProvider = "expressive" | "shiki" | "prism" | "rehype-pretty-code";
@@ -19,9 +20,9 @@ const readProvider = (siteConfig: any): HighlightProvider => {
   return "prism";
 };
 
-const toShikiThemeName = (themeId: string, darkFallback = false) => {
+const toShikiThemeName = (themeId: string, darkFallback = false): BundledShikiTheme => {
   const key = String(themeId || "").trim().toLowerCase();
-  const mapping: Record<string, string> = {
+  const mapping: Record<string, BundledShikiTheme> = {
     "mac-light": "github-light",
     "mac-dark": "github-dark",
     "github-light": "github-light",
@@ -48,19 +49,6 @@ const resolveThemePair = (siteConfig: any) => {
   };
 };
 
-const normalizeLanguages = (input: unknown): string[] => {
-  if (!Array.isArray(input)) return [];
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const item of input) {
-    const lang = String(item || "").trim().toLowerCase();
-    if (!lang || seen.has(lang)) continue;
-    seen.add(lang);
-    result.push(lang);
-  }
-  return result;
-};
-
 export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightConfig => {
   const isFastDev = process.env.FLY_FAST_DEV_ACTIVE === "1";
   if (isFastDev) {
@@ -74,8 +62,6 @@ export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightCo
 
   const provider = readProvider(siteConfig);
   const { light, dark } = resolveThemePair(siteConfig);
-  const langs = Array.isArray(siteConfig?.codeHighlight?.languages) ? siteConfig.codeHighlight.languages : [];
-  const normalizedLangs = normalizeLanguages(langs);
   const langAlias = {
     sh: "shellscript"
   };
@@ -87,7 +73,6 @@ export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightCo
         expressiveCode({
           themes: [light, dark],
           shiki: {
-            langs: normalizedLangs,
             langAlias
           }
         })
@@ -105,7 +90,6 @@ export const resolveCodeHighlightConfig = (siteConfig: any): ResolvedHighlightCo
       shikiConfig: {
         themes: { light, dark },
         wrap: true,
-        langs: normalizedLangs,
         langAlias
       },
       extraRehypePlugins: []

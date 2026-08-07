@@ -72,7 +72,7 @@ const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
 );
 const spacing = siteConfig.article.ui.spacing;
 const tocPosition = siteConfig.theme.toc.position === "left" ? "left" : "right";
-const tocWidth = Number(siteConfig.theme.toc.width ?? 332);
+const tocWidth = Math.min(280, Math.max(220, Number(siteConfig.theme.toc.width ?? 280)));
 const jsonLd = buildArticleJsonLd({
   title,
   description,

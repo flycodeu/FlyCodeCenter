@@ -1,4 +1,5 @@
 import { visit } from "unist-util-visit";
+import type { Code, Root } from "mdast";
 
 const LANG_ALIASES: Record<string, string> = {
   javascript: "javascript",
@@ -126,8 +127,8 @@ function normalizeLang(rawLang: string): string {
 }
 
 export function remarkNormalizeCodeLang() {
-  return (tree: unknown) => {
-    visit(tree, "code", (node: { lang?: string }) => {
+  return (tree: Root) => {
+    visit(tree, "code", (node: Code) => {
       if (!node.lang || !node.lang.trim()) {
         node.lang = "txt";
         return;

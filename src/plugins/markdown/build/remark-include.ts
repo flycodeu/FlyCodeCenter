@@ -20,8 +20,8 @@ export function remarkMarkdownInclude(options: Options = {}) {
 
   return (tree: any, file: any) => {
     if (!enabled) return;
-    visit(tree, "code", (node: any, index: number, parent: any) => {
-      if (!parent || node.lang !== "include") return;
+    visit(tree, "code", (node: any, index: number | undefined, parent: any) => {
+      if (!parent || typeof index !== "number" || node.lang !== "include") return;
       const relativeFile = String(node.value || "").trim();
       if (!relativeFile) return;
       const baseDir = file?.path ? path.dirname(file.path) : process.cwd();
