@@ -149,7 +149,7 @@
   font-size: clamp(1.96rem, 2.3vw + 1rem, 3.18rem);
   font-weight: 700;
   line-height: 1.08;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   text-wrap: pretty;
 }
 
@@ -239,7 +239,7 @@
   margin-bottom: 0.8rem;
   font-family: var(--font-display);
   line-height: 1.18;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   text-wrap: pretty;
   color: var(--text);
 }

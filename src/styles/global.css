@@ -369,7 +369,7 @@ html {
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
-  letter-spacing: -0.004em;
+  letter-spacing: 0;
   color: var(--text);
   background:
     radial-gradient(920px 460px at -10% -12%, color-mix(in oklab, var(--bg-mesh-a) 68%, transparent 32%), transparent 74%),
@@ -391,6 +391,16 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+button:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--brand) 72%, white 28%);
+  outline-offset: 3px;
 }
 
 body::before {
@@ -819,13 +829,13 @@ img {
   font-size: clamp(1rem, 0.8vw + 0.92rem, 1.28rem);
   margin: 0;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   text-transform: none;
 }
 
 :root[data-layout-preset="editorial"] .section-title {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-transform: none;
 }
 
@@ -984,7 +994,7 @@ img {
   font-weight: 700;
   line-height: 1.24;
   color: var(--text);
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   text-transform: none;
 }
 

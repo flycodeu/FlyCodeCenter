@@ -8,6 +8,9 @@ function initInterviewAnswerToggle() {
     const toggle = root.querySelector("[data-answer-toggle]");
     const panel = root.querySelector("[data-answer-panel]");
     const label = root.querySelector("[data-answer-toggle-label]");
+    const controller = new AbortController();
+    const { signal } = controller;
+    document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
 
     if (!(toggle instanceof HTMLButtonElement) || !(panel instanceof HTMLElement) || !(label instanceof HTMLElement)) {
       return;
@@ -26,7 +29,7 @@ function initInterviewAnswerToggle() {
       if (nextExpanded) {
         window.dispatchEvent(new CustomEvent("site:decrypted"));
       }
-    });
+    }, { signal });
   });
 }
 

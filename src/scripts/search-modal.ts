@@ -16,6 +16,12 @@ function escapeHtml(input: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function renderSnippet(input: string): string {
+  return escapeHtml(input)
+    .replaceAll("&lt;mark&gt;", "<mark>")
+    .replaceAll("&lt;/mark&gt;", "</mark>");
+}
+
 function normalizeUrl(url: string): string {
   if (!url) return "/";
   if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) {
@@ -65,17 +71,36 @@ function setupSearchModal() {
     dialog instanceof HTMLDialogElement &&
     typeof dialog.showModal === "function";
 
-  const input = document.getElementById(useDialog ? "search-input" : "search-input-fallback");
-  const resultsEl = document.getElementById(useDialog ? "search-results" : "search-results-fallback");
+  const nativeInput = document.getElementById("search-input");
+  const nativeResults = document.getElementById("search-results");
+  const fallbackInput = document.getElementById("search-input-fallback");
+  const fallbackResults = document.getElementById("search-results-fallback");
 
-  if (!(input instanceof HTMLInputElement) || !(resultsEl instanceof HTMLElement)) return () => {};
+  if (
+    !(nativeInput instanceof HTMLInputElement) ||
+    !(nativeResults instanceof HTMLElement) ||
+    !(fallbackInput instanceof HTMLInputElement) ||
+    !(fallbackResults instanceof HTMLElement)
+  ) {
+    return () => {};
+  }
 
   let engine: SearchEngine | null = null;
+  let enginePromise: Promise<SearchEngine> | null = null;
   let focusedIndex = -1;
   let currentResults: SearchResult[] = [];
   let sequence = 0;
   let debounceTimer = 0;
   let destroyed = false;
+  let dialogActive = useDialog;
+  let input = dialogActive ? nativeInput : fallbackInput;
+  let resultsEl = dialogActive ? nativeResults : fallbackResults;
+
+  const setActiveSurface = (native: boolean) => {
+    dialogActive = native && useDialog;
+    input = dialogActive ? nativeInput : fallbackInput;
+    resultsEl = dialogActive ? nativeResults : fallbackResults;
+  };
 
   const mountFallback = () => {
     if (!(fallback instanceof HTMLElement)) return;
@@ -92,37 +117,50 @@ function setupSearchModal() {
   };
 
   const ensureEngine = async () => {
-    if (!engine) {
-      engine = await createSearchEngine();
-    }
+    if (engine) return engine;
+    enginePromise ??= createSearchEngine();
+    engine = await enginePromise;
     return engine;
+  };
+
+  const updateResultCount = (count: number) => {
+    const countId = dialogActive ? "search-count" : "search-count-fallback";
+    const countEl = document.getElementById(countId);
+    if (countEl instanceof HTMLElement) {
+      countEl.textContent = `${count} 条结果`;
+    }
   };
 
   const setError = (message: string) => {
     resultsEl.innerHTML = `<li class='result-empty'>${escapeHtml(message)}</li>`;
+    updateResultCount(0);
   };
 
   const renderResults = (query: string) => {
     if (!query) {
       resultsEl.innerHTML = "<li class='result-empty'>输入关键词开始搜索</li>";
       focusedIndex = -1;
+      updateResultCount(0);
       return;
     }
 
     if (!currentResults.length) {
       resultsEl.innerHTML = "<li class='result-empty'>没有命中结果</li>";
       focusedIndex = -1;
+      updateResultCount(0);
       return;
     }
 
+    updateResultCount(currentResults.length);
     resultsEl.innerHTML = currentResults
       .map((item, idx) => {
         const cls = idx === focusedIndex ? "result-item active" : "result-item";
         const safeUrl = normalizeUrl(String(item.url || "/"));
         const domain = inferDomainLabel(safeUrl);
         const pathText = toReadablePath(safeUrl);
-        return `<li class="${cls}" data-url="${safeUrl}" data-index="${idx}">
-            <a href="${safeUrl}">
+        const escapedUrl = escapeHtml(safeUrl);
+        return `<li class="${cls}" data-url="${escapedUrl}" data-index="${idx}">
+            <a href="${escapedUrl}">
               <div class="result-title-row">
                 <h4>${escapeHtml(String(item.title || "Untitled"))}</h4>
               </div>
@@ -130,11 +168,20 @@ function setupSearchModal() {
                 <span class="result-domain">${escapeHtml(domain)}</span>
                 <span class="result-path">${escapeHtml(pathText)}</span>
               </div>
-              <p class="result-snippet">${item.snippet || ""}</p>
+              <p class="result-snippet">${renderSnippet(String(item.snippet || "暂无摘要"))}</p>
             </a>
           </li>`;
       })
       .join("");
+  };
+
+  const updateFocusedResult = (nextIndex: number) => {
+    if (nextIndex === focusedIndex || nextIndex < 0 || nextIndex >= currentResults.length) return;
+    const current = resultsEl.querySelector(".result-item.active");
+    current?.classList.remove("active");
+    const next = resultsEl.querySelector(`[data-index="${nextIndex}"]`);
+    next?.classList.add("active");
+    focusedIndex = nextIndex;
   };
 
   const runSearch = async () => {
@@ -169,13 +216,17 @@ function setupSearchModal() {
       typeof dialog.showModal === "function";
 
     if (canUseDialog) {
+      setActiveSurface(true);
       try {
         if (!dialog.open) dialog.showModal();
       } catch (error) {
         console.warn("search modal showModal failed, fallback to panel", error);
+        if (dialog.open) dialog.close();
+        setActiveSurface(false);
         mountFallback();
       }
     } else {
+      setActiveSurface(false);
       mountFallback();
     }
 
@@ -188,6 +239,7 @@ function setupSearchModal() {
       setError("搜索引擎加载失败，请稍后再试。");
     }
 
+    if (destroyed) return;
     window.requestAnimationFrame(() => {
       input.focus();
     });
@@ -195,7 +247,7 @@ function setupSearchModal() {
 
   const closeSearch = () => {
     if (
-      useDialog &&
+      dialogActive &&
       dialog instanceof HTMLDialogElement &&
       dialog.isConnected &&
       dialog.open
@@ -212,7 +264,8 @@ function setupSearchModal() {
     }, 100);
   };
 
-  input.addEventListener("input", handleInput, { signal });
+  nativeInput.addEventListener("input", handleInput, { signal });
+  fallbackInput.addEventListener("input", handleInput, { signal });
 
   if (dialog instanceof HTMLDialogElement) {
     dialog.addEventListener(
@@ -236,34 +289,38 @@ function setupSearchModal() {
     { signal }
   );
 
-  resultsEl.addEventListener(
-    "mousemove",
-    (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      const item = target.closest(".result-item");
-      if (!(item instanceof HTMLElement)) return;
-      focusedIndex = Number(item.dataset.index ?? -1);
-      renderResults(input.value.trim());
-    },
-    { signal }
-  );
+  [nativeResults, fallbackResults].forEach((results) => {
+    results.addEventListener(
+      "mouseover",
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const item = target.closest(".result-item");
+        if (!(item instanceof HTMLElement)) return;
+        const nextIndex = Number(item.dataset.index ?? -1);
+        const related = event.relatedTarget;
+        if (related instanceof Node && item.contains(related)) return;
+        updateFocusedResult(nextIndex);
+      },
+      { signal }
+    );
 
-  resultsEl.addEventListener(
-    "click",
-    (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      const item = target.closest(".result-item");
-      if (!(item instanceof HTMLElement)) return;
-      const url = item.dataset.url;
-      if (!url) return;
-      event.preventDefault();
-      closeSearch();
-      window.location.href = normalizeUrl(url);
-    },
-    { signal }
-  );
+    results.addEventListener(
+      "click",
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const item = target.closest(".result-item");
+        if (!(item instanceof HTMLElement)) return;
+        const url = item.dataset.url;
+        if (!url) return;
+        event.preventDefault();
+        closeSearch();
+        window.location.href = normalizeUrl(url);
+      },
+      { signal }
+    );
+  });
 
   document.addEventListener(
     "click",
@@ -306,7 +363,7 @@ function setupSearchModal() {
         return;
       }
 
-      const opened = useDialog
+      const opened = dialogActive
         ? dialog instanceof HTMLDialogElement && dialog.isConnected && dialog.open
         : fallback instanceof HTMLElement && fallback.classList.contains("open");
 
@@ -321,16 +378,14 @@ function setupSearchModal() {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         if (!currentResults.length) return;
-        focusedIndex = (focusedIndex + 1 + currentResults.length) % currentResults.length;
-        renderResults(input.value.trim());
+        updateFocusedResult((focusedIndex + 1 + currentResults.length) % currentResults.length);
         return;
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
         if (!currentResults.length) return;
-        focusedIndex = (focusedIndex - 1 + currentResults.length) % currentResults.length;
-        renderResults(input.value.trim());
+        updateFocusedResult((focusedIndex - 1 + currentResults.length) % currentResults.length);
         return;
       }
 
@@ -348,8 +403,10 @@ function setupSearchModal() {
 
   return () => {
     destroyed = true;
+    sequence += 1;
     closeSearch();
     window.clearTimeout(debounceTimer);
+    engine?.destroy?.();
     controller.abort();
   };
 }

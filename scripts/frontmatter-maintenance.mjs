@@ -502,9 +502,7 @@ function resolveCreateTime(file, currentValue) {
     if (isValidDate(stat.mtime)) {
       return formatDateTime(stat.mtime);
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return formatDateTime(new Date());
 }

@@ -20,6 +20,15 @@ function escapeRegex(raw: string): string {
   return raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function escapeHtml(input: string): string {
+  return input
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function makeSnippet(content: string, query: string, radius = 56): string {
   const source = content.replace(/\s+/g, " ").trim();
   if (!source) return "";
@@ -35,7 +44,20 @@ export function makeSnippet(content: string, query: string, radius = 56): string
 }
 
 export function highlight(text: string, query: string): string {
-  if (!query.trim()) return text;
-  const pattern = new RegExp(`(${escapeRegex(query)})`, "ig");
-  return text.replace(pattern, "<mark>$1</mark>");
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return escapeHtml(text);
+
+  const pattern = new RegExp(escapeRegex(normalizedQuery), "ig");
+  let output = "";
+  let cursor = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index ?? -1;
+    if (index < 0) continue;
+    output += escapeHtml(text.slice(cursor, index));
+    output += `<mark>${escapeHtml(match[0])}</mark>`;
+    cursor = index + match[0].length;
+  }
+
+  return `${output}${escapeHtml(text.slice(cursor))}`;
 }

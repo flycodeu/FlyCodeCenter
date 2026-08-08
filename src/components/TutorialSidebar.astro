@@ -140,6 +140,9 @@ const {
       const mobilePanel = root.querySelector("[data-sidebar-mobile-panel]");
       const mobileOverlay = root.querySelector("[data-sidebar-mobile-overlay]");
       const readerShell = root.closest(".tutorial-reader");
+      const controller = new AbortController();
+      const { signal } = controller;
+      document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
 
       const closeDrawer = () => {
         if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
@@ -177,13 +180,13 @@ const {
       toggleBtn?.addEventListener("click", () => {
         root.classList.toggle("is-collapsed");
         syncCollapsedState();
-      });
-      openBtn?.addEventListener("click", openDrawer);
-      closeBtn?.addEventListener("click", closeDrawer);
-      mobileOverlay?.addEventListener("click", closeDrawer);
+      }, { signal });
+      openBtn?.addEventListener("click", openDrawer, { signal });
+      closeBtn?.addEventListener("click", closeDrawer, { signal });
+      mobileOverlay?.addEventListener("click", closeDrawer, { signal });
       window.addEventListener("resize", () => {
         if (window.innerWidth > 1024) closeDrawer();
-      });
+      }, { signal });
 
       root.querySelectorAll("[data-sidebar-scroll]").forEach((scrollNode) => {
         if (!(scrollNode instanceof HTMLElement)) return;

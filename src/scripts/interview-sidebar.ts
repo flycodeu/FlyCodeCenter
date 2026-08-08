@@ -21,9 +21,13 @@ function initInterviewSidebar() {
     const progressText = root.querySelector("[data-progress-text]");
     const progressBar = root.querySelector("[data-progress-bar]");
     const nextText = root.querySelector("[data-next-text]");
+    const controller = new AbortController();
+    const { signal } = controller;
+    document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
 
     const sync = async () => {
       const state = await readInterviewState(storageSecret);
+      if (signal.aborted) return;
       const remembered = isInterviewStateValid(state, passwordHash)
         ? new Set(getInterviewSpaceState(state, spaceKey).remembered)
         : new Set<string>();
@@ -78,7 +82,7 @@ function initInterviewSidebar() {
         await toggleInterviewRemembered(storageSecret, { spaceKey, slug });
         dispatchInterviewStateChange("remember");
         await sync();
-      });
+      }, { signal });
     });
 
     if (spaceKey && currentSlug) {
@@ -87,10 +91,10 @@ function initInterviewSidebar() {
 
     window.addEventListener(INTERVIEW_STATE_EVENT, () => {
       sync().catch(console.error);
-    });
+    }, { signal });
     window.addEventListener("storage", () => {
       sync().catch(console.error);
-    });
+    }, { signal });
 
     sync().catch(console.error);
   });

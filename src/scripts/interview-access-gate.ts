@@ -27,6 +27,9 @@ function initInterviewAccessGate() {
     const input = root.querySelector("[data-access-password]");
     const message = root.querySelector("[data-access-message]");
     const submitButton = form?.querySelector('button[type="submit"]');
+    const controller = new AbortController();
+    const { signal } = controller;
+    document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
     const setGateVisible = (visible: boolean) => {
       root.hidden = !visible;
       root.style.display = visible ? "" : "none";
@@ -35,6 +38,7 @@ function initInterviewAccessGate() {
 
     const sync = async () => {
       const sessionState = readInterviewSessionState();
+      if (signal.aborted) return;
       if (isInterviewStateValid(sessionState, passwordHash)) {
         setGateVisible(false);
         return;
@@ -94,14 +98,14 @@ function initInterviewAccessGate() {
           if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false;
         }
       }
-    });
+    }, { signal });
 
     window.addEventListener(INTERVIEW_STATE_EVENT, () => {
       sync().catch(console.error);
-    });
+    }, { signal });
     window.addEventListener("storage", () => {
       sync().catch(console.error);
-    });
+    }, { signal });
 
     sync().catch(console.error);
   });

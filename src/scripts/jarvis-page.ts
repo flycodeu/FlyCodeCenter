@@ -368,6 +368,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   let sessionMenuId = "";
   let pendingNeedPassword = false;
   let sending = false;
+  let messageRenderFrame = 0;
 
   const vault = { key: null as CryptoKey | null, ready: localStorage.getItem(STORAGE.vaultReady) === "1" };
 
@@ -430,9 +431,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
         localStorage.setItem(STORAGE.vaultReady, "1");
         return existing;
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
     const password = String(passwordForSetup || "").trim();
     if (!password) throw new Error("密钥保险库尚未初始化，请先输入加密密码。");
     if (password.length < 6) throw new Error("加密密码至少 6 位。");
@@ -478,6 +477,22 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
       })
       .join("");
     el.stream.scrollTop = el.stream.scrollHeight;
+  };
+
+  const queueMessageRender = () => {
+    if (messageRenderFrame) return;
+    messageRenderFrame = requestAnimationFrame(() => {
+      messageRenderFrame = 0;
+      renderMessages();
+    });
+  };
+
+  const flushMessageRender = () => {
+    if (messageRenderFrame) {
+      cancelAnimationFrame(messageRenderFrame);
+      messageRenderFrame = 0;
+    }
+    renderMessages();
   };
 
   const renderAll = () => {
@@ -627,7 +642,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
       hasDelta = true;
       conversation.messages[assistantIndex].content += text;
       conversation.updatedAt = Date.now();
-      renderMessages();
+      queueMessageRender();
     };
 
     const consume = (flush = false) => {
@@ -665,6 +680,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
       reader.releaseLock();
     }
 
+    flushMessageRender();
     return { done: doneReceived, hasDelta, error: streamError };
   };
 
@@ -1003,6 +1019,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   setSettingsStatus("可配置多个模型，但同一时刻仅启用一个。", "info");
   setChatStatus("AI 回复在左侧、用户消息在右侧，支持流式 Markdown。", "info");
   return () => {
+    if (messageRenderFrame) cancelAnimationFrame(messageRenderFrame);
     globalEventController.abort();
   };
 };

@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 
+import { resolveSafeUpstreamEndpoint } from "@/utils/upstream-url";
+
 export const prerender = false;
 
 interface ChatMessage {
@@ -14,13 +16,6 @@ interface RequestPayload {
   temperature?: number;
   messages: ChatMessage[];
 }
-
-const resolveEndpoint = (apiBase: string) => {
-  const base = String(apiBase || "").trim();
-  if (!base) return "";
-  if (/\/chat\/completions\/?$/i.test(base)) return base;
-  return `${base.replace(/\/$/, "")}/chat/completions`;
-};
 
 const resolveTemperature = (value: unknown) => {
   const temperature = Number(value ?? 0.7);
@@ -44,10 +39,10 @@ const extractDelta = (payload: any): string => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as RequestPayload;
-    const endpoint = resolveEndpoint(body?.apiBase);
+    const endpoint = resolveSafeUpstreamEndpoint(body?.apiBase);
 
     if (!endpoint) {
-      return new Response("apiBase is required", { status: 400 });
+      return new Response("apiBase must be a valid public HTTP(S) endpoint", { status: 400 });
     }
 
     const model = String(body?.model || "").trim();
@@ -59,10 +54,14 @@ export const POST: APIRoute = async ({ request }) => {
       ? body.messages
           .map((item) => ({ role: item?.role, content: String(item?.content || "") }))
           .filter((item) => ["system", "user", "assistant"].includes(String(item.role)) && item.content.trim())
+          .slice(-64)
       : [];
 
     if (!messages.length) {
       return new Response("messages is required", { status: 400 });
+    }
+    if (messages.some((item) => item.content.length > 12000)) {
+      return new Response("message content is too long", { status: 413 });
     }
 
     const headers: Record<string, string> = {

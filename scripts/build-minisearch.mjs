@@ -211,9 +211,7 @@ async function build() {
   try {
     await fs.mkdir(path.dirname(outputDist), { recursive: true });
     await fs.writeFile(outputDist, JSON.stringify(payload), "utf8");
-  } catch {
-    // dist may not exist during standalone runs
-  }
+  } catch {}
 
   console.log(`[minisearch] indexed ${docs.length} documents`);
 }

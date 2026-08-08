@@ -13,9 +13,13 @@ function initInterviewOverview() {
 
     const passwordHash = String(root.dataset.passwordHash || "").trim();
     const storageSecret = String(root.dataset.storageSecret || "").trim();
+    const controller = new AbortController();
+    const { signal } = controller;
+    document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
 
     const sync = async () => {
       const state = await readInterviewState(storageSecret);
+      if (signal.aborted) return;
       const valid = isInterviewStateValid(state, passwordHash);
 
       root.querySelectorAll("[data-space-card]").forEach((card) => {
@@ -45,10 +49,10 @@ function initInterviewOverview() {
     sync().catch(console.error);
     window.addEventListener(INTERVIEW_STATE_EVENT, () => {
       sync().catch(console.error);
-    });
+    }, { signal });
     window.addEventListener("storage", () => {
       sync().catch(console.error);
-    });
+    }, { signal });
   });
 }
 
