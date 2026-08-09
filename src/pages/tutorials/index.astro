@@ -4,6 +4,8 @@ import siteConfig from "@/site.config";
 import { fetchAllEntries, fetchTutorialEntries, makeTagItems } from "@/utils/query";
 import { buildTutorialSeriesBuckets, toSeriesRouteKey } from "@/utils/tutorial-series";
 import { formatDate } from "@/utils/date";
+import { buildResponsiveImageSources } from "@/utils/image";
+import ContentCover from "@/components/ContentCover.astro";
 
 interface TutorialsPageConfig {
   title?: string;
@@ -68,23 +70,22 @@ const seriesList = [...seriesMap.values()]
         if (showEntryCount) metaParts.push(`${bucket.entries.length} 篇`);
         if (showLastUpdated) metaParts.push(`更新于 ${formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")}`);
         const metaText = metaParts.join(" · ");
+        const coverSources = buildResponsiveImageSources(bucket.cover, [320, 480, 640, 960], 640);
         return (
           <article class="surface series-card">
-            {bucket.cover ? (
-              <a class="series-cover" href={href} aria-label={bucket.label}>
-                <img
-                  src={bucket.cover}
-                  alt={bucket.label}
-                  loading="lazy"
-                  decoding="async"
-                  referrerpolicy="no-referrer"
-                />
-              </a>
-            ) : (
-              <a class="series-cover series-cover-fallback" href={href} aria-label={bucket.label}>
-                <span>{bucket.label.slice(0, 1).toUpperCase()}</span>
-              </a>
-            )}
+            <a class="series-cover" href={href} aria-label={bucket.label}>
+              <ContentCover
+                title={bucket.label}
+                image={coverSources.src}
+                srcset={coverSources.srcset}
+                sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1200px) 38vw, 280px"
+                kindLabel="教程系列"
+                topic={bucket.category}
+                loading="lazy"
+                fetchpriority="low"
+                variant="regular"
+              />
+            </a>
 
             <div class="series-body">
               <header class="series-head">
@@ -111,10 +112,6 @@ const seriesList = [...seriesMap.values()]
 </ListLayout>
 
 <style>
-  :global(main.container) {
-    width: min(1360px, calc(100% - var(--space-6)));
-  }
-
   .series-grid {
     display: grid;
     grid-template-columns: repeat(var(--series-col-xl), minmax(0, 1fr));
@@ -167,37 +164,6 @@ const seriesList = [...seriesMap.values()]
     height: 100%;
     min-height: 164px;
     border-right: 0;
-  }
-
-  .series-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
-    transition: transform 200ms ease;
-  }
-
-  .series-card:hover .series-cover img {
-    transform: scale(1.03);
-  }
-
-  .series-cover-fallback {
-    aspect-ratio: var(--series-cover-ratio);
-    display: grid;
-    place-items: center;
-    background:
-      radial-gradient(80% 120% at 18% 0%, color-mix(in oklab, var(--brand) 16%, transparent 84%), transparent 70%),
-      radial-gradient(90% 110% at 90% 10%, color-mix(in oklab, var(--accent) 12%, transparent 88%), transparent 72%),
-      var(--surface-2);
-  }
-
-  .series-cover-fallback span {
-    font-size: 2.4rem;
-    font-weight: 700;
-    color: color-mix(in oklab, var(--brand) 62%, var(--text-muted) 38%);
-    letter-spacing: 0.02em;
-    user-select: none;
   }
 
   .series-body {

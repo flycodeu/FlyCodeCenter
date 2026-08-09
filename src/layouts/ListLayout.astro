@@ -27,7 +27,7 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 
     {
       !hideSidebar && (
-        <aside class="list-side" data-tag-count={String(tags.length)}>
+        <aside class="profile-rail list-side" data-tag-count={String(tags.length)}>
           <SidebarProfile />
         </aside>
       )
@@ -44,21 +44,7 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
     display: grid;
     gap: var(--space-4);
   }
-  .list-side {
-    display: grid;
-    gap: var(--space-4);
-    align-content: start;
-    position: sticky;
-    top: 84px;
-    height: fit-content;
-  }
   .no-side {
     grid-template-columns: minmax(0, 1fr);
-  }
-  @media (max-width: 1024px) {
-    .list-side {
-      position: static;
-      top: auto;
-    }
   }
 </style>

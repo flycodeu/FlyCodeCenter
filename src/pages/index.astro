@@ -3,6 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import siteConfig from "@/site.config";
 import PostCard from "@/components/PostCard.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
+import ContentCover from "@/components/ContentCover.astro";
 import Watermark from "@/components/Watermark.astro";
 import {
   fetchBlogEntries,
@@ -66,13 +67,13 @@ const featuredMode =
   normalizeCoverMode(featuredEntryData?.coverPosition) ??
   normalizeCoverMode(featuredMeta?.coverMode) ??
   featuredDefaultMode;
-const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none";
+const showFeaturedCover = featuredMode !== "none";
 const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || "", [480, 768, 960, 1200], 960);
 ---
 
 <BaseLayout>
   <div class="home-page">
-    <div class="home-shell">
+    <div class="grid-main home-shell">
       <section class="home-main">
         {
           hero.enable && (
@@ -114,7 +115,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
         }
         {
           featuredMeta && (
-            <article class={`surface featured-card mode-${hasFeaturedCover ? featuredMode : "none"} fade-up`}>
+            <article class={`surface featured-card mode-${featuredMode} fade-up`}>
               <div class="featured-meta">
                 <p class="featured-label">Featured</p>
                 <a class="featured-title" href={featuredLink}>{featuredMeta.title}</a>
@@ -128,24 +129,19 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
                   </time>
                 </footer>
               </div>
-              {hasFeaturedCover && (
+              {showFeaturedCover && (
                 <a class="featured-cover" href={featuredLink} aria-label={featuredMeta.title}>
-                  {
-                    featuredMeta.cover ? (
-                      <img
-                        src={featuredImageSources.src}
-                        srcset={featuredImageSources.srcset}
-                        sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1280px) 38vw, 420px"
-                        alt={featuredMeta.title}
-                        loading="eager"
-                        decoding="async"
-                        fetchpriority="high"
-                        referrerpolicy="no-referrer"
-                      />
-                    ) : (
-                      <div class="cover-fallback"></div>
-                    )
-                  }
+                  <ContentCover
+                    title={featuredMeta.title}
+                    image={featuredImageSources.src}
+                    srcset={featuredImageSources.srcset}
+                    sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1280px) 38vw, 420px"
+                    kindLabel="精选文章"
+                    topic={featuredMeta.tags[0]}
+                    loading="eager"
+                    fetchpriority="high"
+                    variant="large"
+                  />
                 </a>
               )}
             </article>
@@ -172,7 +168,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
         <div id="home-feed-sentinel" aria-hidden="true"></div>
       </section>
 
-      <aside class="home-side">
+      <aside class="profile-rail home-side">
         <SidebarProfile />
       </aside>
     </div>
@@ -456,13 +452,6 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
     color: var(--brand);
   }
 
-  .home-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: var(--space-5);
-    align-items: start;
-  }
-
   .home-main {
     display: grid;
     gap: var(--space-4);
@@ -519,21 +508,6 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
 
   .featured-card.mode-top .featured-meta {
     order: 2;
-  }
-
-  .featured-cover img,
-  .cover-fallback {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .cover-fallback {
-    background:
-      radial-gradient(68% 90% at 20% 12%, color-mix(in oklab, var(--brand) 26%, transparent 74%), transparent 68%),
-      radial-gradient(70% 90% at 80% 0%, color-mix(in oklab, var(--accent) 22%, transparent 78%), transparent 65%),
-      color-mix(in oklab, var(--surface-2) 88%, transparent 12%);
   }
 
   .featured-meta {
@@ -664,13 +638,6 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
     height: 2px;
   }
 
-  .home-side {
-    display: grid;
-    gap: var(--space-4);
-    position: sticky;
-    top: 84px;
-  }
-
   .side-panel {
     padding: var(--space-3);
     border-radius: var(--radius-md);
@@ -731,14 +698,6 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   }
 
   @media (max-width: 1024px) {
-    .home-shell {
-      grid-template-columns: 1fr;
-    }
-
-    .home-side {
-      position: static;
-      top: auto;
-    }
   }
 
   @media (max-width: 760px) {

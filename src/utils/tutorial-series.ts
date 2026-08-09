@@ -78,7 +78,7 @@ export function resolveSeriesKeyFromTutorialEntry(entry: TutorialEntry): string 
 
 function prettifySeriesKey(key: string): string {
   const raw = normalizeSeriesKey(key);
-  if (!raw) return "Uncategorized Tutorials";
+  if (!raw) return "其他教程";
   const normalized = raw.replace(/[-_]+/g, " ").trim();
   if (/^[a-z0-9 +#]+$/i.test(normalized)) {
     return normalized.replace(/\b[a-z]/g, (char) => char.toUpperCase());
@@ -90,7 +90,8 @@ const SERIES_LABEL_OVERRIDES: Record<string, string> = {
   ai: "AI",
   cpp: "C++",
   "c++": "C++",
-  godot: "Godot"
+  godot: "Godot",
+  "other-tutorials": "其他教程"
 };
 
 export function normalizeSeriesLabel(label: string, key = label): string {
@@ -169,7 +170,9 @@ export function buildTutorialSeriesBuckets(entries: TutorialEntry[]): Map<string
 
   for (const entry of entries) {
     const meta = resolveArticleMeta(entry);
-    const key = normalizeSeriesKey(resolveSeriesKeyFromTutorialEntry(entry) || meta.series || "uncategorized") || "uncategorized";
+    const key =
+      normalizeSeriesKey(resolveSeriesKeyFromTutorialEntry(entry) || meta.series || "other-tutorials") ||
+      "other-tutorials";
 
     if (!map.has(key)) {
       const legacy = resolveLegacySeriesConfig(key);

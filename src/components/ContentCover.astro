@@ -1,0 +1,195 @@
+---
+interface Props {
+  title: string;
+  image?: string;
+  alt?: string;
+  kindLabel?: string;
+  topic?: string;
+  srcset?: string;
+  sizes?: string;
+  loading?: "eager" | "lazy";
+  fetchpriority?: "high" | "low" | "auto";
+  variant?: "compact" | "regular" | "large";
+}
+
+const {
+  title,
+  image = "",
+  alt = title,
+  kindLabel = "文章",
+  topic = "",
+  srcset,
+  sizes,
+  loading = "lazy",
+  fetchpriority = "low",
+  variant = "regular"
+} = Astro.props;
+
+const normalizedTitle = String(title || "").trim() || "未命名内容";
+const normalizedImage = String(image || "").trim();
+const normalizedTopic = String(topic || "").trim();
+const mark = Array.from(normalizedTitle)[0]?.toUpperCase() || "文";
+const eyebrow = [kindLabel, normalizedTopic].filter(Boolean).join(" · ");
+---
+
+<span
+  class={`content-cover variant-${variant}`}
+  data-content-cover
+  data-image-state={normalizedImage ? "loading" : "fallback"}
+>
+  <span class="content-cover-fallback" aria-hidden="true">
+    <span class="content-cover-copy">
+      <span class="content-cover-eyebrow">{eyebrow}</span>
+      <strong class="content-cover-title">{normalizedTitle}</strong>
+    </span>
+    <span class="content-cover-mark">{mark}</span>
+  </span>
+
+  {
+    normalizedImage && (
+      <img
+        src={normalizedImage}
+        srcset={srcset}
+        sizes={sizes}
+        alt={alt}
+        loading={loading}
+        decoding="async"
+        fetchpriority={fetchpriority}
+        referrerpolicy="no-referrer"
+        onload="this.closest('[data-content-cover]')?.setAttribute('data-image-state','loaded')"
+        onerror="this.hidden=true;this.closest('[data-content-cover]')?.setAttribute('data-image-state','error')"
+      />
+    )
+  }
+</span>
+
+<style>
+  .content-cover {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: color-mix(in oklab, var(--surface-2) 76%, var(--brand-soft) 24%);
+  }
+
+  .content-cover-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-items: end;
+    padding: 0.78rem 0.82rem;
+    overflow: hidden;
+    background:
+      linear-gradient(90deg, color-mix(in oklab, var(--brand) 64%, var(--text) 36%) 0 4px, transparent 4px),
+      color-mix(in oklab, var(--surface-2) 78%, var(--brand-soft) 22%);
+  }
+
+  .content-cover-copy {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+    padding-left: 0.42rem;
+  }
+
+  .content-cover-eyebrow {
+    color: color-mix(in oklab, var(--brand) 74%, var(--text-soft) 26%);
+    font-family: var(--font-tech);
+    font-size: 0.68rem;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .content-cover-title {
+    max-width: 82%;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.34;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .content-cover-mark {
+    position: absolute;
+    right: -0.08em;
+    bottom: -0.3em;
+    z-index: 1;
+    color: color-mix(in oklab, var(--brand) 16%, transparent 84%);
+    font-family: var(--font-display);
+    font-size: 4.6rem;
+    font-weight: 800;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .content-cover img {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: opacity 180ms ease, transform 240ms ease;
+  }
+
+  .content-cover[data-image-state="loaded"] img {
+    opacity: 1;
+  }
+
+  .content-cover:hover img {
+    transform: scale(1.03);
+  }
+
+  .variant-compact .content-cover-fallback {
+    padding: 0.62rem 0.66rem;
+  }
+
+  .variant-compact .content-cover-eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .variant-compact .content-cover-title {
+    font-size: 0.8rem;
+    line-height: 1.28;
+  }
+
+  .variant-compact .content-cover-mark {
+    font-size: 3.7rem;
+  }
+
+  .variant-large .content-cover-fallback {
+    padding: 1rem 1.05rem;
+  }
+
+  .variant-large .content-cover-title {
+    max-width: 76%;
+    font-size: 1.08rem;
+  }
+
+  .variant-large .content-cover-mark {
+    font-size: 6.4rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .content-cover img {
+      transition: none;
+    }
+  }
+
+  @media (hover: none) {
+    .content-cover:hover img {
+      transform: none;
+    }
+  }
+</style>

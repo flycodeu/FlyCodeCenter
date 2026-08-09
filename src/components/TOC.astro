@@ -95,9 +95,15 @@ const list: TocItem[] = filtered.map((item) => {
       const cleanupKey = "__flyTocCleanup";
 
       const initToc = () => {
+        const currentPanel = document.getElementById("toc-mobile-panel");
+        if (window.__flyTocRoot === currentPanel && typeof window[cleanupKey] === "function") {
+          return;
+        }
+
         if (typeof window[cleanupKey] === "function") {
           window[cleanupKey]();
         }
+        window.__flyTocRoot = currentPanel;
 
         const anchors = [...document.querySelectorAll(".toc-list a")].filter((item) => item instanceof HTMLAnchorElement);
         if (!anchors.length) return;
@@ -346,6 +352,9 @@ const list: TocItem[] = filtered.map((item) => {
           if (overlay instanceof HTMLElement) overlay.hidden = true;
           if (toggleBtn instanceof HTMLButtonElement) toggleBtn.setAttribute("aria-expanded", "false");
           body.classList.remove("toc-drawer-open");
+          if (window.__flyTocRoot === panel) {
+            window.__flyTocRoot = null;
+          }
         };
       };
 

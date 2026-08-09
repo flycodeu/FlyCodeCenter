@@ -337,9 +337,9 @@ const siteConfig = defineSiteConfig({
     showTopN: 30,
     tagGraph: {
       enable: true,
-      minFontSize: 0.88,
-      maxFontSize: 1.48,
-      minWeight: 430,
+      minFontSize: 0.84,
+      maxFontSize: 1.18,
+      minWeight: 480,
       maxWeight: 680,
       alphaMin: 0.58,
       alphaMax: 0.96,

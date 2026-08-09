@@ -5,6 +5,7 @@ import { formatDate } from "@/utils/date";
 import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { buildResponsiveImageSources } from "@/utils/image";
+import ContentCover from "@/components/ContentCover.astro";
 
 type PostKind = "blog" | "tutorial";
 type CoverMode = "left" | "right" | "top" | "none";
@@ -61,8 +62,8 @@ const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 const inlineSize = listCard.coverInlineSize ?? listCard.coverWidth ?? 224;
 const topMaxHeight = coverHeight ?? listCard.coverTopMaxHeight ?? listCard.coverHeight ?? 150;
 const ratio = listCard.coverAspectRatio ?? listCard.coverRatio ?? "16 / 9";
-const hasCover = mode !== "none" && Boolean(meta.cover);
-const resolvedMode: CoverMode = hasCover ? mode : "none";
+const showCover = mode !== "none";
+const resolvedMode: CoverMode = mode;
 const collapseMobileToTop = listCard.mobileCollapseToTop ?? true;
 const coverSources = buildResponsiveImageSources(meta.cover, [320, 480, 640, 960], 640);
 
@@ -96,16 +97,18 @@ const outlineLines = listCard.outlineLines ?? 2;
   </div>
 
   {
-    hasCover && (
+    showCover && (
       <a class="cover-wrap" href={link} aria-label={meta.title}>
-        <img
-          src={coverSources.src}
+        <ContentCover
+          title={meta.title}
+          image={coverSources.src}
           srcset={coverSources.srcset}
           sizes={`(max-width: 900px) calc(100vw - 56px), ${inlineSize}px`}
-          alt={meta.title}
+          kindLabel={kind === "blog" ? "博客" : "教程"}
+          topic={meta.tags[0]}
           loading="lazy"
-          decoding="async"
-          referrerpolicy="no-referrer"
+          fetchpriority="low"
+          variant="compact"
         />
       </a>
     )
@@ -178,18 +181,6 @@ const outlineLines = listCard.outlineLines ?? 2;
   .post-card.mode-top .cover-wrap {
     aspect-ratio: auto;
     height: var(--cover-top-max-height);
-  }
-
-  .cover-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.24s ease;
-  }
-
-  .post-card:hover .cover-wrap img {
-    transform: scale(1.03);
   }
 
   .meta {
@@ -298,8 +289,5 @@ const outlineLines = listCard.outlineLines ?? 2;
       transform: none;
     }
 
-    .post-card:hover .cover-wrap img {
-      transform: none;
-    }
   }
 </style>

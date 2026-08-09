@@ -92,7 +92,7 @@ export function resolveDerivedCreateTimeText(entry: ArticleEntry): string {
 export function resolveDerivedTags(tags: unknown): string[] {
   if (Array.isArray(tags) && tags.length) {
     const normalized = normalizeTagList(tags.map((item) => String(item || "")));
-    return normalized.length ? normalized : ["Uncategorized"];
+    return normalized;
   }
-  return ["Uncategorized"];
+  return [];
 }

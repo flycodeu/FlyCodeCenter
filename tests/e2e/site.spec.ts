@@ -215,6 +215,80 @@ test("home featured cover uses a responsive high-priority image candidate", asyn
   expect(currentSrc).not.toContain("w=2400");
 });
 
+test("profile rail keeps the same desktop geometry across list pages", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The profile rail joins the document flow on compact viewports");
+
+  const boxes = [];
+  for (const route of ["/", "/blog", "/tutorials", "/tags"]) {
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    const box = await page.locator(".profile-rail .profile-card").boundingBox();
+    expect(box, route).not.toBeNull();
+    boxes.push({ route, ...box! });
+  }
+
+  const reference = boxes[0];
+  for (const box of boxes.slice(1)) {
+    expect(Math.abs(box.x - reference.x), box.route).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.y - reference.y), box.route).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.width - reference.width), box.route).toBeLessThanOrEqual(1);
+  }
+});
+
+test("post cards reserve cover space and render content-aware text fallbacks", async ({ page }) => {
+  await page.goto("/blog", { waitUntil: "domcontentloaded" });
+
+  const cards = page.locator(".post-card");
+  const covers = page.locator(".post-card .cover-wrap");
+  expect(await cards.count()).toBeGreaterThan(0);
+  expect(await covers.count()).toBe(await cards.count());
+
+  const fallback = page.locator('.post-card [data-content-cover][data-image-state="fallback"]').first();
+  await expect(fallback).toBeVisible();
+  const fallbackCopy = await fallback.evaluate((node) => {
+    const card = node.closest(".post-card");
+    return {
+      cardTitle: card?.querySelector(".title")?.textContent?.trim() || "",
+      coverTitle: node.querySelector(".content-cover-title")?.textContent?.trim() || ""
+    };
+  });
+  expect(fallbackCopy.coverTitle).toBe(fallbackCopy.cardTitle);
+
+  const lazyImage = page.locator(".post-card [data-content-cover] img").first();
+  await expect(lazyImage).toHaveAttribute("loading", "lazy");
+  await expect(lazyImage).toHaveAttribute("decoding", "async");
+  await expect(lazyImage).toHaveAttribute("fetchpriority", "low");
+});
+
+test("content covers keep their text fallback when image requests fail", async ({ page }) => {
+  await page.route("**/*", async (route) => {
+    if (route.request().resourceType() === "image") {
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/blog", { waitUntil: "domcontentloaded" });
+  const failedCover = page.locator('[data-content-cover][data-image-state="error"]').first();
+  await expect(failedCover).toBeVisible();
+  await expect(failedCover.locator(".content-cover-title")).not.toHaveText("");
+});
+
+test("generated taxonomies and interview navigation omit placeholder copy", async ({ page }) => {
+  await page.goto("/tags", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("body")).not.toContainText(/Uncategorized/i);
+  const tagFontSizes = await page.locator(".tag-node").evaluateAll((nodes) =>
+    nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+  );
+  expect(Math.max(...tagFontSizes)).toBeLessThanOrEqual(19);
+  expect(Math.min(...tagFontSizes)).toBeGreaterThanOrEqual(13);
+
+  await page.goto("/interview", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("body")).not.toContainText(
+    "按顺序回顾题目，掌握状态和最近进度会自动记录。"
+  );
+});
+
 test("external cover images load without leaking a referrer", async ({ page }) => {
   const coverPattern =
     "https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/**";
