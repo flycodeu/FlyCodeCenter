@@ -114,9 +114,54 @@ function validateFrontmatter(data) {
   return { warnings: [] };
 }
 
+function validateCodeFences(content) {
+  const errors = [];
+  const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
+  let openFence = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (!match) continue;
+
+    const marker = match[1];
+    const suffix = String(match[2] || "");
+    const line = index + 1;
+
+    if (!openFence) {
+      if (marker[0] === "`" && suffix.includes("`")) {
+        errors.push({ line, message: "fenced code info string cannot contain backticks; use inline code for one-line commands" });
+        continue;
+      }
+      openFence = { marker: marker[0], length: marker.length, line };
+      continue;
+    }
+
+    if (marker[0] !== openFence.marker || marker.length < openFence.length) continue;
+    if (!suffix.trim()) {
+      openFence = null;
+      continue;
+    }
+
+    if (/^[a-z0-9_+.-]+(?:\s|$)/i.test(suffix.trim())) {
+      errors.push({
+        line,
+        message: `nested fenced code opener detected before fence from line ${openFence.line} was closed`
+      });
+    }
+  }
+
+  if (openFence) {
+    errors.push({ line: openFence.line, message: "fenced code block is not closed" });
+  }
+
+  return errors;
+}
+
 function validateMarkdownContent(content) {
   const errors = [];
   const warnings = [];
+
+  errors.push(...validateCodeFences(content));
 
   const fenceRe = /```([a-z0-9-]+)[^\n]*\n([\s\S]*?)\n```/gi;
   let fenceMatch;

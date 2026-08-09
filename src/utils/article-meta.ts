@@ -143,7 +143,7 @@ function normalizeCoverMode(value: unknown): CoverMode | undefined {
 
 function deriveTutorialSeries(entry: ArticleEntry): string {
   if (entry.collection !== "tutorial") return "";
-  const raw = String(entry.id || "").replace(/\\/g, "/");
+  const raw = String(getEntrySourceRelativePath(entry) || entry.id || "").replace(/\\/g, "/");
   const first = raw.split("/").find((segment) => segment && segment !== ".");
   return first ? first.trim() : "";
 }

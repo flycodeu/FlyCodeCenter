@@ -3,8 +3,8 @@
 开源个人博客主题，基于 Astro 构建，静态优先、可插拔评论与搜索。
 Open-source personal blog theme built with Astro: static-first, fast, and extensible.
 
-[![Astro](https://img.shields.io/badge/Astro-5.17.1-FF5D01?logo=astro&logoColor=white)](https://astro.build)
-[![Node](https://img.shields.io/badge/Node-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Astro](https://img.shields.io/badge/Astro-7.2.0-FF5D01?logo=astro&logoColor=white)](https://astro.build)
+[![Node](https://img.shields.io/badge/Node-%3E%3D22.12-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Deploy](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
 [![Demo](https://img.shields.io/badge/Demo-flycode.icu-0ea5e9)](https://www.flycode.icu)

@@ -52,7 +52,10 @@
 }
 
 .reading-page::after {
-  inset: auto 6% -1.75rem auto;
+  /* Anchor the decorative glow to the viewport-facing header region. A
+     bottom anchor moves while long Markdown content is being laid out and
+     was responsible for nearly the entire reader-page CLS. */
+  inset: 24rem 6% auto auto;
   width: min(36vw, 460px);
   height: min(22vw, 220px);
   border-radius: 999px;

@@ -17,6 +17,8 @@ interface RequestPayload {
   messages: ChatMessage[];
 }
 
+const MAX_TOTAL_MESSAGE_LENGTH = 48_000;
+
 const resolveTemperature = (value: unknown) => {
   const temperature = Number(value ?? 0.7);
   return Number.isFinite(temperature) ? Math.max(0, Math.min(2, temperature)) : 0.7;
@@ -63,6 +65,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (messages.some((item) => item.content.length > 12000)) {
       return new Response("message content is too long", { status: 413 });
     }
+    if (messages.reduce((total, item) => total + item.content.length, 0) > MAX_TOTAL_MESSAGE_LENGTH) {
+      return new Response("messages are too long", { status: 413 });
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
@@ -74,6 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const upstream = await fetch(endpoint, {
       method: "POST",
+      redirect: "error",
       headers,
       body: JSON.stringify({
         model,

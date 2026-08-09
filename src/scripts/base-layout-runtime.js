@@ -67,6 +67,7 @@ const matchesSearchShortcut = (event, shortcut) => {
 const showSearchShell = () => {
   const searchRoot = getSearchRoot();
   if (!(searchRoot instanceof HTMLElement)) return;
+  searchRoot.dataset.shellOpen = "1";
 
   const dialog = document.getElementById("search-modal");
   const fallback = document.getElementById("search-fallback");
@@ -99,6 +100,21 @@ const showSearchShell = () => {
   }
 };
 
+const hideSearchShell = () => {
+  const searchRoot = getSearchRoot();
+  if (searchRoot instanceof HTMLElement) searchRoot.dataset.shellOpen = "0";
+
+  const dialog = document.getElementById("search-modal");
+  if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+
+  const fallback = document.getElementById("search-fallback");
+  if (fallback instanceof HTMLElement) {
+    fallback.classList.remove("open");
+    fallback.hidden = true;
+  }
+  document.body.classList.remove("has-overlay");
+};
+
 const ensureSearchModal = async () => {
   const searchRoot = getSearchRoot();
   if (!(searchRoot instanceof HTMLElement)) return null;
@@ -117,6 +133,7 @@ const openSearchModal = async () => {
   if (!(getSearchRoot() instanceof HTMLElement)) return;
   showSearchShell();
   await ensureSearchModal();
+  if (getSearchRoot()?.dataset.shellOpen !== "1") return;
   window.dispatchEvent(new CustomEvent("site:open-search"));
 };
 
@@ -128,6 +145,12 @@ const bindSearchBootstrap = () => {
     if (window.__flySearchModalReady) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
+    const closeTrigger = target.closest('[data-action="close-search"]');
+    if (closeTrigger instanceof HTMLElement) {
+      event.preventDefault();
+      hideSearchShell();
+      return;
+    }
     const trigger = target.closest('[data-action="open-search"]');
     if (!(trigger instanceof HTMLElement)) return;
     event.preventDefault();

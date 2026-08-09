@@ -52,7 +52,8 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 ---
 
 <BaseLayout title={siteConfig.pages.sites.title} description={siteConfig.pages.sites.description}>
-  <section class={`vault-shell ${showFilter ? "" : "no-nav"}`}>
+  <section class={`vault-shell ${showFilter ? "" : "no-nav"}`} aria-labelledby="sites-page-title">
+    <h1 id="sites-page-title" class="sr-only">{siteConfig.pages.sites.title}</h1>
     {
       showFilter && (
         <aside class="vault-nav surface" id="vault-nav">
@@ -138,7 +139,7 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
   </section>
 </BaseLayout>
 
-<script is:inline>
+<script is:inline define:vars={{ defaultSiteIcon }}>
   const initVaultFilter = () => {
     const root = document.getElementById('vault-groups');
     const filter = document.getElementById('vault-nav');

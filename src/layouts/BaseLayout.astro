@@ -5,7 +5,7 @@ import SearchModal from "@/components/SearchModal.astro";
 import Watermark from "@/components/Watermark.astro";
 import JarvisOrb from "@/components/JarvisOrb.astro";
 import { makePageTitle, resolveCanonical } from "@/utils/seo";
-import { ViewTransitions } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   title?: string;
@@ -255,7 +255,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
         <meta name={meta.name} content={meta.content} />
       ))
     }
-    {siteConfig.theme.transitions?.page && <ViewTransitions fallback="swap" />}
+    {siteConfig.theme.transitions?.page && <ClientRouter fallback="swap" />}
     <script
       is:inline
       define:vars={{
@@ -522,6 +522,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     </script>
   </head>
   <body data-pagefind-ignore={pagefindIgnore ? "all" : undefined}>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
     <div
       id="site-bg-image"
       class="site-bg-image"
@@ -553,7 +554,13 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     </div>
     {siteConfig.watermark.enable && siteConfig.watermark.scope === "global" && <Watermark scope="global" />}
     <Header />
-    <main class="container" data-pagefind-ignore={pagefindIgnore ? "all" : undefined}>
+    <main
+      id="main-content"
+      class="container"
+      tabindex="-1"
+      data-pagefind-body={pagefindIgnore ? undefined : true}
+      data-pagefind-ignore={pagefindIgnore ? "all" : undefined}
+    >
       <slot />
     </main>
     <footer class="site-footer">
@@ -609,6 +616,24 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     position: relative;
     z-index: 2;
     min-height: calc(100dvh - var(--layout-header-height) - var(--layout-footer-height));
+  }
+  .skip-link {
+    position: fixed;
+    top: 0.65rem;
+    left: 0.75rem;
+    z-index: 120;
+    padding: 0.58rem 0.82rem;
+    border: 1px solid var(--brand);
+    border-radius: 10px;
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: var(--card-shadow-strong);
+    font-weight: 650;
+    transform: translateY(calc(-100% - 1rem));
+    transition: transform 160ms ease-out;
+  }
+  .skip-link:focus-visible {
+    transform: translateY(0);
   }
   .site-footer {
     position: relative;

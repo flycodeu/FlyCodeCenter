@@ -22,7 +22,11 @@ const moreActive = moreItems.some((item) => isActive(item.link));
 <nav class="nav">
   {
     mainItems.map((item) => (
-      <a class={`nav-link ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+      <a
+        class={`nav-link ${isActive(item.link) ? "active" : ""}`}
+        href={item.link}
+        aria-current={isActive(item.link) ? "page" : undefined}
+      >
         {item.text}
       </a>
     ))
@@ -38,7 +42,11 @@ const moreActive = moreItems.some((item) => isActive(item.link));
       </summary>
       <div class="nav-more-menu">
         {moreItems.map((item) => (
-          <a class={`nav-more-link ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+          <a
+            class={`nav-more-link ${isActive(item.link) ? "active" : ""}`}
+            href={item.link}
+            aria-current={isActive(item.link) ? "page" : undefined}
+          >
             {item.text}
           </a>
         ))}
@@ -47,7 +55,11 @@ const moreActive = moreItems.some((item) => isActive(item.link));
   )}
 
   {moreItems.map((item) => (
-    <a class={`nav-link nav-inline-more ${isActive(item.link) ? "active" : ""}`} href={item.link}>
+    <a
+      class={`nav-link nav-inline-more ${isActive(item.link) ? "active" : ""}`}
+      href={item.link}
+      aria-current={isActive(item.link) ? "page" : undefined}
+    >
       {item.text}
     </a>
   ))}

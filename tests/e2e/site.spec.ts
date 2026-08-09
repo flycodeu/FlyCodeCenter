@@ -50,6 +50,19 @@ test.describe("route smoke and responsive layout", () => {
   }
 });
 
+test("core navigation exposes a single page heading and keyboard landmarks", async ({ page }) => {
+  await page.goto("/blog", { waitUntil: "domcontentloaded" });
+
+  const skipLink = page.getByRole("link", { name: "跳到主要内容" });
+  await skipLink.focus();
+  await expect(skipLink).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  await expect(page.locator("#main-content")).toBeFocused();
+  await expect(page.locator("main h1")).toHaveCount(1);
+  await expect(page.locator('header nav a[href="/blog"][aria-current="page"]')).toHaveCount(1);
+});
+
 test("development runtime keeps real article content available", async ({ page }) => {
   await page.goto("/tutorials/cpp/C++快速入门", { waitUntil: "domcontentloaded" });
 
@@ -144,9 +157,11 @@ test("search remains usable while its index loads slowly", async ({ page }) => {
 
   const resultCount = await page.locator(".search-results:visible .result-item").count();
   await expect(page.locator(".search-count:visible")).toHaveText(`${resultCount} 条结果`);
+  await expect(input).toHaveAttribute("aria-expanded", "true");
 
   await page.keyboard.press("ArrowDown");
   await expect(page.locator(".search-results:visible .result-item.active")).toHaveCount(1);
+  await expect(input).toHaveAttribute("aria-activedescendant", /^search-result/);
   await page.keyboard.press("Escape");
   await expect(visibleSearch).toBeHidden();
 
@@ -156,7 +171,8 @@ test("search remains usable while its index loads slowly", async ({ page }) => {
   await expect(page.locator(".search-results:visible .result-item").first()).toBeVisible({
     timeout: 12_000
   });
-  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "关闭搜索" }).click();
+  await expect(visibleSearch).toBeHidden();
 });
 
 test("theme selection survives client-side navigation", async ({ page }) => {
@@ -420,6 +436,25 @@ test("reading, tag and site filters keep URL and visible content in sync", async
   await expect(page.locator("#vault-groups .vault-group:visible")).toHaveCount(1);
   expect(new URL(page.url()).searchParams.get("category")).toBe(category);
   await expectNoViewportOverflow(page);
+});
+
+test("tutorial series and project tag links resolve to real landing pages", async ({ page }) => {
+  await page.goto("/tutorials/cpp/C++快速入门", { waitUntil: "domcontentloaded" });
+  const seriesLink = page.locator(".tutorial-breadcrumb a").nth(1);
+  await expect(seriesLink).toHaveAttribute("href", "/tutorials/cpp");
+  const seriesResponse = await page.request.get(new URL((await seriesLink.getAttribute("href"))!, page.url()).href);
+  expect(seriesResponse.status()).toBeLessThan(400);
+
+  await page.goto("/projects/p13k5rxij", { waitUntil: "domcontentloaded" });
+  const tagLink = page.locator(".tag-link").first();
+  const tagHref = await tagLink.getAttribute("href");
+  expect(tagHref).toBeTruthy();
+  const tagResponse = await page.request.get(new URL(tagHref!, page.url()).href);
+  expect(tagResponse.status()).toBeLessThan(400);
+  await tagLink.click();
+  await expect(page).toHaveURL(/\/tags\//);
+  await expect(page.locator("main h1")).toHaveCount(1);
+  await expect(page.locator("main")).toContainText("FlyCodeCenter 个人博客");
 });
 
 test("gallery loads another batch and disables motion on constrained devices", async ({ page }) => {

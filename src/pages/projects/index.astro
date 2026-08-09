@@ -1,6 +1,6 @@
 ﻿---
 import ListLayout from "@/layouts/ListLayout.astro";
-import { fetchAllContentEntries, fetchProjectEntries, makeTagItems } from "@/utils/query";
+import { fetchProjectEntries, fetchTaxonomyEntries, makeTagItems } from "@/utils/query";
 import { formatDate } from "@/utils/date";
 import { getProjectEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
@@ -9,7 +9,7 @@ import { getRenderedPageByCode } from "@/utils/page-content";
 const [pageConfig, entries, allEntries] = await Promise.all([
   getRenderedPageByCode("projects-page"),
   fetchProjectEntries(),
-  fetchAllContentEntries()
+  fetchTaxonomyEntries()
 ]);
 
 if (!pageConfig) {

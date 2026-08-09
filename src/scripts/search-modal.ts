@@ -93,14 +93,19 @@ function setupSearchModal() {
   let sequence = 0;
   let debounceTimer = 0;
   let destroyed = false;
-  let dialogActive = useDialog;
+  let dialogActive = useDialog && (!(fallback instanceof HTMLElement) || !fallback.classList.contains("open"));
   let input = dialogActive ? nativeInput : fallbackInput;
   let resultsEl = dialogActive ? nativeResults : fallbackResults;
 
   const setActiveSurface = (native: boolean) => {
+    const previousInput = input;
     dialogActive = native && useDialog;
     input = dialogActive ? nativeInput : fallbackInput;
     resultsEl = dialogActive ? nativeResults : fallbackResults;
+    if (!input.value && previousInput.value) input.value = previousInput.value;
+    const inactiveInput = dialogActive ? fallbackInput : nativeInput;
+    inactiveInput.setAttribute("aria-expanded", "false");
+    inactiveInput.removeAttribute("aria-activedescendant");
   };
 
   const mountFallback = () => {
@@ -119,9 +124,26 @@ function setupSearchModal() {
 
   const ensureEngine = async () => {
     if (engine) return engine;
-    enginePromise ??= createSearchEngine();
-    engine = await enginePromise;
-    return engine;
+    const pending = enginePromise ?? createSearchEngine();
+    enginePromise = pending;
+    try {
+      engine = await pending;
+      return engine;
+    } catch (error) {
+      if (enginePromise === pending) enginePromise = null;
+      throw error;
+    }
+  };
+
+  const syncComboboxState = (count: number) => {
+    const hasResults = count > 0;
+    input.setAttribute("aria-expanded", hasResults ? "true" : "false");
+    if (hasResults && focusedIndex >= 0) {
+      const active = resultsEl.querySelector<HTMLElement>(`[data-index="${focusedIndex}"]`);
+      if (active?.id) input.setAttribute("aria-activedescendant", active.id);
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
   };
 
   const updateResultCount = (count: number) => {
@@ -134,11 +156,13 @@ function setupSearchModal() {
 
   const setError = (message: string) => {
     resultsEl.innerHTML = `<li class='result-empty'>${escapeHtml(message)}</li>`;
+    syncComboboxState(0);
     updateResultCount(0);
   };
 
   const setLoading = () => {
     resultsEl.innerHTML = "<li class='result-empty'>正在加载搜索索引...</li>";
+    syncComboboxState(0);
     updateResultCount(0);
   };
 
@@ -146,18 +170,21 @@ function setupSearchModal() {
     if (!query) {
       resultsEl.innerHTML = "<li class='result-empty'>输入关键词开始搜索</li>";
       focusedIndex = -1;
+      syncComboboxState(0);
       updateResultCount(0);
       return;
     }
 
     if (!currentResults.length) {
-      resultsEl.innerHTML = "<li class='result-empty'>没有命中结果</li>";
+      resultsEl.innerHTML = "<li class='result-empty'>没有命中结果，请尝试更短或更具体的关键词。</li>";
       focusedIndex = -1;
+      syncComboboxState(0);
       updateResultCount(0);
       return;
     }
 
     updateResultCount(currentResults.length);
+    const resultIdPrefix = dialogActive ? "search-result" : "search-result-fallback";
     resultsEl.innerHTML = currentResults
       .map((item, idx) => {
         const cls = idx === focusedIndex ? "result-item active" : "result-item";
@@ -165,7 +192,7 @@ function setupSearchModal() {
         const domain = inferDomainLabel(safeUrl);
         const pathText = toReadablePath(safeUrl);
         const escapedUrl = escapeHtml(safeUrl);
-        return `<li class="${cls}" data-url="${escapedUrl}" data-index="${idx}">
+        return `<li id="${resultIdPrefix}-${idx}" class="${cls}" role="option" aria-selected="${idx === focusedIndex ? "true" : "false"}" data-url="${escapedUrl}" data-index="${idx}">
             <a href="${escapedUrl}">
               <div class="result-title-row">
                 <h4>${escapeHtml(String(item.title || "Untitled"))}</h4>
@@ -179,15 +206,20 @@ function setupSearchModal() {
           </li>`;
       })
       .join("");
+    syncComboboxState(currentResults.length);
   };
 
   const updateFocusedResult = (nextIndex: number) => {
     if (nextIndex === focusedIndex || nextIndex < 0 || nextIndex >= currentResults.length) return;
     const current = resultsEl.querySelector(".result-item.active");
     current?.classList.remove("active");
+    current?.setAttribute("aria-selected", "false");
     const next = resultsEl.querySelector(`[data-index="${nextIndex}"]`);
     next?.classList.add("active");
+    next?.setAttribute("aria-selected", "true");
     focusedIndex = nextIndex;
+    syncComboboxState(currentResults.length);
+    next?.scrollIntoView({ block: "nearest" });
   };
 
   const runSearch = async () => {
@@ -208,7 +240,7 @@ function setupSearchModal() {
       focusedIndex = currentResults.length ? 0 : -1;
       renderResults(query);
     } catch (error) {
-      if (destroyed) return;
+      if (destroyed || runId !== sequence) return;
       console.error(error);
       setError("搜索初始化失败，请刷新页面后重试。");
     }
@@ -274,6 +306,10 @@ function setupSearchModal() {
 
     if (document.activeElement === nativeInput) nativeInput.blur();
     if (document.activeElement === fallbackInput) fallbackInput.blur();
+    nativeInput.setAttribute("aria-expanded", "false");
+    fallbackInput.setAttribute("aria-expanded", "false");
+    nativeInput.removeAttribute("aria-activedescendant");
+    fallbackInput.removeAttribute("aria-activedescendant");
     if (restoreFocus) {
       const trigger = document.querySelector('[data-action="open-search"]');
       if (trigger instanceof HTMLElement && trigger.isConnected && trigger.getClientRects().length > 0) {
@@ -353,9 +389,16 @@ function setupSearchModal() {
       const target = event.target;
       if (!(target instanceof Element)) return;
       const trigger = target.closest('[data-action="open-search"]');
-      if (!(trigger instanceof HTMLElement)) return;
-      event.preventDefault();
-      openSearch().catch(console.error);
+      if (trigger instanceof HTMLElement) {
+        event.preventDefault();
+        openSearch().catch(console.error);
+        return;
+      }
+      const closeTrigger = target.closest('[data-action="close-search"]');
+      if (closeTrigger instanceof HTMLElement) {
+        event.preventDefault();
+        closeSearch();
+      }
     },
     { signal }
   );
@@ -426,7 +469,12 @@ function setupSearchModal() {
     { signal }
   );
 
-  renderResults("");
+  if (input.value.trim()) {
+    setLoading();
+    queueMicrotask(() => runSearch().catch(console.error));
+  } else {
+    renderResults("");
+  }
 
   return () => {
     destroyed = true;

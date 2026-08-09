@@ -7,6 +7,7 @@ import { remarkExtendedBuild } from "../markdown/build/remark-extended-build.ts"
 import { rehypeDemoFallback } from "../markdown/build/rehype-demo-fallback.ts";
 import { rehypeImageEnhance } from "../markdown/build/rehype-image-enhance.ts";
 import { rehypeInlineMarkdownRepair } from "../markdown/build/rehype-inline-markdown-repair.ts";
+import { rehypeNormalizeHeading } from "../markdown/build/rehype-normalize-heading.ts";
 import { rehypeTableEnhance } from "../markdown/build/rehype-table-enhance.ts";
 
 export const markdownBuildPlugin = {
@@ -78,6 +79,7 @@ export const markdownBuildPlugin = {
     }
 
     rehypePlugins.push(rehypeInlineMarkdownRepair);
+    rehypePlugins.push(rehypeNormalizeHeading);
     rehypePlugins.push(rehypeTableEnhance);
 
     return { remarkPlugins, rehypePlugins };

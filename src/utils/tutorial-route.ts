@@ -21,13 +21,13 @@ const SERIES_ROUTE_ALIAS_INVERSE: Record<string, string> = Object.fromEntries(
 export function toSeriesRouteKey(seriesKey: string): string {
   const normalized = normalizeSeriesKey(seriesKey);
   if (!normalized) return normalized;
-  return SERIES_ROUTE_ALIASES[normalized] ?? normalized;
+  return SERIES_ROUTE_ALIASES[normalized.toLowerCase()] ?? normalized;
 }
 
 export function fromSeriesRouteKey(routeKey: string): string {
   const normalized = normalizeSeriesKey(routeKey);
   if (!normalized) return normalized;
-  return SERIES_ROUTE_ALIAS_INVERSE[normalized] ?? normalized;
+  return SERIES_ROUTE_ALIAS_INVERSE[normalized.toLowerCase()] ?? normalized;
 }
 
 export function getTutorialEntrySegments(entryId: string): string[] {

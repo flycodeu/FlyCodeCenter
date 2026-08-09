@@ -7,7 +7,8 @@ import {
   sortBlogWithPin,
   toTagMap,
   type AnyEntry,
-  type PostEntry
+  type PostEntry,
+  type ProjectEntry
 } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import {
@@ -132,6 +133,15 @@ export async function fetchProjectEntries(): Promise<CollectionEntry<"projects">
 export async function fetchAllEntries(): Promise<PostEntry[]> {
   const [blog, tutorial] = await Promise.all([fetchBlogEntries(), fetchTutorialEntries()]);
   return sortByDateDesc([...blog, ...tutorial]);
+}
+
+export async function fetchTaxonomyEntries(): Promise<Array<PostEntry | ProjectEntry>> {
+  const [blog, tutorial, projects] = await Promise.all([
+    fetchBlogEntries(),
+    fetchTutorialEntries(),
+    fetchProjectEntries()
+  ]);
+  return sortByDateDesc([...blog, ...tutorial, ...projects]);
 }
 
 export async function fetchHomeFeedEntries(): Promise<PostEntry[]> {

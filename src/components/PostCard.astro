@@ -2,16 +2,16 @@
 import type { CollectionEntry } from "astro:content";
 import siteConfig from "@/site.config";
 import { formatDate } from "@/utils/date";
-import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
+import { getBlogEntryUrl, getProjectEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { buildResponsiveImageSources } from "@/utils/image";
 import ContentCover from "@/components/ContentCover.astro";
 
-type PostKind = "blog" | "tutorial";
+type PostKind = "blog" | "tutorial" | "projects";
 type CoverMode = "left" | "right" | "top" | "none";
 
 interface Props {
-  entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial">;
+  entry: CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">;
   kind: PostKind;
   coverMode?: CoverMode;
   coverHeight?: number;
@@ -42,9 +42,11 @@ function normalizeCoverMode(value: unknown): CoverMode | undefined {
   return undefined;
 }
 
-const pageOverride = siteConfig.blog.pageCardOverrides[kind === "blog" ? "blog" : "tutorial"];
+const pageOverride = siteConfig.blog.pageCardOverrides[kind === "tutorial" ? "tutorial" : "blog"];
 const entryData = entry.data as { coverMode?: string; coverPosition?: string };
-const meta = resolveArticleMeta(entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial">);
+const meta = resolveArticleMeta(
+  entry as CollectionEntry<"blog"> | CollectionEntry<"tutorial"> | CollectionEntry<"projects">
+);
 const dataCoverMode =
   normalizeCoverMode(entryData.coverMode) ?? normalizeCoverMode(entryData.coverPosition) ?? normalizeCoverMode(meta.coverMode);
 const mode: CoverMode =
@@ -55,7 +57,11 @@ const mode: CoverMode =
   "right";
 
 const link =
-  kind === "blog" ? getBlogEntryUrl(entry as CollectionEntry<"blog">) : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
+  kind === "blog"
+    ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
+    : kind === "tutorial"
+      ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
+      : getProjectEntryUrl(entry as CollectionEntry<"projects">);
 const outline = (meta.outline || "").trim();
 const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 
@@ -104,7 +110,7 @@ const outlineLines = listCard.outlineLines ?? 2;
           image={coverSources.src}
           srcset={coverSources.srcset}
           sizes={`(max-width: 900px) calc(100vw - 56px), ${inlineSize}px`}
-          kindLabel={kind === "blog" ? "博客" : "教程"}
+          kindLabel={kind === "blog" ? "博客" : kind === "tutorial" ? "教程" : "项目"}
           topic={meta.tags[0]}
           loading="lazy"
           fetchpriority="low"

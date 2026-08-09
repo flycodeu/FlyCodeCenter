@@ -21,7 +21,8 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
 
 <BaseLayout title={title} description={description}>
   <div class={`grid-main list-layout-shell ${hideSidebar ? "no-side" : ""}`}>
-    <section class="list-main">
+    <section class="list-main" aria-labelledby="list-page-title">
+      <h1 id="list-page-title" class="sr-only">{title}</h1>
       <slot />
     </section>
 

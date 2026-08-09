@@ -1,3 +1,5 @@
+import { unified } from "@astrojs/markdown-remark";
+
 /**
  * @typedef {{
  *  id: string;
@@ -45,8 +47,7 @@ export function buildAstroPipeline(siteConfig, plugins) {
     integrations,
     markdown: {
       ...markdown,
-      remarkPlugins,
-      rehypePlugins
+      processor: unified({ remarkPlugins, rehypePlugins })
     }
   };
 }

@@ -18,9 +18,9 @@ tags:
 
 
 ## oshi
-[oshi官网]([https://www.oshi.ooo/](https://www.oshi.ooo/))
+[OSHI 官网](https://www.oshi.ooo/)
 
-[oshiApi]([https://www.oshi.ooo/oshi-core-java11/apidocs/com.github.oshi/module-summary.html](https://www.oshi.ooo/oshi-core-java11/apidocs/com.github.oshi/module-summary.html))
+[OSHI Java API 文档](https://www.oshi.ooo/oshi-core-java11/apidocs/com.github.oshi/module-summary.html)
 
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731030404281-669f273c-0b9c-4dd8-8e07-71cc75f9c48b.png)
 
@@ -1631,4 +1631,3 @@ getSystemInfo()
 }
 </style>
 ```
-

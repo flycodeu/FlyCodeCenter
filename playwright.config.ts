@@ -22,7 +22,8 @@ export default defineConfig({
     video: "retain-on-failure"
   },
   webServer: {
-    command: `npm run dev:astro -- --host 127.0.0.1 --port ${port}`,
+    command: `npm run dev:astro -- --ignore-lock --host 127.0.0.1 --port ${port}`,
+    env: { ASTRO_DEV_BACKGROUND: "0" },
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

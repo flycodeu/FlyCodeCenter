@@ -300,7 +300,7 @@ public class WebScrapingTool {
 }
 ```
 
-目前只会返回对应的网页html信息，可以获取更加详细信息，详情可以参考[在线抓取图片](在线抓取图片)
+目前只会返回对应网页的 HTML 信息。如需获取更详细的图片资源，可参考[在线抓取图片](/blog/b1ffx6d3g)。
 
 3. 测试
 
@@ -877,4 +877,3 @@ ToolCallbackResolver customToolCallbackResolver() {
     return toolName -> toolMap.get(toolName);
 }
 ```
-

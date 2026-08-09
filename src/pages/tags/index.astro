@@ -2,11 +2,11 @@
 import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
-import { fetchAllEntries, makeTagItems } from "@/utils/query";
+import { fetchTaxonomyEntries, makeTagItems } from "@/utils/query";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { buildTagGraphItems } from "@/utils/tag-graph";
 
-const entries = await fetchAllEntries();
+const entries = await fetchTaxonomyEntries();
 const tags = makeTagItems(entries);
 const totalTagRefs = tags.reduce((sum, item) => sum + item.count, 0);
 const topTags = tags.slice(0, siteConfig.taxonomy.showTopN);
@@ -38,7 +38,7 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
   description="按热度图谱筛选标签，支持分页与无限滚动两种浏览模式。"
   stats={[
     { title: "标签总数", value: tags.length },
-    { title: "文章总数", value: entries.length, href: "/archives" },
+    { title: "内容总数", value: entries.length },
     { title: "标签引用", value: totalTagRefs }
   ]}
   tags={tags}
@@ -72,7 +72,7 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
             data-entry-index={String(idx)}
             data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}
           >
-            <PostCard entry={entry} kind={entry.collection === "blog" ? "blog" : "tutorial"} coverMode={tagCoverMode} />
+            <PostCard entry={entry} kind={entry.collection} coverMode={tagCoverMode} />
           </div>
         ))
       }

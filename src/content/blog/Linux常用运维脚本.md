@@ -148,15 +148,22 @@ sudo find / -type f -size +100M -exec ls -lh {} \; | awk '{ print
 
 ## 一键安装Git
 
-自动化安装指定版本的Node.js。
+自动化安装 Git，并输出版本用于确认安装结果。
 
 ```bash
 #!/bin/bash
-sudo apt-get update
-### 13. **一键安装Node.js**
+sudo apt-get update
+sudo apt-get install -y git
+git --version
+```
+
+## 一键安装Node.js
+
+通过 NodeSource 软件源安装指定主版本的 Node.js。
+
 ```bash
 #!/bin/bash
-VERSION="node_14.x" # 可以根据需要更改版本
+VERSION="node_22.x" # 根据项目要求选择受支持的 LTS 主版本
 DISTRO=$(lsb_release -s -c)
 echo "deb https://deb.nodesource.com/$VERSION $DISTRO main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 sudo apt-get update

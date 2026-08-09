@@ -3,11 +3,11 @@ import siteConfig from "@/site.config";
 import ListLayout from "@/layouts/ListLayout.astro";
 import PostCard from "@/components/PostCard.astro";
 import Pagination from "@/components/Pagination.astro";
-import { fetchAllEntries, makeTagItems } from "@/utils/query";
+import { fetchTaxonomyEntries, makeTagItems } from "@/utils/query";
 import { resolveArticleMeta } from "@/utils/article-meta";
 
 export async function getStaticPaths() {
-  const entries = await fetchAllEntries();
+  const entries = await fetchTaxonomyEntries();
   const tags = new Set<string>();
   for (const entry of entries) {
     for (const tag of resolveArticleMeta(entry).tags) tags.add(tag);
@@ -19,7 +19,7 @@ export async function getStaticPaths() {
 }
 
 const { tag } = Astro.props;
-const allEntries = await fetchAllEntries();
+const allEntries = await fetchTaxonomyEntries();
 const matched = allEntries.filter((entry) => resolveArticleMeta(entry).tags.includes(tag));
 const tags = makeTagItems(allEntries);
 const mode = siteConfig.blog.pagination.mode;
@@ -29,7 +29,7 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
 
 <ListLayout
   title={`标签：${tag}`}
-  description="符合该标签的博客与教程条目。"
+  description="符合该标签的博客、教程与项目条目。"
   stats={[
     { title: "命中结果", value: matched.length },
     { title: "全部标签", value: tags.length, href: "/tags" }
@@ -40,7 +40,7 @@ const tagCoverMode = siteConfig.blog.pageCardOverrides.tags.coverMode;
     {
       matched.map((entry, idx) => (
         <div data-page-item hidden={mode === "loadMore" && idx >= pageSize ? true : undefined}>
-          <PostCard entry={entry} kind={entry.collection === "blog" ? "blog" : "tutorial"} coverMode={tagCoverMode} />
+          <PostCard entry={entry} kind={entry.collection} coverMode={tagCoverMode} />
         </div>
       ))
     }

@@ -3,6 +3,7 @@ title: HLS+FFMPEG实时视频流
 createTime: '2026/03/01 19:23:46'
 code: b2ow0cdtq
 permalink: /blog/b2ow0cdtq/
+summary: 使用 FFmpeg 将摄像头 RTSP 转为 HLS，并通过 Spring Boot 提供静态映射、进程守护与浏览器播放。
 tags:
   - 视频流
   - HLS
@@ -18,7 +19,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/a49
 - 不依赖 Nginx 或 Wowza；
 - 支持 20 路摄像头同时推流；
 - 自动守护、掉线重启；
-- 浏览器原生可播放（HTML `<video>` 即可）。
+- 浏览器可通过 hls.js 播放（Safari 等环境可原生播放 HLS）。
 
 ---
 
@@ -60,7 +61,7 @@ https://ffmpeg.org/download.html
 
 命令行输入
 
-```ffmpeg -version```
+`ffmpeg -version`
 
 运行成功后，会看到如下信息：
 
