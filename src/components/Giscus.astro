@@ -26,11 +26,12 @@ const ready =
 }
 
 <script type="module" define:vars={{ deferUntilEvent, giscus, ready }}>
-  if (!ready) {
-    // Skip script injection when giscus credentials are not configured.
-  }
+  const cleanupKey = "__flyGiscusCleanup";
+  if (typeof window[cleanupKey] === "function") window[cleanupKey]();
 
   const anchor = document.getElementById("giscus-anchor");
+  const controller = new AbortController();
+  const { signal } = controller;
   let mounted = false;
   let readyToMount = !deferUntilEvent;
 
@@ -105,9 +106,23 @@ const ready =
         readyToMount = true;
         mount();
       },
-      { once: true }
+      { once: true, signal }
     );
   }
 
-  window.addEventListener("site:theme-change", syncTheme);
+  window.addEventListener("site:theme-change", syncTheme, { signal });
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      observer.disconnect();
+      controller.abort();
+    },
+    { once: true, signal }
+  );
+
+  window[cleanupKey] = () => {
+    observer.disconnect();
+    controller.abort();
+    window[cleanupKey] = null;
+  };
 </script>

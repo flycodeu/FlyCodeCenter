@@ -17,7 +17,10 @@
     "postbuild": "node ./scripts/pagefind-index.mjs",
     "build:minisearch": "node ./scripts/build-minisearch.mjs",
     "build:pagefind": "node ./scripts/pagefind-index.mjs",
-    "encrypt": "node ./scripts/encrypt.mjs"
+    "encrypt": "node ./scripts/encrypt.mjs",
+    "test:e2e": "npm run build:minisearch && playwright test",
+    "test:e2e:chromium": "npm run build:minisearch && playwright test --project=chromium-desktop --project=mobile-chromium",
+    "test:e2e:performance": "npm run build:minisearch && playwright test --config=playwright.performance.config.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
@@ -44,6 +47,7 @@
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/micromatch": "^4.0.10",
     "@types/node": "^24.6.2",
     "pagefind": "^1.4.0",

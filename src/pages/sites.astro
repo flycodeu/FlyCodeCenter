@@ -23,9 +23,15 @@ const entries = await Promise.all(
 );
 
 const groups = [...entries].sort((a, b) => (a.entry.data.order ?? 999) - (b.entry.data.order ?? 999));
-const defaultCategory = siteConfig.pages.sites.filter.defaultCategory;
+const defaultCategory = String(siteConfig.pages.sites.filter.defaultCategory || "").trim();
 const showFilter = siteConfig.pages.sites.filter.enable;
-const resolvedDefaultCategory = groups[0]?.category ?? "";
+const resolvedDefaultCategory =
+  defaultCategory.toLowerCase() === "all"
+    ? "all"
+    : groups.find((group) => group.category.toLowerCase() === defaultCategory.toLowerCase())?.category ??
+      groups[0]?.category ??
+      "";
+const totalSiteCount = groups.reduce((sum, group) => sum + group.cards.length, 0);
 const defaultSiteIcon = "/icons/site-default.svg";
 
 const getHost = (url: string) => {
@@ -50,6 +56,14 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     {
       showFilter && (
         <aside class="vault-nav surface" id="vault-nav">
+          <button
+            type="button"
+            class={`nav-item${resolvedDefaultCategory === "all" ? " active" : ""}`}
+            data-filter="all"
+          >
+            <span class="nav-label">全部</span>
+            <span class="nav-count">{totalSiteCount}</span>
+          </button>
           {
             groups.map((group) => (
               <button
@@ -72,9 +86,9 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
         {
           groups.map((group) => (
             <section
-              class={`vault-group surface${group.category === resolvedDefaultCategory ? " is-active" : ""}`}
+              class={`vault-group surface${resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? " is-active" : ""}`}
               data-group={group.category}
-              aria-hidden={group.category === resolvedDefaultCategory ? "false" : "true"}
+              aria-hidden={resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? "false" : "true"}
             >
               <h2 class="sr-only">{group.entry.data.title}</h2>
               <div class="group-summary">
@@ -95,6 +109,7 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
                           alt=""
                           loading="lazy"
                           decoding="async"
+                          referrerpolicy="no-referrer"
                         />
                         <div class="site-title-wrap">
                           <h3 title={card.title}>{card.title}</h3>
@@ -129,9 +144,11 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     const filter = document.getElementById('vault-nav');
     if (!root || !filter) return;
 
+    if (window.__flySitesFilterRoot === root && window.__flySitesFilterCleanup) return;
     if (window.__flySitesFilterCleanup) {
       window.__flySitesFilterCleanup();
     }
+    window.__flySitesFilterRoot = root;
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -143,6 +160,7 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     const setFilter = (value, syncQuery = true) => {
       const normalized = normalize(value || '');
       if (!normalized) return;
+      const showAll = normalized === 'all';
 
       buttons.forEach((btn) => {
         btn.classList.toggle('active', normalize(btn.dataset.filter) === normalized);
@@ -151,7 +169,7 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
       let hasVisible = false;
       groups.forEach((group) => {
         const category = normalize(group.getAttribute('data-group'));
-        const visible = normalized === category;
+        const visible = showAll || normalized === category;
         if (visible) hasVisible = true;
         group.classList.toggle('is-active', visible);
         group.setAttribute('aria-hidden', String(!visible));
@@ -167,9 +185,13 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 
       if (syncQuery && hasVisible) {
         const url = new URL(window.location.href);
-        const activeBtn = buttons.find((btn) => normalize(btn.dataset.filter) === normalized);
-        if (activeBtn?.dataset.filter) {
-          url.searchParams.set('category', activeBtn.dataset.filter);
+        if (showAll) {
+          url.searchParams.delete('category');
+        } else {
+          const activeBtn = buttons.find((btn) => normalize(btn.dataset.filter) === normalized);
+          if (activeBtn?.dataset.filter) {
+            url.searchParams.set('category', activeBtn.dataset.filter);
+          }
         }
         window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
       }
@@ -198,11 +220,13 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 
     window.__flySitesFilterCleanup = () => {
       controller.abort();
+      if (window.__flySitesFilterRoot === root) {
+        window.__flySitesFilterRoot = null;
+        window.__flySitesFilterCleanup = null;
+      }
     };
   };
 
-  document.addEventListener('astro:page-load', initVaultFilter);
-  initVaultFilter();
   const initSiteIconCache = () => {
     const storageKey = "fly-sites-icon-fail";
     let failed = {};
@@ -220,10 +244,12 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 
     document.querySelectorAll("img[data-icon-src]").forEach((img) => {
       if (!(img instanceof HTMLImageElement)) return;
+      if (img.dataset.iconCacheBound === "1") return;
       const iconSrc = (img.dataset.iconSrc || "").trim();
       const key = (img.dataset.iconKey || "").trim();
       if (!iconSrc || !key) return;
       if (failed[key]) return;
+      img.dataset.iconCacheBound = "1";
 
       img.addEventListener(
         "error",
@@ -239,7 +265,12 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     });
   };
 
-  document.addEventListener('astro:page-load', initSiteIconCache);
+  if (!window.__flySitesPageLoadBound) {
+    window.__flySitesPageLoadBound = true;
+    document.addEventListener('astro:page-load', initVaultFilter);
+    document.addEventListener('astro:page-load', initSiteIconCache);
+  }
+  initVaultFilter();
   initSiteIconCache();
 </script>
 

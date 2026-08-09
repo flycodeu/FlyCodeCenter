@@ -421,6 +421,10 @@
   display: none !important;
 }
 
+body.jarvis-settings-open main {
+  z-index: 85;
+}
+
 .jarvis-modal-backdrop,
 .jarvis-confirm-mask {
   position: absolute;

@@ -72,7 +72,13 @@ const seriesList = [...seriesMap.values()]
           <article class="surface series-card">
             {bucket.cover ? (
               <a class="series-cover" href={href} aria-label={bucket.label}>
-                <img src={bucket.cover} alt={bucket.label} loading="lazy" decoding="async" />
+                <img
+                  src={bucket.cover}
+                  alt={bucket.label}
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                />
               </a>
             ) : (
               <a class="series-cover series-cover-fallback" href={href} aria-label={bucket.label}>

@@ -14,8 +14,7 @@
 
 @font-face {
   font-family: "Zpix";
-  src: url("/fonts/pixel/zpix.woff2") format("woff2"),
-    url("/fonts/pixel/zpix.ttf") format("truetype");
+  src: url("/fonts/pixel/zpix.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;

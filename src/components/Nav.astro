@@ -55,20 +55,48 @@ const moreActive = moreItems.some((item) => isActive(item.link));
 
 <script is:inline>
   (() => {
+    const state = window.__flyNavState ?? { bound: false };
+    window.__flyNavState = state;
+
     const closeAll = (except) => {
       document.querySelectorAll("details[data-nav-more][open]").forEach((el) => {
         if (el !== except) el.removeAttribute("open");
       });
     };
-    document.addEventListener("click", (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const owner = target ? target.closest("details[data-nav-more]") : null;
-      closeAll(owner);
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeAll(null);
-    });
-    document.addEventListener("astro:page-load", () => closeAll(null));
+
+    if (!state.bound) {
+      state.bound = true;
+      document.addEventListener("click", (event) => {
+        const target =
+          event.target instanceof Element
+            ? event.target
+            : event.target instanceof Node
+              ? event.target.parentElement
+              : null;
+        const owner = target?.closest("details[data-nav-more]");
+        const summary = target?.closest("summary");
+
+        if (owner instanceof HTMLDetailsElement && summary?.parentElement === owner) {
+          event.preventDefault();
+          const shouldOpen = !owner.open;
+          closeAll(owner);
+          owner.open = shouldOpen;
+          return;
+        }
+
+        if (owner && target?.closest("a")) {
+          closeAll(null);
+          return;
+        }
+        closeAll(owner);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeAll(null);
+      });
+      document.addEventListener("astro:before-swap", () => closeAll(null));
+    }
+
+    closeAll(null);
   })();
 </script>
 

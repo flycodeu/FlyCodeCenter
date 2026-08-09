@@ -57,15 +57,23 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
     const loadBtn = document.getElementById('load-more-photos');
     if (!grid || !loadBtn) return;
 
+    if (window.__flyGalleryRoot === grid && window.__flyGalleryCleanup) return;
     if (window.__flyGalleryCleanup) {
       window.__flyGalleryCleanup();
     }
+    window.__flyGalleryRoot = grid;
 
     const controller = new AbortController();
     const { signal } = controller;
     const batchSize = Number(grid.getAttribute('data-batch') || '8');
+    const motionEnabled =
+      document.documentElement.dataset.perf !== 'low' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const motionCleanups = [];
 
     const bindMotionEffects = (items) => {
+      if (!motionEnabled) return;
       items.forEach((item) => {
         if (!(item instanceof HTMLElement)) return;
         if (item.dataset.motionBound === '1') return;
@@ -79,6 +87,10 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
         let active = false;
 
         const render = () => {
+          if (signal.aborted || !item.isConnected) {
+            frame = 0;
+            return;
+          }
           currentX += (targetX - currentX) * 0.14;
           currentY += (targetY - currentY) * 0.14;
           item.style.setProperty('--tilt-x', `${currentY.toFixed(2)}deg`);
@@ -98,6 +110,7 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
 
         item.addEventListener('pointerenter', () => {
           active = true;
+          item.classList.add('is-motion-active');
           start();
         }, { signal });
 
@@ -112,10 +125,21 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
 
         item.addEventListener('pointerleave', () => {
           active = false;
+          item.classList.remove('is-motion-active');
           targetX = 0;
           targetY = 0;
           start();
         }, { signal });
+
+        motionCleanups.push(() => {
+          active = false;
+          if (frame) window.cancelAnimationFrame(frame);
+          frame = 0;
+          item.classList.remove('is-motion-active');
+          item.style.removeProperty('--tilt-x');
+          item.style.removeProperty('--tilt-y');
+          item.style.removeProperty('--zoom');
+        });
       });
     };
 
@@ -163,10 +187,19 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
 
     window.__flyGalleryCleanup = () => {
       controller.abort();
+      motionCleanups.forEach((cleanup) => cleanup());
+      motionCleanups.length = 0;
+      if (window.__flyGalleryRoot === grid) {
+        window.__flyGalleryRoot = null;
+        window.__flyGalleryCleanup = null;
+      }
     };
   };
 
-  document.addEventListener('astro:page-load', initGallery);
+  if (!window.__flyGalleryPageLoadBound) {
+    window.__flyGalleryPageLoadBound = true;
+    document.addEventListener('astro:page-load', initGallery);
+  }
   initGallery();
 </script>
 
@@ -185,8 +218,11 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
     background: var(--bg-elev);
     transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--zoom, 1));
     transform-style: preserve-3d;
-    will-change: transform;
     transition: transform 180ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  }
+
+  .photo-item.is-motion-active {
+    will-change: transform;
   }
 
   .photo-item:hover {
@@ -277,6 +313,17 @@ const lazyBatchSize = siteConfig.gallery.lazyBatchSize;
   @media (max-width: 640px) {
     .photo-grid {
       columns: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .photo-item,
+    .photo-item:hover {
+      transform: none;
+    }
+
+    .photo-item:hover img {
+      transform: none;
     }
   }
 </style>

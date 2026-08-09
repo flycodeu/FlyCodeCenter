@@ -52,7 +52,7 @@ export const resolveAntiCrawlRuntimeConfig = (
   const maxCopyBurst = toSafeNumber(config?.maxCopyBurst, Math.max(legacyMaxActions + 4, 12), 6);
 
   return {
-    antiCrawlEnabled: Boolean(config?.enable ?? false),
+    antiCrawlEnabled: Boolean(config?.enable ?? false) && !import.meta.env.DEV,
     antiCrawlLockOnSuspicious: Boolean(config?.lockOnSuspicious ?? true),
     antiCrawlAllowlistedUserAgents: Array.isArray(config?.allowlistedUserAgents)
       ? config.allowlistedUserAgents.map((value) => String(value || "").trim()).filter(Boolean)

@@ -27,6 +27,7 @@ export function rehypeImageEnhance(options: ImageOptions = {}) {
       if (node.tagName !== "img") return;
 
       node.properties ??= {};
+      node.properties.referrerPolicy = "no-referrer";
       if (lazyload) {
         node.properties.loading = "lazy";
         node.properties.decoding = "async";

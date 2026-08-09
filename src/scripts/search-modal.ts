@@ -4,6 +4,7 @@ import type { SearchEngine, SearchResult } from "../providers/search/types";
 declare global {
   interface Window {
     __flySearchCleanup?: () => void;
+    __flySearchRoot?: HTMLElement;
   }
 }
 
@@ -136,6 +137,11 @@ function setupSearchModal() {
     updateResultCount(0);
   };
 
+  const setLoading = () => {
+    resultsEl.innerHTML = "<li class='result-empty'>正在加载搜索索引...</li>";
+    updateResultCount(0);
+  };
+
   const renderResults = (query: string) => {
     if (!query) {
       resultsEl.innerHTML = "<li class='result-empty'>输入关键词开始搜索</li>";
@@ -185,6 +191,7 @@ function setupSearchModal() {
   };
 
   const runSearch = async () => {
+    if (destroyed) return;
     const query = input.value.trim();
     if (!query) {
       currentResults = [];
@@ -196,11 +203,12 @@ function setupSearchModal() {
     try {
       const searchEngine = await ensureEngine();
       const nextResults = await searchEngine.search(query);
-      if (runId !== sequence) return;
+      if (destroyed || runId !== sequence) return;
       currentResults = nextResults;
       focusedIndex = currentResults.length ? 0 : -1;
       renderResults(query);
     } catch (error) {
+      if (destroyed) return;
       console.error(error);
       setError("搜索初始化失败，请刷新页面后重试。");
     }
@@ -230,22 +238,30 @@ function setupSearchModal() {
       mountFallback();
     }
 
-    renderResults("");
-
-    try {
-      await ensureEngine();
-    } catch (error) {
-      console.error(error);
-      setError("搜索引擎加载失败，请稍后再试。");
+    if (input.value.trim()) {
+      setLoading();
+    } else {
+      renderResults("");
     }
 
-    if (destroyed) return;
     window.requestAnimationFrame(() => {
       input.focus();
     });
+
+    try {
+      await ensureEngine();
+      if (destroyed) return;
+      if (input.value.trim()) {
+        await runSearch();
+      }
+    } catch (error) {
+      if (destroyed) return;
+      console.error(error);
+      setError("搜索引擎加载失败，请稍后再试。");
+    }
   };
 
-  const closeSearch = () => {
+  const closeSearch = (restoreFocus = true) => {
     if (
       dialogActive &&
       dialog instanceof HTMLDialogElement &&
@@ -255,6 +271,15 @@ function setupSearchModal() {
       dialog.close();
     }
     unmountFallback();
+
+    if (document.activeElement === nativeInput) nativeInput.blur();
+    if (document.activeElement === fallbackInput) fallbackInput.blur();
+    if (restoreFocus) {
+      const trigger = document.querySelector('[data-action="open-search"]');
+      if (trigger instanceof HTMLElement && trigger.isConnected && trigger.getClientRects().length > 0) {
+        trigger.focus({ preventScroll: true });
+      }
+    }
   };
 
   const handleInput = () => {
@@ -355,7 +380,9 @@ function setupSearchModal() {
     "keydown",
     (event) => {
       const key = event.key.toLowerCase();
-      const slashShortcut = shortcut === "/" && key === "/";
+      const slashShortcut =
+        shortcut === "/" &&
+        (key === "/" || event.code === "Slash" || event.code === "NumpadDivide");
       const customShortcut = shortcut !== "/" && (event.ctrlKey || event.metaKey) && key === shortcut;
       if ((slashShortcut || customShortcut) && !isTypingContext(event.target)) {
         event.preventDefault();
@@ -404,7 +431,7 @@ function setupSearchModal() {
   return () => {
     destroyed = true;
     sequence += 1;
-    closeSearch();
+    closeSearch(false);
     window.clearTimeout(debounceTimer);
     engine?.destroy?.();
     controller.abort();
@@ -412,8 +439,23 @@ function setupSearchModal() {
 }
 
 export function bootSearchModal() {
-  if (window.__flySearchCleanup) {
-    window.__flySearchCleanup();
+  const root = document.getElementById("search-root");
+  if (!(root instanceof HTMLElement)) {
+    window.__flySearchCleanup?.();
+    window.__flySearchCleanup = undefined;
+    window.__flySearchRoot = undefined;
+    return;
   }
-  window.__flySearchCleanup = setupSearchModal();
+
+  if (window.__flySearchRoot === root && window.__flySearchCleanup) return;
+
+  window.__flySearchCleanup?.();
+  const cleanup = setupSearchModal();
+  window.__flySearchRoot = root;
+  window.__flySearchCleanup = () => {
+    cleanup();
+    if (window.__flySearchRoot === root) {
+      window.__flySearchRoot = undefined;
+    }
+  };
 }

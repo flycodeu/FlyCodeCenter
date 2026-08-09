@@ -10,6 +10,7 @@ import { formatDate } from "@/utils/date";
 import { absoluteUrl } from "@/utils/url";
 import { buildArticleJsonLd } from "@/utils/seo";
 import { resolveAntiCrawlRuntimeConfig, type AntiCrawlConfigInput } from "@/utils/anti-crawl";
+import { buildResponsiveImageSources } from "@/utils/image";
 
 interface Heading {
   depth: number;
@@ -67,6 +68,7 @@ const {
 } = Astro.props;
 
 const deferUntilEvent = encrypted ? "site:decrypted" : undefined;
+const coverSources = buildResponsiveImageSources(cover || "", [640, 960, 1280, 1600], 1280);
 const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
   (siteConfig.article as { antiCrawl?: AntiCrawlConfigInput }).antiCrawl
 );
@@ -223,7 +225,16 @@ const articleRuntimeConfig = {
 
         {!hideCover && cover && (
           <div class="post-hero-image reading-hero-image">
-            <img src={cover} alt={title} loading="eager" fetchpriority="high" />
+            <img
+              src={coverSources.src}
+              srcset={coverSources.srcset}
+              sizes="(max-width: 760px) calc(100vw - 48px), (max-width: 1200px) calc(100vw - 380px), 820px"
+              alt={title}
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+              referrerpolicy="no-referrer"
+            />
           </div>
         )}
 

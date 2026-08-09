@@ -106,9 +106,11 @@ const getHost = (url?: string) => {
     const grid = document.getElementById('reading-grid');
     if (!filter || !grid) return;
 
+    if (window.__flyReadingFilterRoot === grid && window.__flyReadingFilterCleanup) return;
     if (window.__flyReadingFilterCleanup) {
       window.__flyReadingFilterCleanup();
     }
+    window.__flyReadingFilterRoot = grid;
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -161,10 +163,17 @@ const getHost = (url?: string) => {
 
     window.__flyReadingFilterCleanup = () => {
       controller.abort();
+      if (window.__flyReadingFilterRoot === grid) {
+        window.__flyReadingFilterRoot = null;
+        window.__flyReadingFilterCleanup = null;
+      }
     };
   };
 
-  document.addEventListener('astro:page-load', initReadingFilter);
+  if (!window.__flyReadingFilterPageLoadBound) {
+    window.__flyReadingFilterPageLoadBound = true;
+    document.addEventListener('astro:page-load', initReadingFilter);
+  }
   initReadingFilter();
 </script>
 

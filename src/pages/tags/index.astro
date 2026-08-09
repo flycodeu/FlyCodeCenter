@@ -91,9 +91,11 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     const sentinel = document.getElementById("tag-result-sentinel");
     if (!(root instanceof HTMLElement) || !(list instanceof HTMLElement) || !(status instanceof HTMLElement) || !(sentinel instanceof HTMLElement)) return;
 
+    if (window.__flyTagFilterRoot === root && window.__flyTagFilterCleanup) return;
     if (window.__flyTagFilterCleanup) {
       window.__flyTagFilterCleanup();
     }
+    window.__flyTagFilterRoot = root;
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -266,10 +268,17 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     window.__flyTagFilterCleanup = () => {
       controller.abort();
       if (observer) observer.disconnect();
+      if (window.__flyTagFilterRoot === root) {
+        window.__flyTagFilterRoot = null;
+        window.__flyTagFilterCleanup = null;
+      }
     };
   };
 
-  document.addEventListener("astro:page-load", initTagFilter);
+  if (!window.__flyTagFilterPageLoadBound) {
+    window.__flyTagFilterPageLoadBound = true;
+    document.addEventListener("astro:page-load", initTagFilter);
+  }
   initTagFilter();
 </script>
 

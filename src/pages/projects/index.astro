@@ -96,6 +96,7 @@ const resolveCardCover = (meta: ReturnType<typeof resolveArticleMeta>) => {
           alt={topPriorityMeta.title}
           loading="lazy"
           decoding="async"
+          referrerpolicy="no-referrer"
         />
         <div class="priority-body">
           <div class="priority-title-row">
@@ -140,7 +141,14 @@ const resolveCardCover = (meta: ReturnType<typeof resolveArticleMeta>) => {
                 const meta = getMeta(entry);
                 return (
                   <article class="surface project-card">
-                    <img class="cover" src={resolveCardCover(meta)} alt={meta.title} loading="lazy" decoding="async" />
+                    <img
+                      class="cover"
+                      src={resolveCardCover(meta)}
+                      alt={meta.title}
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                    />
 
                     <header>
                       <a href={getProjectEntryUrl(entry)} class="title-link">{meta.title}</a>

@@ -63,4 +63,7 @@ const initArchiveAntiCrawl = () => {
 };
 
 initArchiveAntiCrawl();
-document.addEventListener("astro:page-load", initArchiveAntiCrawl);
+if (!window.__flyArchiveAntiCrawlPageLoadBound) {
+  window.__flyArchiveAntiCrawlPageLoadBound = true;
+  document.addEventListener("astro:page-load", initArchiveAntiCrawl);
+}

@@ -82,6 +82,10 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
 {
   activeProvider === "waline" && (
     <script type="module" define:vars={{ deferUntilEvent, serverUrl: walineServer }}>
+      const cleanupKey = "__flyWalineCommentsCleanup";
+      if (typeof window[cleanupKey] === "function") window[cleanupKey]();
+      const controller = new AbortController();
+      const { signal } = controller;
       const mount = async () => {
         const root = document.getElementById("waline-root");
         if (!root || !serverUrl) return;
@@ -93,10 +97,15 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
         });
       };
       if (deferUntilEvent) {
-        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true, signal });
       } else {
         mount().catch(console.error);
       }
+      document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
+      window[cleanupKey] = () => {
+        controller.abort();
+        window[cleanupKey] = null;
+      };
     </script>
   )
 }
@@ -104,6 +113,10 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
 {
   activeProvider === "twikoo" && (
     <script type="module" define:vars={{ deferUntilEvent, envId: siteConfig.comment.twikoo.envId }}>
+      const cleanupKey = "__flyTwikooCommentsCleanup";
+      if (typeof window[cleanupKey] === "function") window[cleanupKey]();
+      const controller = new AbortController();
+      const { signal } = controller;
       const mount = async () => {
         const root = document.getElementById("twikoo-root");
         if (!root || !envId) return;
@@ -114,10 +127,15 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
         });
       };
       if (deferUntilEvent) {
-        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true, signal });
       } else {
         mount().catch(console.error);
       }
+      document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
+      window[cleanupKey] = () => {
+        controller.abort();
+        window[cleanupKey] = null;
+      };
     </script>
   )
 }
@@ -135,6 +153,12 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
         themeDark: String(utterances.themeDark ?? "github-dark")
       }}
     >
+      const cleanupKey = "__flyUtterancesCommentsCleanup";
+      if (typeof window[cleanupKey] === "function") window[cleanupKey]();
+      const controller = new AbortController();
+      const { signal } = controller;
+      let themeSyncTimer = 0;
+
       const themeOfSite = () => {
         const theme = document.documentElement.dataset.theme || "";
         return theme.includes("dark") ? themeDark : themeLight;
@@ -162,16 +186,30 @@ const commentsEnabled = activeProvider !== "off" && (providerReady || isDev);
         script.setAttribute("theme", themeOfSite());
         root.appendChild(script);
 
-        window.setTimeout(syncUtterancesTheme, 220);
+        window.clearTimeout(themeSyncTimer);
+        themeSyncTimer = window.setTimeout(syncUtterancesTheme, 220);
       };
 
       if (deferUntilEvent) {
-        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true });
+        window.addEventListener(deferUntilEvent, () => mount().catch(console.error), { once: true, signal });
       } else {
         mount().catch(console.error);
       }
 
-      document.addEventListener("theme:change", syncUtterancesTheme);
+      window.addEventListener("site:theme-change", syncUtterancesTheme, { signal });
+      document.addEventListener(
+        "astro:before-swap",
+        () => {
+          window.clearTimeout(themeSyncTimer);
+          controller.abort();
+        },
+        { once: true, signal }
+      );
+      window[cleanupKey] = () => {
+        window.clearTimeout(themeSyncTimer);
+        controller.abort();
+        window[cleanupKey] = null;
+      };
     </script>
   )
 }

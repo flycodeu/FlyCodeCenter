@@ -583,6 +583,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   const toggleSettings = (show: boolean) => {
     el.modal.hidden = !show;
     document.body.classList.toggle("has-overlay", show);
+    document.body.classList.toggle("jarvis-settings-open", show);
     if (show) {
       requestAnimationFrame(focusActiveTabButton);
       return;
@@ -1021,5 +1022,6 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   return () => {
     if (messageRenderFrame) cancelAnimationFrame(messageRenderFrame);
     globalEventController.abort();
+    document.body.classList.remove("has-overlay", "jarvis-settings-open");
   };
 };

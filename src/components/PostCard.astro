@@ -4,6 +4,7 @@ import siteConfig from "@/site.config";
 import { formatDate } from "@/utils/date";
 import { getBlogEntryUrl, getTutorialEntryUrl } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
+import { buildResponsiveImageSources } from "@/utils/image";
 
 type PostKind = "blog" | "tutorial";
 type CoverMode = "left" | "right" | "top" | "none";
@@ -63,6 +64,7 @@ const ratio = listCard.coverAspectRatio ?? listCard.coverRatio ?? "16 / 9";
 const hasCover = mode !== "none" && Boolean(meta.cover);
 const resolvedMode: CoverMode = hasCover ? mode : "none";
 const collapseMobileToTop = listCard.mobileCollapseToTop ?? true;
+const coverSources = buildResponsiveImageSources(meta.cover, [320, 480, 640, 960], 640);
 
 const tagsLimit = listCard.tagsMax ?? 3;
 const shownTags = meta.tags.slice(0, tagsLimit);
@@ -96,7 +98,15 @@ const outlineLines = listCard.outlineLines ?? 2;
   {
     hasCover && (
       <a class="cover-wrap" href={link} aria-label={meta.title}>
-        <img src={meta.cover} alt={meta.title} loading="lazy" decoding="async" />
+        <img
+          src={coverSources.src}
+          srcset={coverSources.srcset}
+          sizes={`(max-width: 900px) calc(100vw - 56px), ${inlineSize}px`}
+          alt={meta.title}
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+        />
       </a>
     )
   }
@@ -113,8 +123,6 @@ const outlineLines = listCard.outlineLines ?? 2;
     align-items: center;
     border: var(--layout-card-border-width, 1px) solid var(--line);
     background: var(--surface-1);
-    content-visibility: auto;
-    contain-intrinsic-size: 320px 150px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
 

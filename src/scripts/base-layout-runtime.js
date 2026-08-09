@@ -58,8 +58,45 @@ const getSearchShortcut = () => {
 const matchesSearchShortcut = (event, shortcut) => {
   const key = String(event.key || "").toLowerCase();
   if (!shortcut) return false;
-  if (shortcut === "/") return key === "/";
+  if (shortcut === "/") {
+    return key === "/" || event.code === "Slash" || event.code === "NumpadDivide";
+  }
   return (event.ctrlKey || event.metaKey) && key === shortcut;
+};
+
+const showSearchShell = () => {
+  const searchRoot = getSearchRoot();
+  if (!(searchRoot instanceof HTMLElement)) return;
+
+  const dialog = document.getElementById("search-modal");
+  const fallback = document.getElementById("search-fallback");
+  const nativePreferred = searchRoot.dataset.native === "1";
+  let input = document.getElementById("search-input-fallback");
+
+  if (
+    nativePreferred &&
+    dialog instanceof HTMLDialogElement &&
+    typeof dialog.showModal === "function"
+  ) {
+    try {
+      if (!dialog.open) dialog.showModal();
+      input = document.getElementById("search-input");
+    } catch {
+      if (fallback instanceof HTMLElement) {
+        fallback.hidden = false;
+        fallback.classList.add("open");
+        document.body.classList.add("has-overlay");
+      }
+    }
+  } else if (fallback instanceof HTMLElement) {
+    fallback.hidden = false;
+    fallback.classList.add("open");
+    document.body.classList.add("has-overlay");
+  }
+
+  if (input instanceof HTMLInputElement) {
+    window.requestAnimationFrame(() => input.focus());
+  }
 };
 
 const ensureSearchModal = async () => {
@@ -78,6 +115,7 @@ const ensureSearchModal = async () => {
 
 const openSearchModal = async () => {
   if (!(getSearchRoot() instanceof HTMLElement)) return;
+  showSearchShell();
   await ensureSearchModal();
   window.dispatchEvent(new CustomEvent("site:open-search"));
 };
@@ -671,13 +709,6 @@ const bindLinkPrefetch = () => {
 
 const boot = () => {
   document.body.classList.remove("has-overlay");
-  for (const dialog of document.querySelectorAll("dialog[open]")) {
-    if (dialog instanceof HTMLDialogElement) {
-      try {
-        dialog.close();
-      } catch {}
-    }
-  }
 
   initGlobalCopyToast();
   initLayoutOffsets();

@@ -103,7 +103,18 @@ const aboutCommentsEnabled =
         <div class="showcase-grid">
           {cards.map(({ entry, meta }) => (
             <article class="surface showcase-card">
-              {meta.cover && <img class="cover" src={meta.cover} alt={meta.title} loading="lazy" decoding="async" />}
+              {
+                meta.cover && (
+                  <img
+                    class="cover"
+                    src={meta.cover}
+                    alt={meta.title}
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                  />
+                )
+              }
               <h3>{meta.title}</h3>
               <p>{meta.description || meta.summary || linkLabels.noDescription}</p>
               <div class="links">

@@ -48,11 +48,25 @@ const list: TocItem[] = filtered.map((item) => {
         </nav>
       </div>
 
-      <button id="toc-mobile-toggle" class="toc-mobile-toggle" type="button" aria-label="打开目录">
+      <button
+        id="toc-mobile-toggle"
+        class="toc-mobile-toggle"
+        type="button"
+        aria-label="打开目录"
+        aria-controls="toc-mobile-panel"
+        aria-expanded="false"
+      >
         目录
       </button>
-      <div id="toc-mobile-overlay" class="toc-mobile-overlay" hidden></div>
-      <aside id="toc-mobile-panel" class="toc-mobile-panel" hidden aria-label="文章目录">
+      <div id="toc-mobile-overlay" class="toc-mobile-overlay" hidden aria-hidden="true"></div>
+      <aside
+        id="toc-mobile-panel"
+        class="toc-mobile-panel"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-label="文章目录"
+      >
         <nav class="surface toc toc-mobile">
           <header class="toc-mobile-head">
             <h3>本文目录</h3>
@@ -113,6 +127,10 @@ const list: TocItem[] = filtered.map((item) => {
         const panel = document.getElementById("toc-mobile-panel");
         const desktopList = document.querySelector(".toc-list-desktop");
         const body = document.body;
+        let closeTimer = 0;
+        let scrollTimer = 0;
+        let openFrame = 0;
+        let activeFrame = 0;
         const shouldTrackActive = () =>
           document.documentElement.dataset.perf !== "low" && window.innerWidth > 1024;
         const getHeaderOffset = () => {
@@ -128,7 +146,10 @@ const list: TocItem[] = filtered.map((item) => {
           if (!(heading instanceof HTMLElement)) return;
           const offset = getHeaderOffset() + 16;
           const top = Math.max(0, window.scrollY + heading.getBoundingClientRect().top - offset);
-          window.scrollTo({ top, behavior: "smooth" });
+          const reducedMotion =
+            document.documentElement.dataset.perf === "low" ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
           if (history.replaceState) {
             history.replaceState(null, "", `#${encodeURIComponent(id)}`);
           } else {
@@ -138,34 +159,77 @@ const list: TocItem[] = filtered.map((item) => {
 
         const openMobileToc = () => {
           if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+          window.clearTimeout(closeTimer);
+          window.cancelAnimationFrame(openFrame);
           panel.hidden = false;
           overlay.hidden = false;
           body.classList.add("toc-drawer-open");
-          requestAnimationFrame(() => {
+          if (toggleBtn instanceof HTMLButtonElement) {
+            toggleBtn.setAttribute("aria-expanded", "true");
+          }
+          openFrame = window.requestAnimationFrame(() => {
             panel.classList.add("open");
             overlay.classList.add("open");
+            if (closeBtn instanceof HTMLButtonElement) closeBtn.focus();
           });
         };
 
-        const closeMobileToc = () => {
+        const closeMobileToc = (restoreFocus = true) => {
           if (!(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+          window.clearTimeout(closeTimer);
+          window.cancelAnimationFrame(openFrame);
           panel.classList.remove("open");
           overlay.classList.remove("open");
           body.classList.remove("toc-drawer-open");
-          window.setTimeout(() => {
+          if (toggleBtn instanceof HTMLButtonElement) {
+            toggleBtn.setAttribute("aria-expanded", "false");
+          }
+          closeTimer = window.setTimeout(() => {
             panel.hidden = true;
             overlay.hidden = true;
+            if (
+              restoreFocus &&
+              toggleBtn instanceof HTMLButtonElement &&
+              toggleBtn.isConnected &&
+              toggleBtn.getClientRects().length > 0
+            ) {
+              toggleBtn.focus();
+            }
           }, 180);
         };
 
-        const onDesktopResize = () => {
-          if (window.innerWidth > 1024) closeMobileToc();
+        const handleMobileTocKeydown = (event) => {
+          if (!(event instanceof KeyboardEvent)) return;
+          if (!(panel instanceof HTMLElement) || !panel.classList.contains("open")) return;
+          if (event.key === "Escape") {
+            event.preventDefault();
+            closeMobileToc();
+            return;
+          }
+          if (event.key !== "Tab") return;
+
+          const focusable = Array.from(
+            panel.querySelectorAll(
+              'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter((node) => node instanceof HTMLElement && node.offsetParent !== null);
+          if (!focusable.length) return;
+
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
         };
 
         toggleBtn?.addEventListener("click", openMobileToc);
         closeBtn?.addEventListener("click", closeMobileToc);
         overlay?.addEventListener("click", closeMobileToc);
-        window.addEventListener("resize", onDesktopResize);
+        document.addEventListener("keydown", handleMobileTocKeydown);
 
         let activeId = "";
         const activate = (id) => {
@@ -205,15 +269,36 @@ const list: TocItem[] = filtered.map((item) => {
           if (!shouldTrackActive()) return;
           if (ticking) return;
           ticking = true;
-          window.requestAnimationFrame(updateActive);
+          activeFrame = window.requestAnimationFrame(updateActive);
         };
 
-        if (shouldTrackActive()) {
-          window.addEventListener("scroll", queueUpdate, { passive: true });
-          window.addEventListener("resize", queueUpdate);
-          window.addEventListener("hashchange", queueUpdate);
-          window.addEventListener("site:decrypted", queueUpdate);
-        }
+        let trackingBound = false;
+        const syncActiveTracking = () => {
+          const nextTrackingState = shouldTrackActive();
+          if (nextTrackingState === trackingBound) return;
+          trackingBound = nextTrackingState;
+
+          if (trackingBound) {
+            window.addEventListener("scroll", queueUpdate, { passive: true });
+            window.addEventListener("hashchange", queueUpdate);
+            window.addEventListener("site:decrypted", queueUpdate);
+            queueUpdate();
+            return;
+          }
+
+          window.removeEventListener("scroll", queueUpdate);
+          window.removeEventListener("hashchange", queueUpdate);
+          window.removeEventListener("site:decrypted", queueUpdate);
+          window.cancelAnimationFrame(activeFrame);
+          ticking = false;
+        };
+
+        const onViewportResize = () => {
+          if (window.innerWidth > 1024) closeMobileToc(false);
+          syncActiveTracking();
+          queueUpdate();
+        };
+        window.addEventListener("resize", onViewportResize);
 
         const mobileAnchorHandlers = [];
         document.querySelectorAll(".toc-list-mobile a").forEach((anchor) => {
@@ -226,8 +311,9 @@ const list: TocItem[] = filtered.map((item) => {
             }
             event.preventDefault();
             const id = decodeURIComponent(hash.slice(1));
-            closeMobileToc();
-            window.setTimeout(() => {
+            closeMobileToc(false);
+            window.clearTimeout(scrollTimer);
+            scrollTimer = window.setTimeout(() => {
               scrollToHeading(id);
               queueUpdate();
             }, 190);
@@ -236,22 +322,30 @@ const list: TocItem[] = filtered.map((item) => {
           mobileAnchorHandlers.push([anchor, onMobileAnchorClick]);
         });
 
-        if (shouldTrackActive()) {
-          queueUpdate();
-        }
+        syncActiveTracking();
 
         window[cleanupKey] = () => {
+          window.clearTimeout(closeTimer);
+          window.clearTimeout(scrollTimer);
+          window.cancelAnimationFrame(openFrame);
+          window.cancelAnimationFrame(activeFrame);
           toggleBtn?.removeEventListener("click", openMobileToc);
           closeBtn?.removeEventListener("click", closeMobileToc);
           overlay?.removeEventListener("click", closeMobileToc);
-          window.removeEventListener("resize", onDesktopResize);
+          document.removeEventListener("keydown", handleMobileTocKeydown);
+          window.removeEventListener("resize", onViewportResize);
           window.removeEventListener("scroll", queueUpdate);
-          window.removeEventListener("resize", queueUpdate);
           window.removeEventListener("hashchange", queueUpdate);
           window.removeEventListener("site:decrypted", queueUpdate);
           mobileAnchorHandlers.forEach(([anchor, handler]) => {
             anchor.removeEventListener("click", handler);
           });
+          panel?.classList.remove("open");
+          overlay?.classList.remove("open");
+          if (panel instanceof HTMLElement) panel.hidden = true;
+          if (overlay instanceof HTMLElement) overlay.hidden = true;
+          if (toggleBtn instanceof HTMLButtonElement) toggleBtn.setAttribute("aria-expanded", "false");
+          body.classList.remove("toc-drawer-open");
         };
       };
 
@@ -376,6 +470,11 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-overlay.open {
     opacity: 1;
+  }
+
+  .toc-mobile-overlay[hidden],
+  .toc-mobile-panel[hidden] {
+    display: none;
   }
 
   .toc-mobile-panel {

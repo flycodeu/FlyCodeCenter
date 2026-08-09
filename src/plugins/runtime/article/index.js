@@ -57,6 +57,24 @@ export function initArticleRuntime(config = {}) {
     antiCrawlMaxCopyBurst = 12
   } = config;
   const root = document.documentElement;
+  const controller = new AbortController();
+  const { signal } = controller;
+  const activeTimeouts = new Set();
+  const activeIdleCallbacks = new Set();
+  const activeObservers = new Set();
+  const setTrackedTimeout = (callback, delay) => {
+    const id = window.setTimeout(() => {
+      activeTimeouts.delete(id);
+      if (!signal.aborted) callback();
+    }, delay);
+    activeTimeouts.add(id);
+    return id;
+  };
+  const clearTrackedTimeout = (id) => {
+    if (!id) return;
+    window.clearTimeout(id);
+    activeTimeouts.delete(id);
+  };
   root.dataset.encryptedLocked = isEncrypted ? "1" : "0";
   document.body.classList.remove("anti-crawl-locked");
   root.dataset.antiCrawlLocked = "0";
@@ -130,7 +148,7 @@ export function initArticleRuntime(config = {}) {
       window.addEventListener("site:decrypted", () => {
         root.dataset.encryptedLocked = "0";
         initArticleEnhancements().catch(console.error);
-      });
+      }, { signal });
     }
 
     const copyIcon = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2m-8-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>';
@@ -149,7 +167,7 @@ export function initArticleRuntime(config = {}) {
         btn.classList.add("copied");
         btn.innerHTML = successIcon;
         emitCopySuccessToast("复制成功");
-        setTimeout(() => {
+        setTrackedTimeout(() => {
           btn.classList.remove("copied");
           btn.innerHTML = copyIcon;
         }, 1800);
@@ -172,9 +190,13 @@ export function initArticleRuntime(config = {}) {
 
     const scheduleIdle = (task) => {
       if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(task, { timeout: 500 });
+        const id = window.requestIdleCallback((deadline) => {
+          activeIdleCallbacks.delete(id);
+          if (!signal.aborted) task(deadline);
+        }, { timeout: 500 });
+        activeIdleCallbacks.add(id);
       } else {
-        window.setTimeout(() => task({ timeRemaining: () => 8 }), 20);
+        setTrackedTimeout(() => task({ timeRemaining: () => 8 }), 20);
       }
     };
 
@@ -766,7 +788,7 @@ export function initArticleRuntime(config = {}) {
             // no-op
           }
         });
-      });
+      }, { signal });
     };
     const getErrorMessage = (error, fallback) => {
       if (error instanceof Error && error.message) return error.message;
@@ -1194,7 +1216,9 @@ export function initArticleRuntime(config = {}) {
       if (!targets.length) return;
 
       const runForTarget = (target) => {
+        if (signal.aborted) return;
         if (!target || !(target.code instanceof HTMLElement)) return;
+        if (!target.code.isConnected) return;
         if (target.kind === "mermaid" && enableMermaid) {
           renderMermaidBlock(target.code).catch(console.error);
           return;
@@ -1233,6 +1257,7 @@ export function initArticleRuntime(config = {}) {
         },
         { rootMargin: "220px 0px" }
       );
+      activeObservers.add(observer);
 
       targets.forEach((target) => {
         if (target?.pre instanceof HTMLElement) {
@@ -1240,7 +1265,7 @@ export function initArticleRuntime(config = {}) {
         }
       });
 
-      window.setTimeout(() => {
+      setTrackedTimeout(() => {
         targets.forEach((target) => {
           if (!target || !(target.pre instanceof HTMLElement) || target.pre.dataset.diagramEnhanced === "1") {
             return;
@@ -1480,6 +1505,7 @@ export function initArticleRuntime(config = {}) {
 
         try {
           const Chart = await getChartJsApi();
+          if (signal.aborted || !card.isConnected) return;
           const config = JSON.parse(raw);
           if (!config?.type) throw new Error("chart type missing");
           config.options = config.options || {};
@@ -1525,6 +1551,7 @@ export function initArticleRuntime(config = {}) {
         },
         { rootMargin: "220px 0px" }
       );
+      activeObservers.add(observer);
       cards.forEach((card) => observer.observe(card));
     };
 
@@ -1532,7 +1559,7 @@ export function initArticleRuntime(config = {}) {
       if (!(article instanceof HTMLElement)) return;
       const passes = isLowPerf || isCompactViewport ? [0, 320, 960] : [0, 90, 260, 520, 980, 1400];
       passes.forEach((delay) => {
-        window.setTimeout(() => {
+        setTrackedTimeout(() => {
           enhanceExpressiveCodeHeader(article, true);
           enhanceDiffBlocks(article);
           applyCodeFold(article);
@@ -1541,6 +1568,7 @@ export function initArticleRuntime(config = {}) {
     };
 
     const initArticleEnhancements = async () => {
+      if (signal.aborted) return;
       if (root.dataset.encryptedLocked === "1") return;
       if (root.dataset.antiCrawlLocked === "1") return;
       const article = document.querySelector(".article-body");
@@ -1555,7 +1583,9 @@ export function initArticleRuntime(config = {}) {
       bindHeadingCopy(article);
       bindTitleCopy();
       await initInlineIcons(article);
+      if (signal.aborted || !article.isConnected) return;
       await renderChartJsCards(article);
+      if (signal.aborted || !article.isConnected) return;
       addMathCopy(article);
       observeAndRenderDiagrams(article);
       syncExpressiveCodeTheme(article);
@@ -1566,34 +1596,22 @@ export function initArticleRuntime(config = {}) {
       stabilizeCodeUi(article);
     };
     const runArticleEnhancements = () => {
+      if (signal.aborted) return;
       initArticleEnhancements().catch(console.error);
     };
 
     if (window.__flyPostEnhanceHandler) {
       document.removeEventListener("astro:page-load", window.__flyPostEnhanceHandler);
       document.removeEventListener("astro:after-swap", window.__flyPostEnhanceHandler);
+      window.__flyPostEnhanceHandler = null;
     }
-    window.__flyPostEnhanceHandler = runArticleEnhancements;
-    document.addEventListener("astro:page-load", runArticleEnhancements);
-    document.addEventListener("astro:after-swap", runArticleEnhancements);
-
-    if (!window.__flyPostThemeSyncBound) {
-      window.__flyPostThemeSyncBound = true;
-      window.addEventListener("site:theme-change", () => {
-        const article = document.querySelector(".article-body");
-        if (!(article instanceof HTMLElement)) return;
-        syncExpressiveCodeTheme(article);
-        refreshEchartsTheme().catch(console.error);
-        refreshChartJsTheme();
-      });
-      document.addEventListener("astro:page-load", () => {
-        const article = document.querySelector(".article-body");
-        if (!(article instanceof HTMLElement)) return;
-        syncExpressiveCodeTheme(article);
-        refreshEchartsTheme().catch(console.error);
-        refreshChartJsTheme();
-      });
-    }
+    window.addEventListener("site:theme-change", () => {
+      const article = document.querySelector(".article-body");
+      if (!(article instanceof HTMLElement)) return;
+      syncExpressiveCodeTheme(article);
+      refreshEchartsTheme().catch(console.error);
+      refreshChartJsTheme();
+    }, { signal });
 
     const VIEW_CLIENT_KEY = "fly-view-client-id";
     const VIEW_COUNT_CACHE_KEY = "fly-view-count-cache-v1";
@@ -1664,8 +1682,10 @@ export function initArticleRuntime(config = {}) {
             "X-Client-Id": clientId
           },
           keepalive: true,
+          signal,
           body: JSON.stringify({ slug })
         });
+        if (signal.aborted) return;
         if (postResp.ok) {
           const payload = await postResp.json();
           const nextCount = Number(payload?.count || 0);
@@ -1673,6 +1693,7 @@ export function initArticleRuntime(config = {}) {
           writeViewCountCache(slug, nextCount);
         }
       } catch (error) {
+        if (signal.aborted || error?.name === "AbortError") return;
         console.warn("view count post failed", error);
       }
     };
@@ -1708,17 +1729,13 @@ export function initArticleRuntime(config = {}) {
       };
 
       window.addEventListener("scroll", () => {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          if ("requestIdleCallback" in window) {
-            window.requestIdleCallback(write, { timeout: 600 });
-          } else {
-            write();
-          }
+        clearTrackedTimeout(timer);
+        timer = setTrackedTimeout(() => {
+          scheduleIdle(write);
         }, 360);
-      }, { passive: true });
+      }, { passive: true, signal });
 
-      window.addEventListener("beforeunload", write);
+      window.addEventListener("beforeunload", write, { signal });
       write();
     };
 
@@ -1727,5 +1744,30 @@ export function initArticleRuntime(config = {}) {
       syncViewStats().catch(console.error);
     });
     bindReadingState();
+
+    return () => {
+      if (signal.aborted) return;
+      controller.abort();
+      activeTimeouts.forEach((id) => window.clearTimeout(id));
+      activeTimeouts.clear();
+      if ("cancelIdleCallback" in window) {
+        activeIdleCallbacks.forEach((id) => window.cancelIdleCallback(id));
+      }
+      activeIdleCallbacks.clear();
+      activeObservers.forEach((observer) => observer.disconnect());
+      activeObservers.clear();
+      echartsRecords.forEach((record) => {
+        try {
+          record.chart?.dispose?.();
+        } catch {}
+      });
+      chartJsInstances.forEach((chart) => {
+        try {
+          chart.destroy?.();
+        } catch {}
+      });
+      clearAntiCrawlBindings();
+      document.body.classList.remove("anti-crawl-locked");
+    };
 }
 

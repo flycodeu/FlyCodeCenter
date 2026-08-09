@@ -115,15 +115,14 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   };
 
   const init = () => {
+    const ok = bindTargets();
     if (shouldDisable()) {
       state.disabled = true;
-      const fab = document.getElementById("reading-progress-fab");
-      if (fab instanceof HTMLElement) {
-        fab.classList.remove("visible");
+      if (state.fab instanceof HTMLElement) {
+        state.fab.classList.remove("visible");
       }
       return;
     }
-    const ok = bindTargets();
     if (!ok || !isReady()) return;
     requestRender();
     if (state.fab instanceof HTMLElement && !state.fab.dataset.bound) {

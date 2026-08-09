@@ -13,6 +13,7 @@ import {
 import { getBlogEntryUrl, sortByDateDesc } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { formatDate } from "@/utils/date";
+import { buildResponsiveImageSources } from "@/utils/image";
 
 const [blogs, tutorials] = await Promise.all([
   fetchBlogEntries(),
@@ -28,6 +29,7 @@ const heroImageSrc =
   String(heroImageConfig.fallbackSrc || "").trim() ||
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80";
 const heroImageAlt = String(heroImageConfig.alt || "Hero Image").trim() || "Hero Image";
+const heroImageSources = buildResponsiveImageSources(heroImageSrc, [768, 1200, 1600, 2400], 1600);
 const featuredConfig = siteConfig.home.featured;
 const tagCount = makeTagItems(allEntries).length;
 const homeFeedConfig = (siteConfig.home as { feed?: { mode?: "page" | "infinite"; pageSize?: number; mixCollections?: readonly ("blog" | "tutorial")[] } }).feed ?? {};
@@ -65,6 +67,7 @@ const featuredMode =
   normalizeCoverMode(featuredMeta?.coverMode) ??
   featuredDefaultMode;
 const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none";
+const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || "", [480, 768, 960, 1200], 960);
 ---
 
 <BaseLayout>
@@ -77,7 +80,16 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
               {siteConfig.watermark.enable && siteConfig.watermark.scope === "hero" && <Watermark scope="hero" />}
               {heroImageConfig.enable && heroImageSrc && (
                 <div class="hero-bg">
-                  <img src={heroImageSrc} alt={heroImageAlt} loading="lazy" />
+                  <img
+                    src={heroImageSources.src}
+                    srcset={heroImageSources.srcset}
+                    sizes="(max-width: 900px) calc(100vw - 32px), (max-width: 1280px) calc(100vw - 360px), 820px"
+                    alt={heroImageAlt}
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                    referrerpolicy="no-referrer"
+                  />
                 </div>
               )}
               <div class="hero-content">
@@ -120,7 +132,16 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
                 <a class="featured-cover" href={featuredLink} aria-label={featuredMeta.title}>
                   {
                     featuredMeta.cover ? (
-                      <img src={featuredMeta.cover} alt={featuredMeta.title} loading="lazy" decoding="async" />
+                      <img
+                        src={featuredImageSources.src}
+                        srcset={featuredImageSources.srcset}
+                        sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1280px) 38vw, 420px"
+                        alt={featuredMeta.title}
+                        loading="eager"
+                        decoding="async"
+                        fetchpriority="high"
+                        referrerpolicy="no-referrer"
+                      />
                     ) : (
                       <div class="cover-fallback"></div>
                     )
@@ -165,12 +186,25 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
     const sentinel = document.getElementById("home-feed-sentinel");
     if (!(list instanceof HTMLElement) || !(sentinel instanceof HTMLElement)) return;
 
+    if (window.__flyHomeFeedRoot === list && window.__flyHomeFeedCleanup) return;
     if (window.__flyHomeFeedCleanup) window.__flyHomeFeedCleanup();
+    window.__flyHomeFeedRoot = list;
+
+    const setCleanup = (cleanup) => {
+      window.__flyHomeFeedCleanup = () => {
+        cleanup();
+        if (window.__flyHomeFeedRoot === list) {
+          window.__flyHomeFeedRoot = null;
+          window.__flyHomeFeedCleanup = null;
+        }
+      };
+    };
 
     const items = Array.from(list.querySelectorAll("[data-page-item]"));
     if (items.length <= batchSize) {
       sentinel.hidden = true;
       if (pager instanceof HTMLElement) pager.hidden = true;
+      setCleanup(() => {});
       return;
     }
 
@@ -202,17 +236,27 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
               }
               return out;
             };
+            const pageHref = (pageNo) => {
+              const url = new URL(window.location.href);
+              if (pageNo <= 1) url.searchParams.delete("page");
+              else url.searchParams.set("page", String(pageNo));
+              return `${url.pathname}${url.search}${url.hash}`;
+            };
             const pages = windowPages(currentPage, totalPages)
               .map((pageNo) => {
                 if (pageNo === "ellipsis") return `<span class="pager-ellipsis" aria-hidden="true">…</span>`;
                 const active = pageNo === currentPage ? "is-active" : "";
-                return `<button type="button" class="pager-btn pager-btn-num ${active}" data-page="${pageNo}">${pageNo}</button>`;
+                return `<a class="pager-btn pager-btn-num ${active}" data-page="${pageNo}" data-astro-reload href="${pageHref(pageNo)}">${pageNo}</a>`;
               })
               .join("");
             pager.innerHTML = `
-              <button type="button" class="pager-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? "disabled" : ""}>上一页</button>
+              ${currentPage <= 1
+                ? '<span class="pager-btn is-disabled" aria-disabled="true">上一页</span>'
+                : `<a class="pager-btn" data-page="${currentPage - 1}" data-astro-reload href="${pageHref(currentPage - 1)}">上一页</a>`}
               <div class="pager-pages">${pages}</div>
-              <button type="button" class="pager-btn" data-page="${currentPage + 1}" ${currentPage >= totalPages ? "disabled" : ""}>下一页</button>
+              ${currentPage >= totalPages
+                ? '<span class="pager-btn is-disabled" aria-disabled="true">下一页</span>'
+                : `<a class="pager-btn" data-page="${currentPage + 1}" data-astro-reload href="${pageHref(currentPage + 1)}">下一页</a>`}
             `;
             pager.hidden = false;
           }
@@ -234,24 +278,30 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
       sentinel.hidden = true;
 
       const onPagerClick = (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        const button = target.closest("button[data-page]");
-        if (!(button instanceof HTMLButtonElement) || button.disabled) return;
-        const next = Number.parseInt(button.dataset.page || "1", 10);
+        const target =
+          event.target instanceof Element
+            ? event.target
+            : event.target instanceof Node
+              ? event.target.parentElement
+              : null;
+        if (!(target instanceof Element)) return;
+        const link = target.closest("a[data-page]");
+        if (!(link instanceof HTMLAnchorElement)) return;
+        const next = Number.parseInt(link.dataset.page || "1", 10);
         if (!Number.isFinite(next)) return;
+        event.preventDefault();
         setPage(next);
       };
 
       if (pager instanceof HTMLElement) {
-        pager.addEventListener("click", onPagerClick);
+        pager.addEventListener("click", onPagerClick, true);
       }
 
-      window.__flyHomeFeedCleanup = () => {
+      setCleanup(() => {
         if (pager instanceof HTMLElement) {
-          pager.removeEventListener("click", onPagerClick);
+          pager.removeEventListener("click", onPagerClick, true);
         }
-      };
+      });
       return;
     }
 
@@ -282,10 +332,13 @@ const hasFeaturedCover = Boolean(featuredMeta?.cover) && featuredMode !== "none"
     if (pager instanceof HTMLElement) pager.hidden = true;
     observer.observe(sentinel);
     sentinel.hidden = false;
-    window.__flyHomeFeedCleanup = () => observer.disconnect();
+    setCleanup(() => observer.disconnect());
   };
 
-  document.addEventListener("astro:page-load", initHomeFeed);
+  if (!window.__flyHomeFeedPageLoadBound) {
+    window.__flyHomeFeedPageLoadBound = true;
+    document.addEventListener("astro:page-load", initHomeFeed);
+  }
   initHomeFeed();
 </script>
 

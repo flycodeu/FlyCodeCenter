@@ -32,3 +32,8 @@ todo/
 # generated search index
 public/search/minisearch.json
 public/encrypted/
+
+# browser test output
+playwright-report/
+playwright-report-performance/
+test-results/

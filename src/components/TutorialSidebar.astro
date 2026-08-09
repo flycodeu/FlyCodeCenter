@@ -74,11 +74,26 @@ const {
   {
     mobileDrawer && (
       <>
-        <button class="tutorial-sidebar-mobile-open" type="button" data-sidebar-mobile-open aria-label="打开章节目录">
+        <button
+          class="tutorial-sidebar-mobile-open"
+          type="button"
+          data-sidebar-mobile-open
+          aria-label="打开章节目录"
+          aria-controls="tutorial-sidebar-mobile-panel"
+          aria-expanded="false"
+        >
           章节
         </button>
         <div class="tutorial-sidebar-mobile-overlay" data-sidebar-mobile-overlay hidden></div>
-        <aside class="surface tutorial-sidebar mobile-drawer" data-sidebar-mobile-panel hidden aria-label={`${seriesLabel} 章节导航`}>
+        <aside
+          id="tutorial-sidebar-mobile-panel"
+          class="surface tutorial-sidebar mobile-drawer"
+          data-sidebar-mobile-panel
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${seriesLabel} 章节导航`}
+        >
           <header class="tutorial-sidebar-head">
             <h3>{seriesLabel}</h3>
             <button class="tutorial-sidebar-mobile-close" type="button" data-sidebar-mobile-close aria-label="关闭章节目录">
@@ -142,28 +157,71 @@ const {
       const readerShell = root.closest(".tutorial-reader");
       const controller = new AbortController();
       const { signal } = controller;
+      let closeTimer = 0;
       document.addEventListener("astro:before-swap", () => controller.abort(), { once: true, signal });
 
-      const closeDrawer = () => {
+      const closeDrawer = (restoreFocus = true) => {
         if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
+        window.clearTimeout(closeTimer);
         mobilePanel.classList.remove("open");
         mobileOverlay.classList.remove("open");
         document.body.classList.remove("tutorial-sidebar-drawer-open");
-        window.setTimeout(() => {
+        if (openBtn instanceof HTMLButtonElement) {
+          openBtn.setAttribute("aria-expanded", "false");
+        }
+        closeTimer = window.setTimeout(() => {
           mobilePanel.hidden = true;
           mobileOverlay.hidden = true;
+          if (
+            restoreFocus &&
+            openBtn instanceof HTMLButtonElement &&
+            openBtn.isConnected &&
+            openBtn.getClientRects().length > 0
+          ) {
+            openBtn.focus();
+          }
         }, 180);
       };
 
       const openDrawer = () => {
         if (!(mobilePanel instanceof HTMLElement) || !(mobileOverlay instanceof HTMLElement)) return;
+        window.clearTimeout(closeTimer);
         mobilePanel.hidden = false;
         mobileOverlay.hidden = false;
         document.body.classList.add("tutorial-sidebar-drawer-open");
+        if (openBtn instanceof HTMLButtonElement) {
+          openBtn.setAttribute("aria-expanded", "true");
+        }
         requestAnimationFrame(() => {
           mobilePanel.classList.add("open");
           mobileOverlay.classList.add("open");
+          if (closeBtn instanceof HTMLButtonElement) closeBtn.focus();
         });
+      };
+
+      const handleDrawerKeydown = (event) => {
+        if (!(mobilePanel instanceof HTMLElement) || !mobilePanel.classList.contains("open")) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeDrawer();
+          return;
+        }
+        if (event.key !== "Tab") return;
+
+        const focusable = Array.from(
+          mobilePanel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+        ).filter((node) => node instanceof HTMLElement && node.offsetParent !== null);
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       };
 
       const syncCollapsedState = () => {
@@ -182,11 +240,13 @@ const {
         syncCollapsedState();
       }, { signal });
       openBtn?.addEventListener("click", openDrawer, { signal });
-      closeBtn?.addEventListener("click", closeDrawer, { signal });
-      mobileOverlay?.addEventListener("click", closeDrawer, { signal });
+      closeBtn?.addEventListener("click", () => closeDrawer(), { signal });
+      mobileOverlay?.addEventListener("click", () => closeDrawer(), { signal });
+      document.addEventListener("keydown", handleDrawerKeydown, { signal });
       window.addEventListener("resize", () => {
-        if (window.innerWidth > 1024) closeDrawer();
+        if (window.innerWidth > 1024) closeDrawer(false);
       }, { signal });
+      signal.addEventListener("abort", () => window.clearTimeout(closeTimer), { once: true });
 
       root.querySelectorAll("[data-sidebar-scroll]").forEach((scrollNode) => {
         if (!(scrollNode instanceof HTMLElement)) return;
@@ -469,6 +529,11 @@ const {
       transition: opacity 180ms ease;
     }
 
+    .tutorial-sidebar-mobile-overlay[hidden],
+    .mobile-drawer[hidden] {
+      display: none;
+    }
+
     .tutorial-sidebar-mobile-overlay.open {
       opacity: 1;
     }
@@ -480,6 +545,7 @@ const {
       left: 0;
       width: min(86vw, 340px);
       height: 100vh;
+      height: 100dvh;
       z-index: 91;
       transform: translateX(-100%);
       transition: transform 180ms ease;
@@ -498,6 +564,10 @@ const {
 
     :global(body.tutorial-sidebar-drawer-open) {
       overflow: hidden;
+    }
+
+    :global(body.tutorial-sidebar-drawer-open main) {
+      z-index: 70;
     }
   }
 </style>

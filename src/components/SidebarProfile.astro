@@ -47,7 +47,14 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
 
 <section class="surface profile-card">
   <div class="avatar-wrap">
-    <img src={profile.avatar} alt={profile.name} loading="lazy" class={avatarClass} />
+    <img
+      src={profile.avatar}
+      alt={profile.name}
+      loading="lazy"
+      decoding="async"
+      referrerpolicy="no-referrer"
+      class={avatarClass}
+    />
   </div>
   <h3 class="site-name">{profile.name}</h3>
   {subline && <p class="name">{subline}</p>}
@@ -134,7 +141,10 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
     });
   };
 
-  document.addEventListener("astro:page-load", initProfileSocialCopy);
+  if (!window.__flyProfileSocialCopyBound) {
+    window.__flyProfileSocialCopyBound = true;
+    document.addEventListener("astro:page-load", initProfileSocialCopy);
+  }
   initProfileSocialCopy();
 </script>
 
