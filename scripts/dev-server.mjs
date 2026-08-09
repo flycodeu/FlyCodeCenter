@@ -6,7 +6,9 @@ import process from "node:process";
 const rootDir = process.cwd();
 const nodeBin = process.execPath;
 const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
-const forwardedArgs = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const syncContent = process.env.FLY_DEV_SYNC === "1" || rawArgs.includes("--sync-content");
+const forwardedArgs = rawArgs.filter((arg) => arg !== "--sync-content");
 const args = ["run", "dev:astro", ...(forwardedArgs.length ? ["--", ...forwardedArgs] : [])];
 const warmupDisabled = process.env.FLY_DEV_WARMUP === "0";
 const warmupPaths = String(process.env.FLY_DEV_WARMUP_PATHS || "/")
@@ -21,14 +23,16 @@ let shuttingDown = false;
 let child;
 let themeRestartTimer;
 
-const syncResult = spawnSync(nodeBin, ["./scripts/fix-frontmatter-normalization.mjs"], {
-  cwd: rootDir,
-  env: process.env,
-  stdio: "inherit"
-});
+if (syncContent) {
+  const syncResult = spawnSync(nodeBin, ["./scripts/fix-frontmatter-normalization.mjs"], {
+    cwd: rootDir,
+    env: process.env,
+    stdio: "inherit"
+  });
 
-if (syncResult.status !== 0) {
-  process.exit(syncResult.status ?? 1);
+  if (syncResult.status !== 0) {
+    process.exit(syncResult.status ?? 1);
+  }
 }
 
 function normalizeWarmupUrl(baseUrl, targetPath) {
@@ -79,13 +83,16 @@ function pipeOutput(stream, target) {
   });
 }
 
-function cleanAstroCache() {
-  const result = spawnSync(nodeBin, ["./scripts/clean-astro-cache.mjs"], {
-    cwd: rootDir,
-    env: process.env,
-    stdio: "inherit"
-  });
-  return result.status === 0;
+function terminateAstro(signal = "SIGTERM") {
+  if (!child || childExited) return;
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], {
+      cwd: rootDir,
+      stdio: "ignore"
+    });
+    return;
+  }
+  child.kill(signal);
 }
 
 function startAstro() {
@@ -110,13 +117,9 @@ function startAstro() {
     }
 
     if (restarting) {
-      if (!cleanAstroCache()) {
-        restarting = false;
-        childExited = true;
-        process.exit(1);
-      }
       restarting = false;
       childExited = false;
+      warmed = false;
       child = startAstro();
       return;
     }
@@ -139,15 +142,15 @@ function requestThemeRestart(filename) {
     themeRestartTimer = undefined;
     if (childExited || restarting) return;
     restarting = true;
-    process.stdout.write(`\n[dev] theme changed (${filename || "theme css"}), restarting Astro and clearing cache...\n`);
-    child?.kill();
+    process.stdout.write(`\n[dev] theme changed (${filename || "theme css"}), restarting Astro...\n`);
+    terminateAstro();
   }, 240);
 }
 
 function forwardSignal(signal) {
   if (childExited) return;
   shuttingDown = true;
-  child.kill(signal);
+  terminateAstro(signal);
 }
 
 process.on("SIGINT", () => forwardSignal("SIGINT"));

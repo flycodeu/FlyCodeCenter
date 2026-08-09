@@ -89,21 +89,6 @@
   box-shadow: var(--reading-shadow);
 }
 
-.reading-page .reading-sheet::before {
-  content: "";
-  position: absolute;
-  inset: 1.15rem auto 1.15rem 1.15rem;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent 0,
-    color-mix(in oklab, var(--brand) 18%, transparent 82%) 8%,
-    color-mix(in oklab, var(--brand) 10%, transparent 90%) 50%,
-    transparent 100%
-  );
-  opacity: 0.9;
-}
-
 .reading-page .reading-head {
   position: relative;
   display: grid;
@@ -492,8 +477,7 @@
 
 @media (max-width: 900px) {
   .reading-page::before,
-  .reading-page::after,
-  .reading-page .reading-sheet::before {
+  .reading-page::after {
     display: none;
   }
 

@@ -57,6 +57,20 @@ test("development runtime keeps real article content available", async ({ page }
   const article = page.locator(".article-body");
   await expect(article).toBeVisible();
   expect((await article.innerText()).trim().length).toBeGreaterThan(500);
+
+  const bindingLineContent = await page
+    .locator(".reading-sheet")
+    .evaluate((node) => getComputedStyle(node, "::before").content);
+  expect(bindingLineContent).toBe("none");
+});
+
+test("archive restriction stays hidden during normal browsing", async ({ page }) => {
+  await page.goto("/archives", { waitUntil: "domcontentloaded" });
+
+  const lockPanel = page.locator("#archive-lock");
+  await expect(lockPanel).toBeHidden();
+  await expect(page.locator("#archive-timeline")).not.toHaveClass(/is-locked/);
+  expect(await lockPanel.evaluate((node) => getComputedStyle(node).display)).toBe("none");
 });
 
 test("article runtime refreshes metadata after client-side navigation", async ({ page, isMobile }) => {
@@ -227,6 +241,7 @@ test("profile rail keeps the same desktop geometry across list pages", async ({ 
   }
 
   const reference = boxes[0];
+  expect(reference.height).toBeGreaterThanOrEqual(540);
   for (const box of boxes.slice(1)) {
     expect(Math.abs(box.x - reference.x), box.route).toBeLessThanOrEqual(1);
     expect(Math.abs(box.y - reference.y), box.route).toBeLessThanOrEqual(1);

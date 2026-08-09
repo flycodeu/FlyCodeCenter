@@ -6,6 +6,7 @@ import { buildPlugins } from "./src/plugins/build/index.mjs";
 
 const isDev = process.env.NODE_ENV !== "production";
 const fastDev = isDev && process.env.FLY_FAST_DEV !== "0";
+const viteCacheDir = isDev ? "node_modules/.vite-dev" : "node_modules/.vite-build";
 process.env.FLY_FAST_DEV_ACTIVE = fastDev ? "1" : "0";
 
 const pipeline = buildAstroPipeline(siteConfig, buildPlugins);
@@ -17,6 +18,9 @@ export default defineConfig({
   base: siteConfig.site.base,
   integrations: pipeline.integrations,
   markdown: pipeline.markdown,
+  vite: {
+    cacheDir: viteCacheDir
+  },
   experimental: {
     contentIntellisense: !fastDev
   }

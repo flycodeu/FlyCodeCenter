@@ -76,7 +76,7 @@ const yearGroups = years.map((yearBucket) => {
     <section class="archive-lock" id="archive-lock" hidden>
       <h2>访问已受限</h2>
       <p>检测到异常访问行为，归档内容已临时受限。</p>
-      <p class="archive-lock-reason" id="archive-lock-reason">原因: suspicious</p>
+      <p class="archive-lock-reason" id="archive-lock-reason"></p>
     </section>
   </section>
 </ListLayout>
@@ -182,6 +182,10 @@ const yearGroups = years.map((yearBucket) => {
     display: grid;
     gap: 0.5rem;
     z-index: 2;
+  }
+
+  .archive-lock[hidden] {
+    display: none;
   }
 
   .archive-lock h2 {
