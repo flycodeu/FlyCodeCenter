@@ -1047,22 +1047,18 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.7em;
-  padding: 0.14em 0.45em;
-  margin: 0 0.12em;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in oklab, var(--line-strong) 72%, transparent 28%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface-1) 94%, white 6%),
-    color-mix(in oklab, var(--surface-2) 84%, transparent 16%)
-  );
+  min-width: 1.8em;
+  padding: 0.16em 0.45em;
+  margin: 0 0.2em;
+  background: color-mix(in oklab, var(--bg-elev) 80%, var(--surface-1) 20%);
+  border: 1px solid color-mix(in oklab, var(--line-strong) 40%, transparent 60%);
+  border-radius: 6px;
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 30%, transparent 70%),
+    inset 0 -2px 0 color-mix(in oklab, var(--line) 40%, transparent 60%),
     0 2px 0 color-mix(in oklab, var(--line-strong) 36%, transparent 64%);
   color: color-mix(in oklab, var(--text) 82%, var(--brand) 18%);
   font-family: var(--font-mono);
-  font-size: 0.82em;
+  font-size: 0.88em;
   line-height: 1.1;
 }
 
@@ -1077,8 +1073,8 @@ img {
 
 .prose :where(p, li, td, th, blockquote) > code {
   font-family: var(--font-mono);
-  font-size: 0.82em;
-  padding: 0.12em 0.42em;
+  font-size: 0.9em;
+  padding: 0.16em 0.48em;
   background: color-mix(in oklab, var(--code-bg) 80%, var(--brand-soft) 20%);
   color: color-mix(in oklab, var(--brand) 84%, var(--text) 16%);
   border-radius: 6px;
@@ -1434,10 +1430,10 @@ main pre.has-global-copy {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   white-space: nowrap;
   color: var(--code-muted) !important;
-  font-weight: 560;
+  font-weight: 600;
   line-height: 1.1;
   display: inline-flex;
   align-items: center;
