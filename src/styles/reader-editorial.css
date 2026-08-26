@@ -249,6 +249,12 @@
   font-size: 1rem;
 }
 
+.tutorial-reader .reading-body > :first-child:is(h1, h2, h3, h4) {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .reading-page .reading-body :where(p, ul, ol, blockquote, dl) {
   max-width: var(--reading-body-block-max-width);
 }
