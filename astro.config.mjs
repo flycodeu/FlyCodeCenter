@@ -24,8 +24,10 @@ export default defineConfig({
   experimental: {
     contentIntellisense: !fastDev
   },
-  prefetch: {
-    prefetchAll: true,
-    defaultStrategy: "hover"
-  }
+  prefetch: isDev
+    ? false
+    : {
+        prefetchAll: true,
+        defaultStrategy: "hover"
+      }
 });

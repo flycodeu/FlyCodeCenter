@@ -1,10 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3a63ff" />
-      <stop offset="100%" stop-color="#ff8a3d" />
+    <linearGradient id="primary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="secondary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#c084fc" />
     </linearGradient>
   </defs>
-  <rect width="128" height="128" rx="28" fill="url(#g)" />
-  <text x="64" y="74" text-anchor="middle" fill="#ffffff" font-size="46" font-family="Georgia">FC</text>
+  <rect width="128" height="128" rx="32" fill="#0f172a" />
+  <path d="M26 62L106 28L68 106L58 72L26 62Z" fill="url(#primary)" />
+  <path d="M106 28L68 106L68 76L106 28Z" fill="url(#secondary)" opacity="0.6"/>
+  <path d="M26 62L106 28L68 76L26 62Z" fill="#ffffff" opacity="0.15"/>
 </svg>
