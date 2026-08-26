@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchReadingEntries } from "@/utils/query";
@@ -180,15 +180,21 @@ const getHost = (url?: string) => {
 <style>
   .reading-shell {
     display: grid;
-    gap: 0.84rem;
+    gap: 1.2rem;
   }
 
   .reading-hero {
-    padding: 0.92rem 0.98rem;
+    padding: clamp(1.8rem, 3.4vw, 2.8rem);
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 0.9rem;
+    gap: 1.2rem;
+    background:
+      radial-gradient(88% 150% at 100% 0%, color-mix(in oklab, var(--brand-soft) 40%, transparent 60%), transparent 62%),
+      var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--line) 40%, transparent 60%);
   }
 
   .reading-hero h1 {
@@ -265,11 +271,12 @@ const getHost = (url?: string) => {
   }
 
   .reading-card {
-    border-radius: 12px;
-    padding: 0.72rem;
-    display: grid;
-    gap: 0.5rem;
-    min-height: 220px;
+    border-radius: calc(var(--radius-md) * var(--layout-radius-scale, 1));
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    height: 100%;
     transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
   }
 
@@ -292,12 +299,13 @@ const getHost = (url?: string) => {
 
   .reading-card h3 {
     margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.38;
+    font-size: 1.1rem;
+    font-family: var(--font-display);
+    line-height: 1.35;
   }
 
   .meta-row {
-    margin-top: 0.16rem;
+    margin-top: 0.4rem;
     display: inline-flex;
     align-items: center;
     gap: 0.34rem;
@@ -339,10 +347,10 @@ const getHost = (url?: string) => {
   .summary {
     margin: 0;
     color: var(--text-soft);
-    font-size: 0.82rem;
-    line-height: 1.46;
+    font-size: 0.92rem;
+    line-height: 1.6;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -350,12 +358,12 @@ const getHost = (url?: string) => {
   .tag-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.26rem;
+    gap: 0.36rem;
   }
 
   .meta-tag {
-    font-size: 0.68rem;
-    padding: 0.03rem 0.34rem;
+    font-size: 0.72rem;
+    padding: 0.1rem 0.45rem;
     border-radius: 7px;
   }
 
@@ -366,8 +374,8 @@ const getHost = (url?: string) => {
     background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
     color: color-mix(in oklab, var(--text) 72%, var(--brand) 28%);
     text-align: center;
-    padding: 0.34rem 0.54rem;
-    font-size: 0.76rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
     transition: background-color 140ms ease, color 140ms ease;
   }
 

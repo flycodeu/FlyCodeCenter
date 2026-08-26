@@ -11,7 +11,7 @@ interface JarvisInitConfig {
 type ChatRole = "user" | "assistant";
 interface ConversationMessage { role: ChatRole; content: string; createdAt: number }
 interface Conversation { id: string; title: string; createdAt: number; updatedAt: number; messages: ConversationMessage[] }
-interface RoleProfile { id: string; name: string; systemPrompt: string; personaPrompt: string; greeting: string }
+interface RoleProfile { id: string; name: string; systemPrompt: string; personaPrompt: string; greeting: string; avatar?: string }
 interface ModelProfile {
   uid: string;
   name: string;
@@ -186,6 +186,8 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
     vaultReset: getEl<HTMLButtonElement>("jarvis-vault-reset"),
     roleDraftSelect: getEl<HTMLSelectElement>("jarvis-role-draft-select"),
     roleName: getEl<HTMLInputElement>("jarvis-role-name"),
+    roleAvatar: getEl<HTMLSelectElement>("jarvis-role-avatar"),
+    roleAvatarPreview: getEl<HTMLDivElement>("jarvis-role-avatar-preview"),
     roleSystem: getEl<HTMLTextAreaElement>("jarvis-role-system"),
     rolePersona: getEl<HTMLTextAreaElement>("jarvis-role-persona"),
     roleGreeting: getEl<HTMLTextAreaElement>("jarvis-role-greeting"),
@@ -283,7 +285,8 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
     name: String(item.name || `角色 ${idx + 1}`),
     systemPrompt: String(item.systemPrompt || `你是角色 ${idx + 1}，请使用 Markdown 回答。`),
     personaPrompt: String(item.personaPrompt || ""),
-    greeting: String(item.greeting || "角色已激活，准备对话。")
+    greeting: String(item.greeting || "角色已激活，准备对话。"),
+    avatar: String(item.avatar || "bottts")
   });
   const normalizeConversation = (item: Partial<Conversation>, idx: number): Conversation => ({
     id: String(item.id || `c-${Date.now().toString(36)}-${idx}`),
@@ -466,12 +469,14 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
 
   const renderMessages = () => {
     const conversation = getActiveConversation();
+    const activeRole = getActiveRole();
     el.stream.innerHTML = conversation.messages
       .map((message) => {
         const user = message.role === "user";
         const body = user ? `<p>${escapeHtml(message.content).replaceAll("\n", "<br/>")}</p>` : markdownToHtml(message.content);
+        const url = `https://api.dicebear.com/7.x/${activeRole.avatar || 'bottts'}/svg?seed=${encodeURIComponent(activeRole.name)}&backgroundColor=fcd34d`;
         return `<article class="chat-msg ${user ? "user" : "assistant"}">
-          <div class="chat-msg-role">${user ? "YOU" : "JARVIS"}</div>
+          <div class="chat-msg-role" ${!user ? `style="background-image: url('${url}')"` : ''}>${user ? "YOU" : ""}</div>
           <div class="chat-msg-content">${body}</div>
         </article>`;
       })
@@ -551,11 +556,20 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
     el.modelKey.value = "";
     el.modelKey.placeholder = model.apiKeyCipher ? "已加密保存，输入新值将覆盖" : "sk-...";
 
-    const role = getDraftRole();
-    el.roleName.value = role.name;
-    el.roleSystem.value = role.systemPrompt;
-    el.rolePersona.value = role.personaPrompt;
-    el.roleGreeting.value = role.greeting;
+    const draftRole = getDraftRole();
+    el.roleName.value = draftRole.name;
+    el.roleAvatar.value = draftRole.avatar || "bottts";
+    
+    const updatePreview = () => {
+      const name = el.roleName.value.trim() || 'avatar';
+      const type = el.roleAvatar.value || 'bottts';
+      el.roleAvatarPreview.style.backgroundImage = `url('https://api.dicebear.com/7.x/${type}/svg?seed=${encodeURIComponent(name)}&backgroundColor=fcd34d')`;
+    };
+    updatePreview();
+    
+    el.roleSystem.value = draftRole.systemPrompt;
+    el.rolePersona.value = draftRole.personaPrompt;
+    el.roleGreeting.value = draftRole.greeting;
 
     const activeSettingsTab = normalizeSettingsTab(settingsTab);
     settingsTab = activeSettingsTab;
@@ -917,6 +931,15 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   });
 
   el.roleDraftSelect.addEventListener("change", () => { draftRoleId = el.roleDraftSelect.value; renderAll(); });
+  
+  const handlePreviewUpdate = () => {
+    const name = el.roleName.value.trim() || 'avatar';
+    const type = el.roleAvatar.value || 'bottts';
+    el.roleAvatarPreview.style.backgroundImage = `url('https://api.dicebear.com/7.x/${type}/svg?seed=${encodeURIComponent(name)}&backgroundColor=fcd34d')`;
+  };
+  el.roleName.addEventListener("input", handlePreviewUpdate);
+  el.roleAvatar.addEventListener("change", handlePreviewUpdate);
+
   el.roleNew.addEventListener("click", () => {
     const id = `role-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     roles.push({ id, name: "新角色", systemPrompt: "你是一名专业 AI 助手，请提供准确且结构化的 Markdown 回答。", personaPrompt: "", greeting: "角色已激活，准备对话。" });
@@ -934,6 +957,7 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
       return;
     }
     role.name = name;
+    role.avatar = el.roleAvatar.value;
     role.systemPrompt = system;
     role.personaPrompt = el.rolePersona.value.trim();
     role.greeting = el.roleGreeting.value.trim() || "角色已激活，准备对话。";
@@ -1018,7 +1042,6 @@ export const initJarvisPage = (config: JarvisInitConfig): (() => void) => {
   emitModelChange();
   emitRoleChange();
   setSettingsStatus("可配置多个模型，但同一时刻仅启用一个。", "info");
-  setChatStatus("AI 回复在左侧、用户消息在右侧，支持流式 Markdown。", "info");
   return () => {
     if (messageRenderFrame) cancelAnimationFrame(messageRenderFrame);
     globalEventController.abort();

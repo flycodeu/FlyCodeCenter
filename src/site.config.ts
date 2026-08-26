@@ -864,13 +864,13 @@ const siteConfig = defineSiteConfig({
       }
     ],
     defaultModels: [
-      { id: "deepseek-chat", name: "DeepSeek V3.2", apiBase: "https://api.deepseek.com/v1" },
+      { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", apiBase: "https://api.deepseek.com/v1" },
+      { id: "deepseek-pro", name: "DeepSeek Pro", apiBase: "https://api.deepseek.com/v1" },
       { id: "deepseek-reasoner", name: "DeepSeek R1 推理", apiBase: "https://api.deepseek.com/v1" },
-      { id: "gpt-5.1", name: "GPT-5.1", apiBase: "https://api.openai.com/v1" },
-      { id: "gpt-5.1-mini", name: "GPT-5.1 mini", apiBase: "https://api.openai.com/v1" },
-      { id: "claude-sonnet-5", name: "Claude Sonnet 5", apiBase: "https://api.anthropic.com/v1" },
-      { id: "qwen3-max", name: "Qwen3 Max", apiBase: "https://dashscope.aliyuncs.com/compatible-mode/v1" },
-      { id: "glm-4.6", name: "GLM-4.6", apiBase: "https://open.bigmodel.cn/api/paas/v4" }
+      { id: "gpt-5.6", name: "GPT-5.6", apiBase: "https://api.openai.com/v1" },
+      { id: "gpt-5.6-mini", name: "GPT-5.6 mini", apiBase: "https://api.openai.com/v1" },
+      { id: "claude-3-5-sonnet-latest", name: "Claude 3.5 Sonnet", apiBase: "https://api.anthropic.com/v1" },
+      { id: "qwen-max-latest", name: "Qwen Max", apiBase: "https://dashscope.aliyuncs.com/compatible-mode/v1" }
     ]
   },
   pages: {
