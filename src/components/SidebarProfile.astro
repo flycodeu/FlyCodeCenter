@@ -62,7 +62,7 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
   </div>
 
   <div class="profile-details">
-    <p class="desc">{profile.desc}</p>
+    {profile.desc && <p class="desc">{profile.desc}</p>}
     {
       profileTags.length > 0 && (
         <div class="stack-tags" aria-label="技术栈标签">

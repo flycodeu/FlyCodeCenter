@@ -1,4 +1,4 @@
-﻿import { createSearchEngine } from "../providers/search/index";
+import { createSearchEngine } from "../providers/search/index";
 import type { SearchEngine, SearchResult } from "../providers/search/types";
 
 declare global {
@@ -330,7 +330,7 @@ function setupSearchModal() {
 
   if (dialog instanceof HTMLDialogElement) {
     dialog.addEventListener(
-      "click",
+      "pointerdown",
       (event) => {
         if (event.target === dialog) {
           closeSearch();
@@ -341,7 +341,7 @@ function setupSearchModal() {
   }
 
   fallback?.addEventListener(
-    "click",
+    "pointerdown",
     (event) => {
       if (event.target === fallback) {
         closeSearch();
