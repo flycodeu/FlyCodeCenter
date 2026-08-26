@@ -142,19 +142,18 @@ const moreActive = moreItems.some((item) => isActive(item.link));
 
   :global(.nav-link:hover) {
     color: var(--text);
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 86%, transparent 14%), color-mix(in oklab, var(--brand-soft) 14%, transparent 86%));
-    border-color: color-mix(in oklab, var(--line-strong) 72%, transparent 28%);
+    background: color-mix(in oklab, var(--line) 20%, transparent 80%);
+    border-color: transparent;
     transform: none;
     box-shadow: none;
   }
 
   :global(.nav-link.active) {
-    color: var(--text);
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 90%, transparent 10%), color-mix(in oklab, var(--brand-soft) 18%, transparent 82%));
-    border-color: color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
-    box-shadow: inset 0 1px 0 color-mix(in oklab, white 8%, transparent 92%);
+    color: var(--brand);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    font-weight: 600;
   }
 
   .nav-more {

@@ -41,30 +41,31 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
     left: 0;
     right: 0;
     z-index: 60;
-    backdrop-filter: blur(calc(var(--header-blur) + 4px));
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--bg-elev) 84%, transparent 16%), color-mix(in oklab, var(--surface-1) 72%, transparent 28%));
-    border-bottom: 1px solid color-mix(in oklab, var(--line) 56%, transparent 44%);
-    box-shadow: 0 18px 46px -42px rgb(15 23 42 / 0.22);
+    backdrop-filter: blur(12px) saturate(160%);
+    background: color-mix(in oklab, var(--bg-elev) 76%, transparent 24%);
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 40%, transparent 60%);
+    box-shadow: none;
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
   .header-inner {
     min-height: 68px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 1fr auto 1fr;
     gap: 1rem;
     align-items: center;
   }
 
   :global(.nav) {
     min-width: 0;
+    justify-content: center;
   }
 
   .logo {
     display: inline-flex;
     align-items: center;
     gap: 0.82rem;
+    justify-self: start;
   }
 
   .logo-mark {

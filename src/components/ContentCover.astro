@@ -30,6 +30,12 @@ const normalizedImage = String(image || "").trim();
 const normalizedTopic = String(topic || "").trim();
 const mark = Array.from(normalizedTitle)[0]?.toUpperCase() || "文";
 const eyebrow = [kindLabel, normalizedTopic].filter(Boolean).join(" · ");
+
+let titleHash = 0;
+for (let i = 0; i < normalizedTitle.length; i++) {
+  titleHash = normalizedTitle.charCodeAt(i) + ((titleHash << 5) - titleHash);
+}
+const coverHue = Math.abs(titleHash) % 360;
 ---
 
 <span
@@ -37,7 +43,7 @@ const eyebrow = [kindLabel, normalizedTopic].filter(Boolean).join(" · ");
   data-content-cover
   data-image-state={normalizedImage ? "loading" : "fallback"}
 >
-  <span class="content-cover-fallback" aria-hidden="true">
+  <span class="content-cover-fallback" aria-hidden="true" style={`--cover-hue: ${coverHue};`}>
     <span class="content-cover-copy">
       <span class="content-cover-eyebrow">{eyebrow}</span>
       <strong class="content-cover-title">{normalizedTitle}</strong>
@@ -82,8 +88,9 @@ const eyebrow = [kindLabel, normalizedTopic].filter(Boolean).join(" · ");
     align-items: end;
     padding: 0.78rem 0.82rem;
     overflow: hidden;
-    background:
-      linear-gradient(90deg, color-mix(in oklab, var(--brand) 64%, var(--text) 36%) 0 4px, transparent 4px),
+    background: 
+      radial-gradient(circle at 100% 0%, hsl(var(--cover-hue, 220) 80% 65% / 0.5) 0%, transparent 60%),
+      radial-gradient(circle at 0% 100%, hsl(calc(var(--cover-hue, 220) + 60) 80% 60% / 0.4) 0%, transparent 70%),
       color-mix(in oklab, var(--surface-2) 78%, var(--brand-soft) 22%);
   }
 
@@ -123,7 +130,7 @@ const eyebrow = [kindLabel, normalizedTopic].filter(Boolean).join(" · ");
     right: -0.08em;
     bottom: -0.3em;
     z-index: 1;
-    color: color-mix(in oklab, var(--brand) 16%, transparent 84%);
+    color: hsl(var(--cover-hue, 220) 80% 50% / 0.15);
     font-family: var(--font-display);
     font-size: 4.6rem;
     font-weight: 800;

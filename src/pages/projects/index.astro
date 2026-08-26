@@ -1,4 +1,4 @@
-﻿---
+---
 import ListLayout from "@/layouts/ListLayout.astro";
 import { fetchProjectEntries, fetchTaxonomyEntries, makeTagItems } from "@/utils/query";
 import { formatDate } from "@/utils/date";
@@ -190,13 +190,12 @@ const resolveCardCover = (meta: ReturnType<typeof resolveArticleMeta>) => {
 
 <style>
   .command-panel {
-    padding: 0.85rem;
+    padding: 1.5rem;
     display: grid;
-    gap: 0.7rem;
-    background:
-      radial-gradient(90% 120% at 8% -20%, color-mix(in oklab, var(--brand) 14%, transparent), transparent 74%),
-      radial-gradient(90% 100% at 100% 0%, color-mix(in oklab, var(--brand-soft) 24%, transparent), transparent 76%),
-      linear-gradient(180deg, color-mix(in oklab, var(--surface-1) 94%, transparent 6%), color-mix(in oklab, var(--surface-2) 96%, transparent 4%));
+    gap: 1rem;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
   }
 
   .panel-head {

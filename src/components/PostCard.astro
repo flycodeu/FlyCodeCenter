@@ -15,10 +15,10 @@ interface Props {
   kind: PostKind;
   coverMode?: CoverMode;
   coverHeight?: number;
-  cardStyle?: "rounded" | "square" | "glass";
+  cardStyle?: "rounded" | "square" | "glass" | "minimal";
 }
 
-const { entry, kind, coverMode, coverHeight } = Astro.props;
+const { entry, kind, coverMode, coverHeight, cardStyle } = Astro.props;
 const listCard = siteConfig.blog.listCard as {
   defaultCoverMode?: CoverMode;
   coverInlineSize?: number;
@@ -81,7 +81,7 @@ const outlineLines = listCard.outlineLines ?? 2;
 ---
 
 <article
-  class={`surface post-card mode-${resolvedMode} ${collapseMobileToTop ? "collapse-mobile-top" : ""} ${meta.pinned ? "is-pinned" : ""}`}
+  class={`surface post-card mode-${resolvedMode} style-${cardStyle || "default"} ${collapseMobileToTop ? "collapse-mobile-top" : ""} ${meta.pinned ? "is-pinned" : ""}`}
   style={`--title-lines:${titleLines};--outline-lines:${outlineLines};--cover-inline-size:${inlineSize}px;--cover-top-max-height:${topMaxHeight}px;--cover-aspect-ratio:${ratio};`}
 >
   <div class="meta content-wrap">
@@ -135,9 +135,26 @@ const outlineLines = listCard.outlineLines ?? 2;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
 
+  .post-card.style-minimal {
+    padding: 1rem 0;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    border-radius: 0;
+  }
+  
+  .post-card.style-minimal:last-child {
+    border-bottom: none;
+  }
+
   .post-card:hover {
     transform: translateY(-2px);
     border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
+  }
+
+  .post-card.style-minimal:hover {
+    transform: translateX(4px);
+    border-color: var(--line);
   }
 
   .post-card.mode-right {
@@ -190,10 +207,12 @@ const outlineLines = listCard.outlineLines ?? 2;
   }
 
   .meta {
-    display: grid;
-    align-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
     min-height: 0;
+    height: 100%;
   }
 
   .card-head {
@@ -261,9 +280,12 @@ const outlineLines = listCard.outlineLines ?? 2;
 
   .date {
     color: var(--text-muted);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     white-space: nowrap;
     font-family: var(--font-tech);
+    margin-left: 0;
+    margin-right: auto;
+    margin-top: auto;
   }
 
   @media (max-width: 900px) {

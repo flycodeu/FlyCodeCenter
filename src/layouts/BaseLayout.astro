@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import Header from "@/components/Header.astro";
 import SearchModal from "@/components/SearchModal.astro";
@@ -547,11 +547,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
       )}
     </div>
     <div class="site-bg-overlay" data-enabled={globalBackgroundEnable ? "1" : "0"} style={globalBackgroundVars} aria-hidden="true"></div>
-    <div class="aurora-bg" data-style={themeBackgroundStyle} aria-hidden="true">
-      <span class="aurora-orb orb-a"></span>
-      <span class="aurora-orb orb-b"></span>
-      <span class="aurora-orb orb-c"></span>
-    </div>
+    {/* aurora-bg removed for minimalist layout */}
     {siteConfig.watermark.enable && siteConfig.watermark.scope === "global" && <Watermark scope="global" />}
     <Header />
     <main
@@ -645,7 +641,8 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     min-height: 56px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 1rem;
     color: var(--text-soft);
     font-size: 0.8rem;

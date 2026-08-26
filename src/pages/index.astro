@@ -1,4 +1,4 @@
-﻿---
+---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import siteConfig from "@/site.config";
 import PostCard from "@/components/PostCard.astro";
@@ -77,22 +77,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
       <section class="home-main">
         {
           hero.enable && (
-            <section class="hero surface fade-up">
-              {siteConfig.watermark.enable && siteConfig.watermark.scope === "hero" && <Watermark scope="hero" />}
-              {heroImageConfig.enable && heroImageSrc && (
-                <div class="hero-bg">
-                  <img
-                    src={heroImageSources.src}
-                    srcset={heroImageSources.srcset}
-                    sizes="(max-width: 900px) calc(100vw - 32px), (max-width: 1280px) calc(100vw - 360px), 820px"
-                    alt={heroImageAlt}
-                    loading="eager"
-                    decoding="async"
-                    fetchpriority="high"
-                    referrerpolicy="no-referrer"
-                  />
-                </div>
-              )}
+            <section class="hero-card fade-up">
               <div class="hero-content">
                 <h1>{hero.title}</h1>
                 {hero.tagline && <p class="tagline">{hero.tagline}</p>}
@@ -113,40 +98,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
             </section>
           )
         }
-        {
-          featuredMeta && (
-            <article class={`surface featured-card mode-${featuredMode} fade-up`}>
-              <div class="featured-meta">
-                <p class="featured-label">Featured</p>
-                <a class="featured-title" href={featuredLink}>{featuredMeta.title}</a>
-                <p class="featured-summary">{(featuredMeta.summary || featuredMeta.description || "").trim()}</p>
-                <footer class="featured-foot">
-                  <div class="featured-tags">
-                    {featuredMeta.tags.slice(0, 3).map((tag) => <span class="tag-badge">{tag}</span>)}
-                  </div>
-                  <time class="featured-date" datetime={featuredMeta.createTime.toISOString()}>
-                    {formatDate(featuredMeta.createTime, "YYYY-MM-DD")}
-                  </time>
-                </footer>
-              </div>
-              {showFeaturedCover && (
-                <a class="featured-cover" href={featuredLink} aria-label={featuredMeta.title}>
-                  <ContentCover
-                    title={featuredMeta.title}
-                    image={featuredImageSources.src}
-                    srcset={featuredImageSources.srcset}
-                    sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1280px) 38vw, 420px"
-                    kindLabel="精选文章"
-                    topic={featuredMeta.tags[0]}
-                    loading="eager"
-                    fetchpriority="high"
-                    variant="large"
-                  />
-                </a>
-              )}
-            </article>
-          )
-        }
+        {/* Featured section removed for minimalist style, merged into feed */}
 
         <div class="stream-head">
           <div class="stream-title">
@@ -168,7 +120,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
         <div id="home-feed-sentinel" aria-hidden="true"></div>
       </section>
 
-      <aside class="profile-rail home-side">
+      <aside class="profile-rail home-sidebar">
         <SidebarProfile />
       </aside>
     </div>
@@ -342,45 +294,32 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   .home-page {
     display: grid;
     gap: var(--space-6);
-  }
-
-  .hero {
-    position: relative;
-    overflow: hidden;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    padding: clamp(2rem, 4vw, 3.4rem) clamp(1.4rem, 3.2vw, 2.8rem);
-    border: 1px solid var(--line);
-    background:
-      radial-gradient(88% 150% at 100% 0%, color-mix(in oklab, var(--brand-soft) 42%, transparent 58%), transparent 60%),
-      var(--surface-1);
-    text-align: left;
-  }
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.16;
-  }
-
-  .hero-bg img {
+    max-width: var(--layout-container-width);
+    margin: 0 auto;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+  }
+
+  .home-shell {
+  }
+
+  .hero-card {
+    padding: var(--space-4) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--surface-1) 94%, transparent 6%);
+    border: 1px solid color-mix(in oklab, var(--line) 78%, var(--brand) 22%);
+    box-shadow: 0 16px 34px color-mix(in oklab, var(--bg) 78%, transparent 22%);
+    text-align: left;
+    margin-bottom: var(--space-2);
   }
 
   .hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 720px;
+    max-width: 100%;
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
     justify-items: start;
   }
 
-  .hero h1 {
+  .hero-card h1 {
     margin: 0;
     font-size: clamp(1.8rem, 1.8vw + 1.2rem, 2.4rem);
     line-height: 1.22;
