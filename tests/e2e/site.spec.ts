@@ -232,6 +232,50 @@ test("mobile table of contents opens, closes and restores page scrolling", async
   await expect(open).toBeFocused();
 });
 
+test("Mermaid diagrams open in a zoomable temporary editor", async ({ page }) => {
+  const errors = watchPageErrors(page);
+  await page.goto("/tutorials/tffmpeg-guide/", { waitUntil: "domcontentloaded" });
+
+  const diagram = page.locator(".mermaid-host").first();
+  await expect(diagram.locator("svg")).toBeVisible({ timeout: 12_000 });
+  await page.getByRole("button", { name: "放大查看" }).first().click();
+
+  const viewer = page.getByRole("dialog", { name: "Mermaid 图表查看器" });
+  await expect(viewer).toBeVisible();
+  await expect(viewer.locator(".mermaid-viewer-canvas svg")).toBeVisible();
+  const zoomValue = viewer.locator(".mermaid-viewer-zoom-value");
+  const initialZoom = await zoomValue.textContent();
+  await viewer.getByRole("button", { name: "放大 Mermaid 图表" }).click();
+  await expect(zoomValue).not.toHaveText(initialZoom || "");
+
+  await viewer.getByRole("button", { name: "编辑 Mermaid" }).click();
+  const source = viewer.getByRole("textbox", { name: "Mermaid 源码" });
+  await expect(source).toBeVisible();
+  await source.fill("flowchart LR\n  A[输入] --> B[临时预览]");
+  await viewer.getByRole("button", { name: "更新预览" }).click();
+  await expect(viewer.locator(".mermaid-viewer-status")).toContainText("预览已更新");
+  await expect(viewer.locator(".mermaid-viewer-canvas svg")).toContainText("临时预览");
+  await expectNoViewportOverflow(page);
+
+  await page.keyboard.press("Escape");
+  await expect(viewer).toBeHidden();
+  await expect(page.locator("body")).not.toHaveClass(/mermaid-viewer-open/);
+
+  const remainingTutorials = [
+    ["/tutorials/t1vdqkiht/", 1],
+    ["/tutorials/t2qx7heah/", 3],
+    ["/tutorials/t6loukxpw/", 1],
+    ["/tutorials/t17xaopev/", 1],
+    ["/tutorials/t19hdgc9e/", 1]
+  ] as const;
+  for (const [route, expectedDiagrams] of remainingTutorials) {
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".mermaid-host svg")).toHaveCount(expectedDiagrams, { timeout: 12_000 });
+    await expect(page.locator(".diagram-expand-btn")).toHaveCount(expectedDiagrams);
+  }
+  expect(errors).toEqual([]);
+});
+
 test("home featured cover uses a responsive high-priority image candidate", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 

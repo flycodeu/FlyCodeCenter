@@ -1536,6 +1536,29 @@ main pre.has-global-copy {
   border: none;
 }
 
+.diagram-toolbar {
+  min-height: 3rem;
+  padding: 0.45rem 0.55rem 0.45rem 0.9rem;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.diagram-label {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.diagram-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .diagram-copy-btn {
   position: absolute;
   top: 0.5rem;
@@ -1566,6 +1589,299 @@ main pre.has-global-copy {
 .diagram-copy-btn.copied {
   color: #10b981;
   border-color: #10b981;
+}
+
+.diagram-toolbar .diagram-copy-btn,
+.diagram-expand-btn {
+  position: static;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.42rem 0.68rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--text-soft);
+  opacity: 1;
+}
+
+.diagram-expand-btn {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.diagram-toolbar :is(.diagram-copy-btn, .diagram-expand-btn):hover,
+.diagram-toolbar :is(.diagram-copy-btn, .diagram-expand-btn):focus-visible {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.mermaid-host.is-interactive {
+  cursor: zoom-in;
+}
+
+.mermaid-host.is-interactive:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--brand) 38%, transparent 62%);
+  outline-offset: -3px;
+}
+
+.mermaid-host.is-interactive::after {
+  content: "点击图表可放大";
+  display: block;
+  padding: 0 0.85rem 0.7rem;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+body.mermaid-viewer-open {
+  overflow: hidden;
+}
+
+.mermaid-viewer {
+  width: min(96vw, 1440px);
+  height: min(92vh, 980px);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: 0 28px 90px rgb(15 23 42 / 0.35);
+}
+
+.mermaid-viewer[open] {
+  display: block;
+}
+
+.mermaid-viewer::backdrop {
+  background: rgb(15 23 42 / 0.62);
+  backdrop-filter: blur(5px);
+}
+
+.mermaid-viewer-shell {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.mermaid-viewer-header,
+.mermaid-viewer-toolbar,
+.mermaid-viewer-editor-head,
+.mermaid-viewer-editor-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mermaid-viewer-header {
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mermaid-viewer-header h2,
+.mermaid-viewer-editor h3,
+.mermaid-viewer-header p,
+.mermaid-viewer-editor p {
+  margin: 0;
+}
+
+.mermaid-viewer-header h2 {
+  font-size: 1rem;
+}
+
+.mermaid-viewer-header p,
+.mermaid-viewer-editor-head p {
+  margin-top: 0.18rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.mermaid-viewer button {
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.mermaid-viewer button:hover,
+.mermaid-viewer button:focus-visible {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.mermaid-viewer button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.mermaid-viewer-toolbar {
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in oklab, var(--surface-2) 70%, transparent 30%);
+}
+
+.mermaid-viewer-toolbar .mermaid-viewer-zoom-value {
+  min-width: 3.3rem;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.mermaid-viewer-toolbar button:last-child {
+  margin-left: auto;
+}
+
+.mermaid-viewer-stage {
+  min-width: 0;
+  min-height: 18rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background-color: var(--surface-2);
+  background-image: radial-gradient(circle, color-mix(in oklab, var(--line-soft) 80%, transparent 20%) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.mermaid-viewer-stage:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--brand) 35%, transparent 65%);
+  outline-offset: -3px;
+}
+
+.mermaid-viewer-canvas {
+  min-width: 100%;
+  min-height: 100%;
+  width: max-content;
+  padding: 1.25rem;
+  display: grid;
+  place-items: start center;
+  box-sizing: border-box;
+}
+
+.mermaid-viewer-canvas svg {
+  display: block;
+  flex: none;
+}
+
+.mermaid-viewer-editor {
+  max-height: 42vh;
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid var(--line-soft);
+  overflow: auto;
+  background: var(--surface-1);
+}
+
+.mermaid-viewer-editor[hidden] {
+  display: none;
+}
+
+.mermaid-viewer-editor-head {
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.mermaid-viewer-editor h3 {
+  font-size: 0.92rem;
+}
+
+.mermaid-viewer-source {
+  width: 100%;
+  min-height: 9.5rem;
+  resize: vertical;
+  padding: 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--code-panel);
+  color: var(--code-text);
+  font: 0.82rem/1.55 var(--font-mono);
+  box-sizing: border-box;
+}
+
+.mermaid-viewer-source:focus {
+  border-color: var(--brand);
+  outline: 2px solid color-mix(in oklab, var(--brand) 22%, transparent 78%);
+}
+
+.mermaid-viewer-editor-actions {
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.mermaid-viewer-status {
+  min-width: 0;
+  margin-left: 0.25rem !important;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.mermaid-viewer-status[data-state="error"] {
+  color: #dc2626;
+}
+
+.mermaid-viewer-status[data-state="success"] {
+  color: #059669;
+}
+
+@media (max-width: 640px) {
+  .diagram-toolbar {
+    padding-left: 0.7rem;
+  }
+
+  .mermaid-viewer {
+    width: 100vw;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .mermaid-viewer-header {
+    align-items: flex-start;
+    padding: 0.72rem;
+  }
+
+  .mermaid-viewer-header p {
+    max-width: 15rem;
+  }
+
+  .mermaid-viewer-toolbar {
+    padding: 0.45rem 0.7rem;
+  }
+
+  .mermaid-viewer-toolbar button:last-child {
+    margin-left: 0;
+  }
+
+  .mermaid-viewer-stage {
+    min-height: 12rem;
+  }
+
+  .mermaid-viewer-editor {
+    max-height: 52vh;
+    padding: 0.7rem;
+  }
+
+  .mermaid-viewer-editor-head,
+  .mermaid-viewer-editor-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mermaid-viewer-editor-actions {
+    gap: 0.4rem;
+  }
+
+  .mermaid-viewer-status {
+    margin-left: 0 !important;
+  }
 }
 
 .math-wrapper {

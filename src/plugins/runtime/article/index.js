@@ -181,6 +181,7 @@ export function initArticleRuntime(config = {}) {
       btn.className = className;
       btn.type = "button";
       btn.title = title;
+      btn.setAttribute("aria-label", title);
       btn.innerHTML = copyIcon;
       btn.addEventListener("click", () => {
         copyWithFeedback(btn, contentProvider());
@@ -660,7 +661,7 @@ export function initArticleRuntime(config = {}) {
               });
         mermaidApiPromise = loadMermaid.then((mermaid) => {
           const api = resolveMermaidApi(mermaid);
-          api.initialize({ startOnLoad: false, theme: mermaidTheme });
+          api.initialize({ startOnLoad: false, theme: mermaidTheme, securityLevel: "strict" });
           return api;
         });
       }
@@ -839,6 +840,208 @@ export function initArticleRuntime(config = {}) {
       host.appendChild(panel);
     };
 
+    const createMermaidViewer = ({ raw, svg, opener }) => {
+      const dialog = document.createElement("dialog");
+      dialog.className = "mermaid-viewer";
+
+      const shell = document.createElement("div");
+      shell.className = "mermaid-viewer-shell";
+
+      const header = document.createElement("header");
+      header.className = "mermaid-viewer-header";
+
+      const titleGroup = document.createElement("div");
+      const title = document.createElement("h2");
+      const titleId = `mermaid-viewer-title-${mermaidRenderIndex++}`;
+      title.id = titleId;
+      title.textContent = "Mermaid 图表查看器";
+      const description = document.createElement("p");
+      description.textContent = "可缩放、滚动或临时编辑源码；修改仅在当前窗口生效。";
+      titleGroup.append(title, description);
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "mermaid-viewer-close";
+      closeButton.setAttribute("aria-label", "关闭 Mermaid 图表查看器");
+      closeButton.textContent = "关闭";
+      header.append(titleGroup, closeButton);
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "mermaid-viewer-toolbar";
+      toolbar.setAttribute("aria-label", "图表缩放工具");
+
+      const zoomOutButton = document.createElement("button");
+      zoomOutButton.type = "button";
+      zoomOutButton.textContent = "缩小";
+      zoomOutButton.setAttribute("aria-label", "缩小 Mermaid 图表");
+
+      const zoomValue = document.createElement("output");
+      zoomValue.className = "mermaid-viewer-zoom-value";
+      zoomValue.setAttribute("aria-live", "polite");
+
+      const zoomInButton = document.createElement("button");
+      zoomInButton.type = "button";
+      zoomInButton.textContent = "放大";
+      zoomInButton.setAttribute("aria-label", "放大 Mermaid 图表");
+
+      const fitButton = document.createElement("button");
+      fitButton.type = "button";
+      fitButton.textContent = "适应窗口";
+
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.textContent = "编辑 Mermaid";
+      editButton.setAttribute("aria-expanded", "false");
+      toolbar.append(zoomOutButton, zoomValue, zoomInButton, fitButton, editButton);
+
+      const stage = document.createElement("div");
+      stage.className = "mermaid-viewer-stage";
+      stage.tabIndex = 0;
+      stage.setAttribute("aria-label", "可滚动的 Mermaid 图表");
+      const canvas = document.createElement("div");
+      canvas.className = "mermaid-viewer-canvas";
+      stage.appendChild(canvas);
+
+      const editor = document.createElement("section");
+      editor.className = "mermaid-viewer-editor";
+      editor.hidden = true;
+      const editorHead = document.createElement("div");
+      editorHead.className = "mermaid-viewer-editor-head";
+      const editorTitle = document.createElement("h3");
+      editorTitle.textContent = "源码编辑（临时）";
+      const editorHint = document.createElement("p");
+      editorHint.textContent = "关闭查看器后修改丢弃；不会上传或写回 Markdown。";
+      editorHead.append(editorTitle, editorHint);
+
+      const source = document.createElement("textarea");
+      source.className = "mermaid-viewer-source";
+      source.value = raw;
+      source.spellcheck = false;
+      source.setAttribute("aria-label", "Mermaid 源码");
+
+      const editorActions = document.createElement("div");
+      editorActions.className = "mermaid-viewer-editor-actions";
+      const renderButton = document.createElement("button");
+      renderButton.type = "button";
+      renderButton.textContent = "更新预览";
+      const resetButton = document.createElement("button");
+      resetButton.type = "button";
+      resetButton.textContent = "还原文章源码";
+      const status = document.createElement("p");
+      status.className = "mermaid-viewer-status";
+      status.setAttribute("aria-live", "polite");
+      editorActions.append(renderButton, resetButton, status);
+      editor.append(editorHead, source, editorActions);
+
+      shell.append(header, toolbar, stage, editor);
+      dialog.appendChild(shell);
+      dialog.setAttribute("aria-labelledby", titleId);
+      document.body.appendChild(dialog);
+
+      let currentSvg = svg;
+      let scale = 1;
+      let naturalWidth = 800;
+      let naturalHeight = 450;
+
+      const updateScale = (nextScale) => {
+        scale = Math.max(0.1, Math.min(4, nextScale));
+        const diagram = canvas.querySelector("svg");
+        if (diagram instanceof SVGElement) {
+          diagram.style.width = `${Math.round(naturalWidth * scale)}px`;
+          diagram.style.height = `${Math.round(naturalHeight * scale)}px`;
+        }
+        zoomValue.value = `${Math.round(scale * 100)}%`;
+        zoomValue.textContent = zoomValue.value;
+      };
+
+      const mountSvg = (markup) => {
+        canvas.innerHTML = markup;
+        const diagram = canvas.querySelector("svg");
+        if (!(diagram instanceof SVGElement)) return;
+        const viewBox = diagram.viewBox?.baseVal;
+        const width = viewBox?.width || Number.parseFloat(diagram.getAttribute("width") || "");
+        const height = viewBox?.height || Number.parseFloat(diagram.getAttribute("height") || "");
+        naturalWidth = Number.isFinite(width) && width > 0 ? width : 800;
+        naturalHeight = Number.isFinite(height) && height > 0 ? height : 450;
+        diagram.removeAttribute("width");
+        diagram.removeAttribute("height");
+        diagram.style.maxWidth = "none";
+        updateScale(scale);
+      };
+
+      const fitDiagram = () => {
+        const availableWidth = Math.max(stage.clientWidth - 40, 120);
+        const availableHeight = Math.max(stage.clientHeight - 40, 160);
+        updateScale(Math.min(1.5, availableWidth / naturalWidth, availableHeight / naturalHeight));
+        stage.scrollTo({ top: 0, left: 0 });
+      };
+
+      const closeDialog = () => {
+        if (dialog.open) dialog.close();
+      };
+
+      const openDialog = () => {
+        if (dialog.open) return;
+        mountSvg(currentSvg);
+        document.body.classList.add("mermaid-viewer-open");
+        dialog.showModal();
+        window.requestAnimationFrame(() => {
+          fitDiagram();
+          stage.focus({ preventScroll: true });
+        });
+      };
+
+      closeButton.addEventListener("click", closeDialog, { signal });
+      dialog.addEventListener("close", () => {
+        document.body.classList.remove("mermaid-viewer-open");
+      }, { signal });
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) closeDialog();
+      }, { signal });
+      zoomOutButton.addEventListener("click", () => updateScale(scale / 1.2), { signal });
+      zoomInButton.addEventListener("click", () => updateScale(scale * 1.2), { signal });
+      fitButton.addEventListener("click", fitDiagram, { signal });
+      editButton.addEventListener("click", () => {
+        editor.hidden = !editor.hidden;
+        editButton.setAttribute("aria-expanded", editor.hidden ? "false" : "true");
+        editButton.textContent = editor.hidden ? "编辑 Mermaid" : "收起编辑器";
+        if (!editor.hidden) source.focus();
+      }, { signal });
+      resetButton.addEventListener("click", () => {
+        source.value = raw;
+        status.textContent = "已还原文章源码，点击更新预览查看。";
+      }, { signal });
+      renderButton.addEventListener("click", async () => {
+        const nextSource = source.value.trim();
+        if (!nextSource) {
+          status.dataset.state = "error";
+          status.textContent = "源码不能为空。";
+          return;
+        }
+        renderButton.disabled = true;
+        status.dataset.state = "loading";
+        status.textContent = "正在渲染…";
+        try {
+          const mermaid = await getMermaidApi();
+          const result = await mermaid.render(`mermaid-viewer-${mermaidRenderIndex++}`, nextSource);
+          currentSvg = result.svg;
+          scale = 1;
+          mountSvg(currentSvg);
+          fitDiagram();
+          status.dataset.state = "success";
+          status.textContent = "预览已更新，文章内容未改变。";
+        } catch (error) {
+          status.dataset.state = "error";
+          status.textContent = `渲染失败：${getErrorMessage(error, "请检查 Mermaid 语法")}`;
+        } finally {
+          renderButton.disabled = false;
+        }
+      }, { signal });
+
+      opener.addEventListener("click", openDialog, { signal });
+      return { dialog, openDialog };
+    };
+
     const renderMermaidBlock = async (code) => {
       const pre = code.closest("pre");
       if (!pre || pre.dataset.diagramEnhanced === "1") return;
@@ -848,10 +1051,27 @@ export function initArticleRuntime(config = {}) {
       const wrapper = document.createElement("div");
       wrapper.className = "diagram-wrapper";
 
-      wrapper.appendChild(createCopyBtn("diagram-copy-btn", "复制 Mermaid 源码", () => raw));
+      const toolbar = document.createElement("div");
+      toolbar.className = "diagram-toolbar";
+      const label = document.createElement("span");
+      label.className = "diagram-label";
+      label.textContent = "Mermaid 图";
+      const actions = document.createElement("div");
+      actions.className = "diagram-actions";
+      const copyButton = createCopyBtn("diagram-copy-btn", "复制 Mermaid 源码", () => raw);
+      const expandButton = document.createElement("button");
+      expandButton.type = "button";
+      expandButton.className = "diagram-expand-btn";
+      expandButton.textContent = "放大查看";
+      actions.append(copyButton, expandButton);
+      toolbar.append(label, actions);
+      wrapper.appendChild(toolbar);
 
       const host = document.createElement("div");
       host.className = "diagram-host mermaid-host";
+      host.tabIndex = 0;
+      host.setAttribute("role", "button");
+      host.setAttribute("aria-label", "放大查看 Mermaid 图");
       wrapper.appendChild(host);
       pre.replaceWith(wrapper);
 
@@ -859,7 +1079,16 @@ export function initArticleRuntime(config = {}) {
         const mermaid = await getMermaidApi();
         const result = await mermaid.render(`mermaid-${mermaidRenderIndex++}`, raw);
         host.innerHTML = result.svg;
+        host.classList.add("is-interactive");
+        const viewer = createMermaidViewer({ raw, svg: result.svg, opener: expandButton });
+        host.addEventListener("click", viewer.openDialog, { signal });
+        host.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          viewer.openDialog();
+        }, { signal });
       } catch (error) {
+        expandButton.disabled = true;
         renderDiagramDiagnostic(host, {
           title: "Mermaid 渲染失败，请检查语法。",
           detail: getErrorMessage(error, "unknown mermaid error"),
@@ -1766,6 +1995,8 @@ export function initArticleRuntime(config = {}) {
           chart.destroy?.();
         } catch {}
       });
+      document.querySelectorAll(".mermaid-viewer").forEach((dialog) => dialog.remove());
+      document.body.classList.remove("mermaid-viewer-open");
       clearAntiCrawlBindings();
       document.body.classList.remove("anti-crawl-locked");
     };
