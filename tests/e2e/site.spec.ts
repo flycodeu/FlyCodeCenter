@@ -238,6 +238,8 @@ test("Mermaid diagrams open in a zoomable temporary editor", async ({ page }) =>
 
   const diagram = page.locator(".mermaid-host").first();
   await expect(diagram.locator("svg")).toBeVisible({ timeout: 12_000 });
+  await expect(page.locator(".mermaid-host svg")).toHaveCount(2);
+  await expect(page.locator(".diagram-expand-btn")).toHaveCount(2);
   await page.getByRole("button", { name: "放大查看" }).first().click();
 
   const viewer = page.getByRole("dialog", { name: "Mermaid 图表查看器" });
@@ -262,11 +264,13 @@ test("Mermaid diagrams open in a zoomable temporary editor", async ({ page }) =>
   await expect(page.locator("body")).not.toHaveClass(/mermaid-viewer-open/);
 
   const remainingTutorials = [
+    ["/tutorials/ffmpeg/", 1],
     ["/tutorials/t1vdqkiht/", 1],
-    ["/tutorials/t2qx7heah/", 3],
+    ["/tutorials/t2qx7heah/", 1],
     ["/tutorials/t6loukxpw/", 1],
-    ["/tutorials/t17xaopev/", 1],
-    ["/tutorials/t19hdgc9e/", 1]
+    ["/tutorials/t17xaopev/", 2],
+    ["/tutorials/t19hdgc9e/", 2],
+    ["/tutorials/t2er6pk59/", 2]
   ] as const;
   for (const [route, expectedDiagrams] of remainingTutorials) {
     await page.goto(route, { waitUntil: "domcontentloaded" });

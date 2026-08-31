@@ -16,6 +16,20 @@ category: 音视频
 
 `ffprobe` 只负责读取和描述媒体，不负责转码、滤镜或播放。它可以检查本地文件、网络 URL 和实时流，是写 FFmpeg 命令前确认输入事实的第一步。
 
+```mermaid
+flowchart TB
+  I[输入文件 / URL] --> F[FORMAT<br/>容器级信息]
+  I --> S[STREAM<br/>视频 · 音频 · 字幕 · 数据]
+  S --> P[PACKET<br/>压缩数据]
+  P --> R[FRAME<br/>解码后的帧]
+  F --> Q[字段筛选与 JSON 输出]
+  S --> Q
+  P --> Q
+  R --> Q
+```
+
+从上到下是 `ffprobe` 能观察到的层级，从右侧汇总的是查询配置：先用 `-select_streams` 缩小对象，再用 `-show_entries` 缩小字段，最后用 `-of json` 交给程序处理。
+
 ## 先记住这一组命令
 
 | 目的 | 命令选项 | 结果 |
@@ -191,6 +205,15 @@ ffprobe -v error -show_entries "format_tags=title,creation_time" -of json input.
 -select_streams  → 选哪些流
 -show_entries    → 选哪些 Section 和字段
 -of json         → 结果用什么格式输出
+```
+
+```mermaid
+flowchart LR
+  A[要回答的问题] --> B[-select_streams<br/>选流]
+  B --> C[-show_entries<br/>选字段]
+  C --> D[-read_intervals<br/>可选：限范围]
+  D --> E[-of json / csv<br/>选输出格式]
+  E --> F[脚本或人工检查]
 ```
 
 字段不存在时，ffprobe 可能省略它或输出 `N/A`；不要把“字段缺失”直接当成媒体损坏。
