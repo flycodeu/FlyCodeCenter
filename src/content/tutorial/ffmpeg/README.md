@@ -1,41 +1,39 @@
 ---
-title: FFmpeg 媒体处理工程参考
-createTime: '2026/08/26 13:51:37'
+title: FFmpeg 入门教程
+createTime: '2026/08/31 10:00:00'
 code: tffmpeg01
 permalink: /tutorials/ffmpeg/
-summary: FFmpeg 媒体对象、处理链路、流映射、命令作用域与运行验收的工程参考。
-description: FFmpeg 处理任务的设计约束、命令接口、案例基线与故障处置文档。
+summary: 从认识工具、看懂媒体文件开始，逐步完成转封装、转码、流选择和结果验证。
+description: 面向初学者的 FFmpeg 学习路径，先掌握少量高频命令，再按需要深入流、滤镜和网络媒体。
 order: 2
 tags:
   - FFmpeg
   - ffprobe
   - 音视频
-  - RTSP
-  - 设计文档
+  - 入门教程
 category: 音视频
 showOnHome: false
 ---
 
-本系列用于文件处理、实时输入和自动化任务的方案设计与运行审计。文档覆盖媒体对象、数据路径、Stream 映射、参数作用域和结果验收，不复述完整的官方参数手册。命令行为以执行节点的 FFmpeg 版本、构建配置和组件帮助为准。
+这是一套按“先跑通，再理解，再排错”编排的 FFmpeg 教程。命令都按 Windows PowerShell 编写，`input.mp4`、`output.mp4` 和地址只是占位符。
 
-```text
-输入探测 → 目标约束 → Stream 选择 → 复制或转码 → 参数绑定 → 执行 → 输出验收
-```
+## 建议阅读顺序
 
-## 文档范围
+不要一开始背参数。先用第 01 篇跑通一条命令，再用第 02 篇看懂输入，最后按任务进入后续文章。
 
-| 文档 | 内容边界 | 主要产出 |
+| 顺序 | 文档 | 这一篇解决的问题 |
 | --- | --- | --- |
-| [处理设计原则与命令模型](/tutorials/tffmpeg-guide/) | 输入事实、处理规格、输出契约 | 可审计的命令结构 |
-| [媒体对象模型与时间语义](/tutorials/t1vdqkiht/) | 容器、编码、Stream、Packet、Frame、时间戳 | 输入媒体描述 |
-| [媒体处理链路与转码策略](/tutorials/t2qx7heah/) | Demux、Decode、Filter、Encode、Mux | Copy、Encode 与硬件路径决策 |
-| [流选择与输出映射规范](/tutorials/t6loukxpw/) | 自动选择、`-map`、Specifier、Filtergraph 输出 | 确定的输出 Stream 集合 |
-| [参数作用域与命令接口](/tutorials/t17xaopev/) | Global、Input、Output、Per-stream 参数 | 参数位置与进程调用约束 |
-| [任务案例与故障处置](/tutorials/t19hdgc9e/) | 文件任务、HLS、RTSP、解码验证 | 命令基线与分层诊断路径 |
+| 01 | [先跑通 FFmpeg](/tutorials/tffmpeg-guide/) | FFmpeg、ffprobe、ffplay 分别做什么，第一条命令怎么写 |
+| 02 | [看懂媒体文件](/tutorials/t1vdqkiht/) | 容器、编码、Stream 和常见音视频属性是什么 |
+| 随查 | [FFprobe 命令查询与理解](/tutorials/t2er6pk59/) | 查询容器、流、字段、Packet、Frame 和 JSON 输出 |
+| 03 | [完成常见文件任务](/tutorials/t2qx7heah/) | 换容器、转码、缩放、截取、抽图和提取音频 |
+| 04 | [选择需要的媒体流](/tutorials/t6loukxpw/) | 多轨输入时如何准确选择视频、音频和字幕 |
+| 05 | [理解参数、滤镜与质量](/tutorials/t17xaopev/) | 参数放置位置、复制与转码的区别，以及质量控制 |
+| 06 | [验证结果并排查问题](/tutorials/t19hdgc9e/) | 如何证明输出可用，如何从现象逐层定位故障 |
 
-## 运行环境基线
+## 开始前：确认工具
 
-命令处理至少需要 `ffmpeg` 与 `ffprobe`；人工播放或预览场景再提供 `ffplay`。版本信息属于运行记录的一部分：
+在 PowerShell 中确认命令可用：
 
 ```powershell
 ffmpeg -version
@@ -43,62 +41,51 @@ ffprobe -version
 ffplay -version
 ```
 
-编码器能力以当前构建的列表为准：
+`ffmpeg` 负责处理和输出媒体，`ffprobe` 负责读取媒体信息，`ffplay` 用于人工播放预览。三者版本和构建能力可能不同；编码器、滤镜和协议以执行机器的实际输出为准：
 
 ```powershell
-ffmpeg -hide_banner -encoders | Select-String "libx264|hevc_nvenc|aac"
+ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265|aac"
+ffmpeg -hide_banner -filters 2>&1 | Select-String "scale|fps|overlay"
 ```
 
-不同发行包包含的编码器、设备和硬件加速能力并不一致。`libx264`、`hevc_nvenc` 等名称只有在当前构建的能力列表中出现时才可用；`Unknown encoder` 表示编码器不可用或名称错误，与输入媒体是否损坏无直接关系。
+如果提示“不是内部或外部命令”，先安装 FFmpeg 并把 `bin` 目录加入 PATH；不要把一个机器上的编码器名称直接当成所有机器都支持。
 
-## 基准样例
+## 第一条可验证的命令
 
-以下命令生成 10 秒视频、音频基准样例，不依赖外部媒体：
+有一个输入文件后，先查看它：
 
 ```powershell
-ffmpeg -hide_banner -f lavfi -i "testsrc2=size=1280x720:rate=30" -f lavfi -i "sine=frequency=1000:sample_rate=48000" -t 10 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest sample.mp4
+ffprobe -hide_banner input.mp4
 ```
 
-基准结构：
+只想快速转成另一个容器时，可以复制原有媒体流：
 
 ```powershell
-ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels -of json sample.mp4
+ffmpeg -i input.mp4 -c copy output.mkv
 ```
 
-## 命令约定
+`-c copy` 不重新编码，所以速度快且不会产生二次编码损失；它要求目标容器能够承载输入流。需要改变编码或画面时，才进入转码：
 
-- 示例按 Windows PowerShell 编写，不使用 Bash 反斜杠续行。
-- `input.mp4`、`output.mp4` 与 RTSP 地址均为占位符。
-- 凭据不得写入文档、脚本、Git 提交或未脱敏日志。
-- 示例不默认使用 `-y`；自动化覆盖策略应由调用方显式声明。
-- 退出码仅表示进程结果；输出仍需经过结构探测、解码或播放器验收。
+```powershell
+ffmpeg -i input.mp4 -c:v libx264 -c:a aac output.mp4
+```
 
-## 编辑能力边界
+每次处理后都用 `ffprobe` 检查输出，不要只看命令是否结束：
 
-| 能力 | 当前状态 | 设计理由 |
-| --- | --- | --- |
-| Mermaid 图表缩放、滚动 | 支持 | 只影响当前查看器，不改变文章内容 |
-| Mermaid 源码临时编辑与预览 | 支持 | 适合验证布局和语法，关闭窗口后自动丢弃 |
-| Markdown 在线编辑、保存和发布 | 不引入 | 需要鉴权、保存 API、并发冲突、版本审计和发布流水线；当前站点是静态内容模型 |
-| FFmpeg 命令在线执行 | 不引入 | 需要隔离进程、文件配额、网络策略和凭据边界，不能由轻量编辑器替代 |
+```powershell
+ffprobe -v error -show_format -show_streams -of json output.mp4
+```
 
-当前编辑能力限定在 Mermaid 预览层。文章内容仍通过仓库 Markdown 变更和现有构建流程发布。
+## 本教程的命令约定
 
-## 依据与版本边界
+- 示例是 PowerShell 单行命令，不使用 Bash 的 `\` 续行符。
+- 路径含空格时用引号，例如 `"D:\Media Files\input.mp4"`。
+- 示例默认不使用 `-y` 覆盖文件；确认目标后再显式添加。
+- 批处理或服务调用应额外处理超时、取消、并发、磁盘空间和凭据脱敏。
+- 退出码为 0 只说明进程没有报告失败；结构、完整解码和目标播放器仍需单独检查。
 
-命令语义按 2026-08-28 的 FFmpeg 在线文档复核。FFmpeg 持续开发，运行记录仍以 `ffmpeg -version`、构建配置和组件级 `-h` 输出为准。
+## 依据与边界
 
-- 命令结构、选流、`-map`、Stream Copy、`-ss`：[ffmpeg 官方文档](https://ffmpeg.org/ffmpeg.html)
-- 容器、concat、HLS 与分片：[Format 官方文档](https://ffmpeg.org/ffmpeg-formats.html)
-- `scale`、`fps`、`overlay`、`amix`：[Filter 官方文档](https://ffmpeg.org/ffmpeg-filters.html)
-- RTSP 与 `rtsp_transport`：[Protocol 官方文档](https://ffmpeg.org/ffmpeg-protocols.html)
-- 探测字段与输出格式：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)
+命令语义以 [FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)、[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)、[滤镜文档](https://ffmpeg.org/ffmpeg-filters.html)、[格式文档](https://ffmpeg.org/ffmpeg-formats.html) 和 [协议文档](https://ffmpeg.org/ffmpeg-protocols.html) 为准。本机当前验证基线为 FFmpeg 7.1.1 full build；不同版本或发行包的可用组件可能不同。
 
-以下资料只补充编码实践和播放兼容性，不覆盖 FFmpeg 的命令语义：
-
-- [FFmpeg Encoding and Editing Course](https://slhck.info/ffmpeg-encoding-course/)：编码与码率控制的实践背景
-- [CRF Guide](https://slhck.info/video/2017/02/24/crf-guide.html)：理解 CRF 的使用边界
-- [MDN 视频编码指南](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Video_codecs)：浏览器兼容性
-- [NVIDIA FFmpeg 硬件加速指南](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.1/ffmpeg-with-nvidia-gpu/index.html)：NVDEC、NVENC 与 GPU 滤镜链路
-
-本地结果与文档不一致时，差异记录包含完整版本、构建配置、最小复现命令和对应组件文档。
+文档只提供学习和本地命令基线，不声称已经验证任何特定摄像机、生产服务器或浏览器链路。涉及 RTSP、HLS 和自动化时，请按第 06 篇的验证边界重新检查。
