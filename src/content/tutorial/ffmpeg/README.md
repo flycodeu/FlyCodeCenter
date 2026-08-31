@@ -56,7 +56,7 @@ flowchart LR
 | 04 | [选择需要的媒体流](/tutorials/t6loukxpw/) | 多轨输入时如何准确选择视频、音频和字幕 |
 | 05 | [理解参数、滤镜与质量](/tutorials/t17xaopev/) | 参数放置位置、复制与转码的区别，以及质量控制 |
 | 深入 | [FFmpeg Filters：从 Filter 到 Filtergraph](/tutorials/tffmpeg-filters/) | 滤镜语法、Filterchain、Filtergraph、Label 与常用处理链 |
-| 06 | [验证结果并排查问题](/tutorials/t19hdgc9e/) | 如何证明输出可用，如何从现象逐层定位故障 |
+| 最后 | [案例学习：常见任务与面试题](/tutorials/t19hdgc9e/) | 把探测、选流、转码、滤镜、封装和验收组合成可复用案例 |
 
 ## 开始前：确认工具
 
@@ -115,4 +115,4 @@ ffprobe -v error -show_format -show_streams -of json output.mp4
 
 命令语义以 [FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)、[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)、[滤镜文档](https://ffmpeg.org/ffmpeg-filters.html)、[格式文档](https://ffmpeg.org/ffmpeg-formats.html) 和 [协议文档](https://ffmpeg.org/ffmpeg-protocols.html) 为准。本机当前验证基线为 FFmpeg 7.1.1 full build；不同版本或发行包的可用组件可能不同。
 
-文档只提供学习和本地命令基线，不声称已经验证任何特定摄像机、生产服务器或浏览器链路。涉及 RTSP、HLS 和自动化时，请按第 06 篇的验证边界重新检查。
+文档只提供学习和本地命令基线，不声称已经验证任何特定摄像机、生产服务器或浏览器链路。涉及 RTSP、HLS 和自动化时，请按最后的案例学习篇重新检查。
