@@ -270,7 +270,8 @@ test("Mermaid diagrams open in a zoomable temporary editor", async ({ page }) =>
     ["/tutorials/t6loukxpw/", 1],
     ["/tutorials/t17xaopev/", 2],
     ["/tutorials/t19hdgc9e/", 2],
-    ["/tutorials/t2er6pk59/", 2]
+    ["/tutorials/t2er6pk59/", 2],
+    ["/tutorials/tffmpeg-filters/", 7]
   ] as const;
   for (const [route, expectedDiagrams] of remainingTutorials) {
     await page.goto(route, { waitUntil: "domcontentloaded" });

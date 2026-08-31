@@ -55,6 +55,7 @@ flowchart LR
 | 03 | [完成常见文件任务](/tutorials/t2qx7heah/) | 换容器、转码、缩放、截取、抽图和提取音频 |
 | 04 | [选择需要的媒体流](/tutorials/t6loukxpw/) | 多轨输入时如何准确选择视频、音频和字幕 |
 | 05 | [理解参数、滤镜与质量](/tutorials/t17xaopev/) | 参数放置位置、复制与转码的区别，以及质量控制 |
+| 深入 | [FFmpeg Filters：从 Filter 到 Filtergraph](/tutorials/tffmpeg-filters/) | 滤镜语法、Filterchain、Filtergraph、Label 与常用处理链 |
 | 06 | [验证结果并排查问题](/tutorials/t19hdgc9e/) | 如何证明输出可用，如何从现象逐层定位故障 |
 
 ## 开始前：确认工具
