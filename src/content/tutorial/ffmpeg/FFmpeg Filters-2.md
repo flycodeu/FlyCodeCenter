@@ -3,8 +3,8 @@ title: FFmpeg Filters 进阶：时间线、动态控制、帧同步与音频
 createTime: '2026/09/07 14:06:09'
 code: tffmpeg-filters-2
 permalink: /tutorials/tffmpeg-filters-2/
-summary: 对照 FFmpeg Filters 官方第 5～8 章，掌握 enable 时间线、运行时命令、framesync 多输入同步与高频音频滤镜。
-description: 面向实战的 FFmpeg Filters 进阶教程，使用流程图、时间轴和可复制的 PowerShell 命令讲清动态滤镜、多路流同步及音频处理。
+summary: 整理 enable、sendcmd、framesync 和常用音频滤镜，并给出可直接运行的 PowerShell 示例。
+description: FFmpeg Filters 学习笔记，记录时间线控制、动态参数、多路输入同步和音频处理的常用写法。
 order: 6
 tags:
   - FFmpeg
@@ -16,30 +16,21 @@ category: 音视频
 showOnHome: false
 ---
 
-这篇只讲 [FFmpeg Filters 官方文档第 5～8 章](https://ffmpeg.org/ffmpeg-filters.html) 的核心内容，并把“参数字典”改造成一条能真正跑通的学习路线。
-
-先纠正一个容易混淆的地方：`scale`、`crop`、`fps`、`format`、`overlay` 等具体视频滤镜属于官方文档的 **Video Filters** 章节，并不是第 5～8 章的章节标题。官方当前第 5～8 章分别是：
-
-| 官方章节 | 核心问题 | 学完后的能力 |
-| --- | --- | --- |
-| 5. Timeline editing | 滤镜在什么时间生效？ | 用 `enable` 表达式按时间、帧号控制效果 |
-| 6. Changing options at runtime | 运行中怎样修改参数？ | 用 `sendcmd` / `asendcmd` 给指定滤镜实例发送命令 |
-| 7. Framesync | 多输入滤镜怎样对齐帧？ | 正确处理主路、辅路、PTS 与输入结束策略 |
-| 8. Audio Filters | 音频应怎样处理？ | 完成格式统一、裁剪、混音、降噪、响度和检测 |
+上一篇 [FFmpeg Filters：从 Filter 到 Filtergraph](/tutorials/tffmpeg-filters/) 整理了滤镜的基础语法。这一篇继续往下，记录四个实际使用时经常碰到的问题：按时间启用滤镜、运行中修改参数、多路输入的时间戳对齐，以及音频的裁剪、混音和降噪。
 
 ```mermaid
 flowchart LR
-  A[第 5 章<br/>何时启用] --> B[第 6 章<br/>何时改参数]
-  B --> C[第 7 章<br/>多路怎样对齐]
-  C --> D[第 8 章<br/>怎样处理音频]
+  A[按时间启用] --> B[运行中改参数]
+  B --> C[多路按 PTS 对齐]
+  C --> D[处理音频]
   D --> E[文件转码 / RTSP / AI 媒体链路]
 ```
 
-> **核心边界：** Filter 处理的是解码后的音视频 Frame。只要使用视频或音频滤镜，对应流就不能再使用 `-c:v copy` 或 `-c:a copy`。
+滤镜位于解码和编码之间，处理的是音视频 Frame。视频或音频经过滤镜后，对应流需要重新编码，不能再使用 `-c:v copy` 或 `-c:a copy`。
 
-## 开始前：用当前机器的能力说话
+## 先看看本机支持哪些滤镜
 
-FFmpeg 的滤镜和参数会随版本、编译选项变化。本文命令按 Windows PowerShell 编写，并在本机 `FFmpeg 7.1.1-full_build` 上验证；其他环境先运行：
+FFmpeg 的滤镜和参数会随版本、编译选项变化。下面的命令使用 Windows PowerShell，并在 `FFmpeg 7.1.1-full_build` 上运行过。换到其他环境时，可以先查看版本和滤镜帮助：
 
 ```powershell
 ffmpeg -hide_banner -version
@@ -51,26 +42,26 @@ ffmpeg -hide_banner -h filter=volume
 
 `ffmpeg -filters` 的标记要这样读：
 
-| 标记 | 含义 | 与本文的关系 |
+| 标记 | 含义 | 在这里的用途 |
 | --- | --- | --- |
-| `T` | 支持通用时间线 `enable` | 第 5 章 |
+| `T` | 支持通用时间线 `enable` | 判断能否按时间启用 |
 | `S` | 支持 slice threading | 与运行时改参数无关 |
-| `C` | 支持命令 | 第 6 章 |
+| `C` | 支持命令 | 判断能否动态修改参数 |
 | `A` / `V` | 音频 / 视频输入输出 | 判断流类型 |
 | `N` | 输入或输出数量动态 | 常见于 `amix` 等多输入滤镜 |
 
 另一个 `T` 会出现在 `ffmpeg -h filter=<name>` 的**具体选项**末尾，它表示该选项可在运行时修改。例如本机 `drawbox` 的 `x`、`y` 和 `volume` 的 `volume` 选项带有 `T`。
 
-下面的案例使用 `testsrc2`、`color` 和 `sine` 自动生成测试素材，不依赖外部文件。确认结果时可用：
+案例里的 `testsrc2`、`color` 和 `sine` 会直接生成测试素材，不需要提前准备文件。处理完成后可以这样查看：
 
 ```powershell
 ffplay -autoexit 输出文件.mp4
 ffprobe -v error -show_entries format=duration -of default=nw=1 输出文件.mp4
 ```
 
-## 5. Timeline editing：让滤镜只在需要时工作
+## 按时间启用滤镜
 
-### 5.1 先建立正确心智模型
+### `enable` 怎样工作
 
 支持时间线的滤镜拥有通用选项 `enable=<表达式>`。每个输入 Frame 到达时，FFmpeg 都会计算一次表达式：
 
@@ -106,7 +97,7 @@ flowchart LR
 
 表达式最终只看“是否为 0”，所以多个条件可以用乘法表示“并且”，用加法表示“或者”。
 
-### 5.2 第一个实验：红框只出现 3 秒
+### 让红框只出现 3 秒
 
 下面生成一段 8 秒测试视频，红框只在第 2～5 秒出现：
 
@@ -129,16 +120,16 @@ ffmpeg -y -i timeline-enable.mp4 -vf "fps=1,scale=320:-2,tile=4x2" -frames:v 1 t
 
 预期第 3～6 格附近能看到红框，其余格没有红框。取样点落在整秒上，边界帧是否显示会受时间基和取样位置影响，因此不要只凭某一张边界截图判断表达式错误。
 
-### 5.3 `enable` 最适合与不适合做什么
+### 哪些场景可以用 `enable`
 
-适合：
+比较适合这些场景：
 
 - 在固定时间段显示水印、告警框或隐私遮挡；
 - 在片头、片尾启用淡入淡出或颜色效果；
 - 根据 PTS 对离线视频分段应用效果；
 - 暂时绕过支持时间线的滤镜，而不拆分整条 Filtergraph。
 
-不适合：
+下面几类需求则要换一种做法：
 
 - 降低 AI 推理频率：禁用滤镜时 Frame 仍然通过；
 - 动态创建或删除 Filtergraph 节点；
@@ -152,9 +143,9 @@ ffmpeg -hide_banner -filters 2>&1 | Select-String "drawbox|overlay|volume|atempo
 ffmpeg -hide_banner -h filter=drawbox
 ```
 
-如果帮助信息没有时间线支持说明，运行时可能看到 `Timeline ('enable' option) not supported with filter`。这不是转义问题，而是滤镜能力边界。
+如果运行时出现 `Timeline ('enable' option) not supported with filter`，说明当前滤镜没有实现时间线支持，可以回到帮助信息确认。
 
-### 5.4 RTSP 与 AI 场景中的真实用法
+### 放到 RTSP 与 AI 链路里
 
 ```mermaid
 flowchart LR
@@ -167,9 +158,9 @@ flowchart LR
 
 `enable` 可以控制“某个视觉效果是否生效”，但它不是 AI 调度器。若目标是把 25 FPS 降为 2 FPS 送入模型，应在推理链路使用明确的抽帧或节流策略；若目标是只在告警期间画框，才适合使用时间线或运行时命令。
 
-## 6. Changing options at runtime：运行中修改滤镜参数
+## 运行中修改滤镜参数
 
-### 6.1 `enable` 与运行时命令不是一回事
+### `enable` 和运行时命令的区别
 
 | 能力 | `enable` | 运行时命令 |
 | --- | --- | --- |
@@ -178,7 +169,7 @@ flowchart LR
 | 典型用途 | 2～5 秒显示框 | 2 秒时把框移动到另一区域 |
 | 是否要求支持 | 滤镜支持 Timeline | 选项带运行时标记 `T`，滤镜支持命令 |
 
-官方第 6 章的规则很短但很重要：只有帮助输出中标记为 `T` 的选项才能在运行中修改；通常“命令名就是选项名，参数就是新值”。
+只有帮助输出中标记为 `T` 的选项才能在运行中修改。通常命令名就是选项名，参数则是这个选项的新值。
 
 ```powershell
 ffmpeg -hide_banner -h filter=drawbox 2>&1 | Select-String " x | y | w | h | T\."
@@ -186,7 +177,7 @@ ffmpeg -hide_banner -h filter=atempo 2>&1 | Select-String "tempo"
 ffmpeg -hide_banner -h filter=volume 2>&1 | Select-String "volume"
 ```
 
-### 6.2 命令是怎样找到目标滤镜的
+### 给滤镜实例命名
 
 给滤镜实例命名时使用 `filter@id`。例如 `drawbox@roi=...` 表示一个名为 `roi` 的 `drawbox` 实例。
 
@@ -206,7 +197,7 @@ sequenceDiagram
 
 `sendcmd` 用在视频链，`asendcmd` 用在音频链。它们是透传滤镜，必须放在对应类型的滤镜链中。
 
-### 6.3 实验：让检测框在运行中移动
+### 让检测框在运行中移动
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=6" -vf "sendcmd=c='2.0 drawbox@roi x 480;4.0 drawbox@roi x 120',drawbox@roi=x=40:y=180:w=240:h=160:color=red@0.85:t=8" -an -c:v libx264 -pix_fmt yuv420p runtime-command.mp4
@@ -229,7 +220,7 @@ ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=6" -vf "sendcmd=c=
 
 当一个 Filtergraph 中有多个同类滤镜时，应始终使用 `@id` 精确定位，避免命令发给错误实例。
 
-### 6.4 音频实验：处理中途改变语速
+### 中途改变音频语速
 
 ```powershell
 ffmpeg -y -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=6" -af "asendcmd=c='2.0 atempo@speed tempo 1.5;4.0 atempo@speed tempo 0.75',atempo@speed=1.0" -c:a pcm_s16le runtime-tempo.wav
@@ -237,7 +228,7 @@ ffmpeg -y -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=6" -af "ase
 
 命令事件由进入 `asendcmd` 的音频 Frame 时间戳触发。`atempo` 改变时长，所以输出时间轴不一定与输入的 6 秒完全相同。
 
-### 6.5 内联命令、命令文件与实时外部控制
+### 命令从哪里来
 
 ```mermaid
 flowchart TD
@@ -259,11 +250,11 @@ flowchart TD
 ffmpeg -hide_banner -filters 2>&1 | Select-String "sendcmd|asendcmd|zmq|azmq"
 ```
 
-在生产系统中，最难的通常不是“把 x 改成多少”，而是让检测结果和视频 Frame 使用同一个时间语义。至少要定义：摄像头标识、Frame PTS 或帧序号、目标滤镜实例、命令过期策略，以及 FFmpeg 重连后是否重放状态。
+接入实时 AI 检测结果时，命令里还需要带上摄像头标识、Frame PTS 或帧序号、目标滤镜实例和过期策略。否则一旦出现积压或 FFmpeg 重连，检测框就可能画到错误的 Frame 上。
 
-## 7. Framesync：多输入滤镜如何选中同一时刻的帧
+## 多输入滤镜的时间同步
 
-### 7.1 为什么多输入不能只看“谁先到”
+### 不能只看“谁先到”
 
 `overlay`、`hstack` 等滤镜要同时消费多路输入。两路流的帧率、开始时间、网络抖动和结束时间可能不同，因此 FFmpeg 必须按时间戳选择组合帧。
 
@@ -277,7 +268,7 @@ flowchart LR
 
 可以把主输入想成“列车时刻表”，辅助输入想成“站台广告牌”：每次主路 Frame 到站，framesync 根据时间戳挑选一张合适的辅助 Frame，再决定辅助流结束后继续保留、撤下还是让全车停运。
 
-### 7.2 四个公共选项必须记住
+### Framesync 的几个公共选项
 
 这些选项只适用于支持公共 framesync 选项的多输入滤镜，而且必须写成 `key=value`，不能依赖省略名称的短写法。
 
@@ -294,13 +285,13 @@ flowchart LR
 - `endall`：结束所有输入对应的输出；
 - `pass`：辅助输入结束后只让主输入通过。
 
-为了让意图明确，实际命令中建议同时显式设置 `eof_action`、`repeatlast` 或 `shortest`，不要把行为寄托在不同版本的默认组合上。
+为了让命令更容易读懂，我习惯显式写出 `eof_action`、`repeatlast` 或 `shortest`，不只依赖默认值。
 
-### 7.3 三组对照实验：Logo 结束后怎么办
+### Logo 结束后的三种处理方式
 
 主视频持续 8 秒，黄色辅助画面只持续 3 秒。
 
-#### 策略 A：保持最后一帧
+#### 保持最后一帧
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=8" -f lavfi -i "color=c=yellow:size=220x90:rate=30:duration=3" -filter_complex "[0:v][1:v]overlay=x=20:y=20:eof_action=repeat:repeatlast=1[v]" -map "[v]" -an -c:v libx264 -pix_fmt yuv420p framesync-repeat.mp4
@@ -308,7 +299,7 @@ ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=8" -f lavfi -i "co
 
 结果：黄色块在第 3 秒后仍保持到主视频结束。
 
-#### 策略 B：辅助输入结束后只保留主画面
+#### 辅助输入结束后只保留主画面
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=8" -f lavfi -i "color=c=yellow:size=220x90:rate=30:duration=3" -filter_complex "[0:v][1:v]overlay=x=20:y=20:eof_action=pass:repeatlast=0[v]" -map "[v]" -an -c:v libx264 -pix_fmt yuv420p framesync-pass.mp4
@@ -316,7 +307,7 @@ ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=8" -f lavfi -i "co
 
 结果：第 3 秒后黄色块消失，主视频继续到第 8 秒。
 
-#### 策略 C：任一路结束就停止
+#### 任一路结束就停止
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=8" -f lavfi -i "color=c=yellow:size=220x90:rate=30:duration=3" -filter_complex "[0:v][1:v]overlay=x=20:y=20:shortest=1[v]" -map "[v]" -an -c:v libx264 -pix_fmt yuv420p framesync-shortest.mp4
@@ -330,7 +321,7 @@ ffprobe -v error -show_entries format=filename,duration -of csv=p=0 framesync-re
 
 部分 ffprobe 版本不接受一次传入多个普通文件；遇到这种情况就分别执行三次。
 
-### 7.4 `ts_sync_mode`：选过去的帧，还是时间上最近的帧
+### `ts_sync_mode`：过去的帧还是最近的帧
 
 假设主输入在 `2.00s` 需要组合，辅助输入附近有两帧：
 
@@ -347,7 +338,7 @@ ffprobe -v error -show_entries format=filename,duration -of csv=p=0 framesync-re
 
 实时 AI 标注通常更重视因果性：不能让 2.04 秒产生的结果“提前”画到 2.00 秒画面上，因此默认模式通常更容易解释。离线合成追求几何上的最近时间时，才考虑 `nearest`。
 
-### 7.5 PTS 是 framesync 的事实来源
+### 先把 PTS 对齐
 
 文件合成时，两路素材起点不一致，可先归零：
 
@@ -364,9 +355,9 @@ ffmpeg -y -i main.mp4 -i logo.mp4 -filter_complex "[0:v]setpts=PTS-STARTPTS[main
 
 它们所在层级不同，不能互相替代。
 
-## 8. Audio Filters：从 PCM Frame 到可用音频
+## 常用音频滤镜
 
-官方第 8 章是一个很大的音频滤镜字典。学习时不应从 `aap` 开始逐个背诵，而应先掌握下面五类问题。
+音频滤镜数量很多，日常处理可以先从格式、时间、听感、组合和检测这五类问题入手。
 
 ```mermaid
 flowchart LR
@@ -378,7 +369,7 @@ flowchart LR
   F --> G[编码后的音频流]
 ```
 
-### 8.1 音频 Frame 的四个关键属性
+### 音频 Frame 里有什么
 
 | 属性 | 例子 | 影响 |
 | --- | --- | --- |
@@ -387,13 +378,13 @@ flowchart LR
 | 声道布局 | `mono`、`stereo`、`5.1` | 声道数量与空间含义 |
 | PTS / time base | 以采样率为基础的时间戳 | 决定同步、裁剪和命令触发时机 |
 
-选择滤镜时先问“我要改变哪一个属性或哪一种听感”，不要只看滤镜名字。
+拿到一段音频时，我通常先看采样率、采样格式、声道布局和 PTS，再决定后面接哪些滤镜。
 
-### 8.2 高频滤镜地图
+### 常用滤镜速查
 
-| 目标 | 首选滤镜 | 核心认识 |
+| 目标 | 常用滤镜 | 作用 |
 | --- | --- | --- |
-| 改采样率 | `aresample` | 真正重采样 PCM 数据 |
+| 改采样率 | `aresample` | 重采样 PCM 数据 |
 | 限定格式集合 | `aformat` | 约束采样格式、采样率和声道布局 |
 | 调音量 | `volume` | 线性倍数或 dB 表达式 |
 | 截取时间 | `atrim` | 截掉范围外样本，但不会自动把 PTS 归零 |
@@ -408,13 +399,13 @@ flowchart LR
 | 静音检测 | `silencedetect` | 输出静音开始、结束等日志或元数据 |
 | 统计分析 | `astats` / `ebur128` | 观察峰值、RMS 或 EBU R128 指标 |
 
-### 8.3 实验一：统一为 48 kHz、16 位、单声道
+### 统一为 48 kHz、16 位、单声道
 
 ```powershell
 ffmpeg -y -f lavfi -i "sine=frequency=440:sample_rate=44100:duration=5" -af "aresample=48000,aformat=sample_fmts=s16:sample_rates=48000:channel_layouts=mono" -c:a pcm_s16le audio-format.wav
 ```
 
-验收实际输出，而不是只看命令是否退出：
+再用 ffprobe 看一下输出格式：
 
 ```powershell
 ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,sample_fmt,sample_rate,channels,channel_layout -of default=nw=1 audio-format.wav
@@ -422,9 +413,9 @@ ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,sample_fmt,
 
 预期可见 `pcm_s16le`、`s16`、`48000`、单声道。
 
-不要把 `asetrate` 当成 `aresample`：`asetrate` 只改变采样率标记而不重采样 PCM，通常会同时改变播放速度和音高；`aresample` 才是在目标采样率上重建样本。
+`asetrate` 和 `aresample` 的作用不同。`asetrate` 只改变采样率标记而不重采样 PCM，通常会同时改变播放速度和音高；`aresample` 会在目标采样率上重新生成样本。
 
-### 8.4 实验二：裁剪后必须重新整理时间轴
+### 裁剪后重新整理时间轴
 
 截取输入的第 2～7 秒，得到 5 秒音频，并在新片段头尾做 0.3 秒淡入淡出：
 
@@ -443,7 +434,7 @@ afade 后：           渐入          渐出
 
 `atrim` 负责选样本，`asetpts=PTS-STARTPTS` 负责重建新片段的起点，两者职责不能混淆。
 
-### 8.5 实验三：两路音频是“混合”还是“衔接”
+### 混合与衔接
 
 同时播放两路声音使用 `amix`：
 
@@ -467,9 +458,9 @@ flowchart TB
   C --> CO[约 9 秒连续音频]
 ```
 
-`amerge` 与 `amix` 也不要混淆：`amix` 把多路信号混到输出声道中；`amerge` 主要把不同输入的声道合并成更大的声道布局。
+这里顺带区分一下 `amerge` 和 `amix`：`amix` 把多路信号混到输出声道中，`amerge` 则把不同输入的声道合并成更大的声道布局。
 
-### 8.6 实战链：语音清理与响度统一
+### 语音清理与响度统一
 
 对会议、摄像头拾音或语音识别前处理，可以从一个保守链路开始：
 
@@ -485,7 +476,7 @@ flowchart LR
   D --> E[loudnorm<br/>统一听感响度]
 ```
 
-这不是任何录音都适用的“万能参数”：
+这组参数可以作为试听的起点，实际使用时还要根据录音调整：
 
 - `80 Hz` 和 `8000 Hz` 只是常见语音起点，必须结合人声、设备和用途试听；
 - 降噪过强会产生水声、金属感，`nr` 越大不代表效果越好；
@@ -498,7 +489,7 @@ flowchart LR
 ffmpeg -y -i input.wav -vn -af "aresample=16000,aformat=sample_fmts=s16:sample_rates=16000:channel_layouts=mono" -c:a pcm_s16le model-input.wav
 ```
 
-### 8.7 先检测，再决定是否处理
+### 先分析音频
 
 检测静音区间：
 
@@ -518,9 +509,9 @@ ffmpeg -hide_banner -i input.wav -af "astats=metadata=1:reset=1" -f null -
 ffmpeg -hide_banner -i input.wav -filter_complex "ebur128=framelog=verbose" -f null -
 ```
 
-这些命令输出的是日志和指标，不会自动修复音频。检测与处理应分开：先确认问题是否真实存在，再选滤镜和参数。
+这些命令只输出日志和指标，不会修改音频。先看清静音、峰值和响度，再决定后面怎样处理。
 
-## 把第 5～8 章连成一个工程判断流程
+## 实际使用时的判断顺序
 
 ```mermaid
 flowchart TD
@@ -535,21 +526,19 @@ flowchart TD
   F -->|否| H{是否处理音频?}
   G --> H
   H -->|是| I[确认采样率、格式、声道、PTS 和目标]
-  H -->|否| J[编码并验收]
+  H -->|否| J[编码并检查输出]
   I --> J
 ```
 
-### RTSP + AI 平台最值得记住的五条
+### 放到 RTSP 与 AI 项目里
 
-1. `enable` 控制滤镜效果，不等于控制推理帧率，也不会自动丢 Frame。
-2. 运行时命令只能修改滤镜明确支持的选项，不能随意改变 Filtergraph 拓扑。
-3. 多输入组合按 PTS 同步，不按网络到达先后；先定义时间语义，再谈画框对齐。
-4. AI 结果作为辅助流时，要明确结果过期后是保持最后一帧、撤下标注，还是结束输出。
-5. 音频滤镜处理 PCM Frame；一旦处理就需要重新编码，不能继续 `-c:a copy`。
+在实际链路里，我会把几件事分开处理：`enable` 只负责控制滤镜效果，推理帧率仍由抽帧或节流逻辑控制；运行时命令只修改已经存在的滤镜选项，不负责改变 Filtergraph 结构。
 
-## 验收：不要只看“命令没报错”
+多路画面按 PTS 同步，而不是按网络到达顺序同步。AI 结果作为辅助流时，还要提前定好结果过期后的处理方式：保留最后一帧、撤下标注，或者结束输出。音频只要经过滤镜，就需要重新编码，不能继续使用 `-c:a copy`。
 
-### 结构验收
+## 检查处理结果
+
+### 查看媒体信息
 
 ```powershell
 ffprobe -v error -show_streams -show_format timeline-enable.mp4
@@ -557,14 +546,14 @@ ffprobe -v error -show_entries format=duration -of default=nw=1 framesync-pass.m
 ffprobe -v error -select_streams a:0 -show_entries stream=sample_fmt,sample_rate,channels,channel_layout -of default=nw=1 audio-format.wav
 ```
 
-### 完整解码验收
+### 完整解码
 
 ```powershell
 ffmpeg -v error -i runtime-command.mp4 -f null -
 ffmpeg -v error -i voice-clean.wav -f null -
 ```
 
-### 人工感知验收
+### 播放检查
 
 ```powershell
 ffplay -autoexit timeline-enable.mp4
@@ -582,9 +571,9 @@ ffplay -autoexit audio-crossfade.wav
 | 声音爆音或削波 | `volume` / `amix` 增益和 `normalize` 设置是否合理 |
 | 降噪后声音发闷 | 降噪强度、频带边界是否过度 |
 
-## 最小学习闭环
+## 建议练习顺序
 
-如果只做一轮练习，按下面顺序即可：
+想顺着文章动手练习，可以按这个顺序：
 
 1. 跑 `timeline-enable.mp4`，亲眼看到 `enable` 的开和关；
 2. 跑 `runtime-command.mp4`，理解参数在同一进程内发生变化；
@@ -593,4 +582,8 @@ ffplay -autoexit audio-crossfade.wav
 5. 跑 `audio-mix.wav` 与 `audio-crossfade.wav`，听出“同时混合”和“前后衔接”的区别；
 6. 最后再把同一思路迁移到真实文件或 RTSP，并保留 PTS、重连和模型输入契约的验证。
 
-完成这六步，你掌握的不是几个孤立参数，而是官方第 5～8 章真正共同的核心：**按时间决策、在运行中改变、按时间戳对齐，并对音频 Frame 做可验证的处理。**
+走完这几组例子，时间线、动态参数、PTS 同步和音频处理就连起来了。之后换成真实文件或 RTSP，主要变化是输入来源和时间戳，Filtergraph 的思路仍然相同。
+
+## 参考资料
+
+- [FFmpeg Filters Documentation](https://ffmpeg.org/ffmpeg-filters.html)
