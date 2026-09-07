@@ -630,9 +630,11 @@ export function initArticleRuntime(config = {}) {
       return loadModuleFromUrl(cdnUrl);
     };
 
+    const isMermaidApi = (value) =>
+      typeof value?.initialize === "function" && typeof value?.render === "function";
     const resolveMermaidApi = (mermaid) => {
       const api = mermaid?.default ?? mermaid;
-      if (api?.initialize && api?.render) return api;
+      if (isMermaidApi(api)) return api;
       throw new Error("mermaid api unavailable after load");
     };
 
@@ -647,10 +649,14 @@ export function initArticleRuntime(config = {}) {
                 cdnUrl: mermaidBundle,
                 allowFallback: Boolean(diagramFallbackToCdn),
                 label: "mermaid",
-                globalGetter: () =>
-                  globalThis.mermaid ??
-                  globalThis.__esbuild_esm_mermaid_nm?.mermaid?.default ??
-                  globalThis.__esbuild_esm_mermaid_nm?.mermaid
+                globalGetter: () => {
+                  const candidates = [
+                    globalThis.mermaid,
+                    globalThis.__esbuild_esm_mermaid_nm?.mermaid?.default,
+                    globalThis.__esbuild_esm_mermaid_nm?.mermaid
+                  ];
+                  return candidates.find((candidate) => isMermaidApi(candidate));
+                }
               })
             : loadModuleBySource({
                 localMode: mermaidSourceMode === "local",
@@ -1516,8 +1522,18 @@ export function initArticleRuntime(config = {}) {
         const script = document.createElement("script");
         script.src = iconifyBundle;
         script.async = true;
-        script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("iconify load failed"));
+        const timeoutId = setTrackedTimeout(() => {
+          script.remove();
+          reject(new Error("iconify load timed out"));
+        }, 5000);
+        script.onload = () => {
+          clearTrackedTimeout(timeoutId);
+          resolve(true);
+        };
+        script.onerror = () => {
+          clearTrackedTimeout(timeoutId);
+          reject(new Error("iconify load failed"));
+        };
         document.head.appendChild(script);
       });
       return iconifyApiPromise;
@@ -1714,10 +1730,12 @@ export function initArticleRuntime(config = {}) {
         pre.dataset.diffEnhanced = "1";
       });
     };
-    const initInlineIcons = async (article) => {
+    const initInlineIcons = (article) => {
       if (!enableInlineIcon) return;
       if (!article.querySelector("iconify-icon")) return;
-      await ensureIconifyLoaded();
+      ensureIconifyLoaded().catch((error) => {
+        if (!signal.aborted) console.warn(error);
+      });
     };
 
     const renderChartJsCards = async (article) => {
@@ -1811,7 +1829,7 @@ export function initArticleRuntime(config = {}) {
       bindHiddenBlocks(article);
       bindHeadingCopy(article);
       bindTitleCopy();
-      await initInlineIcons(article);
+      initInlineIcons(article);
       if (signal.aborted || !article.isConnected) return;
       await renderChartJsCards(article);
       if (signal.aborted || !article.isConnected) return;

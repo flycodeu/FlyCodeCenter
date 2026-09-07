@@ -271,8 +271,12 @@ test("Mermaid diagrams open in a zoomable temporary editor", async ({ page }) =>
     ["/tutorials/t17xaopev/", 2],
     ["/tutorials/t19hdgc9e/", 2],
     ["/tutorials/t2er6pk59/", 2],
-    ["/tutorials/tffmpeg-filters/", 7]
+    ["/tutorials/tffmpeg-filters/", 7],
+    ["/tutorials/tffmpeg-filters-2/", 10],
+    ["/tutorials/t1b7hqq5l/", 1],
+    ["/blog/b2macc470/", 3]
   ] as const;
+  await page.route("https://code.iconify.design/**", (route) => route.abort());
   for (const [route, expectedDiagrams] of remainingTutorials) {
     await page.goto(route, { waitUntil: "domcontentloaded" });
     await expect(page.locator(".mermaid-host svg")).toHaveCount(expectedDiagrams, { timeout: 12_000 });

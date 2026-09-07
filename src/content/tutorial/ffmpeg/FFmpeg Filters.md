@@ -418,7 +418,7 @@ flowchart TD
   B -->|是| C{输入流正确?}
   C -->|否| C1[ffprobe + -map + Label]
   C -->|是| D{图是否连通?}
-  D -->|否| D1[检查 , ; : 和 [label]]
+  D -->|否| D1["检查 , ; : 和 [label]"]
   D -->|是| E{输出是否完整?}
   E -->|否| E1[检查编码器、容器和完整解码]
   E -->|是| F[ffprobe + ffplay 验收]
