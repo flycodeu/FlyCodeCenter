@@ -446,4 +446,6 @@ ffprobe -version
 ffprobe -h full
 ```
 
+如果已经能区分 Packet 与 Frame，下一步可以继续阅读 [H.264 / H.265 Bitstream：从 Picture、GOP 到 NAL Unit](/tutorials/tffmpeg-bitstream/)，理解一个 Packet 内部的 NAL Unit、Parameter Set 和随机访问结构。
+
 依据：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)；[FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)。
