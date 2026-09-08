@@ -4,7 +4,7 @@ createTime: '2026/08/31 10:00:00'
 code: tffmpeg01
 permalink: /tutorials/ffmpeg/
 summary: 从认识工具、看懂媒体文件开始，逐步完成转封装、转码、流选择和结果验证。
-description: 面向初学者的 FFmpeg 学习路径，先掌握少量高频命令，再按需要深入流、滤镜和网络媒体。
+description: 面向初学者的 FFmpeg 学习路径，先掌握少量高频命令，再按需要深入 Stream、Filter 和网络媒体。
 order: 2
 tags:
   - FFmpeg
@@ -54,9 +54,9 @@ flowchart LR
 | 随查 | [FFprobe 命令查询与理解](/tutorials/t2er6pk59/) | 查询容器、流、字段、Packet、Frame 和 JSON 输出 |
 | 03 | [完成常见文件任务](/tutorials/t2qx7heah/) | 换容器、转码、缩放、截取、抽图和提取音频 |
 | 04 | [选择需要的媒体流](/tutorials/t6loukxpw/) | 多轨输入时如何准确选择视频、音频和字幕 |
-| 05 | [理解参数、滤镜与质量](/tutorials/t17xaopev/) | 参数放置位置、复制与转码的区别，以及质量控制 |
-| 深入 | [FFmpeg Filters：从 Filter 到 Filtergraph](/tutorials/tffmpeg-filters/) | 滤镜语法、Filterchain、Filtergraph、Label 与常用处理链 |
-| 最后 | [案例学习：常见任务与面试题](/tutorials/t19hdgc9e/) | 把探测、选流、转码、滤镜、封装和验收组合成可复用案例 |
+| 05 | [理解参数、Filter 与质量](/tutorials/t17xaopev/) | 参数放置位置、Stream Copy 与 Transcode 的区别，以及质量控制 |
+| 深入 | [FFmpeg Filters：读懂 Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) | Filter syntax、Filterchain、Filtergraph、Label 与常用处理链 |
+| 最后 | [案例学习：常见任务与面试题](/tutorials/t19hdgc9e/) | 把探测、Stream selection、Transcode、Filter 和 Mux 组合成可复用案例 |
 
 ## 开始前：确认工具
 
@@ -68,7 +68,7 @@ ffprobe -version
 ffplay -version
 ```
 
-`ffmpeg` 负责处理和输出媒体，`ffprobe` 负责读取媒体信息，`ffplay` 用于人工播放预览。三者版本和构建能力可能不同；编码器、滤镜和协议以执行机器的实际输出为准：
+`ffmpeg` 负责处理和输出媒体，`ffprobe` 负责读取媒体信息，`ffplay` 用于人工播放预览。三者版本和构建能力可能不同；Encoder、Filter 和 Protocol 以执行机器的实际输出为准：
 
 ```powershell
 ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265|aac"
@@ -113,6 +113,6 @@ ffprobe -v error -show_format -show_streams -of json output.mp4
 
 ## 依据与边界
 
-命令语义以 [FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)、[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)、[滤镜文档](https://ffmpeg.org/ffmpeg-filters.html)、[格式文档](https://ffmpeg.org/ffmpeg-formats.html) 和 [协议文档](https://ffmpeg.org/ffmpeg-protocols.html) 为准。本机当前验证基线为 FFmpeg 7.1.1 full build；不同版本或发行包的可用组件可能不同。
+命令语义以 [FFmpeg CLI Documentation](https://ffmpeg.org/ffmpeg.html)、[ffprobe Documentation](https://ffmpeg.org/ffprobe.html)、[Filters Documentation](https://ffmpeg.org/ffmpeg-filters.html)、[Formats Documentation](https://ffmpeg.org/ffmpeg-formats.html) 和 [Protocols Documentation](https://ffmpeg.org/ffmpeg-protocols.html) 为准。本机当前验证基线为 FFmpeg 7.1.1 full build；不同版本或发行包的可用组件可能不同。
 
 文档只提供学习和本地命令基线，不声称已经验证任何特定摄像机、生产服务器或浏览器链路。涉及 RTSP、HLS 和自动化时，请按最后的案例学习篇重新检查。
