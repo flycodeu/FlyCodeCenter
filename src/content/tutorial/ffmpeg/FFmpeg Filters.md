@@ -15,7 +15,7 @@ tags:
 category: 音视频
 ---
 
-第一次写 `-vf "scale=1280:-2,fps=25"` 时，它看起来很像一串普通参数。直到要叠加 Logo，我把第二个输入、分号、Label 和 `-map` 全塞进同一条命令，才发现真正需要理解的不是某个 Filter，而是 Frame 怎样在 Filtergraph 里流动。
+第一次写 `-vf "scale=1280:-2,fps=25"` 时，它看起来很像一串普通参数。直到要叠加 Logo，第二个输入、分号、Label 和 `-map` 挤在同一条命令里，才会发现真正要理解的不是某个 Filter 的名字，而是 Frame 怎样在 Filtergraph 里流动。
 
 这篇从一条短命令开始，逐步走到多输入 Filtergraph。文中的示例都按 Windows PowerShell 单行命令编写，`input.mp4`、`logo.png` 和 `output.mp4` 替换成自己的路径即可。
 
@@ -26,6 +26,8 @@ category: 音视频
 ```powershell
 ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2,fps=25" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
+
+这条命令在做什么：把画面缩到宽 1280、改成 25 帧/秒，视频重新编码，音频尽量 Stream Copy。
 
 `-vf` 后面的内容是一条 Video Filterchain，从左向右读：
 
@@ -88,12 +90,14 @@ Filter 有 Input Pad 和 Output Pad，两个 Pad 之间的连接叫 Link。`[mai
 [0:v]scale=w=1280:h=-2,fps=25[base];[base][1:v]overlay=x=W-w-24:y=H-h-24[outv]
 ```
 
-不用急着背，按停顿位置拆开：
+不用急着背，按停顿位置拆开。可以把 Label 想成临时变量：
 
-- `:` 分隔同一个 Filter 的不同 option；
-- `,` 连接同一条 Filterchain 上前后相邻的 Filter；
-- `;` 结束当前 Filterchain，开始另一条；
-- `[name]` 给 Link 加 Label。
+```text
+:   同一个 Filter 里的不同 option     scale=w=1280:h=-2
+,   同一条链上前后相接               scale,...,fps
+;   这条链结束，下一条开始           ...[base];[base]...
+[]  给中间结果起名字                 [base]、[outv]
+```
 
 于是上面的内容可以读成：从第一个输入取 Video Stream，经过 `scale` 和 `fps` 后命名为 `[base]`；再把 `[base]` 与第二个输入的视频交给 `overlay`，结果叫 `[outv]`。
 
@@ -228,7 +232,7 @@ flowchart LR
 5. 合成结果命名为 `[outv]`，再由 `-map "[outv]"` 送进输出文件；
 6. `-map 0:a:0?` 尝试带上 input 0 的第一条 Audio Stream，末尾 `?` 表示没有音频时不要报错。
 
-我更喜欢把 `x`、`y` 写成名称。`W`、`H` 是 main input 的尺寸，`w`、`h` 是 overlay input 的尺寸，所以 `W-w-24:H-h-24` 就是距右边、下边各 24 像素。
+把 `x`、`y` 写成名称更不容易读错。`W`、`H` 是主画面尺寸，`w`、`h` 是覆盖层尺寸，所以 `W-w-24:H-h-24` 就是距右边、下边各 24 像素。
 
 静态图片在不同 FFmpeg build、Container 和结束策略下可能出现时长问题。需要让输出严格跟随主视频时，可以为图片输入使用 `-loop 1`，并明确输出时长或 `shortest` 语义；多输入的 EOF 行为会在下一篇的 framesync 部分说明。
 
@@ -252,7 +256,7 @@ ffmpeg -i input.mp4 -filter_complex "[0:v]split[main][tmp];[tmp]crop=w=iw:h=ih/2
 
 ## PowerShell 中怎样少受转义折磨
 
-Filtergraph 已经有自己的逗号、冒号、分号和方括号，外面还套着 PowerShell 字符串。图稍长时，我会先把路径和 Filtergraph 放进变量：
+Filtergraph 已经有自己的逗号、冒号、分号和方括号，外面还套着 PowerShell 字符串。图稍长时，可以把路径和 Filtergraph 放进变量：
 
 ```powershell
 $sourcePath = ".\input.mp4"
@@ -290,7 +294,7 @@ ffmpeg -hide_banner -filters 2>&1 | Select-String "scale|crop|fps|overlay|drawte
 ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265|aac|libopus"
 ```
 
-## 命令跑完后，我会再看三件事
+## 命令跑完后再看三件事
 
 先用 `ffprobe` 看 Container 和 Stream 参数：
 
@@ -321,7 +325,7 @@ ffplay -autoexit output.mp4
 | `Invalid argument` | option 范围、Filtergraph 分隔符和 PowerShell 字符串 |
 | 可以播放但规格不对 | 用 `ffprobe` 对照 width、height、FPS、Pixel Format 与 Codec |
 
-调试长 Filterchain 时，我通常只留第一个 Filter，跑通后再一个个接回去。这样很快就能定位是 Frame 尺寸、Pixel Format、时间戳，还是 Encoder 在拒绝输入。
+调试长 Filterchain 时，先只留第一个 Filter，跑通后再一个个接回去。这样很快就能定位是 Frame 尺寸、Pixel Format、时间戳，还是 Encoder 在拒绝输入。
 
 继续阅读：[FFmpeg Filters 进阶：Timeline、framesync 与 Audio](/tutorials/tffmpeg-filters-2/)。
 

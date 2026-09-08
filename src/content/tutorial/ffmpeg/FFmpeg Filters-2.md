@@ -16,9 +16,9 @@ category: 音视频
 showOnHome: false
 ---
 
-上一篇 [FFmpeg Filters：读懂 Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) 处理的都是静态连接：命令启动时，Filtergraph 就已经确定了。但真实任务经常会变化——告警框只显示几秒，框的位置要跟着目标移动，Logo 比主视频先结束，两段声音还要平滑接在一起。
+上一篇 [FFmpeg Filters：读懂 Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) 处理的都是静态连接：命令启动时，Filtergraph 就已经确定了。真实任务经常会变——告警框只显示几秒，框要跟着目标移动，Logo 比主视频先结束，两段声音还要平滑接上。
 
-这些问题表面上都叫“动态”，在 FFmpeg 里却由不同机制负责：
+这些问题都像“动态”，在 FFmpeg 里却不是同一套开关：
 
 - Timeline Editing 决定一个 Filter 在哪些 Frame 上生效；
 - runtime command 修改已经存在的 Filter option；
@@ -359,7 +359,7 @@ ffmpeg -hide_banner -i input.wav -filter_complex "ebur128=framelog=verbose" -f n
 
 ## 放进 RTSP 与 AI 链路时
 
-文件例子里的 PTS 连续、输入有限、错误也容易重放；实时链路没有这么温和。我会把下面几件事分别处理：
+文件例子里的 PTS 连续、输入有限、错误也容易重放；实时链路没有这么温和。要把下面几件事分开处理：
 
 - inference sampling 由抽帧或节流逻辑负责，不能用 `enable` 冒充；
 - runtime command 只能改已存在且支持 command 的 option，不能重建 Filtergraph；

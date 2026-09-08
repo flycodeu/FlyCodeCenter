@@ -14,7 +14,9 @@ tags:
 category: 音视频
 ---
 
-`ffprobe` 只负责读取和描述媒体，不负责转码、滤镜或播放。它可以检查本地文件、网络 URL 和实时流，是写 FFmpeg 命令前确认输入事实的第一步。
+`ffprobe` 只负责读取和描述媒体，不负责转码、滤镜或播放。写 `ffmpeg` 命令前，先用它看清容器和 Stream 里有什么。
+
+后面每条查询都可以按三步读：要回答什么问题、选项各自做什么、输出里该看哪些字段。
 
 ```mermaid
 flowchart TB
@@ -153,7 +155,7 @@ ffprobe -v error -select_streams a:0 -show_entries "stream=index,codec_name,samp
 | 音频 | `index`、`codec_name`、`sample_rate`、`channels`、`channel_layout`、`bit_rate` |
 | 所有流 | `codec_type`、`time_base`、`start_time`、`duration`、`tags`、`disposition` |
 
-`r_frame_rate` 不一定等于实际平均帧率，`avg_frame_rate` 也可能因输入不完整而不可靠；遇到可变帧率或同步问题，再检查 Packet/Frame 时间戳。
+`r_frame_rate` 是 FFmpeg 对“能准确表示所有时间戳的最低帧率”的估计（官方注释写明这是 guess），不等于实际平均帧率；`avg_frame_rate` 是平均帧率，输入不完整时也可能不可靠。遇到可变帧率或同步问题，再检查 Packet/Frame 时间戳。
 
 ## 选择流：`-select_streams`
 
@@ -335,39 +337,21 @@ ffprobe -v error -show_chapters -of json input.mp4
 ffprobe -v quiet -show_error -of json broken.mp4
 ```
 
-下列选项用于底层分析，不是日常查询首选：
+下列选项不是日常查询首选，用到时再查本机 `ffprobe -h full`：
 
 | 选项 | 用途 |
 | --- | --- |
-| `-show_data` | 输出 Packet 负载或 Codec Extra Data，内容可能非常大 |
-| `-show_data_hash algorithm` | 输出负载或 Extra Data 的哈希 |
+| `-show_error` | 打开失败时输出结构化错误段 |
+| `-show_data` / `-show_data_hash` | 输出 Packet 负载或哈希，内容可能非常大 |
 | `-sections` | 列出 ffprobe 的 Section 结构 |
 | `-show_versions` | 输出程序和库版本 |
-| `-show_pixel_formats` | 输出当前构建支持的像素格式 |
-
-需要这些选项时先查当前构建：
-
-```powershell
-ffprobe -hide_banner -h full
-ffprobe -hide_banner -sections
-```
-
-## 其他官方选项速查
-
-日常查询不需要背下面这些选项，但它们在官方命令中有明确用途：
-
-| 选项 | 用途和限制 |
-| --- | --- |
-| `-show_log loglevel` | 随 `-show_frames` 输出解码器日志；日志级别沿用 `-loglevel` |
-| `-show_optional_fields`（`auto`/`always`/`never`） | 控制 JSON/XML 是否打印无效或不适用字段 |
-| `-show_private_data` / `-private` | 显示格式相关的私有数据；默认开启，生成严格 XML 时可关闭 |
-| `-show_program_version` | 只输出 ffprobe 程序版本段 |
-| `-show_library_versions` | 输出各 FFmpeg 库版本段 |
-| `-show_versions` | 同时输出程序和库版本 |
 | `-show_pixel_formats` | 列出当前构建支持的像素格式 |
+| `-show_log` | 随 `-show_frames` 输出解码器日志 |
+| `-show_optional_fields` | 控制 JSON/XML 是否打印无效字段 |
+| `-show_private_data` | 显示格式相关私有数据，默认开启 |
 | `-bitexact` | 尽量产生与构建环境无关的确定性输出 |
 
-不同 FFmpeg 版本会增加或调整选项。例如新版本官方文档可能出现 `-analyze_frames`；如果本机 `ffprobe -h full` 没有该选项，就不能直接使用。
+不同版本会增减选项。本机帮助里没有的，就不能直接使用。
 
 ## PowerShell 中交给程序处理
 
@@ -413,7 +397,7 @@ $media.streams | Select-Object index,codec_type,codec_name,width,height,sample_r
 
 - `ffprobe` 能读到容器头，不代表文件后半段一定能完整解码；
 - `duration` 为 `N/A` 不自动等于损坏，实时流和管道经常没有总时长；
-- `r_frame_rate` 不是所有场景下的真实播放 FPS；
+- `r_frame_rate` 是估计值（官方注释写明是 guess），不是所有场景下的真实播放 FPS；
 - `-select_streams` 只改变显示范围，不能给 `ffmpeg` 输出做映射；
 - `-show_entries` 只减少显示字段，不会修复输入或改变媒体；
 - `-of json` 只改变输出格式，不会让探测更准确；
@@ -446,6 +430,6 @@ ffprobe -version
 ffprobe -h full
 ```
 
-如果已经能区分 Packet 与 Frame，下一步可以继续阅读 [H.264 / H.265 Bitstream：从 Picture、GOP 到 NAL Unit](/tutorials/tffmpeg-bitstream/)，理解一个 Packet 内部的 NAL Unit、Parameter Set 和随机访问结构。
+如果已经能区分 Packet 与 Frame，下一步可以继续阅读 [看懂 H.264 / H.265 码流：视频到了，画面为什么还没出来](/tutorials/tffmpeg-bitstream/)，理解一个 Packet 内部的 NAL 信封、参数集和随机访问点。
 
 依据：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)；[FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)。
