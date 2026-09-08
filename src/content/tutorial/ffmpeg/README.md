@@ -57,7 +57,7 @@ flowchart LR
 | 05 | [理解参数、Filter 与质量](/tutorials/t17xaopev/) | 参数放置位置、Stream Copy 与 Transcode 的区别，以及质量控制 |
 | 深入 | [FFmpeg Filters：读懂 Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) | Filter syntax、Filterchain、Filtergraph、Label 与常用处理链 |
 | 深入 | [FFmpeg Filters 进阶：Timeline、framesync 与 Audio](/tutorials/tffmpeg-filters-2/) | 按时间启用、runtime command、多输入同步与 Audio 处理 |
-| 深入 | [H.264 / H.265 Bitstream：从 Picture、GOP 到 NAL Unit](/tutorials/tffmpeg-bitstream/) | 随机访问、Parameter Set、Annex B、MP4 与 RTP 的码流层级 |
+| 深入 | [H.264 / H.265 码流：视频到了，画面为什么还没出来](/tutorials/tffmpeg-bitstream/) | 从 6 秒实验看懂 I/P/B、GOP、NAL、参数集、MP4 与 RTSP 首帧 |
 | 最后 | [案例学习：常见任务与面试题](/tutorials/t19hdgc9e/) | 把探测、Stream selection、Transcode、Filter 和 Mux 组合成可复用案例 |
 
 ## 开始前：确认工具

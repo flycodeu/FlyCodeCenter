@@ -1,12 +1,10 @@
 ---
-title: H.264 / H.265 Bitstream：从 Picture、GOP 到 NAL Unit
+title: H.264 / H.265 码流：视频到了，画面为什么还没出来
 createTime: '2026/09/08 20:20:00'
 code: tffmpeg-bitstream
 permalink: /tutorials/tffmpeg-bitstream/
-summary: >-
-  沿着 Picture、Access Unit、NAL Unit、Container 与 RTP，读懂 H.264/H.265 Bitstream
-  的真实层级。
-description: 用 FFmpeg 和 ffprobe 实验讲清 GOP、IDR/CRA、SPS/PPS/VPS、Annex B、avcC/hvcC 与 RTSP 中途接入。
+summary: 从一段 6 秒视频出发，亲手观察 I/P/B、GOP、NAL Unit、参数集、Annex B 与 RTSP 首帧。
+description: 用可重复的 FFmpeg 实验理解 H.264/H.265 码流，并把 missing PPS、首帧慢、花屏和时间戳问题定位到正确层级。
 order: 8
 tags:
   - FFmpeg
@@ -19,144 +17,209 @@ category: 音视频
 showOnHome: false
 ---
 
-RTSP 已经连接成功，RTP Packet 也在持续到达，播放器为什么还会黑几秒？把 MP4 里的 H.264 用 `-c:v copy` 取出来，为什么另一个程序又说找不到 Start Code？
+摄像头已经连接，RTP 包也在不断增加，画面却迟迟不出现。等了两秒，第一帧突然来了。
 
-这类问题很容易被笼统地归为“网络不稳”或“Codec 不兼容”。真正缺少的往往是一张 Bitstream 地图：画面怎样变成压缩数据，Decoder 从哪里取得参数，Container 和 RTP 又怎样包装 NAL Unit。
+这两秒里，播放器不是在“发呆”。它可能已经收到许多数据，只是还缺少三样东西中的某一样：完整的 NAL Unit、解释码流所需的参数集，或者一个可以重新开始解码的随机访问点。
 
-本文不试图复述 H.264、H.265 标准。目标只有一个：看到黑屏、花屏、`missing PPS` 或漫长的首帧等待时，知道问题卡在了哪一层，以及下一条命令该查什么。
+这一篇不从标准里的字段表开始。我们先生成一段只有 6 秒的视频，亲眼看见关键帧、解码顺序和 NAL Unit，再回到 RTSP 黑屏问题。后面的每个名词都会落到同一段样本上。
 
-## 一张图先把层级摆正
+## 先做出这段 6 秒视频
 
-先从摄像头到 AI inference 的完整链路看起：
+先确认本机有 H.264 Encoder 和后面要用的 Bitstream Filter：
+
+```powershell
+ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265"
+ffmpeg -hide_banner -bsfs 2>&1 | Select-String "h264_mp4toannexb|hevc_mp4toannexb|trace_headers|filter_units"
+```
+
+生成一段 640×360、25 FPS 的测试视频。这里把最大 GOP size 设为 50，并关闭 scene cut，目的是让关键帧尽量稳定地出现在 0、2、4 秒附近：
+
+```powershell
+ffmpeg -y -f lavfi -i "testsrc2=size=640x360:rate=25:duration=6" -an -c:v libx264 -g 50 -keyint_min 50 -sc_threshold 0 -pix_fmt yuv420p .\h264-gop.mp4
+```
+
+现在先别急着研究二进制。问视频一个简单的问题：哪些画面被 FFmpeg 标记为 keyframe？
+
+```powershell
+ffprobe -v error -select_streams v:0 -skip_frame nokey -show_frames -show_entries "frame=best_effort_timestamp_time,key_frame,pict_type" -of compact .\h264-gop.mp4
+```
+
+在本文使用的 FFmpeg 7.1.1 与 libx264 上，可以看到三个 I Picture：
+
+```text
+0.000000  I  key_frame=1
+2.000000  I  key_frame=1
+4.000000  I  key_frame=1
+```
+
+不同版本的附加输出可能略有差异，真正值得观察的是时间点：这段视频大约每 2 秒出现一次新的随机访问机会。刚才命令里的 `-g 50`，第一次从一个抽象参数变成了可以观察的现象。
+
+## 一幅画面为什么不能独立保存
+
+640×360 的测试视频看起来很小。如果把 1920×1080、RGB24、25 FPS 的视频原样保存，数据量大约是：
+
+```text
+一帧：1920 × 1080 × 3 ≈ 6.22 MB
+一秒：6.22 MB × 25 ≈ 155 MB/s ≈ 1.24 Gbit/s
+```
+
+连续画面中，大部分像素其实没有剧烈变化。视频编码会同时利用两类重复：一幅画面内部相邻区域的相似，以及前后画面之间的相似。
 
 ```mermaid
 flowchart LR
-  S[Scene] --> P[Raw Picture]
-  P --> EN[H.264 / H.265 Encoder]
-  EN --> AU[Access Units]
-  AU --> N[NAL Units]
-  N --> PK[Container sample<br/>or RTP packetization]
-  PK --> NET[File / Network]
-  NET --> DP[Demux / Depacketize]
-  DP --> N2[NAL Units]
-  N2 --> DE[Decoder]
-  DE --> F[Decoded Frame]
-  F --> AI[Resize / Tensor / Inference]
+  I[I Picture<br/>主要使用画面内部预测]
+  P1[P Picture<br/>可参考过去的 Picture]
+  B1[B Picture<br/>可使用双向预测]
+  P2[P Picture]
+  I --> P1
+  I --> B1
+  P1 --> B1
+  P1 --> P2
 ```
 
-图里的名词不能随意互换：
+日常所说的 I、P、B，可以先这样理解：
 
-| 层级 | 它是什么 | 不要把它当成 |
-| --- | --- | --- |
-| Picture | 编码标准中的一幅图像 | 一个固定大小的数据块 |
-| Slice | Picture 的一部分编码数据 | 完整 Picture |
-| NAL Unit | H.264/H.265 Bitstream 的基本封装单元 | RTP Packet 或 `AVPacket` |
-| Access Unit | 解码一幅 Picture 所需的一组 NAL Units | 永远只有一个 NAL Unit |
-| `AVPacket` | FFmpeg 在 Demux/Decode 边界传递的压缩数据 | 标准规定的 NAL Unit |
-| `AVFrame` | FFmpeg Decode 后的原始 Frame | 压缩 Bitstream |
-| MP4 / MPEG-TS | Container | Video Codec |
-| RTP | 实时媒体的传输包装 | RTSP 本身 |
+- I Picture 主要靠自身信息还原，不需要用其他 Picture 的样本预测当前画面；
+- P Picture 可以引用之前已经解码的参考画面；
+- B Picture 可以利用前后参考画面，通常压得更小，但会带来重排和额外等待。
 
-最值得先记住的是：`1 Frame = 1 NAL Unit` 和 `1 AVPacket = 1 NAL Unit` 都不成立。一个 Picture 可以有多个 Slice NAL Units；一个 Packet 里也可能装一个或多个 NAL Units，具体取决于 Container、Demuxer、Parser 和 Bitstream 表示方式。
+因此，文件中的数据顺序不一定就是观看顺序。再看样本开头的几个 Packet：
 
-## Picture 为什么需要 I、P、B
+```powershell
+ffprobe -v error -select_streams v:0 -read_intervals "%+#8" -show_packets -show_entries "packet=pts_time,dts_time,flags" -of csv=p=0 .\h264-gop.mp4
+```
 
-1920×1080、RGB24、25 FPS 的原始视频，每帧约为：
+本文样本的前四行是：
 
 ```text
-1920 × 1080 × 3 ≈ 6.22 MB
-6.22 MB × 25 ≈ 155 MB/s ≈ 1.24 Gbit/s
+0.000000,-0.080000,K__
+0.080000,-0.040000,___
+0.040000, 0.000000,___
+0.160000, 0.040000,___
 ```
 
-Encoder 会同时利用空间冗余和时间冗余：同一幅 Picture 内，相邻区域经常相似；连续 Picture 之间，大部分内容也没有变化。I、P、B 描述的正是不同的预测方式。
+第一列是 PTS，决定“什么时候呈现”；第二列是 DTS，决定“什么时候送去解码”。`0.08` 秒的 Packet 比 `0.04` 秒的 Packet 更早进入解码器，正是因为后者可能要引用前者。只要时间轴关系合理，PTS 与 DTS 不相等不是文件损坏。
 
-```mermaid
-flowchart LR
-  I[I Picture<br/>intra prediction] --> P[P Picture<br/>past reference]
-  I --> B[B Picture<br/>bi-prediction]
-  P --> B
-  P --> P2[P Picture]
-```
-
-- I Picture 使用 intra prediction，不依赖其他 Picture 的样本进行画面预测；
-- P Picture 可以参考先前已经 Decode 的 Picture；
-- B Picture 可以使用双向预测，压缩效率通常更高，也带来了 reorder 与额外 latency。
-
-日常说“I/P/B Frame”很方便，不过标准语义比这更细：Slice Header 中存在 slice type，一幅 Picture 还可能包含多个 Slice。做工程排查时可以继续使用 I/P/B 这个直观叫法，但不要据此推导出“一个 Frame 只有一个 Slice”或“I 就一定能安全随机接入”。
-
-### Display order 和 Decode order
-
-有 B Picture 时，Decoder 可能要先拿到后面的 reference，才能还原中间的 B Picture：
+可以把这个过程简化为：
 
 ```text
-Display order: I0  B1  B2  P3
-Decode order:  I0  P3  B1  B2
+观看顺序：I0  B1  B2  P3
+解码顺序：I0  P3  B1  B2
 ```
 
-因此 Packet 的 PTS 与 DTS 可能不同：PTS 决定何时呈现，DTS 决定何时 Decode。看到二者不相等，不应立刻判定文件损坏。
+## GOP 像沿途的“重新上车点”
 
-## GOP 决定“多久能重新站稳”
-
-GOP 是 Group of Pictures。工程上常用它描述一段 Picture 的预测结构与随机访问间隔：
+GOP 是 Group of Pictures。工程上常用它描述从一个随机访问点延伸出去的预测结构，以及相邻随机访问点的距离。
 
 ```mermaid
 timeline
-  title 一个简化的 2 秒 GOP（25 FPS，keyint 约 50）
-  0.00s : IDR
-  0.04s : B
-  0.08s : B
-  0.12s : P
-  1.96s : P
-  2.00s : next IDR
+  title 本文样本中观察到的关键帧
+  0 秒 : I / keyframe
+  2 秒 : I / keyframe
+  4 秒 : I / keyframe
+  6 秒 : 视频结束
 ```
 
-`25 FPS`、最大 keyframe interval 为 `50` 时，两个周期性随机访问点大约相隔 2 秒。FFmpeg 使用 libx264 时，`-g 50` 设置最大 GOP size；scene cut、forced keyframe、open GOP 等设置仍可能影响实际结构，所以 `-g 50` 不是“标准保证每 50 帧必有一个 IDR”的同义句。
+假设客户端在 2.6 秒加入直播。它已经错过 2 秒附近的起点，随后收到的 P/B Picture 又可能依赖更早的参考画面。即使网络一切正常，它也可能要等到 4 秒附近，才有机会从完整状态开始解码。
 
-GOP 越长，bitrate 往往更省，但中途加入和丢包恢复可能等得更久。GOP 越短，随机访问与切片更方便，参数集和 intra picture 也会带来更多开销。直播、监控和 HLS 通常要在 bandwidth、compression efficiency、join latency 与 recovery time 之间取舍。
+这解释了一个常见取舍：
 
-### I Picture 不等于 IDR
+| GOP 较长 | GOP 较短 |
+| --- | --- |
+| 通常压缩效率更好 | 通常更容易快速起播和 Seek |
+| 中途加入可能等得更久 | 随机访问点带来更多码率开销 |
+| 丢失参考画面后影响可能持续更久 | 更快遇到新的恢复机会 |
 
-I 描述 Picture 内部的预测方式；IDR 描述 Decoder refresh 与后续 reference 的边界。H.264 的 IDR 到来后，后续 Picture 不再引用 IDR 之前的 reference picture。
+不过，`-g 50` 只是在控制最大关键帧间隔，不是“标准保证每 50 帧必然出现一个 IDR”的声明。Scene cut、forced keyframe、open GOP 和 Encoder 自身策略都会影响实际结果，所以最后仍要用 `ffprobe` 看输出，而不是只看编码命令。
+
+### I Picture 还不等于 IDR
+
+I 描述的是画面使用 intra prediction；IDR 描述的是解码参考关系的一次刷新。
 
 ```mermaid
 flowchart LR
-  OLD[older references] -. blocked .-> NEW[Pictures after IDR]
-  IDR[IDR Picture<br/>decoder refresh] --> NEW
-  INTRA[non-IDR I Picture] --> LATER[later Pictures]
-  OLD -. may still matter .-> LATER
+  OLD[IDR 之前的参考画面]
+  IDR[IDR Picture]
+  NEW[IDR 之后的画面]
+  OLD -. 不再被后续画面引用 .-> NEW
+  IDR --> NEW
+
+  OLD2[更早的参考画面]
+  INTRA[非 IDR 的 I Picture]
+  LATER[后续画面]
+  OLD2 -. 仍可能参与参考 .-> LATER
+  INTRA --> LATER
 ```
 
-所以任意 I Picture 都不应机械地当作 IDR。`ffprobe` 的 `key_frame=1` 是 FFmpeg 层面的 keyframe 标记，也不能在所有 Codec 和 Container 中直接翻译成某个确定的 NAL unit type。
+所以，“它是 I Picture”不能自动推出“任何 Decoder 都能从这里无条件开始”。`ffprobe` 的 `key_frame=1` 也是 FFmpeg 根据 Codec 与 Container 给出的关键帧标记，不能在所有情况下直接翻译成某个确定的 NAL unit type。
 
-H.265/HEVC 把随机访问分得更细，常见 IRAP picture 包括：
+H.265 把随机访问画面分得更细。常见的 IRAP 包括 IDR 和 CRA：IDR 会进行更彻底的解码刷新；CRA 允许更灵活的 open GOP，随机从 CRA 开始时，要按规则丢弃与之前画面相关的某些 leading pictures。普通排障先记住“CRA 可以用于随机访问，但不是换了名字的 IDR”就够了。
 
-| HEVC NAL unit type | 名称 | 工程含义 |
-| ---: | --- | --- |
-| 19 | `IDR_W_RADL` | IDR，允许关联 RADL picture |
-| 20 | `IDR_N_LP` | IDR，不带 leading picture |
-| 21 | `CRA_NUT` | Clean Random Access，常见于更灵活的 open GOP |
+## 现在打开压缩数据这只盒子
 
-CRA 可以作为随机访问点，但从 CRA 开始 Decode 时，CRA 之前关联的 RASL picture 需要按随机访问规则处理。它不是“换了名字的 IDR”。对于普通监控排障，先区分 IDR 与 CRA 已经足够；涉及精确切片和拼接时，再深入 RADL、RASL 和 recovery point。
+到这里，我们一直在谈 Picture。但文件和网络上传输的不是一张张原始画面，而是压缩后的 NAL Units。
 
-## NAL Unit 里面装着什么
-
-NAL 是 Network Abstraction Layer。它把 Video Coding Layer 产生的数据组织成相对适合存储和传输的单元。
+下面这张图沿着同一份视频数据，从屏幕一路走到网络，再走回解码后的 Frame：
 
 ```mermaid
-flowchart TD
-  AU[Access Unit] --> V1[VCL NAL Unit<br/>Slice data]
-  AU --> V2[VCL NAL Unit<br/>another Slice]
-  AU --> NV[Non-VCL NAL Units]
-  NV --> PS[Parameter Sets]
-  NV --> SEI[SEI]
-  NV --> AUD[AUD optional]
+flowchart LR
+  P[Picture] --> EN[Encoder]
+  EN --> AU[Access Unit<br/>解码一幅 Picture 所需的数据]
+  AU --> N1[NAL Unit<br/>Slice data]
+  AU --> N2[NAL Unit<br/>参数集 / SEI 等]
+  N1 --> WRAP[MP4 sample<br/>或 RTP packetization]
+  N2 --> WRAP
+  WRAP --> IO[文件 / 网络]
+  IO --> UNWRAP[Demux / Depacketize]
+  UNWRAP --> DEC[Decoder]
+  DEC --> F[AVFrame<br/>原始画面]
 ```
 
-VCL NAL Units 承载 Slice data。Non-VCL NAL Units 则携带 parameter set、SEI、Access Unit Delimiter 等信息。一个 Access Unit 通常对应一幅 coded Picture 所需的 NAL Units，但并不要求每个 Access Unit 都重新携带 VPS/SPS/PPS，也不要求一定出现 AUD。
+几个经常被混用的名字，在这里各有自己的位置：
 
-### H.264 NAL Unit Header
+| 名称 | 可以怎样理解 | 它不保证什么 |
+| --- | --- | --- |
+| Picture | 编码标准中的一幅图像 | 不保证只含一个 Slice |
+| Slice | Picture 的一部分编码数据，可相对独立解析 | 不等于完整 Picture |
+| NAL Unit | H.264/H.265 码流的基本封装单元 | 不等于 RTP Packet |
+| Access Unit | 与一幅 coded Picture 对应的一组 NAL Units | 不保证只有一个 NAL Unit |
+| `AVPacket` | FFmpeg 传递的压缩数据对象 | 不应依赖它与 NAL Unit 永远一一对应 |
+| `AVFrame` | Decoder 输出的原始音视频数据对象 | 已经不是压缩码流 |
 
-H.264 基础 NAL Unit Header 是 1 byte：
+最容易写错的等式有两个：
+
+```text
+1 Frame  = 1 NAL Unit     ×
+1 Packet = 1 NAL Unit     ×
+```
+
+一幅 Picture 可以被切成多个 Slice NAL Units；一个存储 Sample、RTP Packet 或 `AVPacket` 如何承载 NAL Units，还取决于封装、分包和解析过程。
+
+## 用 trace_headers 看见 NAL Unit
+
+不用手算二进制，FFmpeg 的 `trace_headers` 就能把码流语法打印出来：
+
+```powershell
+ffmpeg -hide_banner -loglevel verbose -i .\h264-gop.mp4 -map 0:v:0 -c:v copy -bsf:v trace_headers -f null - 2>&1 | Select-String "Sequence Parameter Set|Picture Parameter Set|nal_unit_type|slice_type"
+```
+
+输出很长，但第一次只寻找下面几类内容：
+
+```text
+Sequence Parameter Set
+nal_unit_type ... = 7
+Picture Parameter Set
+nal_unit_type ... = 8
+nal_unit_type ... = 6
+nal_unit_type ... = 5
+nal_unit_type ... = 1
+```
+
+它们分别对应 SPS、PPS、SEI、IDR Slice 和普通 non-IDR Slice。我们刚才看到的 I/P/B Picture，到了码流内部，变成了 Slice Header 与 Slice Data；Decoder 还会在旁边遇到参数集和其他辅助信息。
+
+### H.264 的 1-byte NAL Header
+
+H.264 基础 NAL Unit Header 占 1 byte：
 
 ```text
 bit 7         bits 6..5       bits 4..0
@@ -167,28 +230,175 @@ bit 7         bits 6..5       bits 4..0
     1 bit        2 bits           5 bits
 ```
 
-常见 `nal_unit_type`：
+排障时最常遇到这些 type：
 
-| Type | 名称 | 用途 |
+| Type | 内容 | Decoder 用它做什么 |
 | ---: | --- | --- |
-| 1 | non-IDR coded Slice | 普通 VCL data |
-| 5 | IDR coded Slice | IDR Picture 的 Slice |
-| 6 | SEI | Supplemental Enhancement Information |
-| 7 | SPS | Sequence Parameter Set |
-| 8 | PPS | Picture Parameter Set |
-| 9 | AUD | Access Unit Delimiter |
+| 1 | non-IDR coded Slice | 解码普通 Picture 的 Slice |
+| 5 | IDR coded Slice | 从 IDR 随机访问点建立新参考链 |
+| 6 | SEI | 携带补充增强信息，不是画面主体 |
+| 7 | SPS | 取得 sequence 级解码参数 |
+| 8 | PPS | 取得 Picture/Slice 使用的参数 |
+| 9 | AUD | 可选地帮助标识 Access Unit 边界 |
 
-在 Annex B Bitstream 中看到：
+例如 Annex B 码流中的 `00 00 00 01 67`，前四个 byte 是边界标记，`0x67` 才是 NAL Header。`0x67` 的低 5 bit 是 7，所以它是 SPS。相同方法可以读出常见的 `0x68` 为 PPS、`0x65` 为 IDR Slice。
 
-```text
-00 00 00 01 67 ...
+但不要把 `SPS → PPS → IDR` 当作所有 Encoder 必须遵守的固定开场顺序。本文样本转成 Annex B 后，开头第一个 NAL Unit 就可能是 type 6 的 SEI。码流要按实际语法解析，不能靠背一个十六进制模板判断完整性。
+
+## 参数集是解码器的“说明书”
+
+Slice Data 像压缩后的正文，参数集则告诉 Decoder 应该怎样解释这份正文。
+
+```mermaid
+flowchart LR
+  subgraph H264[H.264]
+    S1[SPS] --> P1[PPS 引用 SPS]
+    P1 --> SH1[Slice Header 引用 PPS]
+    SH1 --> D1[Decode Slice Data]
+  end
+
+  subgraph H265[H.265]
+    V2[VPS] --> S2[SPS 引用 VPS]
+    S2 --> P2[PPS 引用 SPS]
+    P2 --> SH2[Slice Header 引用 PPS]
+    SH2 --> D2[Decode Slice Data]
+  end
 ```
 
-前四个 byte 是 Start Code，`0x67` 才是 NAL Unit Header。它的低 5 bit 为 `00111`，也就是 type 7：SPS。相同方法可读出常见的 `0x68` 为 PPS，`0x65` 为 IDR Slice；不过实际 Bitstream 还可能包含 AUD、SEI 或多个 Slice，不应假定所有 Encoder 都按这三项固定排列。
+- SPS 保存 sequence 级信息，例如 Profile、Level、coded picture size、chroma format、bit depth、POC 和部分 VUI 信息；
+- PPS 保存更接近 Picture 与 Slice 使用的配置，Slice Header 会通过 ID 引用 PPS；
+- H.265 还增加 VPS，用来描述 layer、sub-layer 等更高层视频参数，SPS 会引用它。
 
-### H.265 NAL Unit Header
+参数集没有必要每帧重复。它们可以出现在码流内部，也可以作为 Container、SDP 或 FFmpeg 所说的 `extradata` 放在带外位置。于是，在某一个 `AVPacket` 中没搜到 SPS/PPS，不能单独证明码流有问题；Decoder 在处理 Slice 前是否已经拿到正确参数集，才是关键。
 
-HEVC 基础 NAL Unit Header 是 2 bytes：
+### 故意删掉 SPS/PPS，会发生什么
+
+先把 MP4 中的 H.264 取成 Annex B 码流：
+
+```powershell
+ffmpeg -y -i .\h264-gop.mp4 -map 0:v:0 -c:v copy -an -bsf:v h264_mp4toannexb .\h264-gop.h264
+```
+
+然后做一个只用于学习的“破坏实验”，从副本中删掉 type 7 和 type 8：
+
+```powershell
+ffmpeg -y -f h264 -i .\h264-gop.h264 -map 0:v:0 -c:v copy -bsf:v "filter_units=remove_types=7|8" .\without-parameter-sets.h264
+```
+
+尝试解码损坏的副本：
+
+```powershell
+ffmpeg -hide_banner -v error -f h264 -i .\without-parameter-sets.h264 -f null -
+```
+
+这次错误不再抽象：
+
+```text
+non-existing PPS 0 referenced
+decode_slice_header error
+no frame!
+```
+
+Slice 明明还在，Decoder 却不知道怎样解释它，所以连一幅 `AVFrame` 都交不出来。这时去修改 RGB 转换、CUDA、TensorRT 或 AI 模型没有意义——问题还没有走到那些层级。
+
+这个实验还有一个容易忽略的细节：有些损坏输入即使打印了大量解码错误，FFmpeg 进程仍可能以 0 结束。做媒体程序不能只检查 exit code，还要按任务需要处理 Decoder 日志、实际输出帧数和时间连续性。
+
+## 为什么 MP4 里不一定找得到 Start Code
+
+刚才使用 `h264_mp4toannexb`，是因为 NAL Unit 的内容相同，边界写法却可以不同。
+
+```mermaid
+flowchart TD
+  N[NAL Units]
+  N --> AB[Annex B]
+  N --> LP[Length-prefixed sample]
+  AB --> SC[00 00 01 或 00 00 00 01<br/>然后是 NAL Unit]
+  LP --> LEN[NAL length<br/>然后是 NAL Unit]
+  LP --> CFG[avcC / hvcC<br/>保存 Decoder configuration]
+```
+
+### Annex B：用 Start Code 找边界
+
+Annex B 使用 `00 00 01` 形式的 start code prefix；常见的 `00 00 00 01` 可以理解为前面多了一个 `zero_byte`。Raw `.h264`、`.h265` 以及 MPEG-TS 等场景中经常使用这种表示。
+
+```powershell
+Format-Hex -Path .\h264-gop.h264 | Select-Object -First 12
+```
+
+在十六进制输出中看到 `00 00 00 01`，只说明找到了一个 Annex B 边界。它后面的 Header 才告诉我们 NAL type，后续是否还有参数集和完整 Slice 仍要继续解析。
+
+NAL payload 里如果也偶然出现 `00 00 01`，会破坏边界判断。因此编码时会按规则插入 `0x03` emulation prevention byte，把 RBSP 转成 EBSP；解析时再移除。这个细节解释了为什么不能随意编辑 NAL payload 中看似“多余”的 `03`。
+
+### MP4：先写长度，再写 NAL Unit
+
+MP4 sample 中的 H.264/H.265 通常是 length-prefixed：
+
+```text
+[NAL length][NAL data][NAL length][NAL data] ...
+```
+
+H.264 的 Decoder configuration 通常在 `avcC` box，H.265 对应 `hvcC`。配置中可以保存参数集和 NAL length size；length field 常见为 4 bytes，但解析器应读取配置，而不是写死 4。
+
+因此，直接在 MP4 文件中搜索 `00 00 00 01`，然后得出“里面没有 NAL Unit”的结论，是把 Container 写法和 Codec 内容混在了一起。
+
+### Bitstream Filter 只改压缩数据的表示
+
+从 MP4 取出 Annex B H.264：
+
+```powershell
+ffmpeg -i .\input.mp4 -map 0:v:0 -c:v copy -an -bsf:v h264_mp4toannexb .\output.h264
+```
+
+H.265 使用对应的 Filter：
+
+```powershell
+ffmpeg -i .\input-hevc.mp4 -map 0:v:0 -c:v copy -an -bsf:v hevc_mp4toannexb .\output.h265
+```
+
+Bitstream Filter 工作在压缩 Packet 上，不需要先解码：
+
+```mermaid
+flowchart LR
+  P1[Compressed Packet] --> BSF[Bitstream Filter]
+  BSF --> P2[Compressed Packet]
+
+  P1 --> DEC[Decoder]
+  DEC --> F1[Frame]
+  F1 --> VF[scale / crop / overlay]
+  VF --> F2[Frame]
+  F2 --> ENC[Encoder]
+```
+
+所以 `h264_mp4toannexb` 可以和 `-c:v copy` 同时使用；它改变 NAL Unit 的边界表示，并处理相关 extradata，但不会缩放画面，也不会产生一次新的有损编码。`scale`、`crop`、`overlay` 操作的则是解码后的 Frame，必须重新 Encode。
+
+MPEG-TS 和 raw H.264/H.265 等输出格式中，FFmpeg 可能自动插入对应的 `mp4toannexb` Filter。排障命令显式写出它，通常更容易看懂数据究竟发生了什么变化。
+
+## H.265 不是把 H.264 的 type 表换一遍
+
+有了 H.264 这条实验线，再看 H.265 会轻松很多。先生成同样时长的样本：
+
+```powershell
+ffmpeg -y -f lavfi -i "testsrc2=size=640x360:rate=25:duration=6" -an -c:v libx265 -g 50 -x265-params "min-keyint=50:scenecut=0" -pix_fmt yuv420p .\h265-gop.mp4
+```
+
+查看它的 Header：
+
+```powershell
+ffmpeg -hide_banner -loglevel verbose -i .\h265-gop.mp4 -map 0:v:0 -c:v copy -bsf:v trace_headers -f null - 2>&1 | Select-String "Video Parameter Set|Sequence Parameter Set|Picture Parameter Set|nal_unit_type|slice_type"
+```
+
+两种 Codec 的工程差异可以先收在这张表里：
+
+| | H.264 / AVC | H.265 / HEVC |
+| --- | --- | --- |
+| 基础 NAL Header | 1 byte | 2 bytes |
+| NAL type 位数 | 5 bit | 6 bit |
+| 参数集 | SPS、PPS | VPS、SPS、PPS |
+| 常见随机访问 | IDR type 5 | IDR type 19/20、CRA type 21 |
+| MP4 配置 | `avcC` | `hvcC` |
+| 转 Annex B | `h264_mp4toannexb` | `hevc_mp4toannexb` |
+
+HEVC 基础 NAL Header 的结构是：
 
 ```text
 +---+---------------+--------------+-----------------------+
@@ -197,265 +407,124 @@ HEVC 基础 NAL Unit Header 是 2 bytes：
   1       6 bits          6 bits             3 bits
 ```
 
-常见类型如下：
+常见类型包括 VPS 32、SPS 33、PPS 34、AUD 35、prefix/suffix SEI 39/40。HEVC 的 `nal_unit_type` 要从第一个 Header byte 取 `(byte0 >> 1) & 0x3F`；不能把 H.264 的 `byte & 0x1F` 原样套过来。`nuh_temporal_id_plus1` 的合法值也不能为 0。
 
-| Type | 名称 | Type | 名称 |
-| ---: | --- | ---: | --- |
-| 19 | `IDR_W_RADL` | 32 | VPS |
-| 20 | `IDR_N_LP` | 33 | SPS |
-| 21 | `CRA_NUT` | 34 | PPS |
-| 35 | AUD | 39 / 40 | prefix / suffix SEI |
+## 回到开头：RTSP 已连接，为什么仍然没有首帧
 
-`nuh_temporal_id_plus1` 不能为 0。H.264 用 Header byte 的低 5 bit 取 NAL type；HEVC 的 type 占 6 bit，可由第一个 Header byte 的 `(byte0 >> 1) & 0x3F` 取得，不能把 `byte & 0x1F` 的 H.264 写法直接套过来。
-
-## VPS、SPS、PPS 是 Decoder 的上下文
-
-Parameter Set 不包含一幅完整画面，却决定 Slice 应怎样解释。
+RTSP 负责建立和控制会话，视频通常通过 RTP 传输。一个较小的 NAL Unit 可以放进单个 RTP Packet，多个 NAL Units 可以聚合，过大的 NAL Unit 也可以拆成多个 Fragmentation Units。
 
 ```mermaid
 flowchart LR
-  subgraph AVC[H.264 / AVC]
-    S1[SPS] --> P1[PPS references SPS]
-    P1 --> H1[Slice Header references PPS]
-    H1 --> D1[Decode Slice Data]
-  end
-  subgraph HEVC[H.265 / HEVC]
-    V2[VPS] --> S2[SPS references VPS]
-    S2 --> P2[PPS references SPS]
-    P2 --> H2[Slice Header references PPS]
-    H2 --> D2[Decode Slice Data]
-  end
+  N1[small NAL Unit] --> SINGLE[single NAL packet]
+  N2[several small NAL Units] --> AP[aggregation packet]
+  N3[large NAL Unit] --> F1[fragment 1]
+  N3 --> F2[fragment 2]
+  N3 --> F3[fragment 3]
+  SINGLE --> RTP[RTP]
+  AP --> RTP
+  F1 --> RE[reassemble]
+  F2 --> RE
+  F3 --> RE
+  RE --> RTP
 ```
 
-- SPS 描述 sequence 级信息，例如 profile/level、coded picture size、chroma format、bit depth、POC 与 VUI 等；
-- PPS 保存更接近 Picture/Slice 使用的配置，并由 Slice Header 通过 ID 引用；
-- HEVC 的 VPS 位于更高层，承载 layer、sub-layer 等视频参数，SPS 会引用 VPS。
-
-Parameter Set 不一定每帧重复。它可能在 Bitstream 的随机访问点附近周期性出现，也可能放在 MP4 的 decoder configuration record、RTSP 的 SDP 或其他 extradata 中。因此，在某一个 `AVPacket` 里没找到 SPS/PPS，并不能单独证明输入错误。
-
-但 Decoder 在开始处理对应 Slice 前，必须已经拿到正确的 Parameter Set。缺失或引用错位时常见日志包括：
+H.264 中常见 STAP-A 与 FU-A，HEVC 中对应的机制通常称为 AP 与 FU。这里真正重要的不是缩写，而是层级：
 
 ```text
-non-existing PPS referenced
-missing picture in access unit
-decode_slice_header error
-could not find codec parameters
+UDP datagram ≠ RTP Packet ≠ NAL Unit ≠ Access Unit ≠ AVPacket ≠ AVFrame
 ```
 
-这时 Decoder 连 Picture 都还没有交出来，继续调整 YOLO、TensorRT 或 RGB resize 不会解决上游问题。
-
-## Annex B 与 avcC/hvcC：内容相同，边界写法不同
-
-NAL Unit 的 Codec 内容可以相同，但怎样标出每个 NAL Unit 的边界并不只有一种方式。
+现在把一个客户端在 2.6 秒加入本文样本的过程完整走一遍：
 
 ```mermaid
-flowchart TD
-  N[NAL Units] --> AB[Annex B byte stream]
-  N --> LP[Length-prefixed samples]
-  AB --> SC[00 00 01 or 00 00 00 01<br/>+ NAL Unit]
-  LP --> LEN[length field + NAL Unit]
-  LP --> AVC[H.264 config in avcC]
-  LP --> HEVC[H.265 config in hvcC]
+sequenceDiagram
+  participant C as Client
+  participant R as RTSP/RTP source
+  participant D as Decoder
+  C->>R: SETUP / PLAY 成功
+  R-->>C: P/B 对应的 RTP Packets 持续到达
+  C->>C: 按序重排并重组 NAL Units
+  C->>C: 取得 SDP/extradata 或 in-band 参数集
+  Note over C: 仍缺少可用参考画面时继续等待
+  R-->>C: 下一组参数集与 IDR/CRA 到达
+  C->>D: 提交可解码的 Access Unit
+  D-->>C: 输出第一幅 Frame
 ```
 
-### Annex B
+这条链上的每一步都可能让画面停住：
 
-Annex B 使用 3-byte `start_code_prefix_one_3bytes`（`00 00 01`）分隔 NAL Units。常见的 `00 00 00 01` 是前面的 `zero_byte` 加上这个 3-byte prefix，常见于 `.h264`、`.h265` elementary stream 和 MPEG-TS 等场景：
+1. RTSP authentication 或 SETUP 失败，媒体根本没建立；
+2. RTP sequence 有丢失或乱序，FU 无法重组为完整 NAL Unit；
+3. Slice 已经到达，但 Decoder 没从 SDP、extradata 或 in-band 数据取得 VPS/SPS/PPS；
+4. 参数集已经有了，但客户端加入得太晚，还在等待合适的 IDR/CRA；
+5. Decoder 已经输出 Frame，问题才可能进入色彩转换、GPU upload、渲染或 AI inference。
+
+所以至少应该分别记录四个时间点：RTSP PLAY 成功、首个 RTP 到达、首个完整 Access Unit 提交、首个 `AVFrame` 输出。只记录“连接成功”会把网络层的成功误当成视频已经可用。
+
+### H.264/H.265 参数集可能从哪里来
+
+| 位置 | 常见情况 | 排查方式 |
+| --- | --- | --- |
+| 码流内部 | SPS/PPS 或 VPS/SPS/PPS 在随机访问点附近重复发送 | 用 `trace_headers` 或抓取 Annex B 检查 |
+| RTSP SDP | H.264 可通过 `sprop-parameter-sets`，HEVC 有相应 VPS/SPS/PPS 属性 | 保存并检查 DESCRIBE 返回的 SDP |
+| MP4 配置 | `avcC` / `hvcC` 中的 Decoder configuration | 用 MP4 box 工具或 FFmpeg extradata 路径检查 |
+| FFmpeg Codec Parameters | Demuxer/Parser 提供的 `extradata` | 在打开 Decoder 前记录 codecpar 与 extradata size |
+
+“某个 RTP Packet 中没有 SPS”本身不是错误；真正的问题是 Decoder 在需要它时有没有一份与当前 Slice ID 匹配的参数集。
+
+## 看到这些现象，下一步查哪里
+
+| 现象 | 先回答的问题 | 暂时不要先改什么 |
+| --- | --- | --- |
+| RTSP 已 PLAY，却一直没有首帧 | RTP 是否连续、NAL 是否重组完整、参数集和 IDR/CRA 是否到齐 | AI 模型参数 |
+| 每次都要等 3～4 秒才起播 | 实际 IRAP/keyframe interval 是多少，客户端在 GOP 的哪里加入 | 盲目加大播放 Buffer |
+| `non-existing PPS referenced` | PPS 从 SDP、extradata 还是 in-band 来，Slice 引用的 ID 是否存在 | 端口和 TensorRT |
+| `missing picture in access unit` | 丢包、分片重组、Access Unit 边界和时间戳是否完整 | 只改文件扩展名 |
+| MP4 中搜不到 Start Code | 它是否使用 `avcC`/`hvcC` 与 length prefix | 判断文件没有 H.264/H.265 |
+| Raw `.h264` 播放失败 | 是否真是 Annex B，是否带 SPS/PPS，Codec 是否识别正确 | 反复换播放器 |
+| PTS 与 DTS 不相等 | 是否存在 B Picture 重排，时间戳是否仍然单调可解码 | 直接把 PTS 复制给 DTS |
+| 花屏一阵后恢复 | 是否丢失参考 Picture，恢复是否恰好发生在下一个 IDR/CRA | 只看平均带宽 |
+
+遇到真实摄像头问题时，可以用下面的顺序逐层收窄：
 
 ```text
-00 00 00 01 67 ...  H.264 SPS
-00 00 00 01 68 ...  H.264 PPS
-00 00 00 01 65 ...  H.264 IDR Slice
+RTSP 会话
+  ↓
+RTP sequence / loss / reorder
+  ↓
+NAL fragment reassembly
+  ↓
+VPS / SPS / PPS
+  ↓
+IDR / CRA 与参考关系
+  ↓
+Decoder 是否输出 AVFrame
+  ↓
+渲染、GPU、AI inference
 ```
 
-为了避免 NAL payload 内部偶然形成 Start Code 等保留字节模式，Encoder 会把 RBSP 转为 EBSP：连续两个 `00` 后，若下一 byte 位于 `00`～`03`，便插入 `0x03` emulation prevention byte。这个过程作用于 NAL payload，不包含 NAL Unit Header；解析 RBSP 时再按规范移除。只想排查 FFmpeg 媒体链路时，不要手工改这些 byte。
+顺序的价值在于：只要 Decoder 还没有输出 Frame，后面的模块就不可能是“没有首帧”的根因。
 
-### MP4 中常见的 length prefix
+## 最后再看一次这段 6 秒视频
 
-MP4 sample 内的 H.264/H.265 通常使用 length-prefixed NAL Units：
+我们从一条生成命令开始，已经可以回答这些问题：
 
-```text
-[NAL length][NAL data][NAL length][NAL data]...
-```
+1. 为什么 25 FPS、`-g 50` 大约每 2 秒给出一次新的随机访问机会？
+2. 为什么样本中的 PTS 和 DTS 顺序不同，却仍然可以正常播放？
+3. 为什么一个 Picture、NAL Unit、RTP Packet 和 `AVPacket` 不能画等号？
+4. 为什么删掉 SPS/PPS 后 Slice 还在，Decoder 却报告 `no frame`？
+5. 为什么把 MP4 复制成 raw H.264 时需要处理 length prefix 与 Annex B，而不是只改扩展名？
+6. 为什么 RTSP PLAY 成功只能说明会话已建立，不能说明首个 `AVFrame` 已经产生？
 
-H.264 decoder configuration 通常记录在 `avcC` box，HEVC 对应 `hvcC`，其中可以提供 Parameter Set 和 NAL length size 等信息；length field 常见为 4 bytes，但应读取 configuration record 中的实际配置。不同 sample entry（如 `avc1/avc3`、`hvc1/hev1`）对 Parameter Set 的携带约束也不同。这也是为什么不能在 MP4 文件里盲搜 `00 00 00 01`，然后断言“没有 NAL Unit”。Container 的 box、sample 与 Codec Bitstream 是不同层。
-
-### Bitstream Filter 不会重新 Encode
-
-从 MP4 提取 Annex B H.264：
-
-```powershell
-ffmpeg -i .\input.mp4 -map 0:v:0 -c:v copy -an -bsf:v h264_mp4toannexb .\output.h264
-```
-
-HEVC 对应：
-
-```powershell
-ffmpeg -i .\input-hevc.mp4 -map 0:v:0 -c:v copy -an -bsf:v hevc_mp4toannexb .\output.h265
-```
-
-`h264_mp4toannexb` 和 `hevc_mp4toannexb` 修改压缩 Bitstream 的表示，并把相关 extradata 转成 Annex B Parameter Sets；它们不经过 Decode → Frame → Encode，所以可以和 `-c:v copy` 一起使用。某些 output format（例如 MPEG-TS 和 raw H.264/H.265）会由 FFmpeg 自动插入相应 Bitstream Filter，显式写出则更便于解释和排查。
-
-普通 Video Filter 与 Bitstream Filter 的位置完全不同：
-
-```mermaid
-flowchart LR
-  P1[Compressed Packet] --> BSF[Bitstream Filter]
-  BSF --> P2[Compressed Packet]
-  P1 --> DE[Decoder]
-  DE --> F1[Frame]
-  F1 --> VF[Video Filter]
-  VF --> F2[Frame]
-  F2 --> EN[Encoder]
-```
-
-`scale`、`crop`、`overlay` 会改 Frame，因此需要重新 Encode；`h264_mp4toannexb` 只改 Bitstream packaging，不会缩放画面，也不会改变 Picture 内容。
-
-## RTSP 中途加入时发生了什么
-
-RTSP 主要负责建立和控制媒体会话，Video media 通常经 RTP 传输。RTP payload format 允许三种重要形态：一个 RTP Packet 携带单个 NAL Unit；多个较小 NAL Units 聚合进一个 Packet；较大 NAL Unit 拆成多个 Fragmentation Units。
-
-```mermaid
-flowchart LR
-  N1[one NAL Unit] --> S[single NAL packet]
-  N2[small NAL Units] --> A[aggregation packet]
-  N3[large NAL Unit] --> F1[FU 1]
-  N3 --> F2[FU 2]
-  N3 --> F3[FU 3]
-  S --> RTP[RTP transport]
-  A --> RTP
-  F1 --> RTP
-  F2 --> RTP
-  F3 --> RTP
-  RTP --> DP[depacketize / reassemble]
-```
-
-所以 NAL Unit、RTP Packet、UDP datagram 与 FFmpeg `AVPacket` 分属不同层级。看到 RTP 在增长，只能证明传输层有数据；Decoder 是否已拿到完整 NAL Unit、Parameter Set 和可用随机访问点，还要继续确认。
-
-客户端刚好在两个 IDR 之间加入时，先收到的 P/B Picture 可能依赖它从未见过的 reference：
-
-```text
-IDR ── P ── B ── P ── B ── IDR ── P
-                    ↑ client joins
-                    └─ may wait here ─┘
-```
-
-如果 Parameter Set 也没有通过 in-band、SDP 或其他 extradata 取得，等待会更明显。于是“RTSP SETUP/PLAY 成功”和“Decoder 已输出首个 Frame”必须分别记录。
-
-碰到黑屏，我会按下面的顺序缩小范围：
-
-1. RTSP handshake 与 authentication 是否成功；
-2. RTP sequence 是否持续，是否出现 loss / reorder；
-3. depacketization 能否重组完整 NAL Units；
-4. VPS/SPS/PPS 是否在需要时可用；
-5. 是否等到合适的 IDR / CRA，GOP interval 多长；
-6. Decoder 是否真正输出了首个 Frame；
-7. 只有 Frame 已经稳定产生后，才继续检查 color conversion、GPU upload 与 AI inference。
-
-## 在本机做一组可重复实验
-
-不要一开始就拿不稳定的 Camera 做实验。`testsrc2` 可以生成可控输入，让 GOP、Packet 与 NAL Header 的现象重复出现。
-
-### 生成 H.264 与 H.265 样本
-
-先确认 Encoder 和 Bitstream Filter：
-
-```powershell
-ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265"
-ffmpeg -hide_banner -bsfs 2>&1 | Select-String "h264_mp4toannexb|hevc_mp4toannexb|trace_headers"
-```
-
-生成 8 秒、25 FPS、最大 GOP size 为 50 的 H.264：
-
-```powershell
-ffmpeg -y -f lavfi -i "testsrc2=size=1280x720:rate=25:duration=8" -an -c:v libx264 -g 50 -keyint_min 50 -sc_threshold 0 -pix_fmt yuv420p .\h264-gop.mp4
-```
-
-关闭 scene cut 是为了让教学样本更容易观察，不代表生产流也应该照搬。实际 keyframe 位置仍应从输出文件读取。
-
-如果本机带 `libx265`，生成 HEVC 样本：
-
-```powershell
-ffmpeg -y -f lavfi -i "testsrc2=size=1280x720:rate=25:duration=8" -an -c:v libx265 -g 50 -x265-params "min-keyint=50:scenecut=0" -pix_fmt yuv420p .\h265-gop.mp4
-```
-
-### 看 Frame type 和 keyframe 位置
-
-```powershell
-ffprobe -v error -select_streams v:0 -show_frames -show_entries "frame=best_effort_timestamp_time,key_frame,pict_type" -of compact .\h264-gop.mp4
-```
-
-只看 FFmpeg 标记为 keyframe 的 Frame：
-
-```powershell
-ffprobe -v error -select_streams v:0 -skip_frame nokey -show_frames -show_entries "frame=best_effort_timestamp_time,key_frame,pict_type" -of compact .\h264-gop.mp4
-```
-
-这里能回答“FFmpeg 在哪些时间点标了 keyframe”，不能单独回答“每个 keyframe 的 NAL unit type 是多少”。后一个问题要看 Bitstream Header。
-
-### 看 Packet 的 PTS、DTS 和 flags
-
-```powershell
-ffprobe -v error -select_streams v:0 -show_packets -show_entries "packet=pts_time,dts_time,duration_time,size,flags" -of compact .\h264-gop.mp4
-```
-
-如果 Encoder 产生了 B Picture，通常能观察到 PTS 与 DTS 的差异。`flags=K_` 表示 FFmpeg 对该 Packet 的 keyframe 标记；它同样不是一个通用的“IDR type detector”。
-
-### 提取 Annex B 并看 Start Code
-
-```powershell
-ffmpeg -y -i .\h264-gop.mp4 -map 0:v:0 -c:v copy -an -bsf:v h264_mp4toannexb .\h264-gop.h264
-Format-Hex -Path .\h264-gop.h264 | Select-Object -First 12
-```
-
-HEVC：
-
-```powershell
-ffmpeg -y -i .\h265-gop.mp4 -map 0:v:0 -c:v copy -an -bsf:v hevc_mp4toannexb .\h265-gop.h265
-Format-Hex -Path .\h265-gop.h265 | Select-Object -First 12
-```
-
-看到 Start Code 只证明 Annex B boundary 存在。具体 NAL Unit 顺序由 Encoder 与配置决定，不要只凭前 12 行 hex 就判断整段 Bitstream 完整。
-
-### 用 `trace_headers` 读语法字段
-
-H.264：
-
-```powershell
-ffmpeg -hide_banner -loglevel verbose -i .\h264-gop.mp4 -map 0:v:0 -c:v copy -bsf:v trace_headers -f null - 2>&1 | Select-String "Sequence Parameter Set|Picture Parameter Set|nal_unit_type|slice_type"
-```
-
-HEVC：
-
-```powershell
-ffmpeg -hide_banner -loglevel verbose -i .\h265-gop.mp4 -map 0:v:0 -c:v copy -bsf:v trace_headers -f null - 2>&1 | Select-String "Video Parameter Set|Sequence Parameter Set|Picture Parameter Set|nal_unit_type|slice_type"
-```
-
-`trace_headers` 是 Bitstream Filter，当前 FFmpeg build 必须列出并支持目标 Codec。它把解析结果写到 stderr，适合学习和定位 Header，不适合直接作为高吞吐生产日志常开。
-
-### 最后确认文件还能完整 Decode
+最后让原始样本完整解码一次：
 
 ```powershell
 ffmpeg -v error -i .\h264-gop.mp4 -f null -
 ffmpeg -v error -i .\h265-gop.mp4 -f null -
 ```
 
-`ffprobe` 能读到 Container Header，不代表所有 Packet 都能 Decode。完整 Decode 没有报错且 process exit code 为 0，才补上了这层证据；真实播放器、RTSP transport 和硬件 Decoder 仍需在目标环境验证。
-
-## 从现象回到正确层级
-
-| 现象 | 更值得先查什么 | 容易走错的方向 |
-| --- | --- | --- |
-| RTSP 连上却没有首帧 | Parameter Set、IDR/CRA、RTP reassembly、Decoder log | 先改 AI model |
-| 总要等 3～4 秒才出画面 | 实际 keyframe/IRAP interval、GOP 设置 | 只加大 player buffer |
-| `missing PPS` / `non-existing PPS` | SDP/extradata/in-band PPS 与 Slice reference | 只查端口是否通 |
-| MP4 中搜不到 Start Code | `avcC`/`hvcC`、length-prefixed sample | 判断 MP4 没有 H.264/H.265 |
-| raw `.h264` 无法播放 | 是否正确转成 Annex B、是否带 Parameter Set | 只改扩展名 |
-| PTS 与 DTS 不相等 | B Picture reorder 与 Container timeline | 直接重写时间戳 |
-| MediaMTX/GStreamer/DeepStream 报 invalid NAL | Codec、Parameter Set、RTP loss/reassembly、NAL boundary | Decoder 未出帧就调 TensorRT |
-
-把整篇收回到一条排查路径，就是：Container 或 RTP 先交出完整的压缩数据，NAL Units 再组成 Decoder 能理解的 Access Unit；正确的 Parameter Set 和随机访问点到齐后，Decoder 才能产生 Frame。AI pipeline 从 Frame 开始，前面任何一层没有成立，模型都还没有真正进入问题现场。
+无错误完成说明这两个本地样本可以被当前软件 Decoder 读完；它不等于特定摄像机、硬件 Decoder 或生产网络也已经通过。到了真实链路，仍要沿着 RTSP、RTP、NAL、参数集、随机访问点和 Decoder 输出逐层观察。
 
 相关阅读：[FFprobe 命令查询与理解](/tutorials/t2er6pk59/)、[案例学习：常见任务与面试题](/tutorials/t19hdgc9e/)。
 
-参考：[ITU-T H.264](https://www.itu.int/rec/T-REC-H.264)、[ITU-T H.265](https://www.itu.int/rec/T-REC-H.265)、[RFC 6184: RTP Payload Format for H.264](https://www.rfc-editor.org/rfc/rfc6184)、[RFC 7798: RTP Payload Format for HEVC](https://www.rfc-editor.org/rfc/rfc7798)、[FFmpeg Bitstream Filters Documentation](https://ffmpeg.org/ffmpeg-bitstream-filters.html)、[ffprobe Documentation](https://ffmpeg.org/ffprobe.html)。
+本文中的码流语义与命令参考 [ITU-T H.264](https://www.itu.int/rec/T-REC-H.264)、[ITU-T H.265](https://www.itu.int/rec/T-REC-H.265)、[RFC 6184：H.264 RTP Payload Format](https://www.rfc-editor.org/rfc/rfc6184)、[RFC 7798：HEVC RTP Payload Format](https://www.rfc-editor.org/rfc/rfc7798)、[FFmpeg Bitstream Filters Documentation](https://ffmpeg.org/ffmpeg-bitstream-filters.html) 与 [ffprobe Documentation](https://ffmpeg.org/ffprobe.html)。
