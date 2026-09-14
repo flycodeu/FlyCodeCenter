@@ -1,405 +1,191 @@
 ---
-title: Rust 模块系统（上）：Package / Crate / Module / Path / use / pub
+title: Package、Crate 与 Module：把代码拆成文件
 createTime: '2026/03/08 15:17:37'
 code: t1wp1yyjm
 permalink: /tutorials/t1wp1yyjm/
+summary: 通过一个能运行的 library 与 binary 示例，理解 module tree、path、use、pub 和 re-export。
+order: 9
+tags:
+  - Rust
+  - Cargo
+  - module
 ---
-## 0. 你要记住的一个心智模型
 
-把 Rust 的模块系统当成两层结构：
+前面的程序都能放进 `main.rs`。代码变多后，可以把可复用逻辑放进 library crate，再用 module 分组。先分清 Cargo 管的项目单位与 Rust 编译的单位。
 
-- 包（Package）：Cargo 的项目单位（有 Cargo.toml），用于组织一个或多个 crate。
+## Package、Crate、Module 的关系
 
-- crate：Rust 编译时最小单位（一个 crate 编成一个库或一个可执行文件）。
+| 名称 | 作用 | 本篇例子 |
+| --- | --- | --- |
+| Package | Cargo 组织构建与依赖的单位，有 `Cargo.toml` | `restaurant` |
+| Crate | Rust 的编译单元，可为 binary 或 library | `src/main.rs` 与 `src/lib.rs` 分别作为 root |
+| Module | crate 内的组织和可见性边界 | `front_of_house`、`hosting` |
+| Path | 定位 item 的名称序列 | `crate::front_of_house::hosting` |
 
-- 模块（module）：crate 内部的目录树/命名空间，用来分组代码 + 控制可见性。
+一个 Package 可以有多个 binary target，最多一个 library target，至少包含一个 crate。测试、示例等 Cargo target 也有相应构建规则；这里先学习常见的 binary / library 布局。
 
-- 路径（path）：在“模块树”里定位某个东西的方式。
-
-- use/pub：让路径更好用、对外暴露 API 的工具。
-
-## 1. Package 与 Crate
-### 1.1 crate 是什么？
-
-crate 是 Rust 编译器的最小编译单元。
-
-就算你用 rustc foo.rs 编译单文件，编译器也会把它当成一个 crate。
-
-crate 有两种：
-
-- Binary crate（二进制 crate）
-  - 会编译成可执行程序 
-  - 必须有 fn main()
-
-- Library crate（库 crate）
-
-  - 不会生成可执行文件
-
-  - 没有 main
-
-  - 用于提供可复用功能（类似其他语言里的 library）
-
-### 1.2 crate root 是什么？
-
-crate root 是编译器构建模块树的起点文件：
-
-- 库 crate 通常是 src/lib.rs
-
-- 二进制 crate 通常是 src/main.rs
-
-crate root 文件的内容会构成一个隐式的根模块：crate
-
-### 1.3 package 是什么？
-
-package 是一个或多个 crate 的打包单位，由 Cargo.toml 描述构建方式。
-
-一个 package：
-
-- 最多包含 1 个库 crate（src/lib.rs）
-
-- 可以包含多个二进制 crate（src/main.rs + src/bin/*.rs）
-
-- 但至少要有 1 个 crate（库或二进制）
-
-### 1.4 cargo new 创建了什么？
-
-运行：
-```rus
-cargo new my-project
+```mermaid
+flowchart TD
+  P[Package: restaurant] --> M[Cargo.toml]
+  P --> B[Binary crate root: src/main.rs]
+  P --> L[Library crate root: src/lib.rs]
+  L --> F[module: front_of_house]
+  F --> H[module: hosting]
+  B -->|通过公开 API 使用| L
 ```
 
-通常会得到：
-```
-my-project
-├── Cargo.toml
-└── src
-    └── main.rs
-```
+crate root 是编译器建立 module tree 的起点。library 不需要程序入口 `main`；普通 binary 示例需要入口。两者即使在同一个 Package 中，也仍是两个 crate，不能互相直接访问私有 item。
 
-这表示：package 名叫 my-project，里面有一个同名的二进制 crate，其 crate root 是 src/main.rs。
+## 先在一个文件中声明 module
 
-如果你再加一个 src/lib.rs：
-```
-src/
-    main.rs   # binary crate root
-    lib.rs    # library crate root
-```
+这个独立程序可以作为 `src/main.rs` 运行：
 
-这表示：同一个 package 内含 一个库 crate + 一个二进制 crate（两个 crate 的名字默认都跟 package 名相同）。
-
-## 2. 模块（module）与模块树（module tree）
-   ### 2.1 为什么要模块？
-
-模块主要解决两件事：
-
-- 把相关代码组织到一起（可读性、可维护性）
-
-- 控制可见性（默认私有，细节封装）
-
-### 2.2 模块树是什么？
-
-模块是嵌套的，会形成一棵树，比如：
 ```rust
 mod front_of_house {
-mod hosting {
-    fn add_to_waitlist() {}
+    pub mod hosting {
+        pub fn add_to_waitlist() -> &'static str {
+            "added to waitlist"
         }
+    }
+}
+
+use crate::front_of_house::hosting;
+
+fn main() {
+    assert_eq!(hosting::add_to_waitlist(), "added to waitlist");
+    println!("{}", hosting::add_to_waitlist());
 }
 ```
 
-对应模块树（简化）：
-```
+这里没有多个文件，但已经有 module tree：
+
+```text
 crate
-└── front_of_house
-└── hosting
-    └── add_to_waitlist
+├── front_of_house
+│   └── hosting
+│       └── add_to_waitlist
+└── main
 ```
-## 3. 模块声明与“文件怎么对应模块”
-   ### 3.1 在 crate root 里声明模块
 
-在 src/main.rs 或 src/lib.rs：
+`mod` 声明 module，`use` 把已有路径对应的名字引入当前 scope。`use` 不负责加载文件，也不会绕过 privacy。
+
+`&'static str` 表示引用在 `'static` lifetime 内有效；这里返回字符串字面量，因此不需要分配 `String`。
+
+## Path 与 privacy
+
+| 写法 | 从哪里找 |
+| --- | --- |
+| `crate::...` | 当前 crate 的 root |
+| `self::...` | 当前 module |
+| `super::...` | 父 module |
+| `std::...` | 以已引入的 crate 名定位，例如标准库 |
+
+在 edition 2024 中，本篇按这些路径规则编写。普通 module、函数和 struct 字段默认 private；private item 可由定义它的 module 及其子 module 访问。public item 能否从某处通过一条路径访问，还取决于路径中祖先 module 的可见性。
+
+上例中，root 的 `main` 可以访问 root 内定义的 `front_of_house`；但要继续进入其内部的 `hosting` 并调用函数，需要把后两者公开。`pub mod hosting` 不会自动把 `hosting` 内的函数也变为 public。
+
+`pub struct` 的字段仍默认 private。`pub enum` 的 variant 默认 public，`pub trait` 中的 associated item 也默认 public；“一切都默认私有”会遗漏这些例外。只需 crate 内共享时，可以使用 `pub(crate)`。
+
+## 拆为 library 与 binary
+
+新建另一个练习项目：
+
+```powershell
+cargo new restaurant --edition 2024
+cd restaurant
+```
+
+按下面路径创建或替换文件。四段代码属于同一个项目，不是四个独立程序。
+
+`src/lib.rs`：
+
 ```rust
-pub mod garden;
-``` 
-
-编译器会按规则找模块代码（常见新风格）：
-```rust
-src/garden.rs
-```
-或 src/garden/mod.rs（旧风格，仍支持但不推荐混用）
-
-### 3.2 子模块怎么找？
-
-如果 src/garden.rs 里写：
-```rust
-pub mod vegetables;
-```
-
-编译器会找：
-```rust
-src/garden/vegetables.rs
-
-或 src/garden/vegetables/mod.rs
-```
-## 4. 路径（Path）：如何定位模块树里的东西
-
-路径分两种：
-
-### 4.1 绝对路径
-
-当前 crate：从 crate:: 开始
-
-外部 crate：从 crate 名开始（例如 rand::、std::）
-
-例子：
-```rust
-crate::front_of_house::hosting::add_to_waitlist();
-std::collections::HashMap;
-rand::thread_rng();
-```
-### 4.2 相对路径
-
-从当前模块出发：
-```
-self::...（当前模块）
-
-super::...（父模块）
-```
-或直接以当前模块下的标识符开头
-
-例子：
-```rust
-front_of_house::hosting::add_to_waitlist();
-super::deliver_order();
-```
-## 5. 可见性：private vs pub（这块最容易卡）
-   ### 5.1 默认规则：一切默认私有
-
-模块、函数、结构体、枚举、方法、常量……默认对父模块私有。
-
-所以你写：
-```rust
-mod front_of_house {
-mod hosting {
-    fn add_to_waitlist() {}
-    }
-}
-
-pub fn eat_at_restaurant() {
-    crate::front_of_house::hosting::add_to_waitlist();
-}
-
-```
-会报错：hosting 是 private。
-
-### 5.2 pub 只“打开门”，不“开箱子”
-
-你把模块改成公有：
-```rust
-mod front_of_house {
-    pub mod hosting {
-        fn add_to_waitlist() {}
-    }
-}
-
-```
-仍然会报错：add_to_waitlist 是 private。
-
-要能调用，必须两层都 pub：
-```rust
-mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
-```
-## 6. use：把长路径变短（但作用域很重要）
-  ### 6.1 use 是“在当前作用域创建捷径”
-```rust   
-use crate::front_of_house::hosting;
-
-pub fn eat_at_restaurant() {
-    hosting::add_to_waitlist();
-}
-```
-### 6.2 use 只在它所在的作用域生效
-
-如果 use 在根模块，但函数在子模块里：
-```rust
-use crate::front_of_house::hosting;
-
-mod customer {
-    pub fn eat_at_restaurant() {
-        hosting::add_to_waitlist(); // ❌ 这里看不到 hosting
-    }
-}
-
-```
-解决方法：
-
-把 use 放到 mod customer 里面
-
-或者在子模块用完整路径
-
-或者在子模块用 super:: 访问父模块中已存在的东西（注意：这需要父模块里确实有对应名字）
-
-## 7. 惯用法：use 怎么写更“Rust”
-  ### 7.1 引入函数：通常引入父模块
-
-推荐（更清晰地表明函数来源）：
-```rust
-use crate::front_of_house::hosting;
-
-hosting::add_to_waitlist();
-```
-
-不太推荐：
-```rust
-use crate::front_of_house::hosting::add_to_waitlist;
-
-add_to_waitlist();
-```
-### 7.2 引入类型（struct/enum/trait）：通常引入完整路径
-```rust
-use std::collections::HashMap;
-```
-### 7.3 同名冲突：两种解法
-
-解法 A：用父模块区分
-```rust
-use std::fmt;
-use std::io;
-
-fn f1() -> fmt::Result { Ok(()) }
-fn f2() -> io::Result<()> { Ok(()) }
-```
-
-解法 B：用 as 起别名
-```rust
-use std::io::Result as IoResult;
-```
-## 8. pub use：重导出（对外 API 很重要）
-
-如果你的内部结构是：
-```rust
-mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
-    }
-}
-```
-
-但你希望用户写：
-```rust
-restaurant::hosting::add_to_waitlist()
-```
-
-而不是：
-```rust
-restaurant::front_of_house::hosting::add_to_waitlist()
-```
-
-你可以在 crate root：
-```rust
-pub use crate::front_of_house::hosting;
-```
-
-这叫 重导出（re-export）：既在当前作用域用，也对外暴露。
-
-## 9. struct / enum 的 pub 细节（很容易记错）
-   ### 9.1 pub struct：结构体公有 ≠ 字段公有
-```rust   
-pub struct Breakfast {
-   pub toast: String,
-        seasonal_fruit: String, // 仍是私有
-   }
-```   
-
-要创建实例，如果有私有字段，你通常要提供一个公共构造函数（关联函数）：
-```rust
-impl Breakfast {
-    pub fn summer(toast: &str) -> Breakfast {
-        Breakfast { toast: toast.into(), seasonal_fruit: "peaches".into() }
-    }
-}
-```
-### 9.2 pub enum：枚举公有 ⇒ 变体全公有（默认就这样）
-```rust
-pub enum Appetizer {
-    Soup,
-    Salad,
-}
-```
-## 10. 二进制 + 库 crate 的最佳实践（强烈推荐）
-
-当一个 package 同时有：
-```rust
-src/main.rs（binary）
-
-src/lib.rs（library）
-```
-建议：
-
-绝大多数逻辑写在 lib crate
-
-`main.rs` 只做“入口”和少量参数解析/启动逻辑
-
-好处：
-
-- 你的逻辑可复用（以后写测试、写另一个二进制入口都方便）
-
-- main.rs 像“库的用户”一样使用 public API，更容易保持 API 稳定
-
-## 11. 分文件组织：从单文件到多文件的正确姿势
-   ### 11.1 从 crate root 声明模块（lib.rs 或 main.rs）
-```rust
-src/lib.rs：
-
 mod front_of_house;
 
 pub use crate::front_of_house::hosting;
 
-pub fn eat_at_restaurant() {
-    hosting::add_to_waitlist();
+pub fn eat_at_restaurant() -> &'static str {
+    hosting::add_to_waitlist()
 }
 ```
-### 11.2 新建模块文件
-```rust
-src/front_of_house.rs：
 
+`src/front_of_house.rs`：
+
+```rust
 pub mod hosting;
 ```
 
-### 11.3 子模块放在同名目录
-```rust
-src/front_of_house/hosting.rs：
+`src/front_of_house/hosting.rs`：
 
-pub fn add_to_waitlist() {}
-
-```
-最终目录：
 ```rust
-src/
-    lib.rs
-    front_of_house.rs
-    front_of_house/
-        hosting.rs
+pub fn add_to_waitlist() -> &'static str {
+    "added to waitlist"
+}
 ```
 
-旧风格 mod.rs 仍支持，但不建议同项目混用两套风格，否则容易让团队迷惑。
+`src/main.rs`：
 
-## 12. 模块小抄（Cheat Sheet）
+```rust
+fn main() {
+    assert_eq!(restaurant::eat_at_restaurant(), "added to waitlist");
+    println!("{}", restaurant::hosting::add_to_waitlist());
+}
+```
 
-- crate root：src/lib.rs 或 src/main.rs
+最后的目录应是：
 
-- mod x; 会让编译器去找 x.rs 或 x/mod.rs
+```text
+restaurant/
+├── Cargo.toml
+└── src/
+    ├── main.rs
+    ├── lib.rs
+    ├── front_of_house.rs
+    └── front_of_house/
+        └── hosting.rs
+```
 
-- 默认 私有，要外部可见必须 pub
+```powershell
+cargo check
+cargo run
+```
 
-- pub mod 只让“模块名可见”，模块内部内容仍需 pub
+输出应包含 `added to waitlist`。binary 通过 `restaurant::` 调用 library；若在 `main.rs` 写 `crate::hosting`，这个 `crate` 指的是 binary 自己，不会自动指向 `lib.rs`。
 
-- use 只在当前作用域创建捷径
+### mod 文件的查找规则
 
-pub use = 捷径 + 对外暴露（重导出）
+在 `src/lib.rs` 写 `mod front_of_house;`，通常对应 `src/front_of_house.rs` 或 `src/front_of_house/mod.rs`，两者不能同时作为该 module 的定义。在 `front_of_house.rs` 声明 `mod hosting;`，子 module 可放在 `front_of_house/hosting.rs`。
 
-pub struct 字段仍默认私有；pub enum 变体默认公有
+`mod.rs` 写法仍受支持；本篇统一采用同名 `.rs` 文件。文件拆分不改变 module tree。没有 `mod` 声明，仅在目录中新增一个 `.rs` 文件，不会自动把它加入普通 module tree。
+
+### pub use：re-export
+
+library 中的 `front_of_house` 保持 private，`pub use ...::hosting` 将 `hosting` 重新导出到 root。调用者因此可以写 `restaurant::hosting::...`，不必经由内部路径。
+
+### use 的 scope 与别名
+
+root 中写了 `use`，子 module 不能直接假定该名字已经进入自己的 scope；可以在子 module 内重新 `use`，或通过 `super::`、`crate::` 访问适当路径。
+
+同名类型可以用 `as` 区分：
+
+```rust
+use std::fmt;
+use std::io::Result as IoResult;
+
+fn format_result() -> fmt::Result {
+    Ok(())
+}
+
+fn io_result() -> IoResult<()> {
+    Ok(())
+}
+
+fn main() {
+    assert!(format_result().is_ok());
+    assert!(io_result().is_ok());
+}
+```
+
+引入函数的父 module，通常能让调用处保留来源；直接引入函数本身也合法，这是组织风格而非编译要求。Package 名含 `-` 时，Rust 路径中的 library crate 名通常用 `_`；本篇使用 `restaurant` 避免把命名转换与 module 规则混在一起。
+
+参考：[Packages and Crates](https://doc.rust-lang.org/1.92.0/book/ch07-01-packages-and-crates.html)、[Defining Modules](https://doc.rust-lang.org/1.92.0/book/ch07-02-defining-modules-to-control-scope-and-privacy.html)、[use](https://doc.rust-lang.org/1.92.0/book/ch07-04-bringing-paths-into-scope-with-the-use-keyword.html)、[Separating Modules into Different Files](https://doc.rust-lang.org/1.92.0/book/ch07-05-separating-modules-into-different-files.html)、[Visibility and Privacy](https://doc.rust-lang.org/1.92.0/reference/visibility-and-privacy.html)、[Cargo Targets](https://doc.rust-lang.org/1.92.0/cargo/reference/cargo-targets.html)。

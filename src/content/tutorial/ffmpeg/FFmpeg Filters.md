@@ -5,7 +5,7 @@ code: tffmpeg-filters
 permalink: /tutorials/tffmpeg-filters/
 summary: 从一条可以运行的命令出发，读懂 Filter、Filterchain、Filtergraph、Label 与 PowerShell 写法。
 description: 用缩放、裁剪、叠加 Logo 和调整音量等实例，讲清 FFmpeg Filters 的连接方式与调试方法。
-order: 5
+order: 6
 tags:
   - FFmpeg
   - Filters
@@ -15,21 +15,21 @@ tags:
 category: 音视频
 ---
 
-第一次写 `-vf "scale=1280:-2,fps=25"` 时，它看起来很像一串普通参数。直到要叠加 Logo，第二个输入、分号、Label 和 `-map` 挤在同一条命令里，才会发现真正要理解的不是某个 Filter 的名字，而是 Frame 怎样在 Filtergraph 里流动。
+`scale` 改尺寸，`fps` 改帧率，`overlay` 把两路画面叠起来。将这些滤镜连成命令时，需要说明帧从哪里来、经过哪些处理、结果写到哪里。
 
 这篇从一条短命令开始，逐步走到多输入 Filtergraph。文中的示例都按 Windows PowerShell 单行命令编写，`input.mp4`、`logo.png` 和 `output.mp4` 替换成自己的路径即可。
 
 ## 先跑一条 Filterchain
 
-把视频宽度缩到 1280，保持原比例，并输出 25 FPS：
+把视频宽度设为 1280，高度按比例计算，并输出 25 FPS。输入宽度不足 1280 时也会放大：
 
 ```powershell
 ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2,fps=25" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-这条命令在做什么：把画面缩到宽 1280、改成 25 帧/秒，视频重新编码，音频尽量 Stream Copy。
+视频经过缩放和帧率处理后重新编码，音频使用 Stream Copy。复制的前提是 MP4 支持源音频编码，否则需要改用兼容编码器或容器。
 
-`-vf` 后面的内容是一条 Video Filterchain，从左向右读：
+`-vf` 后面的内容在本例中是一条 Video Filterchain，从左向右读：
 
 ```text
 Decoded Video Frame → scale → fps → Encoder
@@ -37,15 +37,14 @@ Decoded Video Frame → scale → fps → Encoder
 
 - `scale=w=1280:h=-2` 把宽度设为 1280，高度按原比例计算并取偶数；
 - `,` 把两个 Filter 串在同一条 Filterchain 中；
-- `fps=25` 重新安排输出 Frame，使输出成为 25 FPS；
-- `-c:v libx264` 对处理后的 Frame 重新 Encode；
-- Audio Stream 没有经过 Filter，因此这里尝试用 `-c:a copy` 保留原始 Audio Packet。
+- `fps=25` 重新安排输出帧，使输出成为 25 FPS；
+- `-c:v libx264` 对处理后的帧重新编码；
+- 音频流没有经过滤镜，因此这里尝试用 `-c:a copy` 保留原始音频包。
 
-最后一句特意用了“尝试”。Stream Copy 能否成功还取决于输出 Container 是否接受原来的 Codec；例如把某些音频直接复制进 MP4，Container 与 Codec 不兼容时仍会失败。
 
 ## Filter 工作在什么位置
 
-FFmpeg 从 Container 中 Demux 出压缩的 Packet，Decoder 再把 Packet 还原成 Frame。Filter 接触的是 Decode 后的 Frame，不是压缩 Packet。
+FFmpeg 从容器中解封装出压缩的 Packet，解码器再把 Packet 还原成帧。滤镜接触的是解码后的帧，不是压缩 Packet。
 
 ```mermaid
 flowchart LR
@@ -68,7 +67,7 @@ flowchart LR
 Filtering and streamcopy cannot be used together
 ```
 
-同一条 Video Stream 一旦经过 `scale`、`crop`、`fps`、`drawbox` 或 `overlay`，就不能再使用 `-c:v copy`。Audio Stream 如果完全没改，仍有机会单独使用 `-c:a copy`；反过来也一样。
+同一条视频流一旦经过 `scale`、`crop`、`fps`、`drawbox` 或 `overlay`，就不能再使用 `-c:v copy`。音频流如果完全没改，仍有机会单独使用 `-c:a copy`；反过来也一样。
 
 ## Filter、Filterchain、Filtergraph
 
@@ -80,9 +79,9 @@ Filtering and streamcopy cannot be used together
 | Filterchain | `scale=1280:-2,fps=25` | 用逗号连接的一条处理路径 |
 | Filtergraph | `[0:v]split[a][b];...` | 由一条或多条 Filterchain 组成的完整连接图 |
 
-Filter 有 Input Pad 和 Output Pad，两个 Pad 之间的连接叫 Link。`[main]`、`[logo]`、`[outv]` 这类 Label 是 Link 的名字，用来说明某段 Frame 接下来要去哪里。
+每个 Filter 可以有 Input Pad 和 Output Pad，用于接收、输出 Frame；Pad 之间的连接称为 Link。方括号中的名字称为 Link Label，例如 `[main]`、`[logo]`、`[outv]`，用于标识连接的两端。本文保留这些官方术语，中文说明只解释它们的作用。
 
-普通 `scale` 通常是 1 input / 1 output，`split` 是 1 input / N outputs，`overlay` 则是 2 inputs / 1 output。出现分支、合并或多个输入后，仅靠从左到右的默认连接很容易看错，这时 Label 就有用了。
+`scale` 通常一路输入、一路输出；`split` 将一路分成多路；`overlay` 接收两路，合成一路。出现分支或合并后，用 Link Label 标明连接，便于核对各路 Frame 的去向。
 
 ### 四种符号怎样读
 
@@ -90,7 +89,7 @@ Filter 有 Input Pad 和 Output Pad，两个 Pad 之间的连接叫 Link。`[mai
 [0:v]scale=w=1280:h=-2,fps=25[base];[base][1:v]overlay=x=W-w-24:y=H-h-24[outv]
 ```
 
-不用急着背，按停顿位置拆开。可以把 Label 想成临时变量：
+按分隔符拆开。Link Label 标识连接，不能像普通变量一样任意重复读取；需要分出多路时使用 `split`：
 
 ```text
 :   同一个 Filter 里的不同 option     scale=w=1280:h=-2
@@ -99,9 +98,9 @@ Filter 有 Input Pad 和 Output Pad，两个 Pad 之间的连接叫 Link。`[mai
 []  给中间结果起名字                 [base]、[outv]
 ```
 
-于是上面的内容可以读成：从第一个输入取 Video Stream，经过 `scale` 和 `fps` 后命名为 `[base]`；再把 `[base]` 与第二个输入的视频交给 `overlay`，结果叫 `[outv]`。
+于是上面的内容可以读成：从第一个输入取视频流，经过 `scale` 和 `fps` 后命名为 `[base]`；再把 `[base]` 与第二个输入的视频交给 `overlay`，结果叫 `[outv]`。
 
-### option 尽量写名字
+### 参数按位置传入，或写出名称
 
 下面两种写法都很常见：
 
@@ -110,9 +109,9 @@ crop=1280:720:0:0
 crop=w=1280:h=720:x=0:y=0
 ```
 
-第一种短，第二种更适合博客、脚本和半年后的自己。不同 Filter 的 option 顺序并不相同，排查问题时显式名称也更容易看出传错了哪个值。
+第一种按位置传参，第二种写出参数名。不同滤镜的参数顺序不同，显式名称便于核对尺寸和坐标。
 
-当前 FFmpeg build 实际支持什么，以本机帮助为准：
+当前 FFmpeg 构建实际支持什么，以本机帮助为准：
 
 ```powershell
 ffmpeg -hide_banner -h filter=scale
@@ -126,12 +125,12 @@ ffmpeg -hide_banner -h filter=overlay
 
 | 参数 | 适合的连接 | 例子 |
 | --- | --- | --- |
-| `-vf` | 单路 Video Filterchain | 缩放、裁剪、改 FPS |
-| `-af` | 单路 Audio Filterchain | 调音量、重采样、淡入淡出 |
+| `-vf` | 一个视频输入、一个视频输出的 Simple Filtergraph | 缩放、裁剪、改 FPS |
+| `-af` | 一个音频输入、一个音频输出的 Simple Filtergraph | 调音量、重采样、淡入淡出 |
 | `-filter_complex` / `-lavfi` | 多输入、分支、合并或多输出 | Logo、画中画、分屏、混音 |
 | `-f lavfi -i` | 使用 Libavfilter virtual input device | `testsrc2`、`color`、`sine` |
 
-CLI option `-lavfi <graph_description>` 是 `-filter_complex` 的 alias；`-f lavfi -i "..."` 则是另一条路径，它让 Libavfilter virtual input device 生成测试画面或声音：
+`-lavfi <graph_description>` 是 `-filter_complex` 的别名；`-f lavfi -i "..."` 则通过 libavfilter 虚拟输入设备生成测试画面或声音：
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=1280x720:rate=25:duration=5" -c:v libx264 -pix_fmt yuv420p test.mp4
@@ -139,21 +138,30 @@ ffmpeg -y -f lavfi -i "testsrc2=size=1280x720:rate=25:duration=5" -c:v libx264 -
 
 ## 几个常用 Video Filter
 
-### `scale`：把画面装进目标尺寸
+### `scale`：固定宽度与固定画布
 
 ```powershell
-ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2:force_original_aspect_ratio=decrease" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
+ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-`h=-2` 会按比例计算高度，并让结果能被 2 整除。`force_original_aspect_ratio=decrease` 表示只把画面放进 1280 宽的限制框，不为了凑尺寸而拉伸。
+`h=-2` 按比例计算高度，并使高度能被 2 整除。例如 640×360 的方形像素素材会变成 1280×720；这条命令会放大小视频。
 
 如果需求是固定 1280×720 并用黑边补齐，单独一个 `scale` 不够：
 
 ```powershell
-ffmpeg -i input.mp4 -vf "scale=w=1280:h=720:force_original_aspect_ratio=decrease,pad=w=1280:h=720:x=(ow-iw)/2:y=(oh-ih)/2:color=black" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
+ffmpeg -i input.mp4 -vf "scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=w=1280:h=720:x=(ow-iw)/2:y=(oh-ih)/2:color=black" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-这里 `scale` 负责“放进去”，`pad` 负责“补到固定画布”。这比强行把任意比例拉成 16:9 更稳妥。
+`scale` 先保持比例装进 1280×720 的尺寸框，`force_divisible_by=2` 使缩放尺寸为偶数，`pad` 再居中补黑边。`decrease` 相对的是给定的尺寸框，不是原视频尺寸，因此不保证只缩小。这个例子按方形像素素材理解；非方形像素还要检查 `sample_aspect_ratio` 和显示比例。
+
+```text
+原画面 → 等比缩放 → 放到固定画布中央
+                   ┌─────────────────┐
+                   │      黑边       │
+                   │    缩放画面     │
+                   │      黑边       │
+                   └─────────────────┘
+```
 
 ### `crop`：从 Frame 中取一块区域
 
@@ -163,7 +171,7 @@ ffmpeg -i input.mp4 -vf "scale=w=1280:h=720:force_original_aspect_ratio=decrease
 ffmpeg -i input.mp4 -vf "crop=w=1280:h=720:x=(iw-1280)/2:y=(ih-720)/2" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-`iw`、`ih` 是 input width / input height。如果原视频小于目标尺寸，这条命令会失败。面对来源不固定的素材，可以先用 `ffprobe` 看宽高，再决定是先 `scale` 还是直接 `crop`。
+`iw`、`ih` 是输入宽度和高度。如果原视频小于目标尺寸，这条命令会失败。面对来源不固定的素材，可以先用 `ffprobe` 看宽高，再决定是先 `scale` 还是直接 `crop`。
 
 ### `fps`：改变输出 Frame 的节奏
 
@@ -171,7 +179,7 @@ ffmpeg -i input.mp4 -vf "crop=w=1280:h=720:x=(iw-1280)/2:y=(ih-720)/2" -c:v libx
 ffmpeg -i input.mp4 -vf "fps=fps=25" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-`fps` 会通过丢弃或复制 Frame 形成目标恒定 FPS。它不是“给文件标签改成 25”，也不等于编码器的 `-r` 在所有位置都具有相同语义。只在交付规格、播放器或后续算法明确要求时改变 FPS。
+`fps` 会通过丢弃或复制帧形成目标恒定 FPS。它不是“给文件标签改成 25”，也不等于编码器的 `-r` 在所有位置都具有相同语义。只在交付规格、播放器或后续算法明确要求时改变 FPS。
 
 ### `format`：约束 Pixel Format
 
@@ -187,7 +195,7 @@ ffmpeg -i input.mp4 -vf "format=pix_fmts=yuv420p" -c:v libx264 -crf 23 -preset m
 ffmpeg -i input.mp4 -vf "drawbox=x=20:y=20:w=320:h=180:color=red@0.7:t=4" -c:v libx264 -crf 23 -preset medium -c:a copy output.mp4
 ```
 
-这里的 `t=4` 是边框 thickness，不是 time。若只想让框在一段时间内出现，需要使用 `enable`；动态移动框则要用 runtime command，下一篇会单独展开。
+这里的 `t=4` 表示边框厚度为 4 像素。只在特定时间段显示红框用 `enable`；运行中改变坐标可用运行时命令，下一篇有对应例子。
 
 ## 两个常用 Audio Filter
 
@@ -203,7 +211,7 @@ ffmpeg -i input.mp4 -af "volume=1.5" -c:v copy -c:a aac -b:a 128k output.mkv
 ffmpeg -i input.mp4 -vn -af "aresample=48000" -c:a pcm_s16le output.wav
 ```
 
-`volume` 与 `aresample` 都处理 Decode 后的 Audio Frame，所以 Audio Stream 需要重新 Encode；它们不会让未参与处理的 Video Stream 自动重新 Encode。
+`volume` 与 `aresample` 都处理解码后的音频帧，所以音频流需要重新编码；它们不会让未参与处理的视频流自动重新编码。
 
 ## 从 Logo 叠加读懂 `-filter_complex`
 
@@ -223,18 +231,18 @@ flowchart LR
   OUT --> MAP[-map outv]
 ```
 
-沿着 Link 读一遍就不难了：
+沿着连接读一遍就不难了：
 
-1. `-i input.mp4` 是 input 0，`-i logo.png` 是 input 1；
-2. `[1:v]` 取 input 1 的第一条 Video Stream；
+1. `-i input.mp4` 是输入 0，`-i logo.png` 是输入 1；
+2. `[1:v]` 取输入 1 的第一条视频流；
 3. `scale` 的输出命名为 `[logo]`；
-4. `overlay` 的第一个 input 是主画面，第二个 input 是覆盖层；
+4. `overlay` 的第一个输入是主画面，第二个输入是覆盖层；
 5. 合成结果命名为 `[outv]`，再由 `-map "[outv]"` 送进输出文件；
-6. `-map 0:a:0?` 尝试带上 input 0 的第一条 Audio Stream，末尾 `?` 表示没有音频时不要报错。
+6. `-map 0:a:0?` 尝试带上输入 0 的第一条音频流，末尾 `?` 表示没有音频时不要报错。
 
 把 `x`、`y` 写成名称更不容易读错。`W`、`H` 是主画面尺寸，`w`、`h` 是覆盖层尺寸，所以 `W-w-24:H-h-24` 就是距右边、下边各 24 像素。
 
-静态图片在不同 FFmpeg build、Container 和结束策略下可能出现时长问题。需要让输出严格跟随主视频时，可以为图片输入使用 `-loop 1`，并明确输出时长或 `shortest` 语义；多输入的 EOF 行为会在下一篇的 framesync 部分说明。
+本例使用 `overlay` 默认的 `eof_action=repeat` 和 `repeatlast=1`，辅助图片结束后会继续使用最后一帧，直至主视频结束。带 Link Label 的输出 `[outv]` 必须映射且仅映射一次；没有 Link Label 的 Complex Filtergraph 输出会自动加入第一个输出文件。更多结束策略见下一篇的 framesync 部分。
 
 ## 一个分支 Filtergraph
 
@@ -252,11 +260,11 @@ ffmpeg -i input.mp4 -filter_complex "[0:v]split[main][tmp];[tmp]crop=w=iw:h=ih/2
 [main][flip]overlay=...[outv]
 ```
 
-如果只盯着完整命令，这段很拥挤；如果把每个 Label 当成临时变量，它其实只是“复制一份 → 处理副本 → 合回主画面”。
+`split` 分出两路：一路保留原画面，另一路裁出上半幅并翻转；最后在 `overlay` 处合并。
 
-## PowerShell 中怎样少受转义折磨
+## PowerShell 的字符串与转义
 
-Filtergraph 已经有自己的逗号、冒号、分号和方括号，外面还套着 PowerShell 字符串。图稍长时，可以把路径和 Filtergraph 放进变量：
+Filtergraph 已经有自己的逗号、冒号、分号和方括号，外面还套着 PowerShell 字符串。描述稍长时，可以把路径和 Filtergraph 放进变量：
 
 ```powershell
 $sourcePath = ".\input.mp4"
@@ -268,41 +276,41 @@ ffmpeg -i $sourcePath -i $logoPath -filter_complex $filterGraph -map "[outv]" -m
 
 路径含空格时让变量保存完整字符串即可。不要把 Bash 教程里的反斜杠续行原样复制到 PowerShell。
 
-`drawtext` 会再引入文字、字体路径和更多转义。长文案优先使用 `textfile=`，字体位置用 `fontfile=` 明确指定，并先查看当前 build 的帮助：
+`drawtext` 会再引入文字、字体路径和更多转义。长文案优先使用 `textfile=`，字体位置用 `fontfile=` 明确指定，并先查看当前构建的帮助：
 
 ```powershell
 ffmpeg -hide_banner -h filter=drawtext
 ```
 
-## Encode 参数仍然是另一件事
+## 滤镜处理后怎样编码
 
-Filtergraph 决定 Frame 怎样变化，Encoder 决定处理后的 Frame 怎样压缩。两部分不要混在一起理解。
+Filtergraph 决定 Frame 怎样变化，Encoder 决定处理后的 Frame 怎样压缩。
 
 ```powershell
 ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2" -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k output.mp4
 ```
 
-- `libx264` 是 Video Encoder；当前 build 未必都带有它，可用 `ffmpeg -encoders` 查询；
-- `-crf 23` 是 x264 常见的质量起点，不是 23% 画质，也不能原样套到每种 Encoder；
+- `libx264` 是视频编码器；当前构建未必都带有它，可用 `ffmpeg -encoders` 查询；
+- `-crf 23` 是 x264 常见的质量起点，不是 23% 画质，也不能原样套到每种编码器；
 - `-preset medium` 主要权衡编码速度与压缩效率；
-- `-c:a aac -b:a 128k` 为 Audio Stream 选择 AAC 与目标 bitrate。
+- `-c:a aac -b:a 128k` 为音频流选择 AAC 与目标码率。
 
-查看当前机器的 Filter 和 Encoder：
+查看当前机器的滤镜和编码器：
 
 ```powershell
 ffmpeg -hide_banner -filters 2>&1 | Select-String "scale|crop|fps|overlay|drawtext|volume"
 ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265|aac|libopus"
 ```
 
-## 命令跑完后再看三件事
+## 检查尺寸、解码和播放效果
 
-先用 `ffprobe` 看 Container 和 Stream 参数：
+先用 `ffprobe` 看容器和 Stream 参数：
 
 ```powershell
 ffprobe -v error -show_entries "format=format_name,duration:stream=index,codec_type,codec_name,width,height,pix_fmt,avg_frame_rate" -of json output.mp4
 ```
 
-再完整 Decode 一遍。没有输出并且 exit code 为 0，才表示 Decoder 没发现错误：
+再完整解码一遍，同时检查错误日志和退出码：
 
 ```powershell
 ffmpeg -v error -i output.mp4 -map 0:v? -map 0:a? -f null -
@@ -325,8 +333,8 @@ ffplay -autoexit output.mp4
 | `Invalid argument` | option 范围、Filtergraph 分隔符和 PowerShell 字符串 |
 | 可以播放但规格不对 | 用 `ffprobe` 对照 width、height、FPS、Pixel Format 与 Codec |
 
-调试长 Filterchain 时，先只留第一个 Filter，跑通后再一个个接回去。这样很快就能定位是 Frame 尺寸、Pixel Format、时间戳，还是 Encoder 在拒绝输入。
+调试长 Filterchain 时，先只保留第一个 Filter，确认输出后逐个接回去。每次只改变一个环节，便于核对尺寸、像素格式、时间戳或编码器报错。
 
 继续阅读：[FFmpeg Filters 进阶：Timeline、framesync 与 Audio](/tutorials/tffmpeg-filters-2/)。
 
-参考：[FFmpeg Filters Documentation](https://ffmpeg.org/ffmpeg-filters.html)、[FFmpeg CLI Documentation](https://ffmpeg.org/ffmpeg.html)。
+参考：[Filtergraph syntax](https://ffmpeg.org/ffmpeg-filters.html#Filtergraph-syntax)、[scale](https://ffmpeg.org/ffmpeg-filters.html#scale)、[overlay](https://ffmpeg.org/ffmpeg-filters.html#overlay)、[Complex filtergraphs 的输出映射](https://ffmpeg.org/ffmpeg.html#Complex-filtergraphs-1)。

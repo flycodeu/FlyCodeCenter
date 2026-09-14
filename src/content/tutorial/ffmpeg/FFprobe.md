@@ -5,7 +5,7 @@ code: t2er6pk59
 permalink: /tutorials/t2er6pk59/
 summary: 用 ffprobe 查询容器、媒体流、字段、时间和数据，并读懂 JSON 输出。
 description: FFprobe 官方命令的入门查询手册：从常用结构探测开始，逐步深入 Stream、Packet、Frame 和程序化输出。
-order: 7
+order: 8
 tags:
   - FFprobe
   - FFmpeg
@@ -16,7 +16,7 @@ category: 音视频
 
 `ffprobe` 只负责读取和描述媒体，不负责转码、滤镜或播放。写 `ffmpeg` 命令前，先用它看清容器和 Stream 里有什么。
 
-后面每条查询都可以按三步读：要回答什么问题、选项各自做什么、输出里该看哪些字段。
+日常处理先看容器和流；排查切片、同步或解码问题时，再查 Packet 和 Frame。下面从最常用的 JSON 查询开始。
 
 ```mermaid
 flowchart TB
@@ -53,7 +53,7 @@ flowchart TB
 ffprobe -v error -show_entries "format=format_name,duration,size:stream=index,codec_type,codec_name,width,height,pix_fmt,avg_frame_rate,sample_rate,channels" -of json input.mp4
 ```
 
-翻译成人话：读取 `input.mp4`，隐藏非错误日志，查询容器和每条流的指定字段，并以 JSON 输出。
+它读取 `input.mp4`，以 JSON 输出指定的容器和流字段；错误日志仍写到 stderr。
 
 ## 基本语法和日志
 
@@ -78,7 +78,7 @@ ffprobe -v error -show_format -show_streams -of json input.mp4
 ```
 
 - `-hide_banner` 隐藏版本横幅；
-- `-v error`（`-loglevel error` 的缩写）只保留错误日志，避免日志混入机器输出；
+- `-v error`（`-loglevel error` 的缩写）只保留错误日志；JSON 在 stdout，日志在 stderr，程序应分别读取；
 - `-version` 查看当前版本，能力以执行机器为准。
 
 PowerShell 中路径或 URL 含空格、`&`、`?` 等字符时要加引号。命令结束后的 `$LASTEXITCODE` 是进程退出码；它不能替代对 JSON 内容和完整解码结果的检查。
@@ -94,7 +94,7 @@ PowerShell 中路径或 URL 含空格、`&`、`?` 等字符时要加引号。命
 └── PACKET/FRAME 逐包或逐帧数据（深入分析）
 ```
 
-完整 JSON 通常类似：
+下面只用少量字段示意 JSON 结构，数值不代表你的文件，也不是完整探测输出：
 
 ```json
 {
@@ -169,7 +169,6 @@ ffprobe -v error -select_streams a:0 -show_entries "stream=index,codec_name,samp
 | `d` | 所有数据流 |
 | `v:0` | 第一条视频流 |
 | `a:1` | 第二条音频流 |
-| `0:v:0` | ffmpeg 的 `-map` 常用写法；ffprobe 的 `-select_streams` 通常省略输入编号 |
 
 示例：
 
@@ -178,7 +177,7 @@ ffprobe -v error -select_streams v -show_streams -of json input.mkv
 ffprobe -v error -select_streams a:1 -show_streams -of json input.mkv
 ```
 
-`ffprobe` 负责“显示哪些流”，`ffmpeg -map` 负责“输出哪些流”；两者都使用 Stream Specifier，但用途不同。
+`ffprobe` 负责“显示哪些流”，`ffmpeg -map` 负责“输出哪些流”。这里写 `-select_streams v:0`；不要把 ffmpeg 中含输入编号的 `-map 0:v:0` 原样搬过来。
 
 ## 选择字段：`-show_entries`
 
@@ -264,7 +263,7 @@ ffprobe -v error -select_streams v:0 -read_intervals "%+2" -show_packets -of jso
 Frame 是解码器得到的视频图像或音频采样帧：
 
 ```powershell
-ffprobe -v error -select_streams v:0 -read_intervals "%+2" -show_frames -show_entries "frame=best_effort_timestamp_time,pkt_duration_time,key_frame,pict_type" -of json input.mp4
+ffprobe -v error -select_streams v:0 -read_intervals "%+2" -show_frames -show_entries "frame=best_effort_timestamp_time,duration_time,key_frame,pict_type" -of json input.mp4
 ```
 
 `-show_frames` 的输出来自解码过程，可能包含 `FRAME` 或 `SUBTITLE` Section；它比读取 Stream 元数据更慢。
@@ -289,14 +288,14 @@ Packet 和 Frame 的关系可以简化为：
 ffprobe -v error -read_intervals "%+20" -show_packets -of json input.mp4
 ```
 
-这是减少分析量的工具，不是精确剪辑工具。开始位置依赖输入格式的定位能力，结果可能从附近的可定位点开始；需要精确切片请使用 `ffmpeg` 并按第 03、05 篇的时间参数验证。
+开始位置依赖格式的定位能力，可能落到附近的可定位点。`10%+20` 的 20 秒从实际定位点计算，不保证在原文件第 30 秒结束；`%+#42` 计的是读取的包数，不是解码帧数。需要精确切片时，按第 03、05 篇的时间参数处理并检查结果。
 
 ## 统计 Packet 和 Frame
 
-统计每条流的帧数：
+统计第一条视频流实际读取的帧数：
 
 ```powershell
-ffprobe -v error -count_frames -select_streams v:0 -show_streams -of json input.mp4
+ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=index,nb_read_frames -of json input.mp4
 ```
 
 统计每条流的 Packet 数：
@@ -342,7 +341,7 @@ ffprobe -v quiet -show_error -of json broken.mp4
 | 选项 | 用途 |
 | --- | --- |
 | `-show_error` | 打开失败时输出结构化错误段 |
-| `-show_data` / `-show_data_hash` | 输出 Packet 负载或哈希，内容可能非常大 |
+| `-show_data` / `-show_data_hash` | 配合 `-show_packets` 查看负载，配合 `-show_streams` 查看 extradata；哈希选项还需指定算法 |
 | `-sections` | 列出 ffprobe 的 Section 结构 |
 | `-show_versions` | 输出程序和库版本 |
 | `-show_pixel_formats` | 列出当前构建支持的像素格式 |
@@ -381,27 +380,7 @@ $media.streams | Select-Object index,codec_type,codec_name,width,height,sample_r
 | 选择语言/标题标签 | `-show_entries stream_tags=language,title -of json` |
 | 某一小段 Packet | `-read_intervals "%+2" -show_packets` |
 | 某一小段 Frame | `-read_intervals "%+2" -show_frames` |
-| 是否能完整解码 | 使用 `ffmpeg -v error -i input -f null -`，不要只依赖 ffprobe |
-
-推荐的日常顺序是：
-
-```text
-1. -show_format / -show_streams 看全貌
-2. -select_streams 缩小到目标流
-3. -show_entries 缩小字段
-4. -of json 交给程序
-5. 只有遇到时间、同步或损坏问题时才看 Packet/Frame
-```
-
-## 常见误区
-
-- `ffprobe` 能读到容器头，不代表文件后半段一定能完整解码；
-- `duration` 为 `N/A` 不自动等于损坏，实时流和管道经常没有总时长；
-- `r_frame_rate` 是估计值（官方注释写明是 guess），不是所有场景下的真实播放 FPS；
-- `-select_streams` 只改变显示范围，不能给 `ffmpeg` 输出做映射；
-- `-show_entries` 只减少显示字段，不会修复输入或改变媒体；
-- `-of json` 只改变输出格式，不会让探测更准确；
-- Packet 是压缩数据，Frame 是解码结果，两者数量不必相同。
+| 是否能完整解码 | 映射全部音视频后用 `ffmpeg ... -f null -`，见下节 |
 
 ## 与 FFmpeg 的边界
 
@@ -430,6 +409,6 @@ ffprobe -version
 ffprobe -h full
 ```
 
-如果已经能区分 Packet 与 Frame，下一步可以继续阅读 [看懂 H.264 / H.265 码流：视频到了，画面为什么还没出来](/tutorials/tffmpeg-bitstream/)，理解一个 Packet 内部的 NAL 信封、参数集和随机访问点。
+需要继续分析压缩视频内部结构时，阅读 [H.264 / H.265 码流](/tutorials/tffmpeg-bitstream/)，了解 NAL、参数集和随机访问点。
 
-依据：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)；[FFmpeg 官方命令文档](https://ffmpeg.org/ffmpeg.html)。
+依据：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)、[FFmpeg 命令文档](https://ffmpeg.org/ffmpeg.html)、[AVStream 帧率字段定义（n7.1.1）](https://github.com/FFmpeg/FFmpeg/blob/n7.1.1/libavformat/avformat.h)。
