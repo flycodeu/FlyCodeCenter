@@ -14,7 +14,7 @@ tags:
 category: 音视频
 ---
 
-`ffprobe` 只负责读取和描述媒体，不负责转码、滤镜或播放。写 `ffmpeg` 命令前，先用它看清容器和 Stream 里有什么。
+`ffprobe` 只负责读取和描述媒体，不负责转码、Filter 或播放。写 `ffmpeg` 命令前，先用它看清容器和 Stream 里有什么。
 
 日常处理先看容器和流；排查切片、同步或解码问题时，再查 Packet 和 Frame。下面从最常用的 JSON 查询开始。
 
@@ -409,6 +409,6 @@ ffprobe -version
 ffprobe -h full
 ```
 
-需要继续分析压缩视频内部结构时，阅读 [H.264 / H.265 码流](/tutorials/tffmpeg-bitstream/)，了解 NAL、参数集和随机访问点。
+需要继续理解帧类型与随机访问时，阅读[画面与 I/P/B](/tutorials/tffmpeg-bitstream/)；NAL、参数集和容器包装见[编码与格式篇](/tutorials/tffmpeg-codecs/)。
 
 依据：[ffprobe 官方文档](https://ffmpeg.org/ffprobe.html)、[FFmpeg 命令文档](https://ffmpeg.org/ffmpeg.html)、[AVStream 帧率字段定义（n7.1.1）](https://github.com/FFmpeg/FFmpeg/blob/n7.1.1/libavformat/avformat.h)。

@@ -22,8 +22,8 @@ showOnHome: false
 
 - Timeline editing 通过 `enable` 决定 Filter 在哪些 Frame 上生效；
 - runtime command 修改已经存在的 Filter 的选项；
-- framesync 为多输入滤镜按 PTS 选择帧，并处理 EOF；
-- 音频滤镜处理音频帧的采样、时间、响度与组合。
+- framesync 为多输入 Filter 按 PTS 选择帧，并处理 EOF；
+- 音频 Filter 处理音频帧的采样、时间、响度与组合。
 
 命令使用 PowerShell 写法，素材由 `testsrc2`、`color` 和 `sine` 生成。含 `-y` 的演示会覆盖同名文件，请在空目录里运行。
 
@@ -34,9 +34,9 @@ showOnHome: false
 | 辅助输入先结束 | framesync | 三个 `framesync-*.mp4` |
 | 两路声音叠加或衔接 | amix / acrossfade | `audio-mix.wav`、`audio-crossfade.wav` |
 
-## 检查当前构建的滤镜能力
+## 检查当前构建的 Filter 能力
 
-滤镜的可用选项取决于版本和构建。本文以 `FFmpeg 7.1.1-full_build` 为命令基线；运行前检查当前机器：
+Filter 的可用选项取决于版本和构建。本文以 `FFmpeg 7.1.1-full_build` 为命令基线；运行前检查当前机器：
 
 ```powershell
 ffmpeg -hide_banner -version
@@ -46,9 +46,9 @@ ffmpeg -hide_banner -h filter=overlay
 ffmpeg -hide_banner -h filter=volume
 ```
 
-`ffmpeg -filters` 中，前面的 `T` 表示滤镜支持通用 Timeline，`C` 表示它能接收命令。Audio / Video 类型则显示在 `A`、`V` 以及 `A->A`、`VV->V` 这样的输入/输出形状中。
+`ffmpeg -filters` 中，前面的 `T` 表示 Filter 支持通用 Timeline，`C` 表示它能接收命令。Audio / Video 类型则显示在 `A`、`V` 以及 `A->A`、`VV->V` 这样的输入/输出形状中。
 
-还有一种 `T` 出现在 `-h filter=<name>` 的某个选项末尾，例如 `volume` 选项的标记末尾带 `T`。它表示这个具体选项可以在运行中修改。一个是滤镜级别的 Timeline 能力，一个是选项级别的 runtime 能力，不要只看到同一个字母就混为一谈。
+还有一种 `T` 出现在 `-h filter=<name>` 的某个选项末尾，例如 `volume` 选项的标记末尾带 `T`。它表示这个具体选项可以在运行中修改。一个是 Filter 级别的 Timeline 能力，一个是选项级别的 runtime 能力，不要只看到同一个字母就混为一谈。
 
 ## 用 enable 控制生效时间
 
@@ -69,7 +69,7 @@ flowchart LR
   P --> O
 ```
 
-`enable=0` 让这一帧绕过当前滤镜，仍会传给后面的节点；它不会丢帧或暂停解码。
+`enable=0` 让这一帧绕过当前 Filter，仍会传给后面的节点；它不会丢帧或暂停解码。
 
 ### 表达式中的时间从哪里来
 
@@ -105,7 +105,7 @@ ffmpeg -y -i timeline-enable.mp4 -vf "fps=1,scale=320:-2,tile=4x2" -frames:v 1 -
 - 暂停输入解码，或控制外部 AI 任务的采样频率；
 - 在运行中创建、删除 Filtergraph 中的节点；
 - 修改编码器的码率、GOP 等参数；
-- 让原本不支持 Timeline 的滤镜获得 `enable`。
+- 让原本不支持 Timeline 的 Filter 获得 `enable`。
 
 若看到 `Timeline ('enable' option) not supported with filter`，先用下面的命令确认当前构建，而不是继续调整表达式：
 
@@ -114,9 +114,9 @@ ffmpeg -hide_banner -filters 2>&1 | Select-String "drawbox|overlay|volume|atempo
 ffmpeg -hide_banner -h filter=drawbox
 ```
 
-## 用运行时命令修改滤镜参数
+## 用运行时命令修改 Filter 参数
 
-保持滤镜启用时，也可以修改它支持的运行时选项。例如让红框一直存在，第 2 秒移到右侧，第 4 秒移回左侧。
+保持 Filter 启用时，也可以修改它支持的运行时选项。例如让红框一直存在，第 2 秒移到右侧，第 4 秒移回左侧。
 
 ```powershell
 ffmpeg -y -f lavfi -i "testsrc2=size=960x540:rate=30:duration=6" -vf "sendcmd=c='2.0 drawbox@roi x 480;4.0 drawbox@roi x 120',drawbox@roi=x=40:y=180:w=240:h=160:color=red@0.85:t=8" -an -c:v libx264 -pix_fmt yuv420p runtime-command.mp4
@@ -130,7 +130,7 @@ time     target           command argument
 ```
 
 - `2.0` 是命令触发的媒体时间；
-- `drawbox@roi` 指向 ID 为 `roi` 的 `drawbox` 滤镜实例；
+- `drawbox@roi` 指向 ID 为 `roi` 的 `drawbox` Filter 实例；
 - `x` 是命令名，在这里也就是要修改的选项；
 - `480` 是新值。
 
@@ -172,7 +172,7 @@ ffmpeg -y -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=6" -af "ase
 
 然后使用 `sendcmd=f=commands.txt`，减少 PowerShell、Filtergraph 和命令语法之间的转义。
 
-外部程序持续发送命令时，可以使用 `zmq` / `azmq` 滤镜，前提是构建启用了 ZeroMQ。应用仍要处理命令目标、媒体时间、过期、重连和失败反馈。
+外部程序持续发送命令时，可以使用 `zmq` / `azmq` Filter，前提是构建启用了 ZeroMQ。应用仍要处理命令目标、媒体时间、过期、重连和失败反馈。
 
 ```powershell
 ffmpeg -hide_banner -filters 2>&1 | Select-String "sendcmd|asendcmd|zmq|azmq"
@@ -180,9 +180,9 @@ ffmpeg -hide_banner -filters 2>&1 | Select-String "sendcmd|asendcmd|zmq|azmq"
 
 ## framesync：两路输入究竟配哪一帧
 
-`overlay`、`hstack`、`blend` 等多输入滤镜需要按时间戳配对。输入可能具有不同帧率、起点和时长；以 `overlay` 为例，framesync 为主输入选择时间合适的辅助帧，并处理输入结束的情况。
+`overlay`、`hstack`、`blend` 等多输入 Filter 需要按时间戳配对。输入可能具有不同帧率、起点和时长；以 `overlay` 为例，framesync 为主输入选择时间合适的辅助帧，并处理输入结束的情况。
 
-例如给视频叠一块黄色区域：主视频每到一个时间点，都要选择一帧黄色画面。黄色输入先结束时，可以保留它的最后一帧、移除覆盖层，或结束整个滤镜输出。
+例如给视频叠一块黄色区域：主视频每到一个时间点，都要选择一帧黄色画面。黄色输入先结束时，可以保留它的最后一帧、移除覆盖层，或结束整个 Filter 输出。
 
 ```mermaid
 flowchart LR
@@ -192,16 +192,16 @@ flowchart LR
   FS --> O[output Frame]
 ```
 
-支持 framesync 公共选项的滤镜，通常会提供：
+支持 framesync 公共选项的 Filter，通常会提供：
 
 | 选项 | 默认值 | 含义 |
 | --- | --- | --- |
 | `eof_action` | `repeat` | 辅助输入结束后，重复最后一帧、结束全部或放行主输入 |
-| `shortest` | `0` | 设为 `1` 时，最短输入结束便结束滤镜输出 |
+| `shortest` | `0` | 设为 `1` 时，最短输入结束便结束 Filter 输出 |
 | `repeatlast` | `1` | 是否延续辅助输入的最后一帧 |
 | `ts_sync_mode` | `default` | 选择不晚于主帧的最近帧，或绝对时间差最小的帧 |
 
-这些是 framesync 的公共选项，但并非所有多输入滤镜都一定暴露完全相同的集合。写命令前仍应查看具体滤镜的帮助。
+这些是 framesync 的公共选项，但并非所有多输入 Filter 都一定暴露完全相同的集合。写命令前仍应查看具体 Filter 的帮助。
 
 ### 用同一组素材比较三种 EOF 结果
 
@@ -231,7 +231,7 @@ ffprobe -v error -show_entries format=filename,duration -of default=nw=1 framesy
 ffprobe -v error -show_entries format=filename,duration -of default=nw=1 framesync-shortest.mp4
 ```
 
-这里的滤镜选项 `shortest=1` 与 ffmpeg 输出选项 `-shortest` 不是同一层：前者决定这个多输入滤镜何时结束，后者根据多个输出流的结束时间控制输出文件。
+这里的 Filter 选项 `shortest=1` 与 ffmpeg 输出选项 `-shortest` 不是同一层：前者决定这个多输入 Filter 何时结束，后者根据多个输出流的结束时间控制输出文件。
 
 ### `ts_sync_mode` 与因果顺序
 
@@ -268,7 +268,7 @@ ffmpeg -y -i main.mp4 -i logo.mp4 -filter_complex "[0:v]setpts=PTS-STARTPTS[main
 | channel layout | `mono`、`stereo`、`5.1` | channel 数量与空间含义 |
 | PTS / time base | 常以 sample rate 为基础 | 裁剪、同步、command 触发时间 |
 
-下面按一次实际处理会经历的顺序，看看这些音频滤镜怎样接在一起。
+下面按一次实际处理会经历的顺序，看看这些音频 Filter 怎样接在一起。
 
 ### `aresample` 与 `aformat`
 
@@ -323,7 +323,7 @@ ffmpeg -y -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=5" -f lavfi
 
 ### 频率过滤、降噪与响度
 
-下面沿用一组演示参数，说明四个滤镜的连接顺序。这些数值没有代表某类录音的最佳设置，应先分别试听各环节再决定是否组合：
+下面沿用一组演示参数，说明四个 Filter 的连接顺序。这些数值没有代表某类录音的最佳设置，应先分别试听各环节再决定是否组合：
 
 ```powershell
 ffmpeg -y -i input.wav -af "highpass=f=80,lowpass=f=8000,afftdn=nr=12:nf=-50,loudnorm=I=-16:LRA=11:TP=-1.5" -c:a pcm_s16le voice-clean.wav
@@ -353,7 +353,7 @@ ffmpeg -hide_banner -i input.wav -af "highpass=f=80,lowpass=f=8000,afftdn=nr=12:
 | `input_thresh` | `measured_thresh` |
 | `target_offset` | `offset` |
 
-将实际测量值填回同一处理链，不能直接把 `input_i=` 当成滤镜选项。即使指定 `linear=true`，不满足官方列出的响度范围或真峰值条件时，仍会退回动态模式。动态模式为检测真峰值可能升采样到 192 kHz；输出采样率有要求时，要显式设置 `-ar` 或后接 `aresample`。详见 [loudnorm 官方选项](https://ffmpeg.org/ffmpeg-filters.html#loudnorm)。
+将实际测量值填回同一处理链，不能直接把 `input_i=` 当成 Filter 选项。即使指定 `linear=true`，不满足官方列出的响度范围或真峰值条件时，仍会退回动态模式。动态模式为检测真峰值可能升采样到 192 kHz；输出采样率有要求时，要显式设置 `-ar` 或后接 `aresample`。详见 [loudnorm 官方选项](https://ffmpeg.org/ffmpeg-filters.html#loudnorm)。
 
 如果下游明确要求 16 kHz、单声道、16-bit PCM WAV，可以写成：
 
@@ -394,9 +394,9 @@ ffmpeg -hide_banner -i input.wav -filter_complex "ebur128=framelog=verbose" -f n
 - 视频帧、检测结果与叠加画面需要可对应的时间戳，不能只按到达顺序配对；
 - 结果迟到时，应用决定丢弃、保持旧结果或移除覆盖层；
 - RTSP 重连后 PTS 可能跳变或重新起算，应区分重连前后的命令和结果；
-- 写出经过音频滤镜处理的结果时，需要编码，不能使用 `-c:a copy`。
+- 写出经过音频 Filter 处理的结果时，需要编码，不能使用 `-c:a copy`。
 
-排查实时叠加时，可记录摄像头、帧 ID / PTS、结果延迟和重连批次，再与实际显示对应。本地文件实验只能验证这些滤镜行为。
+排查实时叠加时，可记录摄像头、帧 ID / PTS、结果延迟和重连批次，再与实际显示对应。本地文件实验只能验证这些 Filter 行为。
 
 ## 检查时长、格式和实际效果
 
@@ -435,4 +435,4 @@ ffplay -autoexit audio-crossfade.wav
 | `amix` 后出现 clipping | weights、`normalize` 与输入 gain |
 | 降噪后发闷或有金属感 | frequency cutoff 与 noise reduction 是否过强 |
 
-参考：[Timeline editing](https://ffmpeg.org/ffmpeg-filters.html#Timeline-editing)、[运行时命令](https://ffmpeg.org/ffmpeg-filters.html#Changing-options-at-runtime-with-a-command)、[framesync](https://ffmpeg.org/ffmpeg-filters.html#Options-for-filters-with-several-inputs-_0028framesync_0029)、[sendcmd / asendcmd](https://ffmpeg.org/ffmpeg-filters.html#sendcmd_002c-asendcmd)、[音频滤镜](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters)。
+参考：[Timeline editing](https://ffmpeg.org/ffmpeg-filters.html#Timeline-editing)、[运行时命令](https://ffmpeg.org/ffmpeg-filters.html#Changing-options-at-runtime-with-a-command)、[framesync](https://ffmpeg.org/ffmpeg-filters.html#Options-for-filters-with-several-inputs-_0028framesync_0029)、[sendcmd / asendcmd](https://ffmpeg.org/ffmpeg-filters.html#sendcmd_002c-asendcmd)、[音频 Filter](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters)。

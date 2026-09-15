@@ -3,8 +3,8 @@ title: FFmpeg 入门教程
 createTime: '2026/08/31 10:00:00'
 code: tffmpeg01
 permalink: /tutorials/ffmpeg/
-summary: 从认识工具、看懂媒体文件开始，逐步完成转封装、转码、流选择和结果验证。
-description: 面向初学者的 FFmpeg 学习路径，先掌握少量高频命令，再按需要深入 Stream、Filter 和网络媒体。
+summary: 学会 FFmpeg 常见操作，并从零理解视频组成、帧间预测、编码差异、直播传输和播放异常。
+description: 两条阅读入口：FFmpeg 工具入门，以及从画面到网络的视频基础；术语先解释，命令用于观察和验证。
 order: 2
 tags:
   - FFmpeg
@@ -15,7 +15,22 @@ category: 音视频
 showOnHome: false
 ---
 
-这套教程从本地视频处理开始：查看文件、换容器、转码、选音轨，再读滤镜和码流。初次使用可以从第 01 篇的测试素材动手；已有具体任务，可以直接查案例篇。
+这套教程既讲 FFmpeg 的常见操作，也讲视频本身怎样组成、压缩和传输。可以按眼前的问题选择入口。
+
+## 从哪里开始读
+
+**想先理解视频原理，不熟悉 I/P/B、RTSP 等缩写：** 从下面四篇连续阅读，不需要先学转码命令。
+
+| 顺序 | 文章 | 从什么问题讲起 |
+| --- | --- | --- |
+| 一 | [从一张画面到 I、P、B 帧](/tutorials/tffmpeg-bitstream/) | 视频由什么组成，小球移动后下一帧怎么还原，预测与补丢失有何区别 |
+| 二 | [H.264、H.265、MP4 和 GB 分别是什么](/tutorials/tffmpeg-codecs/) | 编码、容器与协议怎么区分，H.265+、裸码流、NAL 和参数集是什么 |
+| 三 | [RTSP、网络分包与直播传输](/tutorials/tffmpeg-transport/) | 地址和请求长什么样，网络传的是什么，服务器怎样送到浏览器 |
+| 四 | [丢包、花屏、黑屏、绿屏与闪烁](/tutorials/tffmpeg-playback/) | 为什么一个包影响多帧，怎样区分传输、解码、采集与显示问题 |
+
+**想马上处理文件：** 从[先跑通 FFmpeg](/tutorials/tffmpeg-guide/)开始，学习查看、换容器、转码和选轨；已有明确任务可以查[案例篇](/tutorials/t19hdgc9e/)。
+
+本系列保留 `Filter`、`Filterchain`、`Filtergraph`、`Bitstream Filter` 等 FFmpeg 原文术语，并在首次讲解时说明作用。例如 `Filter` 是处理画面或声音的节点，`scale` 用于缩放，`overlay` 用于叠加。
 
 ## 先看懂总流程
 
@@ -45,7 +60,7 @@ flowchart LR
 
 ## 建议阅读顺序
 
-前五篇连续阅读，后五篇按问题查阅。下面的顺序与章节导航一致。
+下面列出完整目录，顺序与章节导航一致。工具入门的前五篇可以连续阅读；视频基础四篇也可以单独作为起点。
 
 | 顺序 | 文档 | 这一篇解决的问题 |
 | --- | --- | --- |
@@ -53,12 +68,15 @@ flowchart LR
 | 02 | [看懂媒体文件](/tutorials/t1vdqkiht/) | 容器、编码、Stream 和常见音视频属性 |
 | 03 | [完成常见文件任务](/tutorials/t2qx7heah/) | 换容器、转码、缩放、截取、抽图、提取音频 |
 | 04 | [选择需要的媒体流](/tutorials/t6loukxpw/) | 多轨时如何准确选择视频、音频和字幕 |
-| 05 | [理解参数、滤镜与质量](/tutorials/t17xaopev/) | 参数写在哪、何时必须转码、CRF 和码率 |
+| 05 | [理解参数、Filter 与质量](/tutorials/t17xaopev/) | 参数写在哪、何时必须转码、CRF 和码率 |
 | 06 | [Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) | Filter、Pad、Link Label 与分支 |
 | 07 | [Timeline editing、framesync 与 Audio Filters](/tutorials/tffmpeg-filters-2/) | enable、runtime command、多输入同步和音频处理 |
 | 08 | [FFprobe 查询手册](/tutorials/t2er6pk59/) | 容器、流、Packet、Frame 和 JSON，随用随查 |
-| 09 | [H.264 / H.265 码流](/tutorials/tffmpeg-bitstream/) | 关键帧、NAL、参数集与首帧排查 |
-| 10 | [常见任务与排障案例](/tutorials/t19hdgc9e/) | 转码、切片、拼接、HLS 与 RTSP |
+| 09 | [视频基础一：画面与 I/P/B](/tutorials/tffmpeg-bitstream/) | 像素、时间、预测、残差、参考画面与起播 |
+| 10 | [视频基础二：编码与格式](/tutorials/tffmpeg-codecs/) | H.264/H.265、厂商名称、容器、NAL、参数集与 GB |
+| 11 | [视频基础三：网络与直播](/tutorials/tffmpeg-transport/) | RTSP/SDP/RTP、UDP/TCP、直播方式和延迟 |
+| 12 | [视频基础四：播放异常](/tutorials/tffmpeg-playback/) | 丢包传播、花屏、黑屏、绿屏、闪烁和卡顿 |
+| 13 | [常见任务与排障案例](/tutorials/t19hdgc9e/) | 转码、切片、拼接、HLS 与 RTSP |
 
 ## 开始前：确认工具
 
@@ -68,7 +86,7 @@ ffprobe -version
 ffplay -version
 ```
 
-`ffmpeg` 处理和输出，`ffprobe` 读取信息，`ffplay` 人工预览。编码器、滤镜和协议以执行机器为准：
+`ffmpeg` 处理和输出，`ffprobe` 读取信息，`ffplay` 人工预览。编码器、Filter 和协议以执行机器为准：
 
 ```powershell
 ffmpeg -hide_banner -encoders 2>&1 | Select-String "libx264|libx265|aac"

@@ -15,7 +15,7 @@ tags:
 category: 音视频
 ---
 
-`scale` 改尺寸，`fps` 改帧率，`overlay` 把两路画面叠起来。将这些滤镜连成命令时，需要说明帧从哪里来、经过哪些处理、结果写到哪里。
+Filter 是 FFmpeg 中处理画面或声音的节点。`scale` 改尺寸，`fps` 改帧率，`overlay` 把两路画面叠起来。将这些 Filter 连成命令时，需要说明帧从哪里来、经过哪些处理、结果写到哪里。
 
 这篇从一条短命令开始，逐步走到多输入 Filtergraph。文中的示例都按 Windows PowerShell 单行命令编写，`input.mp4`、`logo.png` 和 `output.mp4` 替换成自己的路径即可。
 
@@ -39,12 +39,12 @@ Decoded Video Frame → scale → fps → Encoder
 - `,` 把两个 Filter 串在同一条 Filterchain 中；
 - `fps=25` 重新安排输出帧，使输出成为 25 FPS；
 - `-c:v libx264` 对处理后的帧重新编码；
-- 音频流没有经过滤镜，因此这里尝试用 `-c:a copy` 保留原始音频包。
+- 音频流没有经过 Filter，因此这里尝试用 `-c:a copy` 保留原始音频包。
 
 
 ## Filter 工作在什么位置
 
-FFmpeg 从容器中解封装出压缩的 Packet，解码器再把 Packet 还原成帧。滤镜接触的是解码后的帧，不是压缩 Packet。
+FFmpeg 从容器中解封装出压缩的 Packet，解码器再把 Packet 还原成帧。Filter 接触的是解码后的帧，不是压缩 Packet。
 
 ```mermaid
 flowchart LR
@@ -109,7 +109,7 @@ crop=1280:720:0:0
 crop=w=1280:h=720:x=0:y=0
 ```
 
-第一种按位置传参，第二种写出参数名。不同滤镜的参数顺序不同，显式名称便于核对尺寸和坐标。
+第一种按位置传参，第二种写出参数名。不同 Filter 的参数顺序不同，显式名称便于核对尺寸和坐标。
 
 当前 FFmpeg 构建实际支持什么，以本机帮助为准：
 
@@ -282,7 +282,7 @@ ffmpeg -i $sourcePath -i $logoPath -filter_complex $filterGraph -map "[outv]" -m
 ffmpeg -hide_banner -h filter=drawtext
 ```
 
-## 滤镜处理后怎样编码
+## Filter 处理后怎样编码
 
 Filtergraph 决定 Frame 怎样变化，Encoder 决定处理后的 Frame 怎样压缩。
 
@@ -295,7 +295,7 @@ ffmpeg -i input.mp4 -vf "scale=w=1280:h=-2" -c:v libx264 -crf 23 -preset medium 
 - `-preset medium` 主要权衡编码速度与压缩效率；
 - `-c:a aac -b:a 128k` 为音频流选择 AAC 与目标码率。
 
-查看当前机器的滤镜和编码器：
+查看当前机器的 Filter 和编码器：
 
 ```powershell
 ffmpeg -hide_banner -filters 2>&1 | Select-String "scale|crop|fps|overlay|drawtext|volume"
