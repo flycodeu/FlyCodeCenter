@@ -1823,6 +1823,14 @@ export function initArticleRuntime(config = {}) {
       if (article.dataset.enhanced === "1") return;
       article.dataset.enhanced = "1";
 
+      if (article.querySelector("video-coding-demo")) {
+        import("./video-coding-demo.js")
+          .then(({ registerVideoCodingDemo }) => {
+            if (!signal.aborted && article.isConnected) registerVideoCodingDemo();
+          })
+          .catch((error) => console.error("video coding demo could not load", error));
+      }
+
       transformDemoShortcodes(article);
       bindTabsSwitch(article);
       bindCodeGroupSwitch(article);

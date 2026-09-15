@@ -24,6 +24,7 @@
     "build:pagefind": "node ./scripts/pagefind-index.mjs",
     "encrypt": "node ./scripts/encrypt.mjs",
     "test:e2e": "npm run build:minisearch && playwright test",
+    "test:video-demo": "node --test tests/unit/video-coding-model.test.mjs",
     "test:e2e:chromium": "npm run build:minisearch && playwright test --project=chromium-desktop --project=mobile-chromium",
     "test:e2e:performance": "npm run build:minisearch && playwright test --config=playwright.performance.config.ts"
   },
