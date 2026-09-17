@@ -7,10 +7,6 @@ tags:
   - SpringBoot
   - 对象存储
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
 
 ## 1. 基础上传文件 thymeleaf版本
 ### 1.1 需要引入相关依赖
@@ -120,7 +116,6 @@ picture.html上传界面回显照片
 ### 1.5 项目访问
 启动项目浏览器输入http://localhost:8080/img/back,进行文件上传
 
-
 ## 2. ajax版本文件上传回显
 ### 2.1 controller编写
 ```java
@@ -196,9 +191,6 @@ uploadFile.html放在resources里面的static里面
 
 ### 2.3 项目访问
 http://localhost:8080/uploadFile.html
-
-
-
 
 ## 3. 结合七牛云
 
@@ -419,7 +411,6 @@ public class ImageUtils {
 }
 ```
 
-
 ### 3.5 编写controller
 ```java
 @RestController
@@ -443,7 +434,6 @@ public class ImageController {
 ### 3.6 测试
 需要注意文件上传相应的参数是在body里面选择文件，上传成功会返回对应的url，可以将这个url进行页面展示。
 ![sbjhqny-1](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/sbjhqny-1.png)
-
 
 ### 3.7 vue3
 需要安装elment plus

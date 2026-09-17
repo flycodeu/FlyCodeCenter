@@ -66,8 +66,6 @@ jobs:
 
 ![image-20250324150729663](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250324150729663.png)
 
-
-
 ## Actions配置运行Maven项目
 
 创建main-maven-jar.yml文件，主要指定步骤就是maven执行install、复制jar包到指定目录、运行jar包

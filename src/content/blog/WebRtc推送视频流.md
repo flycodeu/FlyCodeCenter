@@ -8,13 +8,8 @@ tags:
   - WebRTC
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/6f75f8e2b0df3e00dfd65ad98dfda1ed.jpg
 ---
-# 使用 MediaMTX 搭建 WebRTC 实时视频流服务器（对接大华相机）
 
-最近在做一个局域网实时视频监控的小项目，想通过浏览器直接播放大华相机的实时画面。原本打算自己搭建 RTMP/RTSP 服务，但折腾起来有点麻烦，还要处理转码、延迟等问题。后来发现一个非常好用的开源项目——**[MediaMTX](https://github.com/bluenviron/mediamtx)**（原 rtsp-simple-server），它不仅能轻松处理 RTSP 流，还内置 WebRTC 输出，非常方便。
-
-这篇文章记录一下我用 MediaMTX 实现 WebRTC 推流、并搭配前端播放器的完整过程。
-
----
+浏览器不能直接播放摄像头的 RTSP 地址。本文使用 MediaMTX v1.15.3 拉取 RTSP，再通过 WebRTC 提供画面，前端通过 WHEP 建立播放会话。
 
 ## 一、背景与原理
 
@@ -22,26 +17,23 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/6f7
 
 | 协议   | 主要用途                        | 延迟   | 是否浏览器原生支持 |
 | ------ | ------------------------------- | ------ | ------------------ |
-| RTSP   | 摄像头、NVR、监控系统           | 0.5~2s | ❌                  |
-| RTMP   | 推流到直播平台（如 OBS → B 站） | 1~3s   | ❌                  |
-| HLS    | 点播/直播网页播放               | 5~30s  | ✅（通过 MSE）      |
-| WebRTC | 实时音视频通信                  | <1s    | ✅                  |
+| RTSP | 摄像头、NVR 接入 | 需实测 | 不直接支持 |
+| RTMP | 向直播服务推流 | 需实测 | 不直接支持 |
+| HLS | 点播、直播分发 | 受分片与缓冲影响 | Safari 可原生播放，其他环境常用 hls.js |
+| WebRTC | 实时音视频通信 | 受编码、网络与缓冲影响 | 支持，仍需核对编码 |
 
-大华、海康等摄像头一般通过 **RTSP** 提供原始码流。浏览器无法直接播放 RTSP，所以通常需要一个中间层来“转换协议”。  
+大华、海康等摄像头一般通过 **RTSP** 提供原始码流。浏览器无法直接播放 RTSP，所以通常需要一个中间层来“转换协议”。
 MediaMTX 正好能完成这件事——它支持：
 
 - RTSP、RTMP、HLS、WebRTC、SRT 等多种协议互转；
 - 自动拉流、转发；
 - 提供 Web 界面、API、Metrics 监控。
 
-换句话说，MediaMTX 可以当作一个“万能的流媒体中转服务”。  
-我们只要让它从相机拉 RTSP 流，再通过 WebRTC 输出，就能在网页中低延迟播放。
-
----
+MediaMTX 转换传输协议，不自动转换视频编码；源流仍需满足浏览器的解码要求。
 
 ## 二、下载 MediaMTX
 
-在 [GitHub Releases](https://github.com/bluenviron/mediamtx/releases/tag/v1.15.3) 页面下载对应系统的版本即可。  
+在 [GitHub Releases](https://github.com/bluenviron/mediamtx/releases/tag/v1.15.3) 页面下载对应系统的版本即可。
 下载后解压，会看到以下文件：
 
 ```
@@ -50,8 +42,6 @@ mediamtx.yml
 ```
 
 我们只需要修改 `mediamtx.yml` 配置文件，然后直接运行 `mediamtx.exe`。
-
----
 
 ## 三、修改配置文件
 
@@ -63,14 +53,14 @@ mediamtx.yml
 paths:
   cam_201_ch1:
     source: rtsp://账号:密码@192.168.1.201:554/cam/realmonitor?channel=1&subtype=0
-    sourceProtocol: tcp
+    rtspTransport: tcp
     sourceOnDemand: yes
 ```
 说明：
 
 - `cam_201_ch1` 是流的名字，后续 WebRTC 访问路径会用到；
 - `source` 是相机的 RTSP URL；
-- `sourceProtocol: tcp` 通常比 UDP 稳定；
+- `rtspTransport: tcp` 指定 RTSP 媒体通过 TCP 传输，网络丢包时仍可能产生等待；
 - `sourceOnDemand: yes` 表示只有当有人访问时才去拉流（节省带宽）。
 
 如果需要启动API接口，可以修改配置文件：改为true
@@ -88,8 +78,6 @@ metricsAddress: :9998
 官方监控接口文档参考：[MediaMTX](https://mediamtx.org/docs/usage/metrics)
 
 保存文件后，就可以启动服务器了。
-
----
 
 ## 四、编写启动脚本
 
@@ -151,15 +139,13 @@ pause
 
 | 功能          | 地址                  |
 | ------------- | --------------------- |
-| WebRTC 播放器 | http://localhost:8889 |
-| API 接口      | http://localhost:9997 |
-| Metrics 监控  | http://localhost:9998 |
-
----
+| WebRTC 播放器 | `http://localhost:8889/cam_201_ch1` |
+| API 接口 | `http://localhost:9997/v3/paths/list` |
+| Metrics 监控 | `http://localhost:9998/metrics` |
 
 ## 五、编写 Web 前端播放界面
 
-WebRTC 端访问的路径格式如下：
+WHEP 信令端点格式如下，需由播放器发送 SDP 请求；浏览器直接观看应访问不带 `/whep` 的路径：
 
 ```
 http://localhost:8889/{path}/whep
@@ -855,23 +841,20 @@ http://localhost:8889/cam_201_ch1/whep
 </body>
 </html>
 ```
----
 
 ## 六、效果展示
 
-启动脚本后打开网页（例如 `index.html`），即可在浏览器中看到实时画面。  
-WebRTC 延迟非常低，大约在 **500~1000ms** 左右，肉眼几乎无感。  
-在局域网环境下，稳定性也非常好。
+启动脚本后打开网页（例如 `index.html`），即可在浏览器中看到实时画面。
+端到端延迟需要同时记录采集与显示时间；页面能播放或位于局域网，都不能单独证明达到某个延迟或稳定性指标。
 
 多路相机同时播放时，CPU 占用会略高，但整体还可以接受。如果需要更强的性能，可以考虑将 `sourceOnDemand` 打开，只在有人观看时才拉流。
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20251022111822.png)
----
 
 ## 七、几点经验
 
-1. **WebRTC 与 HLS 的区别**  
-   WebRTC 延迟低，但要求实时连接、编解码压力较高。  
-   HLS 延迟高，但适合直播分发。  
+1. **WebRTC 与 HLS 的区别**
+   WebRTC 面向实时连接；是否需要服务端转码取决于源编码与客户端能力。
+   HLS 延迟高，但适合直播分发。
    如果你只需要网页端低延迟预览，WebRTC 是更好的选择。
 
 2. **MediaMTX 的优势**
@@ -880,24 +863,16 @@ WebRTC 延迟非常低，大约在 **500~1000ms** 左右，肉眼几乎无感。
     - 提供 WebRTC / HLS / RTSP / RTMP 一体化输出；
     - 性能出色，稳定可靠。
 
-3. **浏览器兼容性**  
-   Chrome、Edge、Firefox 都支持 WebRTC。  
+3. **浏览器兼容性**
+   Chrome、Edge、Firefox 都支持 WebRTC。
    Safari 也支持，但有时会触发自动播放限制，需要 `autoplay muted playsinline` 属性。
-
----
-
-## 八、结语
-
-总体体验下来，**MediaMTX + WebRTC 是一种非常轻量、优雅的实时视频方案**。  
-不需要自己搭 RTMP 服务器，也不用折腾转码。  
-对于要在浏览器中直接播放摄像头实时画面的场景（如监控、门禁、IoT 可视化等），非常值得使用。
-
-后续我会再写一篇文章，介绍如何在公网环境下部署（NAT、TURN 服务器、HTTPS 等问题），让这个方案能安全地跑在互联网上。
 
 ---
 
 **参考资料：**
 
 - [MediaMTX 官方文档](https://mediamtx.org/)
-- [WebRTC 协议说明（WHEP/WHEP）](https://www.ietf.org/archive/id/draft-murillo-whep-03.html)
+- [WHEP 协议草案](https://www.ietf.org/archive/id/draft-murillo-whep-03.html)
 - [大华相机 RTSP URL 规范](https://support.dahuatech.com/)
+
+配置字段以 [v1.15.3 默认配置](https://github.com/bluenviron/mediamtx/blob/v1.15.3/mediamtx.yml) 为准。手写 WHEP 示例只演示建连，公网部署还要处理 ICE 候选、会话删除、重连和 HTTPS；完整客户端可参考 [官方浏览器接入方式](https://mediamtx.org/docs/read/web-browsers)。

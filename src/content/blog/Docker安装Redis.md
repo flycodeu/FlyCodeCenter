@@ -59,7 +59,7 @@ docker start redis
 
 ![image-20250605163256509](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250605163256509.png)
 
-也可以在`docker ps -ef`查看运行状态
+也可以在`docker ps`查看运行状态
 
 ### 进入Redis容器
 

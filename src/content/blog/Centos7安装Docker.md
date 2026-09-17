@@ -9,7 +9,7 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090917.jpg
 ---
 
-
+CentOS Linux 7 已于 2024 年 6 月 30 日结束维护。本文保留旧环境的安装记录，软件源和依赖版本可能已变化；新环境应使用仍受支持的系统。参见 [CentOS 生命周期公告](https://www.centos.org/centos-linux/)。
 
 ------
 > 官网：：https://www.docker.com
@@ -31,8 +31,6 @@ uname -r
 sudo yum update -y
 ```
 
-------
-
 ## 二、安装 Docker 引擎
 
 ### 1. 安装依赖包
@@ -41,7 +39,7 @@ sudo yum update -y
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 ```
 
-### 2. 添加 Docker 官方仓库（推荐阿里云镜像加速）
+### 2. 添加 Docker 官方仓库（下例为历史镜像地址）
 
 ```bash
 sudo yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
@@ -53,7 +51,7 @@ sudo yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/ce
 yum list docker-ce --showduplicates | sort -r
 ```
 
-### 4. 安装最新版 Docker CE
+### 4. 安装与旧系统兼容的 Docker CE 版本
 
 ```bash
 sudo yum install -y docker-ce docker-ce-cli containerd.io
@@ -64,8 +62,6 @@ sudo yum install -y docker-ce docker-ce-cli containerd.io
 ```bash
 sudo yum install -y docker-ce-<VERSION_STRING>
 ```
-
-------
 
 ## 三、启动 Docker 引擎
 
@@ -111,8 +107,6 @@ fg %1
 Ctrl + C
 ```
 
-------
-
 ## 四、安装 Docker Compose
 
 ### 方法一：从官方下载（推荐）
@@ -136,8 +130,6 @@ sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
 ```
 
-------
-
 ## 五、Docker 常用命令速查表
 
 | 功能             | 命令                                                         |
@@ -151,8 +143,6 @@ docker-compose --version
 | 删除容器         | `docker rm <container-id>`                                   |
 | 删除镜像         | `docker rmi <image>`                                         |
 | 查看帮助文档     | `docker --help`                                              |
-
-------
 
 ## 六、卸载 Docker（可选）
 
@@ -168,8 +158,6 @@ docker-selinux \
 docker-engine-selinux \
 docker-engine
 ```
-
-------
 
 ## 七、设置镜像源
 [国内Docker镜像加速](https://status.1panel.top/status/docker)

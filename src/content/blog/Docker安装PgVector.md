@@ -46,7 +46,7 @@ services:
       - my-network
 networks:
   my-network:
-    driver: bridge                                                                                                                                                                                 ~                       
+    driver: bridge
 ```
 ### 运行脚本
 ```bash
@@ -56,7 +56,7 @@ docker-compose -f docker-compose-pgvector.yml up -d
 ### 启动PgVector
 
 ```bash
-docker start vector_db
+docker compose -f docker-compose-pgvector.yml start vector_db
 ```
 
 ### 查看运行状态
@@ -71,7 +71,7 @@ docker start vector_db
 
 ![image-20250610084336393](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610084336393.png)
 
-1. 配置PostgreSQL服务监听地址。默认只允许本地连接
+1. 配置PostgreSQL服务监听地址。以容器内 `SHOW listen_addresses;` 的实际值为准，Docker 镜像可能已经监听所有地址
 
 ```shell
 vim postgresql.conf
@@ -93,9 +93,7 @@ host    all             all             0.0.0.0/0               scram-sha-256
 hostname -I
 ```
 
-会有多个，第一个是当前wsl的ip，一般使用这个
-
-
+`hostname -I` 可能返回多个地址，顺序不能用来判断哪个可达。Windows 访问 WSL 服务优先核实 localhost 转发或当前网络模式，远程设备则需检查端口转发及防火墙。
 
 ### 添加Windows入站规则
 
@@ -105,10 +103,9 @@ hostname -I
 
 ### 软件连接
 
-建议使用IDEA的数据库连接，Navicate的连接成功，但是访问数据库报错。
+使用数据库客户端连接时，分别检查连接成功、目标数据库存在和扩展安装状态。某个客户端的单次报错不能说明其他客户端都不可用。
 
 ![image-20250610091712413](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610091712413.png)
-
 
 ## 安装扩展
 ### 1. 创建数据库
@@ -136,16 +133,11 @@ CREATE TABLE IF NOT EXISTS vector_store (
 id TEXT PRIMARY KEY,
 content TEXT,
 metadata JSONB,
-embedding VECTOR(1536)  -- 1536 是 OpenAI 向量维度，你可以根据实际情况修改
+embedding VECTOR(1536)  -- 1536 仅为示例，必须与所选模型的实际输出维度一致
 );
 ```
 
-如果你之前建表失败，需要重建
-可以先删除旧表再重建（注意数据清空）：
-```bash
-DROP TABLE IF EXISTS vector_store;
-```
-然后再执行上面的 CREATE TABLE 语句。
+如果建表失败，先根据错误检查扩展、权限和现有表结构。已有数据的表应通过迁移调整；`IF NOT EXISTS` 不会修改旧表，也不应通过删表来处理普通配置错误。
 
 ### 4.验证是否成功
 执行：

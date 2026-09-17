@@ -6,17 +6,12 @@ permalink: /blog/b2n5c43s0/
 tags:
   - Git
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
 
 ## 忽略文件集合
 ```gitignore
 
 HELP.md
 .gradle
-gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -46,8 +41,7 @@ out/
 /nbbuild/
 /dist/
 /nbdist/
-/.nb-gradle/
-
+/.nb-
 ### VS Code ###
 .vscode/
 
@@ -63,9 +57,9 @@ target/
 ```
 
 ## gitignore文件不生效
-如果项目已经被git托管了，此时添加忽略文件不能实现需求，必须要清除当前托管缓存，让忽略文件生效
+`.gitignore` 只影响未跟踪文件。已经跟踪的文件需从索引中移除；只指定需要忽略的路径，不必清空整个仓库的索引。这个操作保留工作区文件，也不会删除历史提交中的内容。参见 [Git ignore 文档](https://git-scm.com/docs/gitignore)。
 ```bash
-git rm --cached -r .
-git add .
-git commit -m "Fix .gitignore not working"
+git rm --cached -- path/to/local-config
+git add .gitignore
+git diff --cached
 ```

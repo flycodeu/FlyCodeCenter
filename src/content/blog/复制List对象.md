@@ -6,11 +6,10 @@ permalink: /blog/b2cj2nyy6/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
-## 使用BeanUtils
+`BeanUtils.copyProperties` 复制可匹配的属性值，属于浅拷贝；嵌套对象和集合仍可能共享引用。下面要求目标类有可访问的无参构造器。
+
+## 使用 BeanUtils
 ```java
 package com.hmifo.common.utils;
 
@@ -29,11 +28,11 @@ public class BeanCopyUtils {
         //创建目标对象
         V result = null;
         try {
-            result = clazz.newInstance();
+            result = clazz.getDeclaredConstructor().newInstance();
             //实现属性copy
             BeanUtils.copyProperties(source, result);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("无法创建或复制目标对象", e);
         }
         //返回结果
         return result;

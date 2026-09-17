@@ -7,12 +7,8 @@ tags:
   - SpringBoot
   - 爬虫
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 仅作为学习参考
-
 
 ## 引入依赖
 ```xml
@@ -113,7 +109,6 @@ public class PictureController {
 ```
 
 目前的不足，对于有防盗链的照片无法展示
-
 
 ## 2. 爬取豆瓣的热门电影
 ![pqtp-4](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/pqtp-4.png)
@@ -318,7 +313,6 @@ public static void main(String[] args) {
 
     }
 ```
-
 
 ## 6. 爬取99网站药品信息
 ```java

@@ -7,6 +7,7 @@ tags:
   - Ognl
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e90499388ddc78bb57d46b73ea09260.jpg
 ---
+
 ## 使用 OGNL 提取 JSON 字段
 
 OGNL（Object-Graph Navigation Language） 是一种用于访问和操作 Java 对象图的表达式语言。它最初应用于 Web 框架（如
@@ -65,4 +66,3 @@ public void testOgnl() throws OgnlException {
 INFO  ApiTest                - orderId=123
 INFO  ApiTest                - userName=张三
 ```
-

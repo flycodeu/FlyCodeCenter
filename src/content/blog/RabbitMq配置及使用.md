@@ -6,9 +6,7 @@ permalink: /blog/b1h3ja4fg/
 tags:
   - RabbitMq
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
+
 ## 1. 官网
 https://www.rabbitmq.com/getstarted.html
 
@@ -26,7 +24,6 @@ http://localhost:15672/
 默认账号密码都是guest，如果是上线需要自己更改密码，账号赋予权限，这里仅作为单机本地部署。
 官方设置https://www.rabbitmq.com/access-control.html
 ![rmpzsy-1](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/rmpzsy-1.png)
-
 
 ## 5. java版本快速入门，一对一,原生方式
 https://www.rabbitmq.com/tutorials/tutorial-one-java.html
@@ -75,7 +72,6 @@ exclusive: 是否只允许当前创建的消息队列操作
 autoDelete：删除无人使用的队列
 arguments：
 
-
 ### 5.3 消费者
 ```java
 public class QuickStartConsumerMq {
@@ -104,7 +100,6 @@ public class QuickStartConsumerMq {
 }
 ```
 ![rmpzsy-3](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/rmpzsy-3.png)
-
 
 ## 6. 快速入门，多个消费者
 https://www.rabbitmq.com/tutorials/tutorial-two-java.html
@@ -381,7 +376,6 @@ public class DirectConsumer {
 ![rmpzsy-9](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/rmpzsy-9.png)
 里面只存在AA，BB路由键，没有CC路由键，所以接收不到信息。
 
-
 ## 9. Topic交换机
 topic交换机解决了Direct只能转发到固定的路由键，里面加入了模糊匹配队列，*一个单词 a.orange,b.orange       # 0个或多个单词     lazy.helo lazy.hello2
 ![rmpzsy-10](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/rmpzsy-10.png)
@@ -492,10 +486,8 @@ public class TopicConsumer {
 ![rmpzsy-12](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/rmpzsy-12.png)
 只有产品和后端收到了，前端没有收到消息
 
-
 ## 10. headers交换机
 性能较差，不推荐，不依赖于任何的路由键，只依靠与headers里面的属性进行匹配
-
 
 ## 11. 消息过期机制TTL
 https://www.rabbitmq.com/ttl.html
@@ -524,7 +516,6 @@ https://www.rabbitmq.com/confirms.html
 ack: 消费成功
 nack: 消费失败
 reject：拒绝消费
-
 
 ## 14. SpringBoot结合RabbitMQ使用
 https://spring.io/guides/gs/messaging-rabbitmq/

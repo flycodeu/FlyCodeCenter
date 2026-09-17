@@ -6,9 +6,6 @@ permalink: /blog/b89kow8hv/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 为什么要创建Starter？
 
@@ -46,7 +43,7 @@ tags:
 
 ![image-20240114144225644](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141442689.png)
 
-因为我们目前是生成依赖包，而不是打包成jar，需要删掉，否则会报错
+Starter 仍然发布为 JAR，但应是可被其他项目引用的普通 JAR。移除或跳过 `spring-boot-maven-plugin` 的 `repackage` 执行即可，不必删除所有构建配置。
 
 ### 3. 删除启动类
 
@@ -101,15 +98,21 @@ public class FlyClient {
 }
 ```
 
-### 6. 编写spring.factories
+### 5. 注册自动配置
 
-在resources里面创建spring.factories文件，编写以下配置，用于自动加载的配置类
+Spring Boot 2.6 及更早版本在 `src/main/resources/META-INF/spring.factories` 中注册：
 
 ```
-org.springframework.boot.autoconfigure.EnableAutoConfiguration= com.fly.flydemosdk.NameClientConfig(这部分是自己配置所在的地址)
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.fly.flydemosdk.NameClientConfig
 ```
 
-### 7. install安装
+Spring Boot 2.7 开始支持 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`；Spring Boot 3 不再通过 `spring.factories` 的上述键加载自动配置。新格式每行写一个配置类全名，不写键名。参见 [Spring Boot 3 迁移指南](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide)。
+
+```text
+com.fly.flydemosdk.NameClientConfig
+```
+
+### 6. install 安装
 
 点击install安装Starter到本地依赖
 
@@ -152,9 +155,9 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration= com.fly.flydemos
 1. 需要一个SpringBoot项目，引入Spring-boot-configuration-processor依赖
 2. 编写提供服务的接口
 3. 编写客户端调用服务的类
-4. 添加@ConfigurationProperies注解来标注用户再配置文件输入的提示
-5. 再resources里面创建META-INFO文件夹
-6. 里面编写spring.factories的配置，主要就是通过autoConfiguration来识别到对应启动的客户端
+4. 使用 `@ConfigurationProperties` 绑定配置；配置处理器生成 IDE 提示元数据
+5. 在 resources 中创建 `META-INF` 目录
+6. 按 Spring Boot 版本选择 `spring.factories` 或 `AutoConfiguration.imports` 注册配置类
 7. install来安装依赖，或者deploy来部署依赖
 
 ## 笔者项目

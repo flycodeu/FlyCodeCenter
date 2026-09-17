@@ -1,5 +1,5 @@
 ---
-title: 流式输出设置返回数据
+title: SSE流式文本的空格保留与JSON编码
 createTime: '2026/03/01 19:23:46'
 code: bdz2d2nyh
 permalink: /blog/bdz2d2nyh/
@@ -8,11 +8,11 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/06776b505407acdfcb9e86cff0311143.jpg
 ---
 
-目前有一个使用Flux流式输出给用户
+后端使用 `Flux<String>` 返回模型生成的文本片段：
 ```java
 Flux<String> chatToCodeStream = appService.chatToCode(appId, message, currentLoginUser);
 ```
-在测试过程中，会发现有空格丢失了，无法进行正确拼接，我们可以针对返回的流式数据进行两个处理。
+流式文本拼接后出现空格丢失，需要沿着原始片段、SSE 编码和前端解析逐层检查。SSE 解析器会移除字段冒号后的一个可选空格，并按规则合并多行 `data`；它不会任意删除文本中的所有空格。参见 [SSE 标准](https://html.spec.whatwg.org/multipage/server-sent-events.html)。
 ![image0](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20250806153038.png)
 
 在DeepSeek中，使用的流式字符拼接，再将拼接后的数据前端处理，结束后返回done标识。
@@ -39,8 +39,7 @@ Flux<ServerSentEvent<String>> serverSentEventFlux = chatToCodeStream
                         .build()));
 ```
 
-
-测试后,每次数据使用d构建的map返回数据，这样就不会丢失空格
+将片段作为 JSON 字符串字段传输，再读取 `d` 拼接，可以保留字符串内的空格和换行；前后端都不要再对片段调用 `trim()`。
 ![image2](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20250806152713.png)
 
 前端使用这种方式接收
@@ -77,7 +76,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
         eventSource.onmessage = (event) => {
             try {
                 const parsed = JSON.parse(event.data)
-                if (parsed.d) {
+                if (typeof parsed.d === 'string') {
                     fullContent += parsed.d
                     messages.value[aiMessageIndex].content = fullContent
                     messages.value[aiMessageIndex].loading = false

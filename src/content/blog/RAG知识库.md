@@ -8,7 +8,7 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250512165933.jpg
 ---
 
-# AI知识问答场景
+## AI知识问答场景
 - 教育场景：AI 针对学生的薄弱环节提供个性化辅导和学习资源推荐。
 - 电商场景：AI 根据用户购物历史和偏好推荐适合的商品，并提供智能客服支持。
 - 法律咨询：AI 能解答法律疑问，提供相关法规信息，节省律师时间和成本。
@@ -21,22 +21,20 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 但是AI可能回复错误内容、不按照指定内容回复，所以我们读取自己的知识库，让AI根据已有的知识库回复，而不回复其余内容。可以使用AI主流技术：RAG知识库。
 
-
-
-# RAG概念
+## RAG概念
 
 RAG(Retrieval-Augmented Generation 检索增强生成)，这是一种结合了信息检索（Information Retrieval, IR）与文本生成（Text Generation）的混合方法，旨在提高生成模型输出的相关性和准确性。
 
 ![image-20250512094656772](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512094656772.png)
 
-## RAG工作流程
+### RAG工作流程
 
 - 文档收集和切割
 - 向量转换和存储
 - 文档过滤和检索
 - 查询增强和关联
 
-### 1. 文档收集和切割
+#### 1. 文档收集和切割
 
 文档收集：从各种来源收集原始文档
 
@@ -52,9 +50,7 @@ RAG(Retrieval-Augmented Generation 检索增强生成)，这是一种结合了�
 
 ![image-20250512101837942](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512101837942.png)
 
-
-
-### 2. 向量转换和存储
+#### 2. 向量转换和存储
 
 向量转换：使用Embedding模型将文本转换为高维向量表示，可以捕获到文本的语义特征
 
@@ -62,9 +58,7 @@ RAG(Retrieval-Augmented Generation 检索增强生成)，这是一种结合了�
 
 ![image-20250512102506199](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512102506199.png)
 
-
-
-### 3. 文档过滤和检索
+#### 3. 文档过滤和检索
 
 查询处理：将用户的问题也转换为向量表示
 
@@ -76,9 +70,7 @@ RAG(Retrieval-Augmented Generation 检索增强生成)，这是一种结合了�
 
 ![image-20250512103845423](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512103845423.png)
 
-
-
-### 4. 查询增强与关联
+#### 4. 查询增强与关联
 
 提示词组装：将检索到的文档和用户的问题进行增强组合
 
@@ -90,17 +82,13 @@ RAG(Retrieval-Augmented Generation 检索增强生成)，这是一种结合了�
 
 ![image-20250512104518004](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512104518004.png)
 
-
-
 结合
 
 ![image-20250512104547907](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512104547907.png)
 
+### RAG相关技术
 
-
-## RAG相关技术
-
-### Embedding
+#### Embedding
 
 Embedding 嵌入是将高维离散数据(如文字、图片)转换为低维连续向量的过程。这些向量能在数学空间中表示原始数
 据的语义特征,使计算机能够理解数据间的相似性。
@@ -111,7 +99,7 @@ Embedding模型是执行这种转换算法的机器学习模型,如Word2Vec(文�
 
 ![image-20250512111255920](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512111255920.png)
 
-### 向量数据库
+#### 向量数据库
 
 专门存储和检索数据的数据库系统。通过高效索引算法实现快速相似性搜索。向量数据的典型结构是一个一维数组，其中的元素是数值（通常是浮点数）。这些数值表示对象或数据点在多维空间中的位置、特征或属性。
 [腾讯云向量数据库](https://cloud.tencent.com/developer/techpedia/1953)
@@ -120,13 +108,11 @@ Embedding模型是执行这种转换算法的机器学习模型,如Word2Vec(文�
 
 ![向量数据库分类](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512111655169.png)
 
-### 召回
+#### 召回
 
 召回是信息检索的第一阶段，目的是从大规模数据中筛选出可能相关的候选项子集，强调的是**速度和广度**，而不是精确度。
 
-
-
-### 精排和Rank模型
+#### 精排和Rank模型
 
 精排这是信息检索的最后阶段，使用计算复杂度更高的算法，考虑更多的特征和业务规则，对于候选项进行更复杂、精细的排序。
 
@@ -134,31 +120,23 @@ Embedding模型是执行这种转换算法的机器学习模型,如Word2Vec(文�
 
 Rank模型负责对召回阶段筛选出的数据进行精确排序，考虑多种特征评估相关性
 
-
-
-
-
-### 混合检索策略
+#### 混合检索策略
 
 结合多种检索方法，提高搜索效率。常见关键词、语义、知识图谱。
 
 ![image-20250512134615888](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512134615888.png)
 
-
-
-
-
-## RAG开发
+### RAG开发
 
 [Spring AI RAG](https://docs.spring.io/spring-ai/reference/api/etl-pipeline.html)
 
 首先需要引入Spring AI相关组件，详情参考[SpringBoot调用AI](SpringBoot调用AI.md)
 
-### 1. 文档准备
+#### 1. 文档准备
 
 自行准备文档
 
-### 2. 文档读取
+#### 2. 文档读取
 
 提取、转换和加载 （ETL） 框架是检索增强生成 （RAG） 用例中数据处理的主干。
 
@@ -169,8 +147,6 @@ ETL三个主要组件
 - DocumentWriter：将文档列表保存到存出中
 
 ![image-20250512152548126](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512152548126.png)
-
-
 
 1. 引入依赖
 
@@ -220,9 +196,7 @@ public class LoveAppMarkdownLoader {
 }
 ```
 
-
-
-### 3. 向量转换和存储
+#### 3. 向量转换和存储
 
 可以使用[SimpleVector](https://docs.spring.io/spring-ai/reference/api/vectordbs.html)实现初始化向量数据库并且保存文档,以下是添加方法。
 
@@ -270,9 +244,7 @@ public class LoveAppVectorConfig {
 }
 ```
 
-
-
-### 4. 查询增强
+#### 4. 查询增强
 
 Spring AI 通过Advisor特性提供了开箱即用的RAG功能。主要是QuestionAnswerAdvisor 问答拦截器和 RetrievalAugme
 ntationAdvisor检索增强拦截器,前者更简单易用、后者更灵活强大。
@@ -281,8 +253,6 @@ ntationAdvisor检索增强拦截器,前者更简单易用、后者更灵活强�
 werAdvisor 会查询向量数据库,获取与用户问题相关的文档。然后从向量数据库返回的响应会被附加到用户文本中,为模型提供上下文,帮助其生成回答。
 
 ![image-20250512160226094](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512160226094.png)
-
-
 
 ```java
  	@Resource
@@ -313,13 +283,11 @@ werAdvisor 会查询向量数据库,获取与用户问题相关的文档。然�
 
 ![image-20250512162812210](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250512162812210.png)
 
+### 阿里云RAG
 
+#### 录入数据库
 
-## 阿里云RAG
-
-### 录入数据库
-
-选择阿里的原因是有Spring AI Alibaba兼容Spring AI，比较适用于java开发。 
+选择阿里的原因是有Spring AI Alibaba兼容Spring AI，比较适用于java开发。
 
 https://bailian.console.aliyun.com/?tab=app#/data-center
 
@@ -335,9 +303,7 @@ https://bailian.console.aliyun.com/?tab=app#/data-center
 
 前置数据库已经准备完成，后面可以阅读[Spring AI Alibaba](https://java2ai.com/docs/1.0.0-M6.1/tutorials/retriever/#%E7%A4%BA%E4%BE%8B%E7%94%A8%E6%B3%95)实现RAG数据库
 
-### RAG开发
-
-
+#### RAG开发
 
 ```java
 var dashScopeApi = new DashScopeApi(System.getenv("DASHSCOPE_API_KEY"));
@@ -393,23 +359,21 @@ public class LoveAppAdvisorConfig {
 
 即可在应用程序中加入Advisor
 
+## RAG核心特性
 
-
-# RAG核心特性
-
-## 文档收集与切割（ETL）
+### 文档收集与切割（ETL）
 
 [Spring AI ETL](https://docs.spring.io/spring-ai/reference/api/etl-pipeline.html)
 
-文档收集和切割阶段，我们需要对知识库文档进行处理，其中涉及到提取、转换和加载 ，这个过程成为ETL( Extract, Transform, and Load)。 
+文档收集和切割阶段，我们需要对知识库文档进行处理，其中涉及到提取、转换和加载 ，这个过程成为ETL( Extract, Transform, and Load)。
 
-### Document(文档)
+#### Document(文档)
 
 ![image-20250513104519277](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250513104519277.png)
 
 `Document` 类包含文本、元数据和可选的其他媒体类型，如图像、音频和视频。
 
-### ETL
+#### ETL
 
 ETL 管道有三个主要组件：
 
@@ -419,9 +383,7 @@ ETL 管道有三个主要组件：
 
 ![image-20250513104923705](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250513104923705.png)
 
-
-
-### 抽取（Extract）
+#### 抽取（Extract）
 
 DocumentReader从源数据加载文档到内存中，源码如下：
 
@@ -453,9 +415,7 @@ Spring AI内置了多种DocumentReader实现类
 
 ![Email DocumentReader](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250513134127338.png)
 
-
-
-### 转换（Transform）
+#### 转换（Transform）
 
 DocumentTransformer源码如下，实现了apply，如果需要可以自行创建符合自己的转换。
 
@@ -474,8 +434,6 @@ public interface DocumentTransformer extends Function<List<Document>, List<Docum
 - TextSplitter
 - MetadataEnricher
 - ContentFormatTransformer
-
-
 
 1. TextSplitter文本分割器
 
@@ -513,7 +471,7 @@ class MyTokenTextSplitter {
 - `maxNumChunks`：要从文本生成的最大块数（默认值：10000）。
 - `keepSeparator`：是否在块中保留分隔符（如换行符）（默认值：true）。
 
-Token分词器原理		
+Token分词器原理
 
 1. 使用CL100K_BASE编码将输入文本编码为token。
 2. 根据defaultChunkSize将编码后的文本分割成块。
@@ -526,8 +484,6 @@ Token分词器原理
 
 4. 这个过程会一直持续到所有token都被处理完或达到maxNumChunks 为止。
 5. 如果剩余文本长度大于minChunkLengthToEmbed,则会作为最后一个块添加。
-
-
 
 2. MetadataEnricher源数据增强器
 
@@ -561,13 +517,9 @@ class MyDocumentEnricher {
 }
 ```
 
-
-
 3. ContentFormatTransformer格式转换
 
-
-
-### 加载（Load）
+#### 加载（Load）
 
 DocumentWriter实现了write接口
 
@@ -602,11 +554,7 @@ class MyDocumentWriter {
 
 2. VectorStore  矢量存储
 
-
-
-
-
-### 流程组合示例
+#### 流程组合示例
 
 ```java
 // 抽取：从 PDF 文件读取文档
@@ -628,13 +576,11 @@ vectorStore.write(enrichedDocuments);
 vectorStore.write(enricher.apply(splitter.apply(pdfReader.read())));
 ```
 
-
-
-## 向量转换和存储
+### 向量转换和存储
 
 [Spring AI Vector](https://docs.spring.io/spring-ai/reference/api/vectordbs.html)
 
-### Vector
+#### Vector
 
 实现了DocumentWriter
 
@@ -669,9 +615,7 @@ public interface VectorStore extends DocumentWriter {
 - 删除指定文档对应的向量数据
 - 相似度查询
 
-
-
-### 构建请求
+#### 构建请求
 
 ```java
 SearchRequest request = SearchRequest.builder()
@@ -684,9 +628,7 @@ SearchRequest request = SearchRequest.builder()
 List<Document> results = vectorStore.similaritySearch(request);
 ```
 
-
-
-### 工作流程
+#### 工作流程
 
 1. 嵌入转换:当文档被添加到向量存储时,Spring Al会使用嵌入模型将文本转换为向量。
 2. 相似度计算:查询时,查询文本同样被转换为向量,然后系统计算此向量与存储中所有向量的相似度。
@@ -697,15 +639,13 @@ List<Document> results = vectorStore.similaritySearch(request);
 
 4. 过滤与排序:根据相似度阈值过滤结果,并按相似度排序返回最相关的文档
 
-
-
-### 支持的向量数据库
+#### 支持的向量数据库
 
 https://docs.spring.io/spring-ai/reference/api/vectordbs.html
 
 可以使用[Spring AI Alibaba](https://java2ai.com/docs/1.0.0-M6.1/tutorials/vectorstore/)里面内置的Vector
 
-## 文档过滤和检索
+### 文档过滤和检索
 
 https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html#_pre_retrieval
 
@@ -716,11 +656,11 @@ https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.ht
 - 检索后阶段,系统对检索到的文档进行进一步处理,包括排序、选择最相关的子集以及压缩文档内容,输出经过优
   化的相关文档集。
 
-### 预检索（优化用户查询）
+#### 预检索（优化用户查询）
 
 预检索模块负责处理用户查询以实现最佳检索结果。
 
-#### 查询转换-查询重写(QueryTransformer)
+##### 查询转换-查询重写(QueryTransformer)
 
 当用户查询冗长、不明确或包含不相关信息时，此转换器非常有用 这可能会影响搜索结果的质量。
 
@@ -736,7 +676,7 @@ Query transformedQuery = queryTransformer.transform(query);
 
 通过源码可以了解实际上是写了一个Prompt，重构提示词。
 
-#### 查询转换-查询压缩(CompressionQueryTransformer )
+##### 查询转换-查询压缩(CompressionQueryTransformer )
 
 使用大型语言模型来压缩对话历史记录和后续查询 转换为捕获对话本质的独立查询。
 
@@ -752,9 +692,9 @@ QueryTransformer queryTransformer = CompressionQueryTransformer.builder()
 Query transformedQuery = queryTransformer.transform(query);
 ```
 
-#### 查询转换-查询翻译（TranslationQueryTransformer）
+##### 查询转换-查询翻译（TranslationQueryTransformer）
 
-大型语言模型将查询转换为支持的目标语言 
+大型语言模型将查询转换为支持的目标语言
 
 ```java
 Query query = new Query("Hvad er Danmarks hovedstad?");
@@ -767,9 +707,7 @@ QueryTransformer queryTransformer = TranslationQueryTransformer.builder()
 Query transformedQuery = queryTransformer.transform(query);
 ```
 
-
-
-#### 查询扩展-多查询扩展（MultiQueryExpander）
+##### 查询扩展-多查询扩展（MultiQueryExpander）
 
 用于将输入查询扩展为查询列表
 
@@ -786,11 +724,11 @@ List<Query> queries = queryExpander.expand(new Query("How to run a Spring Boot a
 You are an expert at information retrieval and search optimization.Your task is to generate {number} different versions of the given query.Each variant must cover different perspectives or aspects of the topic,while maintaining the core intent of the original query. The goal is to expand the search space and improve the chances of finding relevant information.Do not explain your choices or add any other text.Provide the query variants separated by newlines.Original query: {query}Query variants:");
 ```
 
-### 检索（提高查询相关性）
+#### 检索（提高查询相关性）
 
 从存储中搜索出相关的文档。
 
-#### 文档搜索
+##### 文档搜索
 
 Spring AI提供了多个文档检索器，如VectorStoreDocumentRetriever、DashScopeDocumentRetriever
 
@@ -806,7 +744,7 @@ DocumentRetriever retriever = VectorStoreDocumentRetriever.builder()
 List<Document> documents = retriever.retrieve(new Query("What is the main character of the story?"));
 ```
 
-#### 文档合并
+##### 文档合并
 
 ConcatenationDocumentJoiner文档合并器,通过连接操作,将基于多个查询和来自多个数据源检索到的
 文档合并成单个文档集合。在遇到重复文档时,会保留首次出现的文档,每个文档的分数保持不变。
@@ -821,17 +759,13 @@ List<Document> documents = documentJoiner.join(documentsForQuery);
 
 本质上就是二维数组打平，重新将一维数组合并
 
-
-
-### 检索后
+#### 检索后
 
 根据检索出来的文档，实现最佳的生成结果。可以减少信息的冗余，优化信息等。
 
+### 查询增强和关联
 
-
-## 查询增强和关联
-
-### QuestionAdvisor查询增强
+#### QuestionAdvisor查询增强
 
 [QuestionAdvisor](https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html#_questionansweradvisor)
 
@@ -864,7 +798,7 @@ String content = this.chatClient.prompt()
     .content();
 ```
 
-### RetrievalAugmentationAdvisor
+#### RetrievalAugmentationAdvisor
 
 Spring AI 包括一个 [RAG 模块库 ](https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html#modules)，您可以使用这些模块来构建自己的 RAG 流。`RetrievalAugmentationAdvisor` 是一个 `Advisor`，它基于模块化架构为最常见的 RAG 流提供开箱即用的实现
 
@@ -883,7 +817,7 @@ String answer = chatClient.prompt()
         .content();
 ```
 
-### ContextualQueryAugmenter
+#### ContextualQueryAugmenter
 
 不允许检索的上下文为空。当没有查询到指定文件，不允许模型回答用户问题，防止模型没有准确信息回复错误内容。
 
@@ -899,20 +833,18 @@ Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
         .build();
 ```
 
+### RAG最佳实践和调优
 
+#### 文档收集和切割
 
-## RAG最佳实践和调优
-
-### 文档收集和切割
-
-#### 优化原始文档
+##### 优化原始文档
 
 知识完备性是文档质量的首要条件。如果知识库缺失相关内容,大模型将无法准确回答对应问题。我们需要通过收集用
 户反馈或统计知识库检索命中率,不断完善和优化知识库内容。
 
 在知识完整的前提下,我们要注意3个方面:
 
-1)内容结构化: 
+1)内容结构化:
 
 - 原始文档应保持排版清晰、结构合理,如案例编号、项目概述、设计要点等
 - 文档的各级标题层次分明,各标题下的内容表达清晰
@@ -931,7 +863,7 @@ Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
 - 如果文档包含图片,需链接化处理,确保回答中能正常展示文档中的插图,可以通过在文档中插入可公网访问的URL
   链接实现
 
-#### 文档切片
+##### 文档切片
 
 文档切片尺寸需要根据具体情况灵活调整,避免两个极端:切片过短导致语义缺失,切片过长引入无关信息。具体需结合
 以下因素:
@@ -944,26 +876,20 @@ Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
 性动态选择切片点,避免固定长度切分导致的语义断裂。在实际应用中,应尽量让文本切片包含完整信息,同时避免包含
 过多干扰信息。
 
-
-
-#### 元数据标注
+##### 元数据标注
 
 为文档添加丰富的结构化信息，便于后续的向量化处理和精确搜索。
 
-
-
-### 向量转换和存储
+#### 向量转换和存储
 
 - 选择合适的向量存储
 - 选择合适的嵌入模型
 
+#### 文档过滤和检索
 
+##### 多查询扩展
 
-### 文档过滤和检索
-
-#### 多查询扩展
-
-用户输入的提示词可能不完整，有歧义。可以使用多查询扩展扩大检索范围，提高文档召回率。	
+用户输入的提示词可能不完整，有歧义。可以使用多查询扩展扩大检索范围，提高文档召回率。
 
 ```java
 MultiQueryExpander queryExpander = MultiQueryExpander.builder()
@@ -973,12 +899,12 @@ MultiQueryExpander queryExpander = MultiQueryExpander.builder()
 List<Query> queries = queryExpander.expand(new Query("xxx"));
 ```
 
-#### 查询重写和翻译
+##### 查询重写和翻译
 
 - TranslationQueryTransformer
 - QueryTransformer
 
-#### 检索器配置
+##### 检索器配置
 
 1. 设置合理的相似度阈值
 2. 控制文档返回数量
@@ -1004,7 +930,7 @@ public class LoveAppRagCustomAdvisorFactory {
 }
 ```
 
-### 查询增强和关联
+#### 查询增强和关联
 
 用户提出的问题可能不存在当前RAG知识库，这时候我们需要提示用户修改提示词或者提示用户不存在相关文档，可以使用ContextualQueryAugmenter上下文查询增强
 
@@ -1020,7 +946,6 @@ public class LoveAppContextualQueryAugmenterFactory {
 }
 ```
 
-
 除了上述优化策略外,还可以考虑以下方面的改进:
 
 ![image-20250520095925675](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520095925675.png)
@@ -1030,27 +955,23 @@ public class LoveAppContextualQueryAugmenterFactory {
 3. 针对查询重写、关键词元信息增强等用到AI大模型的场景,可以选择相对轻量的大模型,不一定整个项目只引入一
    种大模型
 
-## 混合检索策略
+### 混合检索策略
 
 ![image-20250520100331507](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520100331507.png)
 
-### 并行混合存储
+#### 并行混合存储
 
 ![image-20250520100539147](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520100539147.png)
 
-
-
-### 级联混合检索
+#### 级联混合检索
 
 ![image-20250520100611269](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520100611269.png)
 
-
-
-### 动态混合检索
+#### 动态混合检索
 
 ![image-20250520100641180](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520100641180.png)
 
-## 大模型幻觉
+### 大模型幻觉
 
 - 事实性幻觉：事实不符
 - 逻辑性幻觉：推理过程存在逻辑错误
@@ -1064,34 +985,25 @@ public class LoveAppContextualQueryAugmenterFactory {
 - 有效的RAG实现通常会引入“引用标注”机制,让模型明确指出信息来源于哪个文档的哪个部分。
 - 提示工程优化,可以采用“思维链”提高推理透明度,通过引导模型一步步思考,我们能够更好地观察其推理过程,及时发现可能的错误。
 - 使用事实验证模型检查生成内容的准确性,建立关键信息的自动核查机制,或实施人机协作的审核流程。评估幻觉程度的指标包括事实一致性、引用准确性和自洽性评分。
-  
 
-## RAG应用评估
+### RAG应用评估
 
 ![image-20250520102028316](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520102028316.png)
 
+### RAG架构
 
-
-## RAG架构
-
-### 自纠错RAG（C-RAG）
+#### 自纠错RAG（C-RAG）
 
 ![image-20250520102126547](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520102126547.png)
 
-
-
-
-
-### 自省RAG（Sefl-RAG）
+#### 自省RAG（Sefl-RAG）
 
 ![image-20250520102207884](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520102207884.png)
 
-
-
-### 检索树RAG
+#### 检索树RAG
 
 ![image-20250520102246063](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520102246063.png)
 
-### 多智能体RAG系统
+#### 多智能体RAG系统
 
 ![image-20250520102313644](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520102313644.png)

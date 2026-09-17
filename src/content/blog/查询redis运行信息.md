@@ -6,6 +6,7 @@ permalink: /blog/bdahju0w6/
 tags:
   - SpringBoot
 ---
+
 >作者：程序员飞云
 >
 > 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
@@ -343,8 +344,5 @@ getSystemCache()
 </style>
 ```
 
-
-
 ## 效果展示
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731044517980-0c6ca267-3ad4-45ea-a9ac-672fd7369999.png)
-

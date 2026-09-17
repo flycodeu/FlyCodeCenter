@@ -6,11 +6,8 @@ permalink: /blog/bvtr0vhe5/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
-# 1. 如何开发一个java命令行程序
+## 1. 如何开发一个java命令行程序
 首先想到的是通过`Scanner`，获取到用户在命令好界面输入的内容，然后解析对应的内容，执行相应的命令。但是有一些缺点
 
 1. 需要解析用户的输入
@@ -26,8 +23,6 @@ tags:
 比如`git --help`等等，我如何配置自己的命令行能够支持帮助命令，颜色高亮等等内容。
 
 很显然，这种方式缺点较多。
-
-
 
 这边收集了一部分可以支持开发的工具，第三方库
 
@@ -51,16 +46,14 @@ tags:
 
 [Apache Commons CLI](https://github.com/apache/commons-cli): 学习简单，使用容易，但是功能不多，参考地址[https://blog.csdn.net/liuxiangke0210/article/details/78141887](https://blog.csdn.net/liuxiangke0210/article/details/78141887)
 
-
-
 相对而言Picocli更加好一点，毕竟是专业的命令行开发框架，所以接下来笔者会学习使用这个框架。
 
-# 2. 入门Demo
+## 2. 入门Demo
 
 需要一个Maven项目
 学习地址: [https://picocli.info/quick-guide.html](https://picocli.info/quick-guide.html)
 
-## 1. 引入依赖
+### 1. 引入依赖
 
 ```xml
 <!-- https://mvnrepository.com/artifact/info.picocli/picocli -->
@@ -71,7 +64,7 @@ tags:
 </dependency>
 ```
 
-## 2. 引入官方Demo样例
+### 2. 引入官方Demo样例
 对于官方案例稍微改进一点
 ```java
 import picocli.CommandLine;
@@ -102,13 +95,13 @@ public class ASCIIArt implements Runnable {
     }
 }
 ```
-## 3. 运行
+### 3. 运行
 
 ![image-20231230114729912](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202312301147048.png)
 
 因为这里我们没有给对应的输入，所以输出的是默认值，这里有两种方法可以模拟命令行
 
-### 1. 修改运行配置
+#### 1. 修改运行配置
 
 需要点击当前文件的配置
 
@@ -118,7 +111,7 @@ public class ASCIIArt implements Runnable {
 
 在程序实参里面输入对应的命令，例如  -s 20 test，重新运行就可以了。
 
-### 2. 修改传入的Args参数
+#### 2. 修改传入的Args参数
 
 ```java
    public static void main(String[] args) {
@@ -128,9 +121,7 @@ public class ASCIIArt implements Runnable {
     }
 ```
 
-
-
-## 4.详细讲解
+### 4.详细讲解
 
 ![image-20231230120126939](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202312301201014.png)
 
@@ -145,11 +136,9 @@ public class ASCIIArt implements Runnable {
 7. CommandLine.execute方法返回退出代码。
 8. 应用程序可以使用此退出代码调用System.exit，以向调用进程发出成功或失败的信号。
 
+## 3. 实用功能
 
-
-# 3. 实用功能
-
-## 1.  帮助手册
+### 1.  帮助手册
 
 ```java
 @Command( name = "ASCIIArt", version = "ASCIIArt 1.0", mixinStandardHelpOptions = true )
@@ -161,7 +150,7 @@ public class ASCIIArt implements Runnable {
 
 格式 `ASCIIArt -- help`。
 
-## 2. 命令解析@Option
+### 2. 命令解析@Option
 
 ![Example command with annotated @Option and @Parameters](https://picocli.info/images/OptionsAndParameters2.png)
 
@@ -177,11 +166,11 @@ public class ASCIIArt implements Runnable {
 
 ![image-20231230132644954](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202312301326013.png)
 
-格式 `ASCIIArt -s 20` 
+格式 `ASCIIArt -s 20`
 
 其中需要注意的是arity，这个能够指定每个选项可以接受的参数个数，后面会提及
 
-## 3. 命令解析@Parameters
+### 3. 命令解析@Parameters
 
 ```java
 @Parameters( paramLabel = "<word>", defaultValue = "Hello, picocli",
@@ -196,11 +185,9 @@ public class ASCIIArt implements Runnable {
 
 其中需要注意的是echo和arity两个配置，arity这个能够指定每个选项可以接受的参数个数，echo主要是设置用户是否能够看到对应的输入，如果是较早于4.6的picocli通过jar运行命令的时候是看不见用户输入的，现在可以通过echo=true让用户看见自己的输入数据。
 
+### 4. 交互式命令
 
-
-## 4. 交互式命令
-
-### 1. 单个交互式命令
+#### 1. 单个交互式命令
 
 上面option里面有一个参数是**interactive**，只要这个参数设置为true就能实现交互式命令，下面写一个模拟登录的命令。
 
@@ -233,7 +220,7 @@ public class LoginDemo implements Callable<Integer> {
 
 可以看出已经有了交互式内容
 
-### 2. 多个交互命令
+#### 2. 多个交互命令
 
 加入我现在有多个命令需要交互输入，比如我添加了校验密码
 
@@ -257,7 +244,7 @@ public class LoginDemo implements Callable<Integer> {
 
 很显然这里是存在一点问题的，如果这个命令参数是强制需要输入的，那么用户必须填，但是如果不是强制输入的，那么用户可以不填，所以这边需要分成两种情况。
 
-#### 1. 可选交互式
+##### 1. 可选交互式
 
 官方讲解地址[https://picocli.info/#_optionally_interactive](https://picocli.info/#_optionally_interactive)
 
@@ -286,7 +273,7 @@ private String password;
 
 ![image-20231230141349891](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202312301413968.png)
 
-#### 2. 强制交互式
+##### 2. 强制交互式
 
 官方也是有对应的讲解[https://picocli.info/#_forcing_interactive_input](https://picocli.info/#_forcing_interactive_input)
 
@@ -354,13 +341,11 @@ public static void main(String[] args) throws IllegalAccessException {
 
 总体上能够实现功能。
 
+### 5.子命令
 
+子命令是指命令中又包含一组命令，相当于命令的分组嵌套，适用于功能较多、较为复杂的命令行程序，比如 git、docker 命令等 在 Picocli 中，提供两种设置子命令的方式。
 
-## 5.子命令
-
-子命令是指命令中又包含一组命令，相当于命令的分组嵌套，适用于功能较多、较为复杂的命令行程序，比如 git、docker 命令等 在 Picocli 中，提供两种设置子命令的方式。 
-
-- 声明式 通过 @Command 注解的 subcommands 属性来给命令添加子命令，更直观清晰。 
+- 声明式 通过 @Command 注解的 subcommands 属性来给命令添加子命令，更直观清晰。
 
 ```java
 @Command(subcommands = {
@@ -378,7 +363,7 @@ public static void main(String[] args) throws IllegalAccessException {
 })
 ```
 
-- 编程式 在创建 CommandLine 对象时，调用 addSubcommand 方法来绑定子命令，更灵活。 
+- 编程式 在创建 CommandLine 对象时，调用 addSubcommand 方法来绑定子命令，更灵活。
 
 ```java
 CommandLine commandLine = new CommandLine(new Git())

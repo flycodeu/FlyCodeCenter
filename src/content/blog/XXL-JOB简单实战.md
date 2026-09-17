@@ -6,11 +6,6 @@ permalink: /blog/b28iw045n/
 tags:
   - XXL-JOB
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
-
 
 ## 分布式任务调度系统
 
@@ -19,8 +14,6 @@ tags:
 > 可以理解为一个公司的老板给公司员工分配任务，保证每个人不会做重复的工作，提升效率，员工执行完任务向老板汇报。
 
 主流的任务调度系统有 XXL-JOB，Elastic Job等等，此处使用XXL-JOB，相对简单易于使用。
-
-
 
 ## XXL-JOB
 
@@ -176,8 +169,6 @@ public class MyJobHandler {
 
 ![image-20240129170505890](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401291705988.png)
 
-
-
 测试过程中，可以发现即使在界面上关闭任务的执行，但是依然会执行没有完成的数据。
 
 如果`XXL-JOB`管理系统挂了，客户端不再执行定时任务，但是客户端会依然尝试重连`XXL-JOB`管理端，等管理端重新上线后，会处理堆积请求。
@@ -191,6 +182,3 @@ public class MyJobHandler {
 执行器会向调度中心注册服务，调度中心会发布任务给执行器，执行器会通过相应的日志，回调通知调度中心。
 
 > 类似老板和员工
-
-
-

@@ -7,9 +7,10 @@ tags:
   - Git
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/22678c319934c0e968b1ef06041698b.jpg
 ---
+
 ## 创建空仓库
 
-一定需要添加README.md文件，否则无法提交代码
+空仓库不要求包含 `README.md`。首次提交需要先暂存至少一个文件，也可以显式创建空提交；推送时还要指定实际分支名。参见 [git init](https://git-scm.com/docs/git-init)。
 
 ![image-20250327090020163](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090020163.png)
 
@@ -25,8 +26,6 @@ https://github.com/settings/personal-access-tokens
 
 复制生成的token到![image-20250327090834790](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090834790.png)
 
-
-
 ## 引入依赖
 
 ```xml
@@ -37,13 +36,11 @@ https://github.com/settings/personal-access-tokens
         </dependency>
 ```
 
-
-
 ## Java代码
 
 主要步骤：
 
-1. 连接数据库
+1. 克隆 Git 仓库
 2. 创建文件夹和日志文件
 3. 提交暂存区、提交commit、提交代码
 
@@ -77,7 +74,7 @@ https://github.com/settings/personal-access-tokens
         // 4. 提交并推送更改
         git.add().addFilepattern(dateFolderName + "/" + fileName).call();
         git.commit().setMessage("Add new log via Github Actions").call();
-        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, ""));
+        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, "")).call();
 
         return "https://github.com/flycodeu/openai-code-review-logs/blob/master/" + dateFolderName + "/" + fileName;
 

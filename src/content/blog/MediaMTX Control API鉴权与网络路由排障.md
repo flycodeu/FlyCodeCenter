@@ -1,5 +1,5 @@
 ---
-title: MediaMTX Control API 鉴权与网络路由排障技术文档
+title: MediaMTX Control API鉴权与网络路由排障
 createTime: '2026/03/01 19:23:46'
 code: b228ia7yu
 permalink: /blog/b228ia7yu/
@@ -8,15 +8,6 @@ tags:
   - 视频
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efae30bcdf26bfdec9f4bb0326457e75.jpg
 ---
-
-<ImageCard
-    image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efae30bcdf26bfdec9f4bb0326457e75.jpg"
-    href="/"
-    width="400"
-    center="true"
-/>
-
-# MediaMTX Control API 鉴权与网络路由排障技术文档（Linux / 服务器部署）
 
 本文档基于一次典型的「后端写入 MediaMTX path 配置成功，但拉流失败 / API 通过 IP 访问异常」场景整理，覆盖以下内容：
 
@@ -34,7 +25,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efa
 
 ## 1. 背景与关键结论
 1. “写入成功”与“能播放”是两件事
-- 写入成功：`/v3/config/paths/get/<path>` 能返回该 path 的完整配置；`/v3/config/paths/list` 的 itemCount 增加。 
+- 写入成功：`/v3/config/paths/get/<path>` 能返回该 path 的完整配置；`/v3/config/paths/list` 的 itemCount 增加。
 - 能播放：MediaMTX 需要能从服务器侧访问到 source 指定的 RTSP/RTMP/HLS 等源地址。网络不可达会导致 WebRTC/HLS session 报错。
 
 2. 使用 IP 访问 API 失败（authentication error / connection refused）常见原因
@@ -364,7 +355,7 @@ ip route get 172.17.234.204
 - Nginx 配置 X-Forwarded-For
 
 - MediaMTX 配置 apiTrustedProxies，并将 Nginx 的 IP 加进去，让 MediaMTX 从 header 取真实 IP
- 
+
 ## 7. 常用检查清单（按现象定位）
 ### 7.1 API “connection refused”
 

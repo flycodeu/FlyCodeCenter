@@ -7,9 +7,6 @@ tags:
   - SpringBoot
   - 对象存储
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 腾讯云官网
 [腾讯云官网](https://console.cloud.tencent.com/)
@@ -45,7 +42,6 @@ tags:
 
 [云API调试](https://console.cloud.tencent.com/api/explorer?Product=cos&Version=2018-11-26&Action=GetService)
 
-
 ### 获取密钥
 
 进入访问管理
@@ -55,7 +51,6 @@ tags:
 获取自己的密钥
 
 ![image-20241227105148450](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/image-20241227105148450.png)
-
 
 ## 引入依赖
 
@@ -68,8 +63,6 @@ tags:
      <version>5.6.227</version>
 </dependency>
 ```
-
-
 
 ## 初始化客户端
 
@@ -238,8 +231,6 @@ https://cloud.tencent.com/document/product/436/10199#.E4.B8.8B.E8.BD.BD.E5.AF.B9
 - 让用户通过url的方式访问下载
 - 后端服务器先校验用户权限，校验通过返回给前端临时的密钥，然后前端通过密钥请求对象存储
 
-
-
 ```java
     /**
      * 流式下载
@@ -289,4 +280,3 @@ https://cloud.tencent.com/document/product/436/10199#.E4.B8.8B.E8.BD.BD.E5.AF.B9
         }
     }
 ```
-

@@ -7,13 +7,10 @@ tags:
   - LangChain4j
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/0a234e4682107e18d9eba574bc12c263.jpg
 ---
-# LangChain4j 使用指南
 
 ## 简介
 
-LangChain4j 是 LangChain 的 Java 实现，旨在帮助开发者将大型语言模型（LLM）快速整合到 Java 应用中，支持聊天、RAG、函数调用、多模态输入等能力。
-
----
+[LangChain4j](https://docs.langchain4j.dev/intro/) 是面向 Java 的独立 LLM 应用框架，提供模型调用、RAG、工具调用等能力。它并非 Python LangChain 的 Java 移植版；各模型支持的输入和工具能力需分别核对。
 
 ## 核心组件
 
@@ -62,11 +59,9 @@ UserMessage userMessage = UserMessage.from(
 );
 ```
 
----
+## 相关技术概念
 
-## 🧠 相关技术概念
-
-### 🔁 1. RAG（Retrieval-Augmented Generation）检索增强生成
+### 1. RAG（Retrieval-Augmented Generation）检索增强生成
 
 RAG 是 LangChain 中最核心的应用场景之一，其基本思想是：
 
@@ -86,7 +81,7 @@ RAG 是 LangChain 中最核心的应用场景之一，其基本思想是：
 * `VectorStore`（向量存储与检索）
 * `RetrievalAugmentedChatMemory`（记忆+检索结合）
 
-### 🕹️ 2. MCP（模块上下文协议）
+### 2. MCP（模块上下文协议）
 
 LangChain4j 支持与外部 MCP 工具链进行集成，以扩展其上下文能力和工具调度能力。
 
@@ -108,7 +103,7 @@ AiServices.builder(AiCodeHelperService.class)
     .build();
 ```
 
-### 📦 3. Prompt Template（提示词模板）
+### 3. Prompt Template（提示词模板）
 
 用于构造动态 prompt，便于参数化。
 
@@ -117,13 +112,13 @@ PromptTemplate template = PromptTemplate.from("你是一个{role}，请帮助我
 String prompt = template.apply(Map.of("role", "程序员", "task", "写一个冒泡排序"));
 ```
 
-### 🧠 4. Memory（记忆系统）
+### 4. Memory（记忆系统）
 
 * `MessageWindowChatMemory`: 限制消息数量
 * `TokenWindowChatMemory`: 限制 token 长度
 * `ChatMemoryStore`: 可持久化记忆（支持 Redis、MongoDB 等）
 
-### 🧩 5. Tool & Function Call
+### 5. Tool & Function Call
 
 LangChain4j 支持函数调用与工具集成：
 
@@ -137,7 +132,7 @@ Tool weatherTool = Tool.builder()
 
 工具可以用于 Agent 执行环境中。
 
-### 🧠 6. Agent 智能体
+### 6. Agent 智能体
 
 Agent 是具备推理和决策能力的智能体，LangChain4j 通过 ReAct 方式支持多工具调用。
 
@@ -150,7 +145,7 @@ Agent agent = Agent.builder()
 
 Agent 可根据上下文自动决定使用哪些工具。
 
-### 🛡️ 7. Guardrails（输入输出防护）
+### 7. Guardrails（输入输出防护）
 
 用于控制 AI 输入或输出的安全与合规性。
 
@@ -164,7 +159,7 @@ public class SafeInputGuardrail implements InputGuardrail {
 }
 ```
 
-### 📈 8. ChatModelListener（日志与可观测性）
+### 8. ChatModelListener（日志与可观测性）
 
 监听模型请求、响应、错误：
 
@@ -185,7 +180,7 @@ ChatModelListener chatModelListener() {
 }
 ```
 
-### 🔄 9. SSE 流式输出
+### 9. SSE 流式输出
 
 支持以响应式方式输出 AI 响应内容：
 
@@ -207,8 +202,7 @@ langchain4j:
         model-name: qwen-max
         api-key: xxx
 ```
----
 
 ## 结论
 
-LangChain4j 提供了 Java 基础下强大的 LLM 功能扩展，多模态，记忆，RAG，SSE 流式，结构化输出、工具调用、MCP 都有规范支持，非常适合构建个性化、处理处境下的 AI 应用。
+流式回调、记忆、检索和工具调用分别解决不同问题。接入时先确认所用集成模块及模型的支持范围，再组合需要的能力。

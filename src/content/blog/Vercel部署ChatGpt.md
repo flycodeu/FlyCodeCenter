@@ -6,12 +6,6 @@ permalink: /blog/bos2d0vsi/
 tags:
   - AI
 ---
-# Vercel 部署ChatGpt
-
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
 
 ## ChatGPT-Next-Web
 开源项目，跨平台无需服务器就可部署自己的gpt网页端口
@@ -30,7 +24,6 @@ tags:
 2. 拥有gpt账号
 需要使用gpt的key
 3. 将ChatGPT-Next-Web  fork到自己的github仓库
-
 
 ## 开始使用
 1. gpt的key获取

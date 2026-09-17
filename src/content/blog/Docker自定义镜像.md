@@ -7,6 +7,7 @@ tags:
   - Docker
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg06.jpg'
 ---
+
 ## 1. 创建阿里云镜像仓库
 
 ![image-20250708092316129](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250708092316129.png)

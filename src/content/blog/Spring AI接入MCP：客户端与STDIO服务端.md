@@ -1,5 +1,5 @@
 ---
-title: MCP新版实现
+title: Spring AI接入MCP：客户端与STDIO服务端
 createTime: '2026/03/01 19:23:46'
 code: b2awd9f6e
 permalink: /blog/b2awd9f6e/
@@ -9,53 +9,54 @@ tags:
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg04.jpg'
 ---
 
-## 🖥️ 基于 Spring AI 的本地与在线 MCP 客户端接入实战
+## 模型、客户端与工具服务的关系
 
-Spring AI 支持本地与在线模型的统一封装调用，结合 MCP（Model Context Protocol）协议，可实现 AI 与文件系统交互、自动生成文件等强大能力。
+Spring AI 支持本地与在线模型的统一封装调用，结合 MCP（Model Context Protocol）协议，可把服务端开放的文件操作转换为模型可调用的工具。
 
-本文将分别介绍：
+下面按 **Spring AI 1.0.x** 的 API 组织示例。两个模型方案分别配置；依赖版本统一由项目的 `spring-ai-bom` 管理。升级到其他版本时，先核对相应版本的 Starter 和工具回调接口。
 
-- ✅ 基于 **本地 Ollama + Qwen3** 模型实现文件操作
-- ✅ 基于 **ZhiPu AI 在线模型** 实现远程工具调用
+```mermaid
+flowchart LR
+  User[用户请求] --> Client[Spring AI 应用]
+  Client <--> Model[支持工具调用的模型]
+  Client <-->|MCP / STDIO| Server[本地工具子进程]
+  Server --> Resource[允许访问的资源]
+```
 
-------
+MCP 连接由应用建立，模型返回工具调用请求。在线模型也可以经由本地应用调用本地工具；工具并不会因此搬到模型提供方的服务器。
 
-## 🚀 本地 Ollama + Qwen3 模型接入 MCP 实践
+## 本地 Ollama + Qwen3 模型接入 MCP 实践
 
 [Spring AI](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html)
 
-### ✅ 推荐模型：Qwen3
+### 推荐模型：Qwen3
 
 使用 [Qwen3 模型](https://ollama.com/library/qwen3)，原因如下：
 
-- ✅ 支持 MCP 工具调用
-- 🚫 其他模型（如 deepseek）当前不支持 MCP 工具
+- 示例选用支持工具调用的 Qwen3 版本。
+- MCP 由客户端与服务端实现，模型通过工具调用能力接入；不能把某次兼容性问题概括为整个模型家族“不支持 MCP”。应分别核对模型版本、模型提供方接口和客户端适配。
 
-------
-
-### 1️⃣ 引入依赖
+### 1. 引入依赖
 
 ```xml
 
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
+    <artifactId>spring-ai-starter-model-ollama</artifactId>
 </dependency>
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-mcp-server-spring-boot-starter</artifactId>
+    <artifactId>spring-ai-starter-mcp-client</artifactId>
 </dependency>
 ```
 
-------
-
-### 2️⃣ 配置 `application.yml`
+### 2. 配置 `application.yml`
 
 ```yaml
 spring:  
   ai:
     ollama:
-      base-url: http://172.26.37.0:11434
+      base-url: http://127.0.0.1:11434
       embedding:
         enabled: true
         model: nomic-embed-text
@@ -67,9 +68,7 @@ spring:
           servers-configuration: classpath:config/mcp-servers.json
 ```
 
-------
-
-### 3️⃣ MCP 工具配置 `mcp-servers.json`
+### 3. MCP 工具配置 `mcp-servers.json`
 
 在不使用本地服务的情况下，你也可以接入以下 **云端托管的 MCP Server**：
 
@@ -78,9 +77,7 @@ spring:
 
 它们支持通过浏览器接入标准 MCP 工具链，适合快速接入和调试。
 
-------
-
-#### 🖥️ 本地文件操作：server-filesystem 模式
+#### 本地文件操作：server-filesystem 模式
 
 若使用 `server-filesystem` 工具运行在本地环境，可实现如下能力：
 
@@ -116,27 +113,19 @@ spring:
 - MCP 工具将操作 `C:\\Users\\flycode\\Desktop\\temp` 目录
 - 可通过 Ollama 实现 AI 与文件系统的交互
 
-------
-
-### 4️⃣ Spring Bean 配置
+### 4. Spring Bean 配置
 
 ```java
 @Configuration
 public class OllamaConfig {
     @Bean
     public ChatClient.Builder ollamaChatClientBuilder(OllamaChatModel ollamaChatModel) {
-        return new DefaultChatClientBuilder(
-            ollamaChatModel, 
-            ObservationRegistry.NOOP, 
-            (ChatClientObservationConvention) null
-        );
+        return ChatClient.builder(ollamaChatModel);
     }
 }
 ```
 
-------
-
-### 5️⃣ 调用测试：生成本地文件
+### 5. 调用测试：生成本地文件
 
 ```java
 @Resource
@@ -149,7 +138,7 @@ public void makeNewText() {
     String prompt = "帮我生成一个测试.txt文件到C:\\Users\\flycode\\Desktop\\temp位置，并且内容是测试xxxx";
     
     String text = ollamaChatClientBuilder
-        .defaultTools(toolCallback)
+        .defaultToolCallbacks(toolCallback)
         .build()
         .prompt(new Prompt(prompt, OllamaOptions.builder().model("qwen3:latest").build()))
         .call()
@@ -162,42 +151,34 @@ public void makeNewText() {
 }
 ```
 
-------
-
-### ✅ 实际效果
+### 实际效果
 
 📂 本地文件已自动创建：
 
 ![生成本地文件效果图](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250626154816601.png)
 
-------
-
-## ☁️ 使用 ZhiPu AI 在线模型调用 MCP 工具
+## 使用 ZhiPu AI 在线模型调用 MCP 工具
 
 [ZhiPu AI](https://www.bigmodel.cn/dev/api/normal-model/glm-4)
 
-本地模型速度较慢？可以切换到 **智谱 AI 在线模型**，实现远程文件管理。
+此方案使用智谱模型生成工具调用请求，MCP 文件工具仍由客户端应用在本地启动。需同时保留前面的 MCP Client 依赖。
 
 📌 注意：
 
-- 仅智谱 API 支持 MCP 工具协议（国内支持最完善）
+- 选择支持工具调用的模型和接口；模型提供方、客户端适配与 MCP 传输是不同层次。
 - 调用将消耗较多 Token，按需使用
 
-------
-
-### 1️⃣ 引入依赖
+### 1. 引入依赖
 
 ```xml
 
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-zhipuai-spring-boot-starter</artifactId>
+    <artifactId>spring-ai-starter-model-zhipuai</artifactId>
 </dependency>
 ```
 
-------
-
-### 2️⃣ 配置 `application.yml`
+### 2. 配置 `application.yml`
 
 ```yml
 spring:
@@ -214,34 +195,20 @@ spring:
           servers-configuration: classpath:config/mcp-servers.json
 ```
 
-------
-
-### 3️⃣ 配置 Bean
+### 3. 配置 Bean
 
 ```java
 @Configuration
 public class ZhipuConfig {
 
     @Bean
-    public ZhiPuAiApi zhiPuAiApi(@Value("${spring.ai.zhipuai.base-url}") String baseUrl,
-                                  @Value("${spring.ai.zhipuai.api-key}") String apiKey) {
-        return new ZhiPuAiApi(baseUrl, apiKey);
-    }
-
-    @Bean
     public ChatClient.Builder zhipuChatClientBuilder(ZhiPuAiChatModel zhipuChatModel) {
-        return new DefaultChatClientBuilder(
-            zhipuChatModel, 
-            ObservationRegistry.NOOP, 
-            (ChatClientObservationConvention) null
-        );
+        return ChatClient.builder(zhipuChatModel);
     }
 }
 ```
 
-------
-
-### 4️⃣ 测试 MCP 工具能力
+### 4. 测试 MCP 工具能力
 
 ```java
 @Resource
@@ -252,7 +219,7 @@ private ChatClient.Builder zhipuChatClientBuilder;
 @Test
 public void test2() {
     String res = zhipuChatClientBuilder
-        .defaultTools(toolCallback)
+        .defaultToolCallbacks(toolCallback)
         .build()
         .prompt("当前有哪些工具可用")
         .call()
@@ -265,26 +232,11 @@ public void test2() {
 }
 ```
 
-------
-
-### ✅ 效果展示
+### 效果展示
 
 ✨ 可用 MCP 工具一览（自动返回）：
 
 ![ZhiPu AI 工具调用效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250626155456657.png)
-
-------
-
-## 🔚 总结
-
-| 项目   | Ollama 本地模型  | 智谱 AI 在线模型     |
-|------|--------------|----------------|
-| 速度   | 较慢           | 快速             |
-| 支持模型 | Qwen3（MCP支持） | GLM 系列（MCP支持）  |
-| 调用成本 | 免费，需本地资源     | 收费，需 API Token |
-| 推荐用途 | 本地开发、私有部署    | 云端调用、便捷测试      |
-
-------
 
 ## 自定义 MCP 服务开发指南
 
@@ -292,22 +244,18 @@ public void test2() {
 
 > 官方文档参考：[Spring AI - MCP Server Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html)
 
-------
-
-### 1️⃣ 引入核心依赖
+### 1. 引入核心依赖
 
 在新建的 Spring Boot 模块中添加以下依赖：
 
 ```xml
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-mcp-server-spring-boot-starter</artifactId>
+    <artifactId>spring-ai-starter-mcp-server</artifactId>
 </dependency>
 ```
 
-------
-
-### 2️⃣ 实现自定义工具类（以获取电脑配置信息为例）
+### 2. 实现自定义工具类（以获取电脑配置信息为例）
 
 ```java
 @Service
@@ -323,7 +271,7 @@ public class ComputerService {
         String osVersion = System.getProperty("os.version");
         // 操作系统架构
         String osArch = System.getProperty("os.arch");
-        // 用户的账户名称（注意：Java 本身没有直接获取用户名的方法）
+        // 当前 Java 进程所属用户
         String userName = System.getProperty("user.name");
         // 用户的主目录
         String userHome = System.getProperty("user.home");
@@ -343,19 +291,11 @@ public class ComputerService {
 }
 ```
 
-------
+### 3. 配置 application.yml
 
-### 3️⃣ 配置 application.yml
+STDIO 使用子进程的标准输入和输出传递协议消息，不属于 WebMVC 或 WebFlux。HTTP 服务端使用相应的 Web Starter；本节只配置 STDIO。
 
-目前提供的标准 MCP 服务类型有以下几种：
-
-- **WebMVC Server Transport**：支持传统的 WebMVC 传输模式，适用于常规 Web 应用。
-- **WebMVC Server Transport：Full MCP Server**：支持完整的 MCP 服务功能，集成 `SSE`（Server-Sent Events）传输模式，基于 Spring WebFlux 实现，可以高效地处理实时流数据。
-- **WebMVC Server Transport with `STDIO`**：在此模式下，MCP 服务通过标准输入输出（STDIO）方式进行通信，适合命令行工具或无需 Web 服务的场景。
-
-在以下部分，我们将详细说明如何配置和使用 `STDIO` 模式的 MCP 服务，它适用于命令行操作、无界面的后台服务等场景。
-
-为了避免 web 控制台输出，推荐使用 `web-application-type: none`，适合 CLI 工具服务：
+关闭 Web 服务和启动横幅，同时明确启用 STDIO：
 
 ```yml
 spring:
@@ -365,27 +305,31 @@ spring:
   ai:
     mcp:
       server:
+        stdio: true
         name: ${spring.application.name}
         version: 1.0.0
 
   main:
-    banner-mode: off
+    banner-mode: "off"
     web-application-type: none
 
-logging:
-  file:
-    name: ${spring.application.name}.log
-
-server:
-  servlet:
-    encoding:
-      charset: UTF-8
-      force: true
 ```
 
-------
+`logging.file.name` 只添加日志文件，不会自动关闭控制台日志。为避免污染 STDIO，在服务端的 `src/main/resources/logback-spring.xml` 中将日志输出到标准错误：
 
-### 4️⃣ 启动类与工具注册
+```xml
+<configuration>
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder><pattern>%d{HH:mm:ss} %-5level %logger - %msg%n</pattern></encoder>
+    </appender>
+    <root level="INFO"><appender-ref ref="STDERR"/></root>
+</configuration>
+```
+
+工具代码也不要使用 `System.out.println`。只有协议消息可以写入标准输出。
+
+### 4. 启动类与工具注册
 
 ```java
 @SpringBootApplication
@@ -408,9 +352,7 @@ public class ComputerApplication implements CommandLineRunner {
 }
 ```
 
-------
-
-### 5️⃣ 打包服务 Jar 供调用
+### 5. 打包服务 Jar 供调用
 
 将该模块 **打包为可执行 Jar**，记录生成的路径（例如：`ai-mcp-server-computer-1.0-SNAPSHOT.jar`）：
 
@@ -418,11 +360,9 @@ public class ComputerApplication implements CommandLineRunner {
 
 ![打包路径](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250627093509252.png)
 
-------
+### 6. 配置调用方 JSON 文件
 
-### 6️⃣ 配置调用方 JSON 文件
-
-在客户端（如 Zhipu AI）中的 `mcp-servers.json` 配置文件中添加如下内容：
+在调用智谱模型的 Spring AI 客户端应用中的 `mcp-servers.json` 配置文件中添加如下内容：
 
 ```json
 {
@@ -446,11 +386,9 @@ public class ComputerApplication implements CommandLineRunner {
 }
 ```
 
-------
+### 7. 调用测试
 
-### 7️⃣ 调用测试
-
-使用 `ChatClient` 发起测试请求，查看工具是否注册成功：
+模型回复不能代替工具注册检查。先通过 MCP 的 `tools/list` 核对实际工具，再观察调用日志及文件结果。下面的提问用于体验模型交互：
 
 ```java
 @Resource
@@ -459,7 +397,7 @@ private ChatClient.Builder zhipuChatClientBuilder;
 @Test
 public void testToolAvailability() {
     String res = zhipuChatClientBuilder
-                    .defaultTools(toolCallback)
+                    .defaultToolCallbacks(toolCallback)
                     .build()
                     .prompt("当前有哪些工具可用")
                     .call()
@@ -475,9 +413,7 @@ public void testToolAvailability() {
 
 ![工具列表显示成功](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250627110127060.png)
 
-------
-
-### 8️⃣ AI 问答调用效果
+### 8. AI 问答调用效果
 
 示例 prompt：调用工具生成电脑配置文件
 
@@ -486,7 +422,7 @@ public void testToolAvailability() {
 public void testComputerTool() {
     String prompt = "获取我的电脑配置信息，帮我生成一个电脑配置.txt文件到C:\\Users\\flycode\\Desktop\\temp位置，并且内容是电脑配置信息";
     String text = zhipuChatClientBuilder
-                    .defaultTools(toolCallback)
+                    .defaultToolCallbacks(toolCallback)
                     .build()
                     .prompt(new Prompt(prompt))
                     .call()
@@ -502,14 +438,7 @@ public void testComputerTool() {
 
 ![调用效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250627110300537.png)
 
-------
+## 参考
 
-### ✅ 小结
-
-通过自定义 MCP Server 模块，你可以让 AI 工具访问本地服务、操作本地资源，支持场景包括但不限于：
-
-- 系统信息读取
-- 本地文件生成 / 编辑
-- 接入私有 API 或数据库查询
-
-可以将多个服务模块整合，统一注册为 MCP 工具链，提高 AI 调度的灵活性。
+- [Spring AI 1.0 MCP Client](https://docs.spring.io/spring-ai/reference/1.0/api/mcp/mcp-client-boot-starter-docs.html)
+- [Spring AI 1.0 MCP Server](https://docs.spring.io/spring-ai/reference/1.0/api/mcp/mcp-server-boot-starter-docs.html)

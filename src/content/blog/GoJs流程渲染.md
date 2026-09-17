@@ -15,7 +15,6 @@ GoJS 是一个 JavaScript 库，让您可以轻松在网页浏览器中创建交
 
 **核心是节点和关系的数据维护**
 
-
 ## 快速上手
 需要引入一些js，可以从当前位置下载对应的[GoJs样例](https://github.com/flycodeu/business-behavior-monitor/tree/master/front)
 ```html
@@ -153,8 +152,6 @@ GoJS 是一个 JavaScript 库，让您可以轻松在网页浏览器中创建交
 界面总体实现了本地流程图界面展示以及在线修改
 
 ![image-20250728144319954](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250728144319954.png)
-
-
 
 ## 总结
 

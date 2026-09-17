@@ -1,5 +1,5 @@
 ---
-title: Maven自定义Mainfest
+title: Maven自定义MANIFEST.MF
 createTime: '2026/03/01 19:23:46'
 code: b1qfi4jgz
 permalink: /blog/b1qfi4jgz/
@@ -7,7 +7,6 @@ tags:
   - Maven
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d01a33e1a55ca078dc78d963e907308.jpg
 ---
-
 
 ## 简介
 MANIFEST.MF 是一个在 Java 的 JAR 文件中常见的文件，位于 JAR 文件的 META-INF 目录下。它是一个纯文本文件，主要用于描述 JAR 文件的内容、元数据和配置信息。它是 JAR 文件的“清单文件”，类似于一种元数据文件，为运行时环境（如 JVM）或其他工具提供了必要的信息。
@@ -18,7 +17,6 @@ MANIFEST.MF 是一个在 Java 的 JAR 文件中常见的文件，位于 JAR 文�
 - 定义依赖关系：列出 JAR 文件运行所需的其他库或模块。
 - 签名信息：存储数字签名信息以验证 JAR 文件的完整性和来源。
 - 扩展机制：支持 Java 的扩展机制，用于加载额外的功能模块
-
 
 ## 文件结构
 例如：
@@ -48,7 +46,6 @@ Class-Path:  commons-beanutils.jar commons-collections.jar commons-dig
 5. Main-Class
    可执行 JAR 文件的主类（程序入口点）。JVM 使用此属性来启动应用程序。
 
-
 ## 自定义MANIFEST
 有两种方式，第一种直接在resources里面新建META-INF/MANIFEST.MF文件，填写相关信息，第二种是在Maven里面配置相关信息
 ### 1. 创建MF文件
@@ -61,7 +58,6 @@ Class-Path:  commons-beanutils.jar commons-collections.jar commons-dig
 Manifest-Version: 1.0
 Main-Class: icu.flycode.sdk.OpenAiCodeReview
 ```
-
 
 ### 2. pom.xml配置
 在<build></build>里卖弄加入这个插件，需要指定mainfest的mainClass也就是主项目路径
@@ -80,10 +76,6 @@ Main-Class: icu.flycode.sdk.OpenAiCodeReview
                 </configuration>
             </plugin>
 ```
-
-
-
-
 
 ## 参考文档
 [MANIFEST.MF文件详解](https://www.cnblogs.com/Gandy/p/7290069.html)

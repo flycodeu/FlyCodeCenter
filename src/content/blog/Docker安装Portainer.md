@@ -7,26 +7,27 @@ tags:
   - Docker
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090911.jpg
 ---
+
 > 官网：https://www.portainer.io/
-介绍：在任何数据中心、云、网络边缘或 IIOT 设备的 Kubernetes、Docker、Swarm 和 Nomad 上，在几分钟内部署、配置、故障排除和保护容器。
+Portainer 提供容器管理界面。以下示例管理本机 Docker，数据保存在独立卷中。安装参数见 [Portainer CE 官方文档](https://docs.portainer.io/start/install-ce/server/docker/linux)。
 ## 基础安装
 
-
-
-### 1. 拉取最新的Portainer
+### 1. 拉取 Portainer CE LTS
 ```bash
-docker pull portainer/portainer
+docker pull portainer/portainer-ce:lts
 ```
 
 ### 2.Docker运行Portainer
 ```bash
-docker run -d --restart=always --name portainer -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
+docker volume create portainer_data
+docker run -d --restart=always --name portainer \
+  -p 127.0.0.1:9443:9443 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data portainer/portainer-ce:lts
 ```
 
-
 ### 3. 访问Portainer
-http://ip:9000
-首次登录需要设置用户名、密码
+`https://localhost:9443`。远程访问可使用 SSH 隧道。默认使用自签名证书；首次初始化按当前版本的页面提示设置管理员，若要求 setup token，按官方初始化说明获取。下图为旧版本界面，布局可能不同。
 
 ![image-20250605133049002](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250605133049002.png)
 

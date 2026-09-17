@@ -8,7 +8,7 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250521154058.jpg
 ---
 
-
+示例围绕 Spring AI 1.x 的工具调用 API 展开。方法注解为 `@Tool`，参数说明为 `@ToolParam`；依赖应统一到所使用版本的 BOM，升级时核对 [Spring AI 1.0 工具文档](https://docs.spring.io/spring-ai/reference/1.0/api/tools.html)。
 
 ## [Tool Calling](https://docs.spring.io/spring-ai/reference/api/tools.html)
 
@@ -16,9 +16,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 ![image-20250520150735912](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250520150735912.png)
 
-
-
-Methods模式：使用@Tools以及@ToolParam绑定工具
+Methods模式：使用@Tool以及@ToolParam绑定工具
 
 ```java
 public class WeatherTools {
@@ -55,7 +53,7 @@ ChatClient.create(chatModel)
 
 #### 注解式
 
-使用@Tools
+使用@Tool
 
 ```java
 public class WeatherTools {
@@ -68,7 +66,7 @@ public class WeatherTools {
 
 #### 编程式
 
-首先需要定义好工具类  
+首先需要定义好工具类
 
 ```java
 class WeatherTools {
@@ -79,7 +77,7 @@ class WeatherTools {
 }
 ```
 
-将工具类转换为ToolCallBack工具定义类
+将工具类转换为ToolCallback工具定义类
 
 ```java
 Method method = ReflectionUtils.findMethod(WeatherTools.class, "getWeather", String.class);
@@ -129,10 +127,6 @@ chatModel.call(prompt);
 4. 动态解析
 
 ToolCallbackResolver使用适合工具需要根据上下文动态确定的场景
-
-
-
-
 
 ### 工具生态
 
@@ -199,8 +193,6 @@ public class ToolsTest {
     }
 }
 ```
-
-
 
 ### 联网搜索
 
@@ -545,8 +537,6 @@ public class ToolRegistration {
 
 ![image-20250521145113156](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250521145113156.png)
 
-
-
 ## 底层原理
 
 ### ToolCallback
@@ -670,10 +660,6 @@ public class ToolContext {
 - 请求追踪：上下文加入ID，便于日志追踪和调试
 - 自定义配置：不同场景传递不同信息
 
-
-
-
-
 ### Return Direct 直接返回
 
 1. 定义工具时,将 returnDirect 属性设为true
@@ -682,8 +668,6 @@ public class ToolContext {
 
 这种模式很适合需要返回二进制数据(比如图片/文件)的工具、返回大量数据而不需要AI解释的工具,以及产生明确
 结果的操作(如数据库操作)。
-
-
 
 ### Tool Execution 工具执行
 
@@ -748,16 +732,12 @@ public interface ToolCallingManager {
 
 基本流程就是从历史上下文中拿出关键信息，判断是否有工具需要调用，有工具调用，执行完成获取结果，然后拼接到上下文。
 
-
-
 #### 框架控制的工具执行
 
 - 框架自动检测模型是否请求调用工具
 - 自动执行工具调用并获取结果
 -  自动将结果发送回模型
 -  管理整个对话流程直到得到最终答案
-
-
 
 #### 用户控制的工具执行
 
@@ -833,7 +813,7 @@ ToolExecutionExceptionProcessor customExceptionProcessor() {
 
 ### 工具解析
 
-除了使用ToolCallBack交给AI执行工具，也可以通过名称动态解析工具，通过ToolCallbackResolver接口实现的
+除了使用ToolCallback交给AI执行工具，也可以通过名称动态解析工具，通过ToolCallbackResolver接口实现的
 
 ```java
 public interface ToolCallbackResolver {

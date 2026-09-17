@@ -6,13 +6,12 @@ permalink: /blog/b1hv576m0/
 tags:
   - Git
 ---
+
 > 贴心的编程学习路线，全面的编程知识百科
 >
 > 作者：程序员飞云
 >
 > 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
-
 
 在我们使用Git进行版本管理的时候，有些文件我们不希望进行提交，可以使用.gitignore进行忽略，而这个.ignore插件帮我们整合了常用的一些忽略配置。
 
@@ -32,4 +31,3 @@ tags:
 因为git里面是有个缓存的，所以可以清除缓存，然后重新托管，可以看到下图 .iml的文件已经被忽略了
 
 ![image-20231228163836500](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202312281638566.png)
-

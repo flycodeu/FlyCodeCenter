@@ -10,22 +10,19 @@ tags:
   - FFmpeg
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/a496989751bfb3e14c29f07b9ec99116.jpg
 ---
-# 使用 FFmpeg + Spring Boot 搭建大华摄像头 HLS 实时流服务（含自动重启与静态映射）
 
-在本地网络中接入多路大华摄像头时，如果想在浏览器中低成本播放实时画面，一个简单可行的方案是使用 **FFmpeg 将 RTSP 转码为 HLS（m3u8）格式**，再通过 **Spring Boot 提供静态资源映射**。
+在本地网络中接入多路大华摄像头时，如果想在浏览器中低成本播放实时画面，一个简单可行的方案是使用 **FFmpeg 将 RTSP 重新封装为 HLS（m3u8 播放列表与媒体分片）**，再通过 **Spring Boot 提供静态资源映射**。
 
-本文分享我在项目中搭建的完整方案：
+下面的示例使用 Java 管理 FFmpeg 子进程：
 
 - 不依赖 Nginx 或 Wowza；
-- 支持 20 路摄像头同时推流；
+- 可配置多路摄像头，具体容量需结合码率、磁盘和客户端并发实测；
 - 自动守护、掉线重启；
 - 浏览器可通过 hls.js 播放（Safari 等环境可原生播放 HLS）。
 
----
-
 ## 一、方案原理
 
-大华、海康等摄像头通常输出 **RTSP** 流，浏览器无法直接播放。  
+大华、海康等摄像头通常输出 **RTSP** 流，浏览器无法直接播放。
 HLS（HTTP Live Streaming）是苹果提出的基于 HTTP 的流式传输协议，核心思想是：
 
 1. FFmpeg 从摄像头拉取 RTSP 码流；
@@ -41,17 +38,17 @@ HLS（HTTP Live Streaming）是苹果提出的基于 HTTP 的流式传输协议�
 
 优点：
 
-- 实现简单，浏览器原生支持；
+- Safari 等环境可原生播放，其他支持 MSE 的浏览器通常配合 hls.js；
 - 通过 HTTP 传输，容易跨域、兼容 CDN；
 - 可回放或做录像功能。
 
 缺点：
 
-- 延迟较高（通常 2~5 秒）；
+- 播放延迟受 GOP、分片时长、网络和播放器缓冲共同影响；
 - 对实时性要求高的场景（如监控控制）不太合适；
 - 需要持续磁盘写入（碎片化 I/O 较多）。
 
---- 
+---
 安装ffmpeg的build版本
 
 https://ffmpeg.org/download.html
@@ -68,8 +65,6 @@ https://ffmpeg.org/download.html
 ![ffmpeg](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20251022160201.png)
 
 后续即可直接使用ffmpeg
-
----
 
 ## 二、Spring Boot 静态映射配置
 
@@ -91,10 +86,8 @@ public class DahuaStaticMappingConfig implements WebMvcConfigurer {
 }
 ```
 
-这样，`hls-stream/ip/channel1/index.m3u8`  
+这样，`hls-stream/ip/channel1/index.m3u8`
 就能通过 `http://localhost:8080/hls/ip/channel1/index.m3u8` 访问。
-
----
 
 ## 三、批量 FFmpeg 管理器（DahuaStreamManager）
 
@@ -159,8 +152,6 @@ public class DahuaStreamManager {
 }
 ```
 
----
-
 ## 四、FFmpeg 调用封装（DahuaStreamProcess）
 
 每一路摄像头使用一个独立的 FFmpeg 命令：
@@ -176,20 +167,18 @@ ffmpeg -rtsp_transport tcp -i rtsp://admin:pass@ip:554/cam/realmonitor?channel=1
 | 参数                                              | 说明                                    |
 | ------------------------------------------------- | --------------------------------------- |
 | `-rtsp_transport tcp`                             | 使用 TCP 拉流，更稳定（UDP 容易丢包）   |
-| `-c:v copy`                                       | 不转码，直接拷贝视频码流（无 CPU 压力） |
+| `-c:v copy`                                       | 不解码和重编码，但仍有封装、网络和 I/O 开销 |
 | `-an`                                             | 不保留音频                              |
 | `-f hls`                                          | 输出格式为 HLS                          |
-| `-hls_time 2`                                     | 每个片段长度 2 秒                       |
+| `-hls_time 2`                                     | 目标分片时长 2 秒，实际切点还受关键帧位置影响                       |
 | `-hls_list_size 3`                                | 播放列表中保留 3 个片段                 |
-| `-hls_flags delete_segments+independent_segments` | 自动删除旧片段，保证独立关键帧切割      |
+| `-hls_flags delete_segments+independent_segments` | 删除过期分片；independent_segments 声明独立性，不会生成关键帧      |
 
-这些参数组合可以将延迟控制在 3~6 秒之间，且磁盘空间占用较低。
-
----
+`-c:v copy` 不改变编码和 GOP，不能修复不兼容的视频编码，也不能强制每两秒产生关键帧。只有确认所有分片都可独立解码时才声明 `independent_segments`。参数含义见 [FFmpeg HLS muxer](https://ffmpeg.org/ffmpeg-formats.html#hls)。
 
 ## 五、浏览器播放
 
-浏览器可直接使用 `<video>` 标签播放：
+支持原生 HLS 的浏览器可设置 `<video src>`；其他浏览器使用下面的 hls.js 分支：
 
 ```html
 <video
@@ -378,33 +367,18 @@ ffmpeg -rtsp_transport tcp -i rtsp://admin:pass@ip:554/cam/realmonitor?channel=1
 </html>
 ```
 
----
-
 ## 六、HLS 与 WebRTC 的对比
 
 | 特性       | HLS                  | WebRTC               |
 | ---------- | -------------------- | -------------------- |
-| 延迟       | 3~6 秒               | < 1 秒               |
-| 编解码     | 可拷贝或转码         | 通常需实时编解码     |
+| 延迟 | 取决于分片、GOP 和播放缓冲 | 取决于采集、编码、网络和播放缓冲 |
+| 编解码 | 编码兼容时可直接封装 | 编码兼容时可直接转发 |
 | 浏览器支持 | 通过 hls.js 实现     | 原生支持             |
-| 网络兼容性 | HTTP，穿透简单       | 需 STUN/TURN         |
+| 网络连接 | HTTP 分发，需配置跨域和缓存 | 通过 ICE 建立连接，按网络条件使用 STUN/TURN |
 | 适合场景   | 监控回放、直播、预览 | 实时交互、对讲、控制 |
-| CPU 占用   | 低（复制模式）       | 较高（实时编码）     |
+| CPU 占用 | 转码时显著增加，封装仍有开销 | 是否转码、加密和连接数都会影响开销 |
 
 **结论：**
 
 - 若主要用于视频预览、非强实时场景（如施工监控、设备可视化），HLS 简单稳定；
 - 若需低延迟或双向互动，推荐 WebRTC。
-
----
-
-## 七、总结
-
-本方案通过：
-
-- FFmpeg 做 RTSP → HLS 转换；
-- Spring Boot 提供静态映射；
-- Java 管理多进程与自动重启；
-
-实现了一个稳定、高度自动化的多路摄像头流媒体转发系统。  
-它不依赖外部推流服务器，仅需 FFmpeg 与少量 Java 代码即可运行。

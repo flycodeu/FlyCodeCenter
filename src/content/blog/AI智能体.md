@@ -18,8 +18,6 @@ tags:
 5. 保存必要状态：只保留后续任务确实需要的上下文。
 6. 返回结果：给出结论、证据和未完成项，而不是假装任务已经完成。
 
-
-
 ### 智能体分类
 
 反应式智能体：根据输入和固定规则做出反应
@@ -29,8 +27,6 @@ tags:
 自主规划智能体：能够根据任务目标自主分解任务、制定计划、选择工具一步一步进行调用，例如 [Open Manus](https://github.com/FoundationAgents/OpenManus)
 
 这类智能体能够通过思考-行动-观察的循环模式工作，直到完成目标。
-
-
 
 ## 智能体关键技术
 
@@ -64,13 +60,7 @@ ReAct（Reasoning + Acting）结合推理和行动的智能体架构，通过“
 - 观察（Observe）：获取工具返回结果，反馈给智能体进行下一步决策
 - 循环迭代：不断重复上述步骤，直到任务完成或者达到终止条件。
 
-
-
 ![image-20250529154500742](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250529154500742.png)
-
-
-
-
 
 ### 依赖环境
 
@@ -79,8 +69,6 @@ ReAct（Reasoning + Acting）结合推理和行动的智能体架构，通过“
 - 知识库
 - 工具调用
 
-
-
 ### Compute Use
 
 允许智能体能够直接与计算机环境交互
@@ -88,8 +76,6 @@ ReAct（Reasoning + Acting）结合推理和行动的智能体架构，通过“
 [Claude 支持Compute Use](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use)
 
 [开源实现Compute Use](https://github.com/e2b-dev/open-computer-use)
-
-
 
 ## OpenManus源码分析
 
@@ -116,8 +102,6 @@ ReAct（Reasoning + Acting）结合推理和行动的智能体架构，通过“
 ### Prompt
 
 设置预设，可以参考相关预设。
-
-
 
 ## 自主实现Manus
 
@@ -333,8 +317,6 @@ public abstract class ReActAgent extends BaseAgent {
 
    自己写Prompt,引导AI回复想要调用的工具列表和调用参数,然后再执行工具并将结果返送给 AI再次执行。
 
-
-
 ```java
 
 /**
@@ -517,8 +499,6 @@ public class FlyManus extends ToolCallAgent {
 
 我们可以看到详细的工具调用信息，执行步骤。
 
-
-
 ### 流式输出
 
 ```java
@@ -559,8 +539,6 @@ public SseEmitter doChatWithManus(String message) {
 
 模拟人类的 ”写-评-改“过程，一个智能体负责初步结果，另一个智能体负责评估和反馈。
 
-
-
 ## OWL框架
 
 **[OWL (Optimized Workforce Learning)](https://github.com/camel-ai/owl)**是由CAMEL-AI团队开源的一款面向多智能体协作与真实世界任务自动化的前沿
@@ -576,8 +554,6 @@ public SseEmitter doChatWithManus(String message) {
 
 - Web 可视化界面：提供基于Gradio的本地Web Ul，支持模型选择、环境变量管理、交互历史查看等功能,方便开
   发和调试。
-
-
 
 ## A2A协议
 

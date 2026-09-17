@@ -6,16 +6,11 @@ permalink: /blog/bjnavexot/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 展示效果
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731029866496-1bd5b17d-ec10-4aef-b4ac-4ede75b6a655.png)
 
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731029873867-a9757f27-030e-4b9f-a7a8-418d7612108d.png)
-
-
 
 ## oshi
 [OSHI 官网](https://www.oshi.ooo/)
@@ -23,8 +18,6 @@ tags:
 [OSHI Java API 文档](https://www.oshi.ooo/oshi-core-java11/apidocs/com.github.oshi/module-summary.html)
 
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731030404281-669f273c-0b9c-4dd8-8e07-71cc75f9c48b.png)
-
-
 
 ## 引入依赖
 还需要引入lombok
@@ -46,8 +39,6 @@ tags:
     <version>5.8.26</version>
 </dependency>
 ```
-
-
 
 ## 编写监控对象实体类
 包含Cpu、Disk、Jvm、Mem、Sys
@@ -97,8 +88,6 @@ public class Cpu implements Serializable {
 
 }
 ```
-
-
 
 ```java
 
@@ -151,8 +140,6 @@ public class Disk implements Serializable {
 
 }
 ```
-
-
 
 ```java
 
@@ -221,8 +208,6 @@ public class Jvm implements Serializable {
 
 ```
 
-
-
 ```java
 import lombok.Data;
 
@@ -258,8 +243,6 @@ public class Mem implements Serializable {
 
 }
 ```
-
-
 
 ```java
 import lombok.Data;
@@ -301,8 +284,6 @@ public class Sys implements Serializable {
 
 }
 ```
-
-
 
 ## 工具类
 也可以不需要这些工具类
@@ -577,8 +558,6 @@ public class IpUtils {
 }
 ```
 
-
-
 ### 算术运算工具
 ```java
 package com.sky.utils;
@@ -693,8 +672,6 @@ public class ArithUtils {
 }
 
 ```
-
-
 
 ### 时间工具类
 ```java
@@ -1238,8 +1215,6 @@ public class TimeUtils {
 }
 ```
 
-
-
 ## 获取系统信息
 ```java
 package com.sky.utils;
@@ -1401,8 +1376,6 @@ public class ServerUtils {
 }
 ```
 
-
-
 ## 编写接口
 ```java
 @RestController
@@ -1418,18 +1391,8 @@ public class MonitorServerController {
 }
 ```
 
-
-
-
-
 ## 接口测试
 ![](https://cdn.nlark.com/yuque/0/2024/png/34915237/1731032235324-b69cd720-3304-4b26-8286-bde44e26d322.png)
-
-
-
-
-
-
 
 ## 前端代码
 ```javascript

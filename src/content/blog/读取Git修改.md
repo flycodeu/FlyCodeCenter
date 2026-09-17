@@ -9,8 +9,6 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/b0accf531a544795e92b0c042a29563.jpg
 ---
 
-
-
 现在需要在Java命令中读取Git相关命令，获取用户名、提交日期、提交分支、提交描述、提交代码相关信息。
 
 [Git命令](https://www.runoob.com/git/git-tutorial.html)
@@ -44,8 +42,6 @@ git log -1
 
 ---
 
-
-
 以获取用户名为例
 
 ```bash
@@ -53,10 +49,6 @@ git log -1 --pretty=format:'%an'
 ```
 
 通过以上命令即可实现获取用户提交相关信息
-
----
-
-
 
 ### 读取用户名、提交日期、提交描述、提交哈希值
 
@@ -97,15 +89,11 @@ public String getGitInfo(String tags) throws IOException {
 
 ![image-20250331092034073](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250331092034073.png)
 
-
-
 ## 读取提交代码
 
 我们需要使用git中的diff命令,结合哈希值获取历史提交命令
 
 ![image-20250331100627725](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250331100627725.png)
-
-
 
 ### 1. 编写通用方法
 
@@ -140,4 +128,3 @@ public String getGitInfo(String tags) throws IOException {
         String diffCode = getDiffCode(hashCode);
         System.out.println(diffCode);
 ```
-

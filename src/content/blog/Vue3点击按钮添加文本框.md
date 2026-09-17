@@ -6,9 +6,6 @@ permalink: /blog/b2rmlvhtu/
 tags:
   - 前端
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 界面代码
 ```vue
@@ -76,4 +73,3 @@ const nameList = spots.value.map(spot => spot.name);
 // 转换格式
 const dataToSend = { nameList: nameList };
 ```
-

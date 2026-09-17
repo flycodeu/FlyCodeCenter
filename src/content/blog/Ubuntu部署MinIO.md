@@ -4,9 +4,8 @@ createTime: '2026/03/01 19:23:46'
 code: b14not3qw
 permalink: /blog/b14not3qw/
 ---
-# Ubuntu 部署 MinIO（API:8071 / Console:8070）与 Python 接入实战：自启动、上传、下载、图片在线访问
 
-本文按“能落地、可复现”的标准，把 MinIO 在 Ubuntu 上的安装部署、systemd 后台自启动、`mc` 管理以及 Python SDK 上传/下载/在线访问（预签名与公开读）走一遍。示例目录结构与端口配置与你当前环境一致：
+下面记录单机 MinIO 的目录、端口和 systemd 配置，并给出 Python SDK 的上传、下载及预签名访问示例：
 
 - Server：`/opt/minio/server/minio`
 - Client：`/opt/minio/client/mc`
@@ -14,9 +13,7 @@ permalink: /blog/b14not3qw/
 - S3 API：`8071`
 - Console：`8070`
 
-> 注意：Ubuntu 系统自带 `mc`（Midnight Commander 文件管理器），直接输入 `mc` 会进入蓝色双栏界面。MinIO 的客户端必须使用 **`./mc`**（在 `/opt/minio/client` 下）或 **`/opt/minio/client/mc`** 的绝对路径。
-
-------
+> 注意：如果系统另行安装了 Midnight Commander，`mc` 命令可能指向该文件管理器。先用 `command -v mc` 确认；本文为避免歧义，使用 **`./mc`**（在 `/opt/minio/client` 下）或 **`/opt/minio/client/mc`** 的绝对路径。
 
 ## 1. 目录规划与权限
 
@@ -31,15 +28,13 @@ permalink: /blog/b14not3qw/
 
 ### 1.2 创建数据目录并设置权限
 
-生产环境建议用专用用户运行（如 `minio-user`）。你的数据目录目前属于 `minio-user`，这是正确的方向。
+使用专用用户 `minio-user` 运行服务。先确认该用户已创建，再将数据目录授权给它。
 
 ```
 sudo mkdir -p /opt/minio/data
 sudo chown -R minio-user:minio-user /opt/minio/data
 sudo chmod 750 /opt/minio/data
 ```
-
-------
 
 ## 2. 安装 MinIO Server（二进制）
 
@@ -50,8 +45,6 @@ cd /opt/minio/server
 wget https://dl.minio.org.cn/server/minio/release/linux-amd64/minio
 chmod +x minio
 ```
-
-------
 
 ## 3. 前台启动验证（API=8071 / Console=8070）
 
@@ -79,8 +72,6 @@ ss -lntp | egrep '8070|8071'
 
 > `mc`、Python SDK、S3 兼容接口全部走 **8071**；8070 仅用于控制台页面。
 
-------
-
 ## 4. 安装 MinIO Client（mc）并避免“系统 mc”冲突
 
 ### 4.1 下载 MinIO 的 mc
@@ -102,8 +93,6 @@ chmod +x mc
 cd /opt/minio/client
 ./mc --version
 ```
-
-------
 
 ## 5. systemd 后台运行 + 开机自启动
 
@@ -158,8 +147,6 @@ journalctl -u minio -f
 ```
 ss -lntp | egrep '8070|8071'
 ```
-
-------
 
 ## 6. 用 mc 初始化：alias、建桶、创建业务密钥、上传/下载
 
@@ -216,8 +203,6 @@ cd /opt/minio/client
 # 下载
 ./mc cp myminio/images/uploads/2026/02/27/test.jpg ./test-down.jpg
 ```
-
-------
 
 ## 7. Python SDK：上传、下载、图片访问
 
@@ -283,8 +268,6 @@ client.fget_object(
 print("download ok")
 ```
 
-------
-
 ## 8. 图片在线访问：两种常用方案
 
 ### 方案 A：预签名 URL（私有桶推荐）
@@ -321,13 +304,11 @@ http://<服务器IP>:8071/images/uploads/2026/02/27/test.jpg
 
 > 公开读适合明确“对外公开”的资源；内部系统或敏感图片建议使用预签名 URL 或在网关层做鉴权。
 
-------
-
 ## 9. 常见问题与排查清单
 
 ### 9.1 输入 `mc` 进入蓝色界面
 
-这是系统文件管理器。MinIO 客户端必须用：
+这是另一款同名文件管理器。可通过绝对路径调用 MinIO 客户端：
 
 ```
 cd /opt/minio/client
@@ -356,8 +337,6 @@ sudo journalctl -u minio -n 200 --no-pager
 - `/opt/minio/server/minio` 是否可执行
 - `minio-user` 是否能读写 `/opt/minio/data`
 - 端口是否被占用
-
-------
 
 ## 10. 最小可用结果（验收标准）
 

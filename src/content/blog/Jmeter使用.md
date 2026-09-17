@@ -7,8 +7,6 @@ tags:
   - 压力测试
 ---
 
-
-
 ## Jmeter下载
 
 [Jemter官网下载](https://jmeter.apache.org/download_jmeter.cgi)
@@ -32,7 +30,6 @@ tags:
 
 ![image-20250321102107826](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250321102107826.png)
 
-
 3. 添加HTTP信息请求头
 
 ![image-20250321102131414](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250321102131414.png)
@@ -55,8 +52,6 @@ tags:
 ![image-20250321102246099](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250321102246099.png)吞吐量也就是我们的qps：23.3/sec 每秒可以进行的请求数
 最小值和最大值分别指线程等待时间，最大等待时间甚至破万了，无疑我们需要改善。
 这里是用的500个线程，循环10次，启动时常10s
-
-
 
 ## 参考文档
 

@@ -10,13 +10,9 @@ coverStyle:
   layout: right
 ---
 
-
-
 ## 构建方式
 
 ![image-20250305090918858](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250305090918858.png)
-
-
 
 ## 定时构建
 
@@ -32,9 +28,6 @@ https://crontab.guru/
 H(1-30) * * * *
 ```
 
-这个意思是1-30分钟内随机选取时间，每小时的第几分钟，加上H，可以分散负载，不会在同一时间同时执行任务，影响其他任务。
+`H(1-30)` 根据任务名称的哈希，在 1～30 分钟范围内选择一个相对稳定的分钟值，不是每小时重新随机。它用于分散任务触发时间，但不能保证所有任务都不重叠。参见 [Jenkins cron 语法](https://www.jenkins.io/doc/book/pipeline/syntax/#cron-syntax)。
 
 ![image-20250305092437429](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250305092437429.png)
-
-
-

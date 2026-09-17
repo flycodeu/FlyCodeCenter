@@ -1,5 +1,5 @@
 ---
-title: SpringBoot实现接口防抖
+title: Spring Boot接口重复提交与时间窗口去重
 createTime: '2026/03/01 19:23:46'
 code: b1f5ko1pm
 permalink: /blog/b1f5ko1pm/
@@ -7,27 +7,17 @@ tags:
   - 防抖
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a15bc0b828d64f8b45299f80d4208d.jpg
 ---
-# 防抖机制详解：原理、场景与实现方案
 
-在 Web 系统中，**防抖（Debounce）**是一种非常重要的用户体验与服务稳定性保障技术。它可以防止用户的重复操作或网络抖动导致的请求重复提交，从而避免生成冗余的数据记录或引发系统性能问题。
+接口重复提交可能来自连续点击，也可能来自网络重试。本文代码演示短时间窗口内拒绝相同请求，需与前端防抖、并发锁和业务幂等区分。
 
-## 什么是防抖
+## 三种机制的区别
 
-防抖的本质是**防止相同请求在短时间内被多次执行**。它主要应用于两个层面：
-
-- **防用户手抖**：用户可能连续点击按钮或键盘触发事件；
-- **防网络抖动**：网络不稳定可能引发请求的重复发送。
-
-在前端，常通过设置按钮的 `loading` 状态来防止重复点击。但网络层面的重复请求，仅靠前端防护是不够的，后端需要配合实现请求防重复逻辑。
-
-一个优秀的防抖机制应具备以下特点：
-
-- ✅ 逻辑正确
-- ⚡ 响应迅速
-- 🔌 易于集成
-- 👁️ 良好的用户反馈机制
-
-------
+| 机制 | 处理什么 | 不能单独保证什么 |
+| --- | --- | --- |
+| 前端防抖 | 事件停止一段时间后再执行 | 无法阻止绕过页面的请求 |
+| 时间窗口去重 | 同一个请求 Key 在 TTL 内只接受一次 | TTL 后重试仍可能重复执行业务 |
+| 并发锁 | 同一时刻只有一个持有者进入 | 释放后再次调用仍可执行 |
+| 业务幂等 | 同一业务操作重复请求仍得到一致的业务效果 | 需要业务唯一键、结果记录或状态约束 |
 
 ## 防抖应用场景
 
@@ -41,8 +31,6 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a1
    - 示例：列表滚动到底自动加载更多
    - 处理方式：延迟处理滚动事件，防止接口频繁调用
 
-------
-
 ## 如何判断重复请求
 
 判断是否为重复请求可依据以下条件：
@@ -51,13 +39,11 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a1
 2. **请求参数对比**：对关键参数（如 `userId`、`orderNo`）进行比对；
 3. **请求路径匹配**：同一 URL 与参数组合可以认为是同一请求。
 
-------
-
 ## 防抖方案设计
 
 ### 方案一：基于共享缓存实现防抖
 
-利用 Redis 实现幂等性判断，通过 `SETNX` 操作进行原子性加锁，若短时间内相同请求再次进入，则认为是重复请求。
+使用带过期时间的 `SET key value NX EX/PX` 原子占位，在时间窗口内拒绝相同 Key。设置值与过期时间必须在同一个命令里完成；它不等于完整的业务幂等。参见 [Redis SET](https://redis.io/docs/latest/commands/set/)。
 
 ![缓存方案](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250729102026108.png)
 
@@ -66,8 +52,6 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/4a1
 使用 Redisson 的分布式锁机制，实现多实例部署场景下的防重复请求控制。
 
 ![分布式锁方案](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250729102230621.png)
-
-------
 
 ## 具体实现
 
@@ -92,8 +76,6 @@ public class AddReq {
     private List<Long> roleIdList;
 }
 ```
-
-------
 
 ## 注解与 Key 生成
 
@@ -145,8 +127,6 @@ public class RequestKeyGenerator {
 }
 ```
 
-------
-
 ## Redis 实现防抖
 
 ### 切面拦截器：`RedisRequestLockAspect`
@@ -185,9 +165,7 @@ public class RedisRequestLockAspect {
 }
 ```
 
-**`SET_IF_ABSENT`是 [RedisStringCommands.SetOption ](http://redisstringcommands.setoption/)枚举类中的一个选项，用于在执行 SET 命令时设置键值对的时候，如果键不存在则进行设置，如果键已经存在，则不进行设置。**
-
-------
+`SET_IF_ABSENT` 对应 NX：仅当 Key 不存在时设置。请求 Key 还应包含用户或租户作用域，避免不同用户相互阻塞。
 
 ## Redisson 分布式锁实现
 
@@ -242,12 +220,12 @@ public class RedissonRequestLockAspect {
         boolean isLocked = false;
 
         try {
-            isLocked = lock.tryLock();
+            isLocked = lock.tryLock(0, requestLock.expire(), requestLock.timeUnit());
             if (!isLocked) {
                 throw new BizException(ResponseCodeEnum.BIZ_CHECK_FAIL, "您的操作太快了，请稍后重试");
             }
 
-            lock.lock(requestLock.expire(), requestLock.timeUnit());
+            // 已取得一次锁，不要再次 lock() 增加重入计数。
             return joinPoint.proceed();
         } catch (Throwable t) {
             throw new BizException(ResponseCodeEnum.BIZ_CHECK_FAIL, "系统异常");
@@ -260,15 +238,13 @@ public class RedissonRequestLockAspect {
 }
 ```
 
-**Redisson的核心思路就是抢锁，当一次请求抢到锁之后，对锁加一个过期时间，在这个时间段内重复的请求是无法获得这个锁。**
+这里的 Redisson 示例提供并发互斥，`finally` 解锁后下一次请求即可进入；不是整个 TTL 内都拒绝请求。显式租约到期后锁会释放，业务耗时超过租约时需要另行处理。
 
-------
-
-## 总结
+## 两种实现的适用范围
 
 | 项目       | Redis 实现         | Redisson 实现      |
 | ---------- | ------------------ | ------------------ |
-| 并发支持   | 较弱               | 强，适合分布式场景 |
+| 并发支持 | 单次 SET 操作是原子的 | 提供锁持有者与重入语义 |
 | 实现复杂度 | 中等               | 稍高               |
 | 依赖组件   | `RedisTemplate`    | `RedissonClient`   |
-| 场景建议   | 单体服务或轻量应用 | 高并发、微服务架构 |
+| 场景建议 | 多实例共享时间窗口去重 | 多实例共享并发互斥 |

@@ -1,5 +1,5 @@
 ---
-title: Markdown 扩展语法效果验证
+title: Markdown扩展语法效果验证
 createTime: '2026/03/01 19:23:46'
 code: b2eqscw9x
 permalink: /blog/b2eqscw9x/
@@ -9,6 +9,7 @@ tags:
   - chart
   - tabs
 ---
+
 ## 测试图表
 ::: chartjs 块状图案例
 ```json
@@ -59,7 +60,6 @@ github: :[tdesign:logo-github-filled]:
 
 彩色图标 :[skill-icons:vscode-dark 36px]:
 
-
 ## 马克笔
 ==一个提示=={.tip} ==一个警告=={.warning} ==一个错误=={.danger} ==重要内容=={.important}
 
@@ -83,7 +83,6 @@ github: :[tdesign:logo-github-filled]:
 
 4. 结束
    ::::
-
 
 ## 选项组
 ::: tabs

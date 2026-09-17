@@ -8,17 +8,14 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250611165452.jpg
 ---
 
-
 ## 技术方案
 
 [RAG相关文档](RAG知识库.md)
 [Spring AI](https://docs.spring.io/spring-ai/reference/api/vectordbs/pgvector.html)
 
-
-
 ### 方案流程
 
-####  1. 文件上传与解析
+#### 1. 文件上传与解析
 
 **文件上传** : 用户上传文件（如 MD、TXT、SQL 等）。
 
@@ -99,7 +96,6 @@ spring:
           num-batch: 512
         model: nomic-embed-text
 ```
-
 
 ### 配置相应的bean
 [ollama-chat](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html)
@@ -184,8 +180,6 @@ public class OllamaConfig {
     embedding VECTOR(1536)  -- 1536 是 OpenAI 向量维度，你可以根据实际情况修改
 );
 ```
-
-
 
 ## 测试知识库
 
@@ -279,7 +273,6 @@ public class OllamaConfig {
 ### 使用效果
 
 ![image-20250610112257987](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610112257987.png)
-
 
 ### 流式输出
 ```java

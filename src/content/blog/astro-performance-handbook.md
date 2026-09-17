@@ -25,4 +25,3 @@ cover: https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&
 1. 首屏 JS 控制在可交互需求范围内。
 2. 图片统一裁剪尺寸并懒加载。
 3. 高频组件优先做结构复用而不是样式堆叠。
-

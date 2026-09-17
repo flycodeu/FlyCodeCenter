@@ -8,25 +8,19 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250506145712.jpg
 ---
 
-
-
-# 🚀 Spring Boot + 本地大模型：5 分钟打造自己的 ChatGPT 对话系统
-
 > 本文将手把手教你如何用 Spring Boot + Ollama + Spring AI 快速搭建一个支持**流式输出**的本地 AI 对话系统，**无需联网、支持私有部署**，还能扩展接入 OpenAI、DeepSeek 等模型。
 
-------
-
-## 🧠 第一步：安装 Ollama，开启本地大模型
+## 第一步：安装 Ollama，开启本地大模型
 
 Ollama 是一个简洁好用的本地大模型运行工具，你可以在自己的电脑上直接部署和运行 LLM。
 
-### ✅ 安装 Ollama
+### 安装 Ollama
 
 访问官网下载安装（支持 Windows/Mac/Linux）：
 
 👉 https://ollama.com/download
 
-### ✅ 启动并验证是否成功
+### 启动并验证是否成功
 
 打开终端，运行：
 
@@ -38,15 +32,13 @@ ollama run gemma3:1b
 
 ![Ollama运行成功](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250506133601162.png)
 
-------
+## 第二步：Spring Boot 调用本地模型
 
-## 🧩 第二步：Spring Boot 调用本地模型
-
-[Spring AI](https://docs.spring.io/spring-ai/reference/index.html) 是由 Spring 团队推出的 AI 接口库，集成后调用本地模型就像调用数据库一样简单。目前已经推出1.0正式版。
+[Spring AI](https://docs.spring.io/spring-ai/reference/index.html) 是由 Spring 团队推出的 AI 接口库，提供模型调用抽象。以下示例使用文中指定的依赖版本，升级时需同步检查配置和 API。
 
 我们需要创建一个SpringBoot项目，进行如下配置
 
-### 🧱 添加依赖（Maven）
+### 添加依赖（Maven）
 
 ```xml
 <dependency>
@@ -56,7 +48,7 @@ ollama run gemma3:1b
 </dependency>
 ```
 
-### ⚙️ 配置 application.yml
+### 配置 application.yml
 
 ```yml
 spring:
@@ -69,9 +61,7 @@ spring:
 
 > ✅ 模型名需和你本地运行的一致！
 
-------
-
-### ✨ 创建一个简单的对话接口
+### 创建一个简单的对话接口
 
 ```java
 @RequestMapping("/ollama")
@@ -106,9 +96,7 @@ http://localhost:8080/test?prompt=你好
 
 ![普通输出效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625134809668.png)
 
-------
-
-## 💬 第三步：实现流式对话（像 ChatGPT 一样输出）
+## 第三步：实现流式对话（像 ChatGPT 一样输出）
 
 相比普通一次性输出，流式输出体验更丝滑，可以边生成边展示内容。
 
@@ -126,9 +114,7 @@ public Flux<ChatResponse> testChatStream(String prompt) {
 
 ![流式输出效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625141037247.png)
 
-------
-
-## 💻 第四步：用原生 HTML 打造可交互前端
+## 第四步：用原生 HTML 打造可交互前端
 
 无需 Vue/React，只用 HTML + JS 实现一个支持**实时流式展示**的聊天界面👇
 
@@ -327,15 +313,13 @@ public Flux<ChatResponse> testChatStream(String prompt) {
 
 ![页面效果展示](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625144432562.png)
 
-------
-
-## 🌐 第五步：接入 OpenAI、DeepSeek 等云模型（可选）
+## 第五步：接入 OpenAI、DeepSeek 等云模型（可选）
 
 如需调用云端大模型（如 GPT-4、DeepSeek），只需：
 
-### ✅ 申请对应的key
+### 申请对应的key
 
-### ✅ 引入依赖
+### 引入依赖
 
 ```xml
 <dependency>
@@ -344,7 +328,7 @@ public Flux<ChatResponse> testChatStream(String prompt) {
 </dependency>
 ```
 
-### ✅ 配置 API Key
+### 配置 API Key
 
 ```yml
 spring:
@@ -354,14 +338,3 @@ spring:
 ```
 
 > 若使用国产模型（如通义千问），推荐使用阿里封装的SpringAI [Spring AI Alibaba](https://java2ai.com/docs/1.0.0-M6.1/overview/?spm=4347728f.6476bf87.0.0.a3c1556bHVEtNK)。
-
-------
-
-## 📌 小结
-
-通过本文你已经掌握：
-
-✅ 如何安装并运行本地大模型
- ✅ 如何用 Spring Boot + Spring AI 调用模型
- ✅ 如何实现 ChatGPT 式流式输出接口
- ✅ 如何构建一个轻量前端聊天系统

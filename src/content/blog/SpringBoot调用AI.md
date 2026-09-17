@@ -24,7 +24,6 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 1. 创建API Key
 [创建API Key](https://bailian.console.aliyun.com/?tab=model#/api-key)
 
-
 2. 引入依赖
 ```xml
 <dependency>
@@ -90,8 +89,6 @@ public class Main {
 4. 返回数据
 
 ![image-20250506101248537](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250506101248537.png)
-
-
 
 ### Http接入
 
@@ -168,8 +165,6 @@ curl --location "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-genera
 
 ![image-20250506102820845](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250506102820845.png)
 
-
-
 ### Spring AI
 
 [Spring AI文档](https://docs.spring.io/spring-ai/reference/)
@@ -228,14 +223,11 @@ public class HelloworldController {
 
 ![image-20250506112645922](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250506112645922.png)
 
-
-
 ### LangChain4j
 
-和Spring Al作用一样，[LangChain4j](https://docs.langchain4j.dev/)是一个专注于构建基于大语言模型(LLM)应用的Java框架，作为知名AI框架Lan
-gChain的Java版本，它提供了丰富的工具和抽象层，简化了与LLM的交互和应用开发。
+[LangChain4j](https://docs.langchain4j.dev/intro/) 为 Java 应用提供模型调用、工具调用和 RAG 等能力。它是独立的 Java 项目，并非 Python LangChain 的 Java 移植版。
 
-LangChain 官方是没有支持阿里系大模型的,只能用社区版本的整合大模型包。可以在官方文档中查询支持的模型列表:
+本文的 DashScope 示例使用 `langchain4j-community-dashscope` 模块；具体模型和接口能力以对应版本的集成文档为准：
 [LangChain4j模型集成](https://docs.langchain4j.dev/integrations/language-models/)
 
 [dashscope使用](https://docs.langchain4j.dev/integrations/language-models/dashscope/)
@@ -268,11 +260,7 @@ public class LangChainAiInvoke {
 }
 ```
 
-
-
 ### 调用方式对比
-
-
 
 | 接入方式    | 优点                                                         | 缺点                                                   | 适用场景                                            |
 | ----------- | ------------------------------------------------------------ | ------------------------------------------------------ | --------------------------------------------------- |
@@ -282,8 +270,6 @@ public class LangChainAiInvoke {
 | LangChain4j | - 完整AI工具链<br>- 支持复杂工作流<br>- 丰富组件和工具<br>- 适合构建AI代理 | - 学习曲线陡峭<br>- 文档较少<br>- 抽象可能影响性能     | - 复杂AI应用<br>- 需要链式操作<br>- RAG应用开发     |
 
 推荐使用Spring AI，简单易用
-
-
 
 ## SpringAI
 
@@ -321,8 +307,6 @@ VectorStoreChatMemoryAdvisor: 可以用向量数据库来存储检索历史对�
 -  CassandraChatMemory:在Cassandra 中带有过期时间的持久化存储
 -  Neo4jChatMemory:在Neo4j中没有过期时间限制的持久化存储
 -  JdbcChatMemory:在JDBC中没有过期时间限制的持久化存储
-
-
 
 AI 模型处理两种主要类型的消息：用户消息（来自用户的直接输入）和系统消息（由系统生成以指导对话）。
 
@@ -362,8 +346,6 @@ public class TalkApp {
     }
 }
 ```
-
-
 
 ### 自定义Advisors
 
@@ -437,19 +419,9 @@ public class MyAdvisors implements StreamAroundAdvisor, CallAroundAdvisor {
 
 https://docs.spring.io/spring-ai/reference/api/advisors.html#_re_reading_re2_advisor
 
-本质上就是让模型重新阅读来提高推理能力[参考文献](https://arxiv.org/pdf/2309.06275)
+Re-Reading（RE2）将问题重复放入输入，使后一次出现的问题能够利用前面完整的问题上下文。[论文](https://arxiv.org/abs/2309.06275)在特定模型和推理数据集上报告了效果提升。
 
-这种策略受到了人类在学习和解决问题时常常重复阅读问题以增强理解过程的启发。尽管LLMs在编码一个词元时由于其单向视角无法看到后续的词元，但通过模仿人类重复阅读的行为，可以实现对问题的“双向”理解。
-
-具体来说，文中提到的研究者们通过对LLaMA-2模型进行初步实验，将问题重复两次作为输入，并使用GSM8K数据集来验证这一方法的效果。结果表明，这种重读策略使得LLaMA-2能够获得对问题的“双向”理解，进而有望进一步提升推理性能。
-
-此外，研究还展示了RE2方法相较于传统方法的优势：
-
-1. 模仿了人类解决问题的策略；
-2. 重复提问允许LLMs分配更多的计算资源给输入编码；
-3. 强调了输入阶段的理解，使其与大多数关注输出阶段的思维激发提示方法兼容。
-
-
+这里的“双向理解”是对输入上下文利用方式的描述，并未把因果注意力改成双向注意力。重复输入会增加 token 开销；是否适合当前模型和任务，需要用相同问题集比较正确率、延迟与成本。
 
 ### 最佳实践
 
@@ -485,13 +457,9 @@ LLM 生成结构化输出的能力对于依赖可靠解析输出值的下游应�
 
 ![Structured Output Converter Architecture](https://docs.spring.io/spring-ai/reference/_images/structured-output-architecture.jpg)
 
-
-
 - Bean Output Converter Bean 输出转换器：转换AI输出为自定义java类
 - Map Output Converter  贴图输出转换器：转为数字列表的map
 - List Output Converter  列出输出转换器：转换为List
-
-
 
 ```java
     // java14新特性
@@ -650,8 +618,6 @@ public class LocalMemory implements ChatMemory {
 }
 ```
 
-
-
 ### PromptTemplate模板
 
 [PromptTemplate](https://docs.spring.io/spring-ai/reference/api/prompt.html#_prompttemplate)
@@ -703,8 +669,6 @@ private Resource systemResource;
 // 直接使用资源创建模板
 SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemResource);
 ```
-
-
 
 ### 多模态
 

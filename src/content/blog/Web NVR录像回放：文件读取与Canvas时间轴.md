@@ -1,5 +1,5 @@
 ---
-title: 构建企业级 Web NVR 回放系统：从底层流读取到 Canvas 时间轴
+title: Web NVR录像回放：文件读取与Canvas时间轴
 createTime: '2026/03/01 19:23:46'
 code: bvaad5ll4
 permalink: /blog/bvaad5ll4/
@@ -9,17 +9,9 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efa331c41ff52b964587567007ab846d.jpg
 ---
 
-<ImageCard
-    image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efa331c41ff52b964587567007ab846d.jpg"
-    href="/"
-    width=400
-    center=true
-/>
-
-# 构建企业级 Web NVR 回放系统：从底层流读取到 Canvas 时间轴
 在安防视频监控项目中，"历史回放"是最考验前端交互与后端稳定性的功能模块。与普通的视频网站不同，NVR 系统需要处理碎片化的视频文件（fmp4）、绝对时间轴的映射以及多片段的无缝衔接。
 
-本文将基于 Spring Boot 和原生 JS，复盘如何实现一个支持按日检索、平滑时间轴滚动以及解决 Chrome demuxer seek failed 问题的完整方案。
+下面将录像索引、HTTP 文件访问和 Canvas 时间轴分开说明。代码依赖现有录像模型及文件定位逻辑，播放故障需要结合文件结构、Range 响应和浏览器解码日志排查。
 
 ## 一、 系统架构设计
 - 视频源：MediaMTX 录制的 fmp4 文件，按日期分文件夹存储（流名称/日期/时间.mp4）。
@@ -65,70 +57,35 @@ String dayPath = plan.getRootPath() + "/" + streamName + "/" + date;
 
 }
 ```
-### 2. 硬核流读取（解决 Seek 失败的核心）
-   这是解决前端“转圈”和报错的关键。使用 RandomAccessFile 精确控制 Seek 和 206 Partial Content 响应。
-```Java
+### 2. 返回支持 Range 的文件资源
+
+Spring MVC 返回 `Resource` 或状态为 200 的 `ResponseEntity<Resource>` 时，可自动处理 Range。这里使用 `FileSystemResource`，不使用 `InputStreamResource`，也不需要手写只支持部分语法的 Range 解析器。参见 [Spring Range Requests](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-range.html)。
+
+```java
 @GetMapping("/{volumeId}/{streamName}/{date}/{fileName}")
-public void streamVideo(
-@PathVariable Long volumeId,
-/* ...其他参数... */,
-HttpServletRequest request,
-HttpServletResponse response) throws IOException {
-
+public ResponseEntity<Resource> streamVideo(
+        @PathVariable Long volumeId,
+        @PathVariable String streamName,
+        @PathVariable String date,
+        @PathVariable String fileName) throws IOException {
+    // locateFile 需校验用户权限，且解析后的路径必须位于授权存储卷内。
     File file = locateFile(volumeId, streamName, date, fileName);
-    if (!file.exists()) {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        return;
+    if (!file.isFile()) {
+        return ResponseEntity.notFound().build();
     }
-
-    long fileLength = file.length();
-    long start = 0;
-    long end = fileLength - 1;
-
-    // 解析 Range 头 (例如: bytes=102400-)
-    String range = request.getHeader("Range");
-    if (range != null && range.startsWith("bytes=")) {
-        String[] ranges = range.substring(6).split("-");
-        try {
-            if (ranges.length > 0 && !ranges[0].isEmpty()) start = Long.parseLong(ranges[0]);
-            if (ranges.length > 1 && !ranges[1].isEmpty()) end = Long.parseLong(ranges[1]);
-        } catch (NumberFormatException ignored) {}
-    }
-    
-    // 修正结束位置
-    if (end >= fileLength) end = fileLength - 1;
-    long contentLength = end - start + 1;
-
-    // 设置响应头 (跨域头必不可少，否则 Canvas 截图会跨域)
-    response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
-    response.setContentType("video/mp4");
-    response.setHeader("Accept-Ranges", "bytes");
-    response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
-    response.setHeader("Content-Length", String.valueOf(contentLength));
-    
-    // 开始传输
-    try (RandomAccessFile randomFile = new RandomAccessFile(file, "r")) {
-        randomFile.seek(start); // 物理 Seek
-        byte[] buffer = new byte[64 * 1024]; // 64KB 缓冲
-        long bytesToRead = contentLength;
-        
-        while (bytesToRead > 0) {
-            int len = randomFile.read(buffer, 0, (int) Math.min(bytesToRead, buffer.length));
-            if (len == -1) break;
-            response.getOutputStream().write(buffer, 0, len);
-            bytesToRead -= len;
-        }
-        response.getOutputStream().flush();
-    } catch (IOException e) {
-        // 客户端中断连接是正常现象，忽略即可
-    }
-
+    Resource resource = new FileSystemResource(file);
+    return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("video/mp4"))
+            .body(resource);
 }
 ```
+
+上例需引入 Spring 的 `Resource`、`FileSystemResource`、`ResponseEntity` 和 `MediaType`。只对已完成写入且可独立播放的 MP4 文件使用这个接口；原始 fMP4 媒体片段还可能需要初始化段和播放器封装支持。
+
 ## 三、 前端：时间轴与连贯播放
 前端的核心难点在于：如何把一个个独立的视频文件，抽象成一个连续的时间流。
 ### 1. 播放器配置
-   HTML 配置至关重要，必须禁用预加载，防止 fmp4 头部解析锁死。
+   `preload` 是加载提示，可以按首帧需求选择 `none` 或 `metadata`，不能靠禁用预加载修复损坏文件或错误 Range 响应。
 ```HTML
 <video id="player" playsinline preload="none" crossorigin="anonymous"></video>
 ```
@@ -188,9 +145,9 @@ const pxPerMs = 0.05; // 缩放比例
 }
 ```
 ### 4. 连贯播放与安全跳转（防 Crash）
-这是解决“转圈”问题的最后一道防线。
+切换片段时清理上一条加载流程，再等待新资源的元数据。
 - 防缓存：URL 加时间戳。
-- 安全 Seek：文件开头 2 秒内不执行 video.currentTime = x，直接从头播。
+- 跳转：核对 `duration` 和 `seekable`，不要把任意的前 2 秒禁跳当作格式要求。
 - 自动连播：监听 ended 事件。
 ```JavaScript
 // 播放指定片段逻辑
@@ -210,9 +167,8 @@ const video = document.getElementById('player');
     const onMetadata = () => {
         video.removeEventListener('loadedmetadata', onMetadata);
         
-        // 【核心 Hack】避开 fmp4 头部 Seek Bug
-        // 如果跳转目标在文件开头 2秒内，直接从 0 开始播，不要 Seek
-        if (offsetSeconds > 2.0 && offsetSeconds < video.duration) {
+        // 跳转目标应位于该文件的时间范围内。
+        if (Number.isFinite(offsetSeconds) && offsetSeconds >= 0 && offsetSeconds < video.duration) {
             video.currentTime = offsetSeconds;
         } else {
             video.currentTime = 0;
@@ -230,14 +186,16 @@ const video = document.getElementById('player');
 video.addEventListener('ended', () => {
 // 查找当前片段的下一个
 const currentSeg = findSegmentByUrl(video.currentSrc);
-const nextSeg = videoSegments.find(s => s.beginTime >= currentSeg.endTime - 1000); // 1秒容错
+const currentIndex = videoSegments.findIndex(s => s.url === currentSeg?.url);
+const nextSeg = currentIndex >= 0 ? videoSegments[currentIndex + 1] : null;
 if (nextSeg) {
 playSegment(nextSeg, 0); // 从下一个片段的 0秒开始播
 }
 });
 ```
-## 四、 总结
-要实现一个工业级的 Web 录像回放系统，关键在于细节的把控：
-- 后端：放弃高级封装，使用 RandomAccessFile 确保对 Range 请求的字节级响应。
-- 协议：理解 fmp4 格式的局限性，尽量避免在文件头部的 Seek 操作。
-- 视觉：利用 requestAnimationFrame 和数据驱动的方式，将离散的视频文件在视觉上整合成一条连续的时间轴。
+## 播放失败时检查什么
+
+- 文件是否完整，MP4 初始化信息、轨道编码和索引是否可用。
+- `Range` 请求是否返回正确的 206、`Content-Range` 和字节数，越界请求是否正确处理。
+- 目标时间是否落在浏览器报告的可跳转范围内，见 [HTMLMediaElement.seekable](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable)。
+- 切换源后是否还有旧回调修改 `currentTime`，结束事件是否误选回当前片段。

@@ -6,9 +6,6 @@ permalink: /blog/b1abyg6dj/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 背景
 
@@ -61,7 +58,7 @@ public class User {
 以上代码就替代了之前众多繁琐的if else判断，而且整体上也便于浏览。
 ### 3. controller使用
 
-只需要在对应的请求加上@Validated即可，但是对于直接传输基本类型，还需要在controller上面加上@Validated注解，也就是下面第三种情况
+下面使用传统的 AOP 方法校验方式：Controller 类上加 `@Validated`。Spring Framework 6.1 起还提供 MVC 内置方法校验，使用该方式时需去掉类级 `@Validated`，并处理对应的校验异常。参见 [Spring MVC Validation](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html)。
 
 ```java
 @RequestMapping( "/user" )
@@ -138,8 +135,6 @@ public class UserController {
 
 基本使用就按照上面进行就可以。
 
-
-
 ## 正式入门
 
 ### 1. 基本概念
@@ -168,7 +163,7 @@ Hibernate Validation是其具体实现，并对其进行了一些扩展，添加
 |     `@Digits`      | 被注释的元素可以接收指定范围内的数字，`integer`表示整数，`fraction`表示小数 | BigDecimal, BigInteger, CharSequence, byte, short, int, long 、原生类型的封装类、任何 Number 子类。 |              |
 |      `@Email`      | 邮箱必须要符合对应的格式，`regexp`可以使用正则表达式         | CharSequence                                                 |              |
 |     `@Future`      | 元素必须是未来的日期                                         | java.util.Date, java.util.Calendar, java.time.Instant, java.time.LocalDate, java.time.LocalDateTime, java.time.LocalTime, java.time.MonthDay, java.time.OffsetDateTime, java.time.OffsetTime, java.time.Year, java.time.YearMonth, java.time.ZonedDateTime, java.time.chrono.HijrahDate, java.time.chrono.JapaneseDate, java.time.chrono.MinguoDate, java.time.chrono.ThaiBuddhistDate |              |
-| `@FutureOrPresent` | 元素必须是过去或者现在                                       | 同@Future                                                    |              |
+| `@FutureOrPresent` | 元素必须是未来或者现在                                       | 同@Future                                                    |              |
 |       `@Max`       | 元素必须是数字，并且小于等于指定的值                         | BigDecimal, BigInteger, byte, short, int, long, 原生类型的封装类, CharSequence 的任意子类（字符序列表示的数字）, Number 的任意子类, javax.money.MonetaryAmount 的任意子类 |              |
 |       `@Min`       | 元素必须是数字，并且大于等于指定的值                         | BigDecimal, BigInteger, byte, short, int, long, 原生类型的封装类, CharSequence 的任意子类（**字符序列表示的数字**）, Number 的任意子类, javax.money.MonetaryAmount 的任意子类 |              |
 |    `@Negative`     | 元素必须是负数                                               | BigDecimal, BigInteger, byte, short, int, long, 原生类型的封装类, CharSequence 的任意子类（**字符序列表示的数字**）, Number 的任意子类, javax.money.MonetaryAmount 的任意子类 |              |
@@ -187,7 +182,7 @@ Hibernate Validation是其具体实现，并对其进行了一些扩展，添加
 里面有几个比较常用，但是容易出错的注解
 
 - @NotNull: 适用于任何类型，不能为null，但是可以是“”
-- @NotBlank：只能用于String类型，不能为null，要有实际字符，长度必须大于0
+- @NotBlank：用于 CharSequence，不能为 null，且至少包含一个非空白字符
 - @NotEmpty：用于 String、Collection、Map、Array，不能为null，长度必须大于0。
 
 ### 3. 异常处理
@@ -252,13 +247,9 @@ public class GlobalControllerExceptionHandler {
 }
 ```
 
-
-
 #### 1. 使用@RequsteBody参数异常
 
 ![image-20240107171758680](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401071718793.png)
-
-
 
 #### 2. 使用表单方式提交异常
 
@@ -267,10 +258,6 @@ public class GlobalControllerExceptionHandler {
 #### 3. 使用@RequsetParam参数异常
 
 ![image-20240107172356917](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401071723994.png)
-
-
-
-
 
 ### 4. 自定义校验规则
 
@@ -312,10 +299,6 @@ public class GlobalControllerExceptionHandler {
 5. `message`: 错误信息
 6. `groups`: 允许指定此约束所属的验证分组
 7. `payload`:  能被 Bean Validation API 客户端使用，以自定义一个注解的 payload 对象。
-
-
-
-
 
 #### 编写Phone的自定义注解
 
@@ -371,10 +354,6 @@ public class PhoneValidator implements ConstraintValidator<Phone, String> {
 
 `isValid`: 注意：Bean Validation 规范建议将 null 值视为有效值。如果一个元素 null 不是一个有效值，则应该显示的用 @NotNull 标注。
 
-
-
-
-
 ### 5. 分组校验
 
 有时候会遇到一个情况，就是一个属性在不同的场景下，需要有不同的校验，比如
@@ -413,8 +392,6 @@ public interface UpdateUserGroup {
 
 大多数结构约束应属于默认组。
 
-
-
 #### 2. 实体类使用组
 
 这里我们以userId为例，添加不同的分组
@@ -431,8 +408,6 @@ public class User {
     private String userName;
 }
 ```
-
-
 
 #### 3. controller使用组
 
@@ -469,15 +444,11 @@ public class GroupUserController {
 
 ![image-20240108173349018](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401081733090.png)
 
-
-
 4. 对updateUser指定userId
 
 ![image-20240108173428812](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401081734883.png)
 
 上面两个在对应的场景下，分组校验都能进行
-
-
 
 ### 6. 嵌套校验
 
@@ -533,11 +504,7 @@ public class NestUserController {
 
 ![image-20240108174753710](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401081747787.png)
 
-
-
 可以看到上面嵌套校验也是成功生效了
-
-
 
 ### 7. 集合校验
 
@@ -571,11 +538,9 @@ public class NestUserController {
 
 ![image-20240108175846817](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401081758900.png)
 
-但是这样缺点就是无法使用分组校验，因为分组校验里面需要@Validated指定分组，但是现在是使用的@Valid
+`@Valid` 负责级联校验，本身不选择分组。分组由校验入口的 `@Validated` 或 Validator API 指定；不能据此断言集合无法进行分组校验。
 
 无法实现这个功能
-
-
 
 #### 自定义一个list
 
@@ -594,8 +559,6 @@ public class ValidList<E> implements List<E> {
 `@Delegate`是Lombok里面的一个注解，如果不使用的话，需要重写其他的方法，但是这边@Delegate已经废弃了，而且比较难用，这边使用的话会有个报错，所以还是需要自己重写对应的方法
 
 ![image-20240108190924330](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401081909411.png)
-
-
 
 ```java
 @Data
@@ -720,8 +683,6 @@ public class ValidList<E> implements List<E> {
     }
 }
 ```
-
-
 
 使用我们自定义的list
 

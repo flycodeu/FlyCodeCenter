@@ -27,11 +27,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 然后重启电脑。
 
-
-
 ![image-20250604162529259](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250604162529259.png)
-
-
 
 ### 3. 安装 WSL
 
@@ -42,8 +38,6 @@ wsl --install
 ```
 
 默认会安装 Ubuntu 发行版。安装完成后需要设置用户名和密码。
-
-------
 
 ## 二、常用 WSL 命令
 
@@ -99,8 +93,6 @@ wsl --import CentOS7 D:\WSLFile\CentOS7 D:\WSLFile\CentOS7\CentOS7.tar --version
 wsl -d CentOS7
 ```
 
-------
-
 ## 三、安装 CentOS 7（非官方支持）
 
 由于 CentOS 7 已停止维护，官方不再提供直接安装方式。你可以通过第三方项目进行安装。
@@ -129,4 +121,3 @@ yum makecache
 ```bash
 yum install -y yum-utils
 ```
-

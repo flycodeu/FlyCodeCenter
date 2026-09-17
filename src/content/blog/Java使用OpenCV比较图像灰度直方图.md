@@ -1,5 +1,5 @@
 ---
-title: Java调用OpenCv实现人脸相似度对比
+title: Java使用OpenCV比较图像灰度直方图
 createTime: '2026/03/01 19:23:46'
 code: b3ldoapuj
 permalink: /blog/b3ldoapuj/
@@ -7,6 +7,8 @@ tags:
   - OpenCv
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/f4005b755563b4f1159e0b98f749683c.jpg
 ---
+
+下面比较两张图的灰度直方图，衡量亮度分布的相似程度。它没有检测人脸、对齐关键点或提取人脸特征，因此不能据此判断是否为同一个人。参见 [OpenCV 直方图比较](https://docs.opencv.org/4.x/d8/dc8/tutorial_histogram_comparison.html)。
 
 ## 引入依赖
 ```xml
@@ -40,10 +42,14 @@ class FaceRecognitionSystemApplicationTests {
 
     @Test
     void contextLoads() {
+        nu.pattern.OpenCV.loadLocally();
         Path referenceImagePath1 = Paths.get("src/main/resources/all", "demo-01" + ".jpg");
         Path referenceImagePath2 = Paths.get("src/main/resources/all", "demo-02" + ".jpg");
         Mat referenceImage1 = Imgcodecs.imread(referenceImagePath1.toString());
         Mat referenceImage2 = Imgcodecs.imread(referenceImagePath2.toString());
+        if (referenceImage1.empty() || referenceImage2.empty()) {
+            throw new IllegalArgumentException("图片不存在或无法解码");
+        }
         double similarity = calculateSimilarity(referenceImage1, referenceImage2);
         log.info("图像相似度: {}", similarity);
     }
@@ -108,7 +114,7 @@ class FaceRecognitionSystemApplicationTests {
 }
 ```
 
-但是运行会报错，我们需要修改JVM配置，可以读取之前下载的opencv相关文件
+上例使用 OpenPnP 提供的本地库加载器。若改为手动加载官方库，需要匹配 Java 包、操作系统与架构，设置本地库搜索路径后还要调用 `System.loadLibrary(Core.NATIVE_LIBRARY_NAME)`；只设置路径不会自动加载库。手动方式的路径示例：
 ```
  -ea -Djava.library.path="D:\Program Files\opencv\opencv\build\java\x64"
 ```

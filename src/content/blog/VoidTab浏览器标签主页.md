@@ -9,21 +9,11 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3d4c176ee540551925d5c6271f3db040.jpg
 ---
 
-<ImageCard
-image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3d4c176ee540551925d5c6271f3db040.jpg"
-href="/"
-width=400
-center=true
-/>
-
-
-# VoidTab浏览器标签主页
 VoidTab 是一个基于 Vue 3 + TypeScript 构建的极简、赛博朋克风格浏览器起始页（New Tab Extension）。
 
 **目前已上架Edge插件：**
 
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084824.png)
-
 
 仓库地址：
 https://github.com/flycodeu/VoidTab

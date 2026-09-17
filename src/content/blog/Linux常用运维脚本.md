@@ -11,8 +11,6 @@ tags:
 >
 > 转自地址：[https://mp.weixin.qq.com/s/_mqjaxvWibfXzpNbqHM0XQ](https://mp.weixin.qq.com/s/_mqjaxvWibfXzpNbqHM0XQ)
 
-
-
 ## 一键安装Apache服务器
 
 自动化安装并启动Apache服务器。
@@ -130,7 +128,7 @@ sudo systemctl restart apache2
 echo "PHP已安装并配置为Apache模块"
 ```
 
-##  **一键监控CPU和内存使用率**
+## **一键监控CPU和内存使用率**
 
 ```bash
 #!/bin/bash
@@ -232,7 +230,7 @@ tar -czvf $ARCHIVE_NAME.tar.gz -C $(dirname $DIR_PATH) $(basename $DIR_PA
 echo "目录已压缩为 $ARCHIVE_NAME.tar.gz"
 ```
 
-##  **一键安装Java**
+## **一键安装Java**
 
 安装OpenJDK 11
 
@@ -251,4 +249,3 @@ echo "Java已安装"
 #!/bin/bash
 df -h | grep -Ev '^Filesystem|tmpfs|cdrom'
 ```
-

@@ -4,9 +4,10 @@ createTime: '2026/03/01 19:23:46'
 code: bqw28c6g3
 permalink: /blog/bqw28c6g3/
 ---
-# 1. 目标与约束
 
-## 1.1 目标
+## 1. 目标与约束
+
+### 1.1 目标
 
 在现有 Spring Boot（Java 8）+ MyBatis Plus + MySQL 项目中引入 AI 模块，实现：
 
@@ -17,51 +18,47 @@ permalink: /blog/bqw28c6g3/
 5. **可维护**：提示词（Router/Composer）可版本化、可灰度发布、可回滚。
 6. **可观测**：全链路日志可回放，包括 Router 计划、工具调用、耗时、输出 blocks。
 
-## 1.2 约束与边界
+### 1.2 约束与边界
 
 - AI 模块不直接访问数据库；所有事实数据由后端工具（Mapper/Service）产生。
 - Router 输出必须是**严格 JSON**，用于后端解析与校验；非 JSON 内容视为失败并触发降级策略。
 - 工具调用入参必须通过 Schema 约束校验（字段白名单 + 类型约束），防止模型生成无效或危险参数。
 - Composer 的文本输出必须来源于工具结果；禁止无依据推断业务数据。
 
-------
+## 2. 架构设计
 
-# 2. 架构设计
-
-## 2.1 总体流程
+### 2.1 总体流程
 
 1. **Router**：将用户输入映射为结构化 `RouterPlan(JSON)`（工具名 + 参数）。
 2. **ToolExecutor**：根据工具注册表执行对应工具，获得 `ToolResult(blocks, raw)`。
 3. **Composer**：将工具结果组织为 `AiChatResponse(answer + blocks)`。
 4. **Logging**：落库保存 RouterPlan、工具 traces、响应 blocks、耗时等。
 
-## 2.2 分层职责
+### 2.2 分层职责
 
-### Router（决策层）
+#### Router（决策层）
 
 - 输入：用户 query、上下文（可选）
 - 输出：`RouterPlan`（仅包含工具调用计划）
 - 非职责：生成业务事实数据、编写 SQL、推断数据库状态
 
-### Tools（能力层）
+#### Tools（能力层）
 
 - 输入：`args`（Map），并由 Schema 校验
 - 输出：`ToolResult`（结构化 UI Blocks + 可选 raw）
 - 职责：调用 Mapper/Service、执行多表联查、返回图片 URL
 
-### Composer（表达层）
+#### Composer（表达层）
 
 - 输入：工具结果
 - 输出：面向用户的文本摘要 + blocks
 - 可实现两种模式：
-  - **模板模式（推荐初期）**：零幻觉、可控
+  - **模板模式**：按固定模板展示工具字段，仍需校验路由、权限和数据结果
   - **LLM 模式（可选）**：提升可读性，但仅允许基于工具结果重述
 
-------
+## 3. 数据协议
 
-# 3. 数据协议
-
-## 3.1 RouterPlan（Router 输出）
+### 3.1 RouterPlan（Router 输出）
 
 ```
 {
@@ -74,7 +71,7 @@ permalink: /blog/bqw28c6g3/
 }
 ```
 
-## 3.2 ToolResult（工具输出）
+### 3.2 ToolResult（工具输出）
 
 - `blocks`：前端直接渲染所需结构
 - `raw`：可选，供 Composer/排障使用
@@ -87,9 +84,7 @@ permalink: /blog/bqw28c6g3/
 - `text`：文本
 - `graph`：关系图（后续扩展）
 
-------
-
-# 4. 与现有接口的映射（无参能力）
+## 4. 与现有接口的映射（无参能力）
 
 给定 Mapper 接口：
 
@@ -108,11 +103,9 @@ List<CameraDeviceVo> listCameraDeviceVo();
 
 工具输出使用 `table` block，附带 `meta.columns` 与 `meta.valueMap`（例如 status 映射 0/1 → 离线/在线）。
 
-------
+## 5. 有参接口与多表联查示例设计
 
-# 5. 有参接口与多表联查示例设计
-
-## 5.1 有参接口（示例：按条件查询相机）
+### 5.1 有参接口（示例：按条件查询相机）
 
 工具：`camera.device.search`
 
@@ -122,7 +115,7 @@ List<CameraDeviceVo> listCameraDeviceVo();
   - `nameLike`：string（可选）
   - `limit`：int（默认 50，上限 200）
 
-## 5.2 多表联查 + 图片 URL（示例：离线相机 + 最新抓拍）
+### 5.2 多表联查 + 图片 URL（示例：离线相机 + 最新抓拍）
 
 工具：`camera.offline.latestSnapshots`
 
@@ -134,25 +127,21 @@ List<CameraDeviceVo> listCameraDeviceVo();
   - `table`：离线相机列表（名称/IP/分组/最后在线/抓拍时间）
   - `images`：抓拍图片列表（url + caption）
 
-------
+## 6. Prompt 版本化与灰度发布
 
-# 6. Prompt 版本化与灰度发布
-
-## 6.1 版本化原则
+### 6.1 版本化原则
 
 - Router/Composer prompt 存储在 `ai_prompt_release` 表，按 `prompt_name` + `version` 区分。
 - Prompt 发布时支持多版本同时启用，按 `traffic_percent` 分流。
 - Prompt 使用缓存（TTL）减少频繁 DB 读取。
 
-## 6.2 灰度分流策略
+### 6.2 灰度分流策略
 
 - 基于 `userId` 的稳定 hash（如 Murmur/CRC32）映射到 0..99
 - 在启用的版本集合上按 `traffic_percent` 选择版本
 - 具备回滚能力（调低新版本 traffic 或 disabled）
 
-------
-
-# 7. 全链路日志与回放
+## 7. 全链路日志与回放
 
 记录字段：
 
@@ -168,13 +157,11 @@ List<CameraDeviceVo> listCameraDeviceVo();
 - 识别参数校验失败
 - 统计工具命中率与耗时分布
 
-------
+## 8. 项目集成示例
 
-# 8. 可运行参考实现（完整代码）
+以下为模块代码片段，依赖已有业务 Mapper、认证上下文、数据表和模型配置，不能作为独立项目直接启动。包含：
 
-以下代码为最小可运行实现，包含：
-
-- 无参工具（你的两个接口）
+- 无参工具（相机状态统计与列表接口）
 - 有参工具（search）
 - 多表联查 + images block（离线相机抓拍）
 - Prompt 版本化/灰度/缓存
@@ -183,17 +170,13 @@ List<CameraDeviceVo> listCameraDeviceVo();
 
 > 说明：代码使用 Jackson；LLM 调用采用 OpenAI-compatible `/chat/completions`。
 
-------
+### 8.1 Maven 依赖（pom.xml）
 
-## 8.1 Maven 依赖（pom.xml）
+按现有项目的 Spring Boot 版本管理 Jackson、MyBatis-Plus 和 HTTP 客户端依赖。本文未提供独立的完整 pom.xml。
 
-（与前版一致，可直接使用）
+### 8.2 AI 模块模型定义
 
-------
-
-## 8.2 AI 模块模型定义
-
-### AiChatRequest / AiChatResponse / UiBlock
+#### AiChatRequest / AiChatResponse / UiBlock
 
 ```
 package com.example.camai.ai.model;
@@ -240,7 +223,7 @@ public class ToolTrace {
 }
 ```
 
-### RouterPlan
+#### RouterPlan
 
 ```
 package com.example.camai.ai.model;
@@ -266,7 +249,7 @@ public class RouterPlan {
 }
 ```
 
-### ToolResult
+#### ToolResult
 
 ```
 package com.example.camai.ai.model;
@@ -298,11 +281,9 @@ public class ToolResult {
 }
 ```
 
-------
+### 8.3 工具注解与注册表
 
-## 8.3 工具注解与注册表
-
-### @AiTool
+#### @AiTool
 
 ```
 package com.example.camai.ai.tools;
@@ -319,7 +300,7 @@ public @interface AiTool {
 }
 ```
 
-### ToolSpec
+#### ToolSpec
 
 ```
 package com.example.camai.ai.tools;
@@ -338,7 +319,7 @@ public class ToolSpec {
 }
 ```
 
-### ToolRegistry
+#### ToolRegistry
 
 ```
 package com.example.camai.ai.tools;
@@ -381,9 +362,7 @@ public class ToolRegistry {
 }
 ```
 
-------
-
-## 8.4 Schema 校验（字段白名单 + 关键约束）
+### 8.4 Schema 校验（字段白名单 + 关键约束）
 
 ```
 package com.example.camai.ai.util;
@@ -444,9 +423,7 @@ public class SchemaValidator {
 }
 ```
 
-------
-
-## 8.5 ToolExecutor（执行 + Trace）
+### 8.5 ToolExecutor（执行 + Trace）
 
 ```
 package com.example.camai.ai.core;
@@ -502,11 +479,9 @@ public class ToolExecutor {
 }
 ```
 
-------
+### 8.6 Prompt 发布与灰度选择（DB + 缓存）
 
-## 8.6 Prompt 发布与灰度选择（DB + 缓存）
-
-### Entity：AiPromptReleaseEntity
+#### Entity：AiPromptReleaseEntity
 
 ```
 package com.example.camai.ai.persistence.entity;
@@ -529,7 +504,7 @@ public class AiPromptReleaseEntity {
 }
 ```
 
-### Mapper
+#### Mapper
 
 ```
 package com.example.camai.ai.persistence.mapper;
@@ -540,7 +515,7 @@ import com.example.camai.ai.persistence.entity.AiPromptReleaseEntity;
 public interface AiPromptReleaseMapper extends BaseMapper<AiPromptReleaseEntity> {}
 ```
 
-### PromptService（选择版本 + 缓存）
+#### PromptService（选择版本 + 缓存）
 
 ```
 package com.example.camai.ai.persistence;
@@ -619,9 +594,7 @@ public class PromptService {
 }
 ```
 
-------
-
-## 8.7 LLM Client（OpenAI-compatible）
+### 8.7 LLM Client（OpenAI-compatible）
 
 ```
 package com.example.camai.ai.core;
@@ -672,9 +645,7 @@ public class LlmClient {
 }
 ```
 
-------
-
-## 8.8 Router（强 JSON + 工具列表注入 + Prompt 灰度）
+### 8.8 Router（强 JSON + 工具列表注入 + Prompt 灰度）
 
 ```
 package com.example.camai.ai.core;
@@ -761,7 +732,7 @@ public class RouterService {
 }
 ```
 
-### JSON 抽取工具
+#### JSON 抽取工具
 
 ```
 package com.example.camai.ai.util;
@@ -777,9 +748,7 @@ public class JsonExtract {
 }
 ```
 
-------
-
-## 8.9 Composer（模板 + 可选 LLM，Prompt 灰度）
+### 8.9 Composer（模板 + 可选 LLM，Prompt 灰度）
 
 ```
 package com.example.camai.ai.core;
@@ -864,11 +833,9 @@ public class ComposerService {
 }
 ```
 
-------
+### 8.10 AI Chat Service（串联 + 落库日志）
 
-## 8.10 AI Chat Service（串联 + 落库日志）
-
-### 日志 Entity + Mapper
+#### 日志 Entity + Mapper
 
 ```
 package com.example.camai.ai.persistence.entity;
@@ -901,7 +868,7 @@ import com.example.camai.ai.persistence.entity.AiChatLogEntity;
 public interface AiChatLogMapper extends BaseMapper<AiChatLogEntity> {}
 ```
 
-### AiChatService
+#### AiChatService
 
 ```
 package com.example.camai.ai.core;
@@ -1002,9 +969,7 @@ public class AiChatService {
 }
 ```
 
-------
-
-## 8.11 Controller
+### 8.11 Controller
 
 ```
 package com.example.camai.ai.controller;
@@ -1029,11 +994,9 @@ public class AiChatController {
 }
 ```
 
-------
+## 9. 工具实现（无参 + 有参 + 多表联查 + images block）
 
-# 9. 工具实现（无参 + 有参 + 多表联查 + images block）
-
-## 9.1 CameraMapper（补齐有参与联查）
+### 9.1 CameraMapper（补齐有参与联查）
 
 ```
 package com.example.camai.camera.mapper;
@@ -1101,7 +1064,7 @@ public interface CameraMapper extends BaseMapper<CameraDeviceEntity> {
 }
 ```
 
-### OfflineSnapshotVo
+#### OfflineSnapshotVo
 
 ```
 package com.example.camai.camera.vo;
@@ -1122,9 +1085,7 @@ public class OfflineSnapshotVo {
 }
 ```
 
-------
-
-## 9.2 CameraTools（工具化输出 blocks）
+### 9.2 CameraTools（工具化输出 blocks）
 
 ```
 package com.example.camai.ai.tools.impl;
@@ -1309,11 +1270,9 @@ public class CameraTools {
 }
 ```
 
-------
+## 10. Router/Composer Prompt 内容（入库示例）
 
-# 10. Router/Composer Prompt 内容（入库示例）
-
-## 10.1 Router Prompt（强约束 JSON）
+### 10.1 Router Prompt（强约束 JSON）
 
 将以下内容插入 `ai_prompt_release`（prompt_name=router）：
 
@@ -1342,7 +1301,7 @@ VALUES(
 );
 ```
 
-## 10.2 Composer Prompt（只基于工具结果重述）
+### 10.2 Composer Prompt（只基于工具结果重述）
 
 ```
 INSERT INTO ai_prompt_release(prompt_name, version, traffic_percent, enabled, content)
@@ -1356,11 +1315,9 @@ VALUES(
 );
 ```
 
-------
+## 11. 运行与验证
 
-# 11. 运行与验证
-
-## 11.1 调用示例
+### 11.1 调用示例
 
 - 无参：
   - “查看相机状态统计” → `camera.status.count`
@@ -1371,7 +1328,7 @@ VALUES(
 - 多表联查 + 图片：
   - “查看离线相机最新抓拍” → `camera.offline.latestSnapshots`，返回 table + images blocks
 
-## 11.2 curl
+### 11.2 curl
 
 ```
 curl -X POST http://localhost:8080/api/ai/chat \
@@ -1379,9 +1336,7 @@ curl -X POST http://localhost:8080/api/ai/chat \
   -d '{"userId":"u1","query":"查看离线相机最新抓拍，limit 10"}'
 ```
 
-------
-
-# 12. 扩展指南（工程规范）
+## 12. 扩展指南（工程规范）
 
 新增一个可被 AI 调用的能力，遵循固定流程：
 

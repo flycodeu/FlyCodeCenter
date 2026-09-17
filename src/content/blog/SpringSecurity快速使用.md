@@ -6,9 +6,6 @@ permalink: /blog/b19w55cur/
 tags:
   - SpringBoot
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 老版本的使用
 
@@ -130,8 +127,6 @@ public class JWTUtils {
 
 }
 ```
-
-
 
 ### 3.编写JWT验证信息
 
@@ -299,15 +294,9 @@ public class GlobalExceptionHandler {
 }
 ```
 
-
-
 ### 5. 编写config配置文件
 
-
-
 ### 6. 编写handler处理器
-
-
 
 #### 1. 登出成功处理器
 
@@ -484,8 +473,6 @@ public class  JwtAuthenticationFilter extends BasicAuthenticationFilter {
 
 ```
 
-
-
 ### 9. 自定义jwt异常处理
 
 ```java
@@ -505,8 +492,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     }
 }
 ```
-
-
 
 ### 10. 获取用户角色权限
 
@@ -568,4 +553,3 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
 ```
 
 ### 11. 分级菜单
-

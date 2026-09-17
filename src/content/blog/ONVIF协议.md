@@ -9,20 +9,12 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3e5bf05d61c2bf0f032bcf6a33568d4b.jpg
 ---
 
-<ImageCard
-  image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/3e5bf05d61c2bf0f032bcf6a33568d4b.jpg"
-  href="/"
-  width=400
-  center=true
-/>
-
-# 基于 Java Spring Boot 的无依赖轻量级 ONVIF 协议接入技术方案
 ## 1. 概述
 ONVIF（Open Network Video Interface Forum）标准是安防行业的通用接口协议，旨在解决不同厂商（如海康威视、大华、宇视等）IP 摄像机与视频管理系统（VMS）之间的互通性问题。
 
-在 Java 后端开发中，传统的接入方式往往依赖于 onvif-java-lib 等第三方库。然而，这些库普遍存在维护停滞（多为 7-9 年前版本）、依赖繁重（引入大量 Axis2 或 CXF 依赖）以及对新设备兼容性差的问题。
+在 Java 后端开发中，传统的接入方式往往依赖于 onvif-java-lib 等第三方库。选择库时需要核对其维护状态、依赖和目标设备支持情况，不能仅凭发布时间判断兼容性。
 
-本文档提出一种基于原生 SOAP XML 构造的轻量级接入方案。该方案仅依赖 Hutool 工具包进行 HTTP 请求与 XML 解析，具备极高的可控性与兼容性。
+本文档提出一种基于原生 SOAP XML 构造的轻量级接入方案。该方案仅依赖 Hutool 工具包进行 HTTP 请求与 XML 解析，便于观察请求和响应，但具体设备仍需联调。
 ## 2. 协议核心与 SOAP 结构解析
 ONVIF 的底层通信机制是 SOAP (Simple Object Access Protocol) over HTTP。客户端通过 HTTP POST 向设备发送 XML 格式的指令（Envelope），设备解析后返回 XML 响应。
 ### 2.1 SOAP 消息结构剖析
@@ -50,8 +42,8 @@ ONVIF 的底层通信机制是 SOAP (Simple Object Access Protocol) over HTTP。
 ### 2.2 命名空间（Namespace）详解
 XML 中的 s:、tt:、tds: 只是命名空间的前缀（Prefix），其核心定义在于 xmlns 属性指向的 URL：
 - xmlns:s: 定义了 SOAP 信封的标准。
-  - SOAP 1.2: http://www.w3.org/2003/05/soap-envelope (较新设备使用)
-  - SOAP 1.1: http://schemas.xmlsoap.org/soap/envelope/ (兼容性更好，推荐使用)
+  - SOAP 1.2: http://www.w3.org/2003/05/soap-envelope（本文代码使用，ONVIF 标准采用此版本）
+  - SOAP 1.1: http://schemas.xmlsoap.org/soap/envelope/（不同于上述命名空间，不应随意替换）
   - 查询来源: 该结构由 W3C 组织定义，所有 SOAP 客户端必须遵循此格式。
 - xmlns:tt: ONVIF Schema，定义了公共数据类型（如分辨率、PTZ 速度、网络配置）。
   - 查询来源: http://www.onvif.org/onvif/ver10/schema/onvif.xsd
@@ -59,14 +51,16 @@ XML 中的 s:、tt:、tds: 只是命名空间的前缀（Prefix），其核心�
 - xmlns:trt: Media Service，定义媒体相关接口（获取流、截图）。
 
 ### 2.3 WS-Security 鉴权机制
-ONVIF 不使用 HTTP Basic Auth，而是使用 WS-Security UsernameToken。这是接入的最大难点。服务端会对以下参数进行校验：
-- Created: 请求生成的 UTC 时间。服务器时间与设备时间误差通常不能超过 5 分钟，否则返回 HTTP 400 Wsse authorized time check failed。
+ONVIF 涉及 HTTP Digest 与 WS-Security UsernameToken 等鉴权机制。本文只实现 UsernameToken 分支，不能覆盖所有设备的鉴权要求。参见 [ONVIF Core Specification](https://www.onvif.org/specs/core/ONVIF-Core-Specification-v210.pdf)。摘要包含以下参数：
+- Created: 请求生成的 UTC 时间。需与设备时钟同步；允许的时间窗口和错误响应取决于设备实现，不应统一写成固定 5 分钟与 HTTP 400。
 - Nonce: 随机生成的二进制数据（防重放攻击）。
 - PasswordDigest: 密码摘要，计算公式如下：$$\text{Base64}(\text{SHA-1}(\text{Nonce}_{\text{bytes}} + \text{Created}_{\text{bytes}} + \text{Password}_{\text{bytes}}))$$
 
-## 3. 核心代码实现以下代码基于 JDK 8+ 和 Hutool 实现。
+## 3. 核心代码
+
+以下代码基于 JDK 8+ 和 Hutool，业务模型类需在项目中提供。
 ### 3.1 鉴权工具类 (OnvifUtils)
-该类负责构建符合 SOAP 1.1/1.2 标准的 XML 信封，并生成正确的密码摘要
+该类构造 SOAP 1.2 信封和 UsernameToken 密码摘要。
 ```Java
 package com.hmifo.modules.camera.onvif;
 
@@ -115,7 +109,7 @@ public class OnvifUtils {
 
     /**
      * 构建 SOAP 信封 (含 WS-Security)
-     * 关键点：强制使用 UTC 时间，修正 xmlns 地址以兼容 SOAP 1.1
+     * 关键点：强制使用 UTC 时间，使用 SOAP 1.2 的 xmlns 地址
      */
     private static String buildSoapEnvelope(String username, String password, String bodyContent) {
         // 1. 生成 UTC 时间戳 (关键：解决 authorized time check failed)
@@ -130,7 +124,7 @@ public class OnvifUtils {
         // 3. 计算摘要
         String passwordDigest = generatePasswordDigest(nonce, created, password);
 
-        // 4. 拼接 XML (使用 SOAP 1.1 命名空间以获得最大兼容性)
+        // 4. 拼接 XML (使用 SOAP 1.2 命名空间)
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" " +
                 "xmlns:tt=\"http://www.onvif.org/ver10/schema\" " +
@@ -309,9 +303,9 @@ public class OnvifManager {
 ```
 ## 4. 常见问题与平台差异
 ### 4.1 大华 (Dahua) 设备
-- 端口问题：大华设备通常开放两个端口，80 (HTTP/ONVIF) 和 37777 (私有TCP)。必须使用 80 端口进行 ONVIF 连接，使用 37777 会导致 Read timed out。
+- 端口问题：大华设备通常开放两个端口，80 (HTTP/ONVIF) 和 37777 (私有TCP)。ONVIF 应使用设备配置或服务发现返回的 HTTP/HTTPS 地址；不能把私有 SDK 端口当作 ONVIF 端口，也不能假定 HTTP 永远是 80。
 - 通道编码：大华的 SourceToken 可能是 VideoSource_0 (对应通道1) 或 VideoSource_1。需要代码做归一化处理。
-- H.265 问题：大华主码流默认 H.265。Web 端播放需转码或在相机后台改为 H.264。
+- H.265 问题：先读取实际编码参数，不同型号和配置的默认值不同。目标浏览器不支持源编码时，再转码或调整相机编码。
 ### 4.2 海康 (Hikvision)
-- 设备鉴权严格：海康对时间同步要求极高，且必须使用 Digest 认证。
+- 设备鉴权严格：核对设备支持的 HTTP Digest、UsernameToken 和 ONVIF 用户权限，并先同步时钟。
 - 用户权限：需在“系统-安全-系统服务”中显式开启 “启用 ONVIF” 并创建专门的 ONVIF 用户（独立于 Web 登录用户）。

@@ -9,23 +9,19 @@ cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/lo
 coverStyle:
   layout: left
 ---
+
 本文介绍了Centos7安装Jenkins以及相关使用步骤。
 
 <!-- more -->
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
 ## 环境
 - Centos 7
 - Java 11
-
 
 ## 前置软件
 ### JDK
 建议使用11版本，目前Jenkins已经不维护Java8，导致很多插件无法安装。
 
-####  1. 本地下载Java11安装包
+#### 1. 本地下载Java11安装包
 
 镜像下载Java地址：https://repo.huaweicloud.com/java/jdk/11.0.2+7/
 
@@ -156,8 +152,6 @@ git --version
 
 ![image-20250303110254585](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303110254585.png)
 
-
-
 ### Node安装
 
 Node需要注意版本，此处采用18.20.4版本，尽量和自己版本一致。
@@ -199,8 +193,6 @@ export PATH=$NODE_HOME/bin:$PATH
 ```bash
 source /etc/profile
 ```
-
-
 
 #### 4. 验证是否成功
 
@@ -256,15 +248,11 @@ https://mirrors.tuna.tsinghua.edu.cn/jenkins/war/2.499/
 
 ![image-20250303110929834](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303110929834.png)
 
-
-
 #### 3. 运行war
 
 ```bash
 nohup java -jar jenkins.war > nohup.out 2>&1 &
 ```
-
-
 
 #### 4. 开放端口
 
@@ -285,8 +273,6 @@ sudo firewall-cmd --reload
 ```bash
 sudo firewall-cmd --zone=public --list-ports
 ```
-
-
 
 #### 5. 访问界面
 
@@ -336,10 +322,6 @@ cat /root/.jenkins/secrets/initialAdminPassword
 
 ![image-20250303131253719](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303131253719.png)
 
-
-
-
-
 #### 8. 安装额外插件
 
 进入Plugin界面
@@ -349,8 +331,6 @@ cat /root/.jenkins/secrets/initialAdminPassword
 可以远程拉取git仓库代码。
 
 ![image-20250303131555617](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303131555617.png)
-
-
 
 ##### 2. [NodeJS](https://plugins.jenkins.io/nodejs)
 
@@ -513,8 +493,6 @@ chmod 777 x.sh
 
 保存运行，即可实现上述需求。
 
-
-
 ### Jenkins前端部署使用
 
 需要提前安装NodeJs插件、Node。
@@ -548,8 +526,6 @@ server {
 
 ```
 
-
-
 #### 1. 配置NodeJs插件
 
 进入Tools
@@ -576,13 +552,9 @@ server {
 
 ![image-20250303150935359](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303150935359.png)
 
-
-
 #### 5. 选择构建环境
 
 ![image-20250303151051261](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303151051261.png)
-
-
 
 #### 6. 编写构建脚本
 
@@ -612,8 +584,6 @@ cp -rp dist/. /ntdc/web/
 可以先删除package-lock.json，重新构建。
 
 这个脚本可以自行构建。
-
-
 
 #### 7. 生成位置
 

@@ -6,15 +6,10 @@ permalink: /blog/bhehiqz9b/
 tags:
   - 前端
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 官方文档地址
 
 https://www.wangeditor.com/v5/getting-started.html
-
-
 
 ### 1. 引入依赖
 

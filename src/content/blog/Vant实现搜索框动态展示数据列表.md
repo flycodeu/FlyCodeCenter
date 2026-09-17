@@ -6,16 +6,12 @@ permalink: /blog/bdfkmydvm/
 tags:
   - 前端
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
-
 
 ## van-popup+van-search实现数据动态搜索
 1. 需要定义好对应的模板，van-popup里面添加搜索框，绑定searchKeyword，之后搜索内容可以通过这个控制
 2. 获取所有的数据写入allUnits中
 3. 使用allUnits过滤处包含对应字符的数据，写入filteredUnits，过滤后的数据
-4. 使用watch监听searchKeyword的变化，然后请求过滤方法，这样只会请求一次，而不会请求多次
+4. 使用 `watch` 监听 `searchKeyword` 变化。每次变化都可能触发请求；需要减少请求次数时再添加防抖，并处理旧请求晚于新请求返回的情况。
 ```js
 <template>
   <div>

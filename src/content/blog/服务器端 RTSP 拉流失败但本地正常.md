@@ -7,24 +7,12 @@ tags:
   - MediaMTX
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f079a610d1dc90cc5a524d3414ed4ed.jpg
 ---
-<ImageCard
-image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f079a610d1dc90cc5a524d3414ed4ed.jpg"
-href="/"
-width=400
-center=true
-/>
-
-
-
-# 服务器端 RTSP 拉流失败但本地正常：一次路由与源地址选择错误导致的 MediaMTX/FFmpeg 故障深挖与可复用排查手册
 
 ## 摘要
 
 在一套基于 MediaMTX + FFmpeg 的视频汇聚与播放系统中，部分摄像头（大华设备）在 Windows 本地可以稳定播放 RTSP，但在服务器端却无法拉流，表现为 MediaMTX 日志持续 `timed out` / `EOF`，FFprobe 报 `Invalid data found when processing input`。最终定位为服务器对相机网段配置了错误的静态路由，导致出口网卡与源 IP 异常（走虚拟网卡 `Meta`，源地址变为 `198.18.0.1`），相机端或中间策略设备对该源地址的 RTSP 会话不返回应用层响应并主动断开。将相机网段路由改为走业务物理网卡 `ens3f0` 并使用正确源地址后，故障立刻消失。
 
 本文给出完整可发布版复盘：现象、证据链、根因、修复方案、复查方法与长期预防建议，适用于同类“端口通但协议不通、本地可用但服务器不可用”的排障场景。
-
-------
 
 ## 1. 系统背景
 
@@ -35,8 +23,6 @@ center=true
 - 前端播放：WebRTC/HTTP/RTSP 等由 MediaMTX 提供的分发协议
 
 故障出现时，海康设备（`172.16.*`）可正常拉流，大华设备（`172.17.234.205`）在服务器侧失败，而 Windows 本地播放器可正常播放相同 RTSP URL。
-
-------
 
 ## 2. 现象与错误信息
 
@@ -63,8 +49,6 @@ Invalid data found when processing input
 ```
 
 这一错误的关键含义是：FFprobe 没有拿到完整可解析的 RTSP 会话信息（常见是拿不到 DESCRIBE 返回的 SDP，或应用层响应异常），并非典型的“解码失败”或“码流损坏”。
-
-------
 
 ## 3. 关键证据链：端口可通但 RTSP 应用层不通
 
@@ -114,8 +98,6 @@ default via 172.16.214.254 dev ens3f0
 
 这一模式通常意味着：应用层请求未被对端正常处理（常见原因是访问控制、策略丢弃、链路类型不匹配、回程路径异常），而不是 FFmpeg 参数或编解码问题。若是认证问题，至少会返回 401；若是 URL 不存在，通常会返回 404；而“无任何 RTSP 响应后断开”更像策略性拒绝。
 
-------
-
 ## 4. 根因分析
 
 ### 4.1 根因一：出口网卡与源 IP 错误
@@ -141,8 +123,6 @@ default via 172.16.214.254 dev ens3f0
 ```
 
 Docker 默认使用 `172.17.0.0/16`，若业务相机网段恰好也是 172.17.*，将来 docker0 一旦启用，很容易发生路由冲突或异常选路。即使本次问题直接由 `Meta` 路由导致，172.17 段本身也属于高风险冲突段，需要长期治理。
-
-------
 
 ## 5. 解决方案
 
@@ -179,8 +159,6 @@ ffprobe -loglevel debug -rtsp_transport tcp \
 ```
 
 此时通常会出现 RTSP 响应与 SDP 信息，MediaMTX 的 `timed out` / `EOF` 也会随之消失。
-
-------
 
 ## 6. 如何复查与定位：一套可复用的排障流程
 
@@ -238,8 +216,6 @@ sudo tcpdump -i any host <camera_ip> and port 554 -nn -s 0 -vv
 - 如果只看到请求、ACK、随后 FIN/RST，没有任何 RTSP 响应，优先怀疑源地址/策略/回程路径；
 - 如果 RTSP 正常但后续无 RTP 数据，再看 UDP/TCP interleaved、端口范围、防火墙、媒体转发参数。
 
-------
-
 ## 7. 长期治理与预防措施
 
 ### 7.1 将“路由与源地址自检”纳入上线与告警
@@ -278,8 +254,6 @@ sudo tcpdump -i any host <camera_ip> and port 554 -nn -s 0 -vv
 
 实践建议：用系统原生网络配置方式持久化，避免脚本“覆盖式”改路由导致不可控。
 
-------
-
 ## 8. 常见误区与经验总结
 
 1. **“端口通就不是网络问题”是错误的**
@@ -291,13 +265,9 @@ sudo tcpdump -i any host <camera_ip> and port 554 -nn -s 0 -vv
 4. **抓包可以把问题从“可能”变成“确定”**
     是否存在 RTSP 响应（200/401/404）是关键分界线。
 
-------
-
 ## 9. 结语
 
 这次故障的本质不是 MediaMTX、不是 FFmpeg，也不是大华设备协议兼容，而是服务器对特定相机网段的出口网卡与源地址选择错误。通过 `ip route get` 与抓包建立证据链后，修复方案非常直接：将网段路由切回业务物理网卡并使用正确源 IP。该方法同样适用于多网卡、多隧道、容器网络与跨网段视频汇聚场景。
-
-------
 
 ## 附录：本案例关键命令清单（可直接复制）
 

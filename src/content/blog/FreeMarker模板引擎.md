@@ -6,11 +6,8 @@ permalink: /blog/b1k80mxda/
 tags:
   - FreeMarker
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
-## 背景
+### 背景
 
 目前笔者正在如何制作一个模板文件，只需要根据用户需求替换部分代码内容。例如下面代码，分别使用三个todo表示要替换的地方。
 
@@ -54,9 +51,9 @@ public class MainTemplate {
 如果是单纯修改字符串那么可以自己写一套规则然后进行替换，但是一旦遇到比如是否需要循环等复杂条件的时候，这种方法就不行了
 ，而且一旦修改的东西多了，整体上自己写就很麻烦，所以这里直接考虑使用模板引擎，使用现成的技术来实现需求。
 
-## FreeMarker
+### FreeMarker
 
-### 什么是模板引擎
+#### 什么是模板引擎
 
 模板引擎主要是分成两个部分，一个部分是制定好的模板，另一个部分是数据，两者相互结合输出相应的结果。
 
@@ -68,7 +65,7 @@ public class MainTemplate {
 2. 定义好了现成的模板语法规则，不需要自己编写。
 3. 有一些安全特性，虽然目前没有太大的感觉。
 
-### FreeMarker网站
+#### FreeMarker网站
 
 FreeMarker主要优点是不会和其他框架绑定，是个Java项目就可以使用。
 
@@ -76,14 +73,12 @@ FreeMarker主要优点是不会和其他框架绑定，是个Java项目就可以
 ，缺点是都是英文，但是有详细示例，可以看懂
 
 中文网站
-[http://www.freemarker.net/#1](http://www.freemarker.net/#1)   
+[http://www.freemarker.net/#1](http://www.freemarker.net/#1)
 [http://freemarker.foofun.cn/index.html](http://freemarker.foofun.cn/index.html)
 
 基本上不需要特地的去学习，看一下相关知识就可以了。
 
-
-
-### FreeMarker实战Demo
+#### FreeMarker实战Demo
 
 1. 首先需要创建一个Maven项目，引入对应的依赖
 
@@ -206,9 +201,7 @@ FreeMarker主要优点是不会和其他框架绑定，是个Java项目就可以
 cfg.setNumberFormat("0.######")
 ```
 
-
-
-### 常用语法
+#### 常用语法
 
 1. 插值
 
@@ -256,13 +249,9 @@ ${userName}
 <@card userName="fly"/>
 ```
 
-
-
 其余的直接查看对应的官方文档就可以，这边是几个比较常用的语法。
 
-
-
-### 回归背景
+#### 回归背景
 
 以上就是简单的官方示例，那么这个应该如何用于解决背景里面的相关问题，重新回顾一下上面的问题
 
@@ -343,7 +332,7 @@ public class MainTemplate {
 
 很明显添加了作者，移除了循环，修改了输出，基本上完成对应的要求
 
-### 潜在问题
+#### 潜在问题
 
 1. 文件路径
 关于这个配置的file目录可能会存在部分问题，之前直接用的相对路径没出问题，但是可能有的时候使用会出现问题找不到对应的路径，需要传递一个完整的当前项目路径(
@@ -382,9 +371,7 @@ user.dir获取)+相对路径进行拼接
    private Boolean loop = true;
    ```
 
-
-
-### 通用方法
+#### 通用方法
 
 这个完全可以抽象出对应方法，通用方法，唯一需要传递的是输入路径，输出路径，数据
 
@@ -422,13 +409,13 @@ user.dir获取)+相对路径进行拼接
 }
 ```
 
-### 这里可能会有中文乱码
+#### 这里可能会有中文乱码
 可以改成如下
 ```java
 Template template = configuration.getTemplate(templateName,"utf-8");
 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(Paths.get(outputPath)), StandardCharsets.UTF_8));
 ```
 
-# 重点
+## 重点
 这个网站[http://freemarker.foofun.cn/app_faq.html#faq_number_grouping](http://freemarker.foofun.cn/app_faq.html#faq_number_grouping)
 如果之后有问题，大部分都可以在这里解决，找到答案

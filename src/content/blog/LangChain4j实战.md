@@ -120,8 +120,6 @@ class FlyGeniusApplicationTests {
 
 ![image-20250804142905962](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250804142905962.png)
 
-
-
 ## 结构化输出
 
 AI响应的格式有点乱，我们可以使用[结构化输出](https://docs.langchain4j.dev/tutorials/structured-outputs)来规范AI响应格式，返回指定JSON。示例如下：
@@ -689,8 +687,6 @@ public class CodeParser {
 
 ![image-20250805095258273](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250805095258273.png)
 
-
-
 ## 设计模式
 
 ### 策略模式
@@ -698,8 +694,6 @@ public class CodeParser {
 定义了一系列算法或行为，并将每个算法封装起来，使它们可以相互替换。
 
 ![image-20250805105759690](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250805105759690.png)
-
-
 
 ### 模板设计模式
 
@@ -722,4 +716,3 @@ public class CodeParser {
 模板方法生成：抽象类定一个算法的骨架，具体实现在子类中
 
 ![image-20250805110323610](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250805110323610.png)
-

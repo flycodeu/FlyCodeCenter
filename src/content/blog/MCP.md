@@ -9,8 +9,6 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250528101622.jpg
 ---
 
-
-
 ## MCP概念
 
 ### 什么是MCP
@@ -38,8 +36,6 @@ MCP三大作用：
 
 ![image-20250527111609217](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250527111609217.png)
 
-
-
 #### SDK三层架构
 
 ![image-20250527111910062](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250527111910062.png)
@@ -49,8 +45,6 @@ MCP三大作用：
 - 传输层：处理JSON-RPC消息序列化和反序列化，支持多种传输实现，比如Stdio标准IO和Http SSE远程传输
 
 ![image-20250527135952732](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250527135952732.png)
-
-
 
 #### MCP客户端
 
@@ -82,8 +76,6 @@ MCP三大作用：
 
 但是目前大部分模型只支持Tools工具调用。
 
-
-
 ## MCP的使用
 
 MCP服务市场：
@@ -92,8 +84,6 @@ MCP服务市场：
 - [GitHub Awesome MCP Server](https://github.com/punkpeye/awesome-mcp-servers):开源的MCP服务集合
 - [阿里云百炼平台](https://bailian.console.aliyun.com/?tab=mcp#/mcp-market)
 - [Spring Ai alibaba](https://java2ai.com/mcp/)
-
-
 
 ### 阿里云百炼MCP
 
@@ -106,8 +96,6 @@ MCP服务市场：
 ![image-20250527143557628](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250527143557628.png)
 
 可以看到，提问的时候调用了高德的工具，使用到了maps_text_search这个工具
-
-
 
 ### Cursor使用MCP
 
@@ -214,8 +202,6 @@ spring:
 
 ![image-20250527150916033](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250527150916033.png)
 
-
-
 ## MCP开发
 
 ### MCP客户端开发
@@ -223,8 +209,6 @@ spring:
 [Spring AI MCP Client Boot Starters](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html)
 
 官方提供了两种方式MCP Client和WebFlux Client，区别在于响应式和非响应式，具体步骤参照官网
-
-
 
 ### MCP服务端开发
 
@@ -237,13 +221,9 @@ Spring Al提供了3种MCP服务端SDK,分别支持非响应式和响应式编程
   个)
 - spring-ai-starter-mcp-server-webflux:提供基于Spring WebFlux的响应式 SSE 传输和可选的stdio传输
 
-
-
 ### 辅助MCP开发的工具
 
 [Spring AI MCP Helper	](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-helpers.html)
-
-
 
 ## MCP开发实战-图片搜索服务
 
@@ -465,8 +445,6 @@ loveApp.doChatWithMCP(message, chatId);
 
 可以看到是调用了这个服务端的工具
 
-
-
 ### SSE调用
 
 配置服务端yml
@@ -498,8 +476,6 @@ spring:
 
 可以正常运行
 
-
-
 ## MCP使用注意
 
 1. 慎用MCP：MCP本质上就是一个标准，不是一定需要使用，如果在单一场景，没必要使用MCP
@@ -507,4 +483,4 @@ spring:
 3. 明确描述：@Tool和@ToolParam描述需要准确，没有歧义，便于AI的理解和调用
 4. 注意容错：AI生成的内容每次都不相同，可能多次都无法获取成功结果，需要捕获所有可能的异常，返回对应的结果给客户端
 5. 性能优化：AI工具调用执行的时间可能过长，影响后续的调用，可以使用异步方式调用，或者设置超时时间，超过时间就不继续调用工具
-6. 安全问题：我们一般不会关注MCP对应工具的源码，我们只能在调用的时候知道是调用的什么工具，返回了什么结果，不清楚具体的执行逻辑，开发者可能会在MCP服务里面埋坑，MCP缺乏严格的版本通知和更新通知机制，缺乏权限验证
+6. 接入前检查工具实现、权限与版本。MCP 的 HTTP 传输已有授权规范，但具体服务是否正确实现仍需核实；stdio 服务的凭据和进程权限则由宿主环境管理。参见 [MCP 2025-06-18 授权规范](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)。

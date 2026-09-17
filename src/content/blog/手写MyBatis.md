@@ -1,5 +1,5 @@
 ---
-title: 手写Myabtis
+title: 手写MyBatis
 createTime: '2026/03/01 19:23:46'
 code: b1ofmqvc7
 permalink: /blog/b1ofmqvc7/
@@ -7,8 +7,6 @@ tags:
   - Mybatis
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250423155643.jpg
 ---
-
-
 
 ## 手写Mybatis-01
 
@@ -26,7 +24,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5
 
 这是一个动态代理类，用于代理接口方法调用。通过 `InvocationHandler` 接口实现对目标接口方法的拦截与处理。
 
-核心功能: 
+核心功能:
 
 - 使用 `Map<String, String>` 存储接口方法名与 SQL 语句的映射关系。
 - 动态代理接口方法调用，并根据接口名和方法名查找对应的 SQL 语句。
@@ -111,8 +109,6 @@ public interface IUserDao {
 ```
 
 ![image-20250423154058647](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250423154058647.png)
-
-
 
 ### 5. 总结
 

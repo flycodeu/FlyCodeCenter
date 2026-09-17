@@ -9,17 +9,13 @@ tags:
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg05.jpg'
 ---
 
-# CSDN 自动发帖功能完整实现指南
-
-随着 AI 与自动化工具的发展，实现自动发布文章到 CSDN 的能力可以大大提升内容创作者的工作效率。本文将围绕以下三部分展开：
+本文把 Markdown 转换、发帖请求和 MCP 工具调用连接起来，分为以下三部分：
 
 1. **服务端：构建 CSDN 发帖 API 接口服务**
 2. **客户端：集成 MCP 工具调用发帖服务**
 3. **测试端：联动 AI 流程实现自动生成并发帖**
 
-------
-
-## 🚀 一、服务端：构建 CSDN 发帖 API 接口服务
+## 一、服务端：构建 CSDN 发帖 API 接口服务
 
 ### 1. 引入依赖
 
@@ -468,9 +464,7 @@ public class Application implements CommandLineRunner {
 
 ![打包路径](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250627093509252.png)
 
-------
-
-## 🖥 二、客户端：集成 MCP 客户端自动调用发帖服务
+## 二、客户端：集成 MCP 客户端自动调用发帖服务
 
 ### 1. 配置 MCP 启动 JSON
 
@@ -491,7 +485,7 @@ public class Application implements CommandLineRunner {
 
 ### 2. 客户端配置 yml
 
-详细配置客户端信息可以浏览[MCP新版实现](MCP新版实现.md)
+客户端配置见 [Spring AI 接入 MCP：客户端与 STDIO 服务端](/blog/b2awd9f6e/)。
 
 ```yml
 spring:
@@ -519,13 +513,11 @@ server:
   port: 8090
 ```
 
-------
-
-## 🧪 三、测试端：AI 联动自动生成并发布 CSDN 文章
+## 三、测试端：AI 联动自动生成并发布 CSDN 文章
 
 ### 1. 测试工具注册是否成功
 
-详细配置客户端信息可以浏览[MCP新版实现](MCP新版实现.md)
+客户端配置见 [Spring AI 接入 MCP：客户端与 STDIO 服务端](/blog/b2awd9f6e/)。
 
 ```java
 @Configuration
@@ -586,17 +578,3 @@ public void testTools() {
 ![生成结果展示](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250630134728699.png)
 
 📌 注意：CSDN 对频繁发帖行为有限制，避免频繁触发。
-
-------
-
-## ✅ 总结
-
-我们已经完整实现：
-
-- 服务端处理 Markdown 转 HTML 及发帖请求
-- 客户端配置 MCP 启动方式
-- 测试端集成 AI 工具实现一键发帖
-
-⚠️ 温馨提示：请确保 Cookie 合法有效，发帖频率合理，以免触发平台风控。
-
-欢迎关注我获取更多自动化开发干货！

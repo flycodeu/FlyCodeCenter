@@ -75,6 +75,11 @@ const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
 const spacing = siteConfig.article.ui.spacing;
 const tocPosition = siteConfig.theme.toc.position === "left" ? "left" : "right";
 const tocWidth = Math.min(280, Math.max(220, Number(siteConfig.theme.toc.width ?? 280)));
+const isBlog = articleUrl.startsWith("/blog/");
+const visibleHeadingCount = headings.filter(
+  (item) => item.depth >= siteConfig.theme.toc.minDepth && item.depth <= siteConfig.theme.toc.maxDepth
+).length;
+const showToc = !encrypted && siteConfig.theme.toc.enable && visibleHeadingCount >= (isBlog ? 2 : 1);
 const jsonLd = buildArticleJsonLd({
   title,
   description,
@@ -211,7 +216,8 @@ const articleRuntimeConfig = {
 <BaseLayout title={title} description={description} canonicalPath={articleUrl} image={cover}>
   <ReadingProgress />
   <div
-    class={`grid-main post-layout post-layout-${tocPosition} reading-page`}
+    class={`grid-main post-layout post-layout-${tocPosition} reading-page${isBlog && !showToc ? " post-layout-no-toc" : ""}`}
+    data-reading-kind={isBlog ? "blog" : undefined}
     style={`--toc-width:${tocWidth}px;--post-top-gap:${spacing.topBarBottom};--post-hero-gap:${spacing.heroBottom};--post-head-pt:${spacing.headPaddingTop};--post-head-pb:${spacing.headPaddingBottom};--post-head-gap:${spacing.headGap};--post-head-mb:${spacing.headBottom};--post-article-pb:${spacing.articleBottom};--post-summary-size:${spacing.summarySize};--post-p-margin:${spacing.paragraphMargin};--post-h2-top:${spacing.h2Top};--post-h2-bottom:${spacing.h2Bottom};--post-h3-top:${spacing.h3Top};--post-h3-bottom:${spacing.h3Bottom};`}
   >
     <section class="post-main">
@@ -291,7 +297,7 @@ const articleRuntimeConfig = {
       </section>
     </section>
 
-    {!encrypted && <aside class="post-toc-rail"><TOC headings={headings} /></aside>}
+    {showToc && <aside class="post-toc-rail"><TOC headings={headings} /></aside>}
   </div>
 
   <script id="article-runtime-config" type="application/json" set:html={JSON.stringify(articleRuntimeConfig)} />
@@ -324,6 +330,13 @@ const articleRuntimeConfig = {
   }
   .post-layout.post-layout-left {
     grid-template-columns: minmax(260px, var(--toc-width)) minmax(0, var(--post-main-width)) minmax(0, 1fr);
+  }
+  .post-layout.post-layout-no-toc {
+    grid-template-columns: minmax(0, var(--post-main-width));
+    justify-content: center;
+  }
+  .post-layout.post-layout-no-toc > section.post-main {
+    grid-column: 1;
   }
   .post-layout > section,
   .post-layout > aside {
@@ -404,6 +417,9 @@ const articleRuntimeConfig = {
       height: auto;
       order: initial;
       grid-column: auto;
+    }
+    .post-layout[data-reading-kind="blog"] > aside.post-toc-rail {
+      grid-column: 1;
     }
     .post-card-shell {
       padding: 1rem;

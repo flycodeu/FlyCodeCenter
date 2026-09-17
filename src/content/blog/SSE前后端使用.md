@@ -7,21 +7,11 @@ tags:
   - SSE
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg
 ---
-<ImageCard
-image="https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/e848b4cad024661c5bb9b6c2d8aefca9.jpg"
-href="/"
-width=200
-center=true
-/>
-
-# Server-Sent Events (SSE) 使用指南
 
 > **SSE（Server-Sent Events）** 是一种基于 HTTP 的服务器向客户端推送数据的技术，适用于实时消息通知、状态更新、日志推送等场景。相比
 > WebSocket，SSE 更轻量、简单，且天然支持文本流和自动重连。
 
----
-
-## 📌 一、SSE 简介
+## 一、SSE 简介
 
 ### 1. 什么是 SSE？
 
@@ -49,13 +39,11 @@ center=true
 
 > ✅ **推荐使用 SSE 的场景：服务器主动推送，客户端仅接收**
 
----
-
-## 🛠️ 二、后端实现（Spring Boot）
+## 二、后端实现（Spring Boot）
 
 ### 1. 核心依赖
 
-确保项目已引入 Spring Web 依赖（Spring Boot 默认包含）：
+在 Spring MVC 项目中显式引入 Web starter；Spring Boot 本身不会默认包含所有 Web 依赖：
 
 ```xml
 
@@ -170,7 +158,7 @@ public class SSEController {
 }
 ```
 
-## 🖥️ 三、前端使用
+## 三、前端使用
 
 ### 1. 基础连接
 
@@ -206,40 +194,19 @@ eventSource.addEventListener('user-login', function (event) {
 
 ### 3. 自动重连机制
 
+原生 `EventSource` 会在可重试的断线后自动重连。不要同时在 `onerror` 中不断创建新实例，否则旧连接仍可能自行恢复，造成重复连接和重复消息。
+
 ```javascript
-let eventSource = null;
-let reconnectDelay = 3000;
-let maxReconnectDelay = 30000;
-let reconnectAttempts = 0;
-
-function connect() {
-    eventSource = new EventSource('/api/sse/connect');
-
-    eventSource.onopen = () => {
-        console.log('SSE连接已建立');
-        reconnectAttempts = 0; // 重置重试次数
-    };
-
-    eventSource.onmessage = (event) => {
-        console.log('消息:', event.data);
-    };
-
-    eventSource.onerror = () => {
-        console.error('SSE连接断开，准备重连...');
-        setTimeout(() => {
-            const delay = Math.min(reconnectDelay * Math.pow(2, reconnectAttempts), maxReconnectDelay);
-            reconnectAttempts++;
-            connect();
-        }, 3000);
-    };
-
-}
-
-// 启动连接
-connect();
+eventSource.onerror = () => {
+    if (eventSource.readyState === EventSource.CONNECTING) {
+        console.log('连接中断，等待浏览器重连');
+    } else if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('连接已关闭');
+    }
+};
 ```
 
-> 🔁 使用 指数退避 策略避免频繁重试。
+需要自行实现指数退避时，应先关闭旧实例，并确保只有一个重连计时器。
 
 ### 4. 手动关闭连接
 
@@ -249,11 +216,11 @@ if (eventSource) {
 }
 ```
 
-## 🌐 四、高级特性
+## 四、高级特性
 
 ### 1. 心跳机制（Keep-Alive）
 
-防止 Nginx、代理服务器断开长连接：
+可在服务类中定时发送注释心跳；需要启用 Spring 调度，并将代理空闲超时设为大于心跳间隔：
 
 ```java
 // 每 30 秒发送一次心跳
@@ -263,7 +230,8 @@ public void sendHeartbeat() {
         try {
             emitter.send(SseEmitter.event().comment("heartbeat"));
         } catch (IOException e) {
-            // 忽略或记录
+            emitters.remove(emitter);
+            emitter.completeWithError(e);
         }
     });
 }
@@ -273,7 +241,7 @@ public void sendHeartbeat() {
 
 ```java
 emitter.send(SseEmitter.event()
-    .retry(5000)  // 建议前端 5 秒后重连
+    .reconnectTime(5000)  // 建议前端 5 秒后重连
     .name("reconnect")
     .data("服务器建议重连"));
 ```
@@ -282,12 +250,12 @@ emitter.send(SseEmitter.event()
 
 ### 3. 用户级连接管理（可选）
 
-可将 emitters 改为 Map<userId, SseEmitter>，实现定向推送。
+可按用户维护连接集合，实现定向推送。同一用户多标签页或多设备会产生多个连接，单个 `Map<userId, SseEmitter>` 会覆盖旧连接；用户标识需来自认证上下文。
 
-## ⚠️ 五、注意事项
+## 五、注意事项
 
 - **服务重启后连接丢失**
-  → 前端必须实现自动重连机制。
+  → 原生 EventSource 会尝试重连；未接收消息的补发仍需服务端实现。
 - **连接数限制**
   → 高并发时注意线程和内存消耗，建议设置超时时间（如 new SseEmitter(5 * 60 * 1000L)）。
 - **Nginx 配置**
@@ -309,6 +277,7 @@ location /api/sse {
 支持：Chrome、Firefox、Safari、Edge
 不支持：IE（需 Polyfill）
 
+## 参考
 
-## ✅ 总结
-SSE 是一种轻量、高效的服务器推送技术，特别适合“服务器主动通知”的场景。结合 Spring Boot 的 SseEmitter 和前端 EventSource，可以快速实现实时消息系统。
+- [WHATWG SSE 标准](https://html.spec.whatwg.org/multipage/server-sent-events.html)
+- [Spring SseEventBuilder](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/mvc/method/annotation/SseEmitter.SseEventBuilder.html)

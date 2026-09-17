@@ -6,9 +6,6 @@ permalink: /blog/borpq037w/
 tags:
   - Zookeeper
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## 一. 原生安装
 ### 1. 环境准备
@@ -156,4 +153,3 @@ cd bin
 ```shell
 ./zkCli.sh
 ```
-

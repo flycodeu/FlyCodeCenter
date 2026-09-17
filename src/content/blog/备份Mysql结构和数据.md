@@ -6,9 +6,6 @@ permalink: /blog/bare47qnm/
 tags:
   - MySQL
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://www.flycode.icu)
 
 ## Mysql备份方式
 
@@ -99,7 +96,6 @@ crontab -e
 
 ![image-20241225143752921](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/image-20241225143752921.png)
 
-
 ## Windows定时备份数据
 
 编写.bat脚本命令
@@ -141,4 +137,3 @@ if errorlevel 1 (
 
 endlocal
 ```
-

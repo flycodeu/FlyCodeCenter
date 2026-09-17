@@ -8,8 +8,6 @@ tags:
 cover: 'https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/bg01.jpg'
 ---
 
-# JGit
-
 JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实现git的拉取等操作
 [JGit](https://projects.eclipse.org/projects/technology.jgit)
 [命令参考](https://www.kernel.org/pub/software/scm/git/docs/git-clone.html)
@@ -41,9 +39,7 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone https://github.com/example/project.git
   ```
 
-------
-
-###  2. directory
+### 2. directory
 
 - **说明**：本地目录路径，表示将远程仓库克隆到哪个本地文件夹。
 
@@ -57,8 +53,6 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone https://github.com/example/project.git /home/user/myproject
   ```
 
-------
-
 ### 3. gitDir
 
 - **说明**：指定 `.git` 目录的位置（可选）。如果不设置，默认放在 `directory/.git` 中。
@@ -66,8 +60,6 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   ```bash
   gitDir = new File("/home/user/custom_git_dir");
   ```
-
-------
 
 ### 4. bare
 
@@ -81,17 +73,13 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone --bare https://github.com/example/project.git
   ```
 
-------
-
 ### 5. fs
 
 - **说明**：文件系统对象，用于处理平台相关的文件操作（如符号链接、权限等）。
 - **默认值**：使用 JVM 默认的文件系统。
 - **用途**：跨平台兼容性支持。
 
-------
-
-###  6. remote
+### 6. remote
 
 - **说明**：远程仓库名称，默认是 `origin`。
 
@@ -101,9 +89,7 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone -o upstream https://github.com/example/project.git
   ```
 
-------
-
-###  7. branch
+### 7. branch
 
 - **说明**：指定要克隆的分支名，默认是 `HEAD`（通常是主分支，比如 `main` 或 `master`）。
 
@@ -111,21 +97,15 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone -b dev https://github.com/example/project.git
   ```
 
-------
-
 ### 8. monitor
 
 - **说明**：进度监控器，用于显示克隆过程中的进度信息（如下载了多少对象）。
 - **默认值**：`NullProgressMonitor.INSTANCE`（不显示任何进度）
 
-------
-
 ### 9. cloneAllBranches
 
 - **说明**：是否克隆所有远程分支。
 - **注意**：如果设置为 `true`，则会拉取所有分支和标签。
-
-------
 
 ### 10. mirror
 
@@ -137,8 +117,6 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   git clone --mirror https://github.com/example/project.git
   ```
 
-------
-
 ### 11. cloneSubmodules
 
 - **说明**：是否同时克隆子模块（submodules）。
@@ -146,8 +124,6 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   ```bash
   git clone --recurse-submodules https://github.com/example/project.git
   ```
-
-------
 
 ### 12. noCheckout
 
@@ -158,8 +134,6 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   ```bash
   git clone --no-checkout https://github.com/example/project.git
   ```
-
-------
 
 ### 13. branchesToClone
 
@@ -173,19 +147,13 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
 
 - **说明**：回调函数，用于监听或处理克隆过程中的事件（例如认证请求、进度更新等）。
 
-------
-
 ### 15. directoryExistsInitially
 
 - **说明**：标记目标目录是否在开始前已经存在（主要用于内部逻辑判断）。
 
-------
-
 ### 16. gitDirExistsInitially
 
 - **说明**：`.git` 文件夹是否已存在（主要用于内部状态管理）。
-
-------
 
 ### 17. fetchType
 
@@ -197,16 +165,12 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
   - `ALL_BRANCHES`: 克隆所有远程分支；
   - `MIRROR`: 镜像克隆，包含所有引用。
 
-------
-
 ### 18. tagOption
 
 - **说明**：控制如何处理标签（tags）的获取方式。
 - 常见选项
   - `TagOpt.AUTO_FOLLOW`: 自动跟随标签（默认行为）；
   - `TagOpt.FETCH_TAGS`: 显式拉取所有标签。
-
-------
 
 ### 核心配置
 
@@ -222,11 +186,7 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
 | `cloneSubmodules`  | 克隆子模块   | `--recurse-submodules`  |
 | `noCheckout`       | 不检出文件   | `--no-checkout`         |
 
-------
-
 ## 代码实战
-
-
 
 这里以Github指定项目为例，我们可以使用JGit将远程代码克隆到本地，也可以通过JGit推送代码到指定远程仓库。
 无论是操作Github、Gitee、Gitlab哪个，我们都需要对应的API token
@@ -281,7 +241,7 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
 
 ### 提交代码到仓库
 
-这个仓库需要保证是public公开的，除此需要关闭如下配置
+JGit 可以访问公开或私有仓库，取决于凭据和仓库权限。推送还需满足分支保护规则，不应为运行示例而直接关闭保护。下面截图仅展示当时的仓库设置。
 
 ![image-20250619151502559](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250619151502559.png)
 
@@ -318,4 +278,3 @@ JGit是eclipse开发的用于拉取代码的一个jar包，可以使用代码实
 ![image-20250619153923722](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250619153923722.png)
 
 这个推送代码还可以继续优化，比如可以获取所有的分支、给指定分支推送
-
