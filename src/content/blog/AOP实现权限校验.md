@@ -7,111 +7,89 @@ tags:
   - AOP
 ---
 
-接口权限如果散落在每个业务方法里，规则很快会变得难以维护。本文用 Spring AOP 和自定义注解把“需要什么角色”声明在方法上，再由切面统一完成校验。
+AOP 在调用业务方法前检查权限。权限来源必须是服务端已验证的身份；不能信任请求里自报的角色，也不能把未知角色当作无需权限而放行。
 
-## 一、先理解 AOP
-AOP（Aspect Oriented Programming），即面向切面编程，是 Spring 框架中用于封装横切关注点（如日志、事务、安全等）的一种技术。
+下面用于已经配置 Spring Security 登录的 Spring Boot 3.x 项目，需要 `spring-boot-starter-aop` 和 `spring-boot-starter-security`。三个文件放在启动类扫描的 `example` 包下。
 
-简单来说，它可以在不修改原始业务逻辑的前提下，对方法的执行过程进行增强，如：
+## 定义角色注解
 
-- 方法执行前后插入逻辑
-- 异常处理
-- 条件拦截执行等
+`RequireRole.java`：
 
-## 二、定义权限边界
-自定义注解是 Java 提供的一种元编程方式，可以在代码中通过标记注解，传递元信息。结合 AOP，我们可以读取这些注解，并据此决定是否拦截某个方法、执行特定逻辑，从而实现解耦和代码复用。
-
-## 三、代码实现，引入 AOP 依赖
-首先需要在 pom.xml 中引入 Spring AOP 的依赖：
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-aop</artifactId>
-</dependency>
-```
-## 四、编写权限注解
-我们自定义一个注解 @AuthCheck，用于标记需要权限校验的方法：
 ```java
-/**
-* 权限校验注解
-*
-* 用于指定访问该方法所必须拥有的角色。
-*/
+package example;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AuthCheck {
-
-    /**
-    * 指定访问该方法所需的角色，例如：admin
-    */
-    String mustRole() default "";
+public @interface RequireRole {
+    Role value();
+    enum Role { USER, ADMIN }
 }
-```      
-使用时，只需在方法上加上 @AuthCheck(mustRole = "admin") 即可。
+```
 
-## 五、实现权限拦截器（切面类）
-创建一个切面类 AuthInterceptor，用于在方法执行前进行权限校验：
+用枚举限制可声明的角色，拼错角色名会在编译阶段失败。
+
+## 方法执行前校验
+
+`RoleAspect.java`：
+
 ```java
+package example;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
 @Aspect
 @Component
-public class AuthInterceptor {
-
-    @Resource
-    private UserService userService;
-
-    /**
-     * 环绕通知，拦截标记了 @AuthCheck 注解的方法
-     *
-     * @param joinPoint  切入点
-     * @param authCheck  注解信息
-     */
-    @Around("@annotation(authCheck)")
-    public Object doInterceptor(ProceedingJoinPoint joinPoint, AuthCheck authCheck) throws Throwable {
-        String mustRole = authCheck.mustRole();
-        RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
-        HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
-
-        // 获取当前登录用户
-        User loginUser = userService.getCurrentLoginUser(request);
-
-        // 将注解中的角色值转为枚举
-        UserRoleEnum mustRoleEnum = UserRoleEnum.getUserRoleByValue(mustRole);
-
-        // 如果注解未指定角色，直接放行
-        if (mustRoleEnum == null) {
-            return joinPoint.proceed();
+public class RoleAspect {
+    @Around("@annotation(required)")
+    public Object check(ProceedingJoinPoint call, RequireRole required) throws Throwable {
+        Authentication user = SecurityContextHolder.getContext().getAuthentication();
+        if (user == null || !user.isAuthenticated() || user instanceof AnonymousAuthenticationToken) {
+            throw new AuthenticationCredentialsNotFoundException("请先登录");
         }
-
-        // 获取当前用户的角色
-        UserRoleEnum userRoleEnum = UserRoleEnum.getUserRoleByValue(loginUser.getUserRole());
-
-        // 若用户无权限，抛出异常
-        if (userRoleEnum == null) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-
-        // 若要求管理员权限，但当前用户不是管理员，拒绝访问
-        if (UserRoleEnum.ADMIN.equals(mustRoleEnum) && !UserRoleEnum.ADMIN.equals(userRoleEnum)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-
-        // 校验通过，执行原方法
-        return joinPoint.proceed();
+        String authority = "ROLE_" + required.value().name();
+        boolean allowed = user.getAuthorities().stream()
+                .anyMatch(granted -> authority.equals(granted.getAuthority()));
+        if (!allowed) throw new AccessDeniedException("没有所需角色");
+        return call.proceed();
     }
 }
 ```
-## 六、使用示例
+
+这里约定权限为 `ROLE_USER` / `ROLE_ADMIN`。ADMIN 不会自动包含 USER；需要层级关系时必须明确配置。
+
+## 使用与验证
+
+`RoleDemoController.java`：
+
 ```java
-@AuthCheck(mustRole = "admin")
-@GetMapping("/admin/data")
-public Result<List<Data>> getAdminData() {
-    // 仅管理员可访问
-    return Result.success(dataService.getSensitiveData());
+package example;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class RoleDemoController {
+    @RequireRole(RequireRole.Role.ADMIN)
+    @GetMapping("/role-demo")
+    public String read() { return "admin data"; }
 }
 ```
-## 七、小结
-通过 AOP + 自定义注解，可以让权限校验逻辑与业务代码彻底解耦，具备以下优势：
-- 灵活扩展：支持自定义不同角色逻辑；
-- 复用性高：统一拦截逻辑，减少代码重复；
-- 增强可读性：方法上直接标注权限要求，一目了然；
-- 更易维护：权限逻辑集中管理，排查问题更方便。
+
+用未登录、普通用户、管理员分别请求 `/role-demo`。前两者不能进入业务方法，管理员得到 `admin data`。API 的 401 / 403 响应由现有安全过滤链和异常处理共同决定，不能被全局 RuntimeException 处理器转换为成功响应。
+
+同一对象内 `this.read()` 通常绕过 Spring 代理，切面不能覆盖这种调用。常规项目可以优先使用 Spring Security 的 `@EnableMethodSecurity` 与 `@PreAuthorize("hasRole('ADMIN')")`，不必额外维护相同的角色切面。
+
+参考：[Spring AOP 代理](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html)、[Spring Security 方法授权](https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html)。

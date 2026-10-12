@@ -7,169 +7,101 @@ tags:
   - SpringBoot
 ---
 
-## 为什么要创建Starter？
+Starter 将可复用的依赖和自动配置交给其他项目使用。先用一个读取名称的例子理解“依赖被引入后，配置怎样被发现”。下面面向 Spring Boot 3、Java 17 以上。
 
-日常的开发中，我们必然是会遇到一些独立于业务之外的一些通用模块，而这些模块是可以在其他的业务中达到复用的，肯定是不希望将同样的代码继续编写一遍。例如Mysql的依赖导入之后，我们只需要在配置文件里面填写必要的信息，在不同的业务中可以使用不同的数据库，我们并不需要重复编写一些数据库连接等复杂配置，这就是Starter带给我们的便利。
+## 创建普通 JAR 项目
 
-以下笔者将会使用一个简单的demo来快速创建一个Starter，了解如何使用。创建一个配置，能够读取配置里面的用户名，用于展示。
-
-## 如何制作自己的Starter
-
-### 1. 创建SpringBoot项目，引入依赖
-
-需要引入两个依赖
+保存 `pom.xml`，这里不添加可执行 JAR 的 repackage 插件：
 
 ```xml
-       <!--自动配置yml提示-->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-configuration-processor</artifactId>
-    <optional>true</optional>
-</dependency>
-<dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-    <optional>true</optional>
-</dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId><version>3.5.16</version>
+    <relativePath/></parent>
+  <groupId>example</groupId><artifactId>name-starter</artifactId><version>1.0.0</version>
+  <properties><java.version>21</java.version></properties>
+  <dependencies>
+    <dependency><groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId><optional>true</optional></dependency>
+  </dependencies>
+</project>
 ```
 
-### 2. 修改pom配置
+## 编写三个类
 
-第一步：创建成功后，我们能够看到自己的当前项目groupId，工件id以及相应的版本号，这几个配置就是之后打包，别人使用的依赖
-
-![image-20240114151537618](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141515657.png)
-
-第二步：删除build配置
-
-![image-20240114144225644](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141442689.png)
-
-Starter 仍然发布为 JAR，但应是可被其他项目引用的普通 JAR。移除或跳过 `spring-boot-maven-plugin` 的 `repackage` 执行即可，不必删除所有构建配置。
-
-### 3. 删除启动类
-
-因为我们是想让别人来使用的我们的starter，就不需要原本的配置启动类了。
-
-![image-20240114144505926](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141445967.png)
-
-### 4. 编写配置文件
-
-从SpringBoot里面读出相应的配置文件信息
+放到 `src/main/java/demo/starter/`，保持 starter 包独立于消费项目的组件扫描范围：
 
 ```java
-/**
- * 第三方调用客户端
- */
-@Configuration
-@ComponentScan
-// 读取application.yml中的配置信息
-@ConfigurationProperties( "fly.demo" )
-@Data
-public class NameClientConfig {
-    private String name;
+package demo.starter;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties("demo.name")
+public class NameProperties {
+    private String owner = "visitor";
+    public String getOwner() { return owner; }
+    public void setOwner(String owner) { this.owner = owner; }
+}
+```
+
+```java
+package demo.starter;
+
+public class NameClient {
+    private final String owner;
+    public NameClient(String owner) { this.owner = owner; }
+    public String greet(String name) { return "Hello " + name + " from " + owner; }
+}
+```
+
+```java
+package demo.starter;
+
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+
+@AutoConfiguration
+@EnableConfigurationProperties(NameProperties.class)
+public class NameAutoConfiguration {
     @Bean
-    public FlyClient flyClient() {
-        return new FlyClient(name);
+    @ConditionalOnMissingBean(NameClient.class)
+    public NameClient nameClient(NameProperties properties) {
+        return new NameClient(properties.getOwner());
     }
 }
 ```
 
-对外提供服务类
+每个 public 类存为同名文件。不通过 ComponentScan 搜索整个 starter，配置类明确声明需要的 Bean；消费方自行定义 NameClient 时，默认 Bean 会退让。
 
-```java
-/**
- * 提供给用户相关的服务
- */
-public class FlyClient {
-    private String name;
+## 注册与使用
 
-    public FlyClient(String name) {
-        this.name = name;
-    }
-
-    /**
-     * 模拟方法
-     * @param name
-     * @return
-     */
-    public String getUserName(String name) {
-        return "Hello " + name + " from " + this.name;
-    }
-}
-```
-
-### 5. 注册自动配置
-
-Spring Boot 2.6 及更早版本在 `src/main/resources/META-INF/spring.factories` 中注册：
-
-```
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.fly.flydemosdk.NameClientConfig
-```
-
-Spring Boot 2.7 开始支持 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`；Spring Boot 3 不再通过 `spring.factories` 的上述键加载自动配置。新格式每行写一个配置类全名，不写键名。参见 [Spring Boot 3 迁移指南](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide)。
+创建 `src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`，内容一行：
 
 ```text
-com.fly.flydemosdk.NameClientConfig
+demo.starter.NameAutoConfiguration
 ```
 
-### 6. install 安装
-
-点击install安装Starter到本地依赖
-
-![image-20240114151144935](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141511978.png)
-
-安装成功后可以在本地看到对应的依赖，名称就是一开始自己定义的name
-
-![image-20240114151303055](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141513098.png)
-
-当然，这里也可以发布到Maven的中央仓库，让别人也能引入调用，具体步骤不多说，网上都有详细教程。
-
-### 7. 其他项目使用
-
-需要引入自己的本地配置好的依赖
-
-```
-<dependency>
-    <groupId>com.fly</groupId>
-    <artifactId>fly-demo-sdk</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-</dependency>
-```
-
-前往配置文件yml或者其他的配置文件
-
-![image-20240114151620269](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141516320.png)
-
-可以看到已经识别除了对应的配置信息
-
-### 8. 编写测试
-
-![image-20240114152441831](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141524889.png)
-
-![image-20240114152454723](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/202401141524767.png)
-
-很明显，输出了当前的使用者以及传入的配置参数信息
-
-## 总体步骤如下
-
-1. 需要一个SpringBoot项目，引入Spring-boot-configuration-processor依赖
-2. 编写提供服务的接口
-3. 编写客户端调用服务的类
-4. 使用 `@ConfigurationProperties` 绑定配置；配置处理器生成 IDE 提示元数据
-5. 在 resources 中创建 `META-INF` 目录
-6. 按 Spring Boot 版本选择 `spring.factories` 或 `AutoConfiguration.imports` 注册配置类
-7. install来安装依赖，或者deploy来部署依赖
-
-## 笔者项目
-
-飞云API里面配置了对应的Starter如下，可以引入自己的项目调用接口。
-具体信息请看 [飞云API](/项目实战/飞云API/飞云API.md)
+在 starter 根目录执行 `mvn install`，安装到自己的本地 Maven 仓库。在另一个 Boot 3 项目添加：
 
 ```xml
-
-<dependency>
-    <groupId>io.github.flybase1</groupId>
-    <artifactId>flyapi-client-sdk</artifactId>
-    <version>1.0.0.Release</version>
-</dependency>
+<dependency><groupId>example</groupId><artifactId>name-starter</artifactId><version>1.0.0</version></dependency>
 ```
+
+消费项目的 application.yml：
+
+```yaml
+demo:
+  name:
+    owner: FlyCode
+```
+
+注入 NameClient，调用 `greet("reader")` 应得到 `Hello reader from FlyCode`。同时测试不配置 owner 时的 visitor 默认值，以及自定义 NameClient 后默认 Bean 不再创建。
+
+Boot 3 不使用旧 `spring.factories` 的 EnableAutoConfiguration 键加载自动配置。配置处理器用于生成 IDE 元数据，不是发现配置类的机制。
+
+参考：[Spring Boot 自定义自动配置](https://docs.spring.io/spring-boot/reference/features/developing-auto-configuration.html)。

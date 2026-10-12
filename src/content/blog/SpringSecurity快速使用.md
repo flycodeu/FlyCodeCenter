@@ -1,5 +1,5 @@
 ---
-title: SpringSecurity快速使用
+title: Spring Security 入门：登录与接口权限
 createTime: '2026/03/01 19:23:46'
 code: b19w55cur
 permalink: /blog/b19w55cur/
@@ -7,549 +7,108 @@ tags:
   - SpringBoot
 ---
 
-老版本的使用
+下面使用 Spring Boot 3.x、Spring Security 6 和 Java 17+，在已有 Spring MVC 项目中配置两个本地练习账号。先验证公开、登录和管理员入口，再接自己的用户数据库。
 
-## 使用步骤
+## 依赖和密码配置
 
-### 1. 引入依赖
+在 `pom.xml` 加入：
 
 ```xml
 <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-<!--jwt-->
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt</artifactId>
-    <version>0.7.0</version>
-</dependency>
-<dependency>
-    <groupId>com.auth0</groupId>
-    <artifactId>java-jwt</artifactId>
-    <version>3.2.0</version>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
 </dependency>
 ```
 
-### 2. 编写JWT工具类，生成token
+`application.yaml` 加入：
+
+```yaml
+demo:
+  admin-password: ${DEMO_ADMIN_PASSWORD}
+  reader-password: ${DEMO_READER_PASSWORD}
+```
+
+启动前在自己的终端设置这两个环境变量。它们只用于演示账号，不能作为生产默认账号配置。
+
+## 安全过滤链
+
+保存为启动类扫描包下的 `SecurityConfig.java`，本例包名为 `example`：
 
 ```java
-public class JWTUtils {
+package example;
 
-    /**
-     * 签发JWT;这里创建的jwt
-     * @param id
-     * @param subject   可以是JSON数据 尽可能少
-     * @param ttlMillis
-     * @return
-     */
-    public static String createJWT(String id, String subject, long ttlMillis) {
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-        long nowMillis = System.currentTimeMillis();
-        Date now = new Date(nowMillis);
-        SecretKey secretKey = generalKey();  // 通过操作加密生成key
-        JwtBuilder builder = Jwts.builder()
-                .setId(id)
-                .setSubject(subject)   // 主题
-                .setIssuer("fly")       // 签发者：fly
-                .setIssuedAt(now)      // 签发时间
-                .signWith(signatureAlgorithm, secretKey); // 签名算法以及密匙
-        if (ttlMillis >= 0) {
-            long expMillis = nowMillis + ttlMillis;
-            Date expDate = new Date(expMillis);
-            builder.setExpiration(expDate); // 过期时间
-        }
-        return builder.compact();
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    /**
-     * 生成jwt token
-     *
-     * @param username
-     * @return
-     */
-    public static String createJWT(String username) {
-        return createJWT(username, username, 60 * 60 * 1000); // ttlMillis表示的是一小时
+    @Bean
+    UserDetailsService users(PasswordEncoder encoder,
+            @Value("${demo.admin-password}") String adminPassword,
+            @Value("${demo.reader-password}") String readerPassword) {
+        return new InMemoryUserDetailsManager(
+                User.withUsername("admin").password(encoder.encode(adminPassword)).roles("ADMIN").build(),
+                User.withUsername("reader").password(encoder.encode(readerPassword)).roles("USER").build());
     }
 
-    /**
-     * 验证JWT
-     * 根据验证时抛出的超时异常、签名异常、其他异常进行一定的操作
-     *
-     */
-    public static CheckResult validateJWT(String jwtStr) {
-        CheckResult checkResult = new CheckResult();
-        // 如果jwtStr为空的话，设置ErrCode为jwt不存在
-        if(StringUtils.isEmpty(jwtStr)){
-            checkResult.setSuccess(false);
-            checkResult.setErrCode(JWTConstant.JWT_ERRCODE_NULL);
-            return checkResult;
-        }
-        Claims claims = null;
-        try {
-            claims = parseJWT(jwtStr);
-            checkResult.setSuccess(true);
-            checkResult.setClaims(claims);
-        } catch (ExpiredJwtException e) {
-            checkResult.setErrCode(JWTConstant.JWT_ERRCODE_EXPIRE);
-            checkResult.setSuccess(false);
-        } catch (Exception e) {
-            checkResult.setErrCode(JWTConstant.JWT_ERRCODE_FAIL);
-            checkResult.setSuccess(false);
-        }
-        return checkResult;
+    @Bean
+    SecurityFilterChain security(HttpSecurity http) throws Exception {
+        return http.authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/public").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults())
+                .build();
     }
-
-    /**
-     * 生成加密Key
-     *
-     * @return
-     */
-    public static SecretKey generalKey() {
-        byte[] encodedKey = Base64.decode(JWTConstant.JWT_SECRET);
-        SecretKey key = new SecretKeySpec(encodedKey, 0, encodedKey.length, "AES");
-        return key;
-    }
-
-
-    /**
-     * 解析JWT字符串
-     *
-     * @return 返回 jwt 解析后的 payload
-     */
-    public static Claims parseJWT(String jwt) {
-        SecretKey secretKey = generalKey();
-        return Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(jwt)
-                .getBody();
-    }
-
 }
 ```
 
-### 3.编写JWT验证信息
+`roles("ADMIN")` 对应权限字符串 `ROLE_ADMIN`。配置保留默认 CSRF 防护；Cookie 会话下的修改请求需要正确携带 CSRF Token，不能为了消除 403 直接关闭防护。
 
-```
-@Data
-@NoArgsConstructor
-/**
- * JWT 验证信息
- */
-public class CheckResult {
+## 验证接口
 
-    private int errCode;
-
-    private boolean success;
-
-    private Claims claims;
-
-}
-```
-
-### 4. 通用类
-
-#### 通用返回类
+保存 `SecurityDemoController.java`：
 
 ```java
-/**
- * 通用返回类
- *
- * @param <T>
- */
-@Data
-public class BaseResponse<T> implements Serializable {
+package example;
 
-    private int code;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-    private T data;
-
-    private String message;
-
-    public BaseResponse(int code, T data, String message) {
-        this.code = code;
-        this.data = data;
-        this.message = message;
-    }
-
-    public BaseResponse(int code, T data) {
-        this(code, data, "");
-    }
-
-    public BaseResponse(ErrorCode errorCode) {
-        this(errorCode.getCode(), null, errorCode.getMessage());
-    }
+@RestController
+public class SecurityDemoController {
+    @GetMapping("/public")
+    public String publicData() { return "public data"; }
+    @GetMapping("/admin/data")
+    public String adminData() { return "admin data"; }
 }
 ```
 
-#### 通用工具类
+应用默认在 8080 时，PowerShell 中运行：
 
-```java
-
-/**
- * 返回工具类
- */
-public class ResultUtils {
-
-    /**
-     * 成功
-     *
-     * @param data
-     * @param <T>
-     * @return
-     */
-    public static <T> BaseResponse<T> success(T data) {
-        return new BaseResponse<>(0, data, "ok");
-    }
-
-    /**
-     * 失败
-     *
-     * @param errorCode
-     * @return
-     */
-    public static BaseResponse error(ErrorCode errorCode) {
-        return new BaseResponse<>(errorCode);
-    }
-
-    /**
-     * 失败
-     *
-     * @param code
-     * @param message
-     * @return
-     */
-    public static BaseResponse error(int code, String message) {
-        return new BaseResponse(code, null, message);
-    }
-
-    /**
-     * 失败
-     *
-     * @param errorCode
-     * @return
-     */
-    public static BaseResponse error(ErrorCode errorCode, String message) {
-        return new BaseResponse(errorCode.getCode(), null, message);
-    }
-}
+```powershell
+curl.exe -i http://localhost:8080/public
+curl.exe -i -u reader http://localhost:8080/admin/data
+curl.exe -i -u admin http://localhost:8080/admin/data
 ```
 
-#### 通用异常拦截
+`curl -u 用户名` 会提示输入密码。公开接口返回 200，reader 请求管理员接口得到 403，admin 得到 200。浏览器还可以访问 `/login` 使用默认登录表单；未登录请求的响应形式可能是登录重定向或 HTTP 认证提示，取决于请求协商和入口配置。
 
-```java
+内存账号随进程重建，不能保存注册、改密和长期用户数据。迁移到数据库时实现相应的 UserDetailsService，并保留密码编码、禁用状态及权限规则。
 
-/**
- * 全局异常处理器
- */
-@RestControllerAdvice
-@Slf4j
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler( BusinessException.class )
-    public BaseResponse<?> businessExceptionHandler(BusinessException e) {
-        log.error("businessException: " + e.getMessage(), e);
-        return ResultUtils.error(e.getCode(), e.getMessage());
-    }
-
-    @ExceptionHandler( RuntimeException.class )
-    public BaseResponse<?> runtimeExceptionHandler(RuntimeException e) {
-        log.error("runtimeException", e);
-        return ResultUtils.error(ErrorCode.SYSTEM_ERROR, e.getMessage());
-    }
-
-
-    /**
-     * @RequestBody 上校验失败后抛出的异常是 MethodArgumentNotValidException 异常。
-     */
-    @ExceptionHandler( value = MethodArgumentNotValidException.class )
-    public BaseResponse<?> handler(MethodArgumentNotValidException e) {
-        BindingResult bindingResult = e.getBindingResult();
-        ObjectError objectError = bindingResult.getAllErrors().stream().findFirst().get();
-        log.error("实体类校验异常：-------------{}", objectError.getDefaultMessage());
-        return ResultUtils.error(ErrorCode.PARAMS_ERROR, objectError.getDefaultMessage());
-    }
-
-    /**
-     * 不加 @RequestBody注解，校验失败抛出的则是 BindException
-     */
-    @ExceptionHandler( value = BindException.class )
-    public BaseResponse<?> exceptionHandler(BindException e) {
-        String messages = e.getBindingResult().getAllErrors()
-                .stream()
-                .map(ObjectError::getDefaultMessage)
-                .collect(Collectors.joining("；"));
-        return ResultUtils.error(ErrorCode.PARAMS_ERROR, messages);
-    }
-
-    /**
-     * @RequestParam 上校验失败后抛出的异常是 ConstraintViolationException
-     */
-    @ExceptionHandler( {ConstraintViolationException.class} )
-    public BaseResponse<?> methodArgumentNotValid(ConstraintViolationException exception) {
-        String message = exception.getConstraintViolations().stream().map(ConstraintViolation::getMessage).collect(Collectors.joining("；"));
-        return ResultUtils.error(ErrorCode.PARAMS_ERROR, message);
-    }
-
-}
-```
-
-### 5. 编写config配置文件
-
-### 6. 编写handler处理器
-
-#### 1. 登出成功处理器
-
-```java
-/**
- * 登出成功处理器
- */
-@Component
-public class LogoutSuccessHandler implements org.springframework.security.web.authentication.logout.LogoutSuccessHandler {
-    @Override
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        response.setContentType("application/json;charset=utf-8");
-        ServletOutputStream outputStream = response.getOutputStream();
-        outputStream.write(JSONUtil.toJsonStr(ResultUtils.success("退出成功")).getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
-    }
-}
-```
-
-#### 2. 登录成功处理器（模拟）
-
-```java
-/**
- * 登陆成功处理器
- */
-@Component
-public class LoginSuccessHandler implements AuthenticationSuccessHandler {
-
-
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        response.setContentType("application/json;charset=utf-8");
-        ServletOutputStream outputStream = response.getOutputStream();
-        String username = "user";
-        String token = JWTUtils.createJWT(username);
-        outputStream.write(JSONUtil.toJsonStr(ResultUtils.success(token)).getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
-
-    }
-}
-```
-
-#### 3. 登录失败处理器
-
-```java
-/**
- * 登陆失败处理器
- */
-@Component
-public class LoginFailureHandler implements AuthenticationFailureHandler {
-    @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-        response.setContentType("application/json;charset=utf-8");
-        ServletOutputStream outputStream = response.getOutputStream();
-        String message = exception.getMessage();
-        if (exception instanceof BadCredentialsException) {
-            message = "用户名字或者密码错误";
-        }
-        outputStream.write(JSONUtil.toJsonStr(message).getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
-    }
-}
-```
-
-### 7.重写UserDetailService
-
-```java
-/**
- * 自定义userDetails
- */
-@Service
-public class MyUserDetailServiceImpl implements UserDetailsService {
-    @Resource
-    private SysUserServiceImpl sysUserService;
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        SysUser sysUser = sysUserService.getByUserAccount(username);
-        if (sysUser == null) {
-            throw new UsernameNotFoundException("用户账号或密码错误");
-        }
-        if (sysUser.getStatus() == 1) {
-            throw new BusinessException(ErrorCode.ACCOUNT_BLOCK);
-        }
-        return new User(sysUser.getUseraccount(), sysUser.getUserpassword(), getUserAuthority(sysUser.getUserid()));
-
-    }
-
-    public List<GrantedAuthority> getUserAuthority(Long userId) {
-        // 格式 ROLE_admin,ROLE_user,system:user:delete,system:user:add
-        String authority = sysUserService.getUserAuthorityInfo(userId);
-        return AuthorityUtils.createAuthorityList(authority);
-    }
-}
-
-```
-
-### 8. JWT拦截器
-
-```java
-
-/**
- * jwt拦截器
- */
-@Slf4j
-public class  JwtAuthenticationFilter extends BasicAuthenticationFilter {
-
-    @Resource
-    private SysUserServiceImpl sysUserService;
-
-    private static final String[] URL_WHITELIST = {
-            "/api/login",
-            "/api/phoneLogin",
-            "/api/testLogin",
-            "/api/test/test",
-            "/api/sms/smsCode",
-            "/api/captcha/code",
-            "/api/account/userRegister",
-            "/api/test/noAuth/list",
-            "/doc.html",
-            "/doc.html/**",
-            "/doc.html#/**",
-            "/v2/**",
-            "/webjars/**", "/swagger-resources/**", "/v3/api-docs/**",
-    };
-
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
-        super(authenticationManager);
-    }
-
-    @Resource
-    private MyUserDetailServiceImpl myUserDetailService;
-
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        String token = request.getHeader("token");
-        log.info("放行URI" + request.getRequestURI());
-        String requestURI = request.getRequestURI();
-        // 如果token是空，url是白名单，放行
-        if (StrUtil.isEmpty(token) || new ArrayList<>(Arrays.asList(URL_WHITELIST)).contains(requestURI)) {
-            chain.doFilter(request, response);
-            return;
-        }
-        CheckResult checkResult = JWTUtils.validateJWT(token);
-        if (!checkResult.isSuccess()) {
-            switch (checkResult.getErrCode()) {
-                case JWTConstant.JWT_ERRCODE_NULL:
-                    throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "Token 不存在");
-                case JWTConstant.JWT_ERRCODE_EXPIRE:
-                    throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "Token 已过期");
-                case JWTConstant.JWT_ERRCODE_FAIL:
-                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Token 认证失败");
-            }
-        }
-        // 解析jwt去获取用户名
-        //Claims claims = checkResult.getClaims();
-        Claims claims = JWTUtils.parseJWT(token);
-        String userAccount = claims.getSubject();
-        log.info("userAccount:" + userAccount);
-
-        SysUser sysUser = sysUserService.getByUserAccount(userAccount);
-
-
-        List<GrantedAuthority> userAuthority = myUserDetailService.getUserAuthority(sysUser.getUserid());
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userAccount, null, userAuthority);
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        chain.doFilter(request, response);
-    }
-}
-
-```
-
-### 9. 自定义jwt异常处理
-
-```java
-/**
- * jwt认证失败处理类
- */
-@Component
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        response.setContentType("application/json;charset=UTF-8");
-        ServletOutputStream outputStream = response.getOutputStream();
-        BaseResponse baseResponse = ResultUtils.error(ErrorCode.AUTHENTICATION_FAILED, "认证失败,重新登录");
-        outputStream.write(JSONUtil.toJsonStr(baseResponse).getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
-    }
-}
-```
-
-### 10. 获取用户角色权限
-
-```java
-@Service
-@Slf4j
-public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
-        implements SysUserService {
-
-    @Resource
-    private SysRoleServiceImpl sysRoleService;
-
-    @Resource
-    private SysMenuServiceImpl sysMenuService;
-
-    @Override
-    public SysUser getByUserAccount(String userAccount) {
-        QueryWrapper<SysUser> queryWrapper = new QueryWrapper<SysUser>().eq("userAccount", userAccount);
-        SysUser sysUser = this.getOne(queryWrapper);
-        return sysUser;
-    }
-
-    @Override
-    public String getUserAuthorityInfo(Long userId) {
-        StringBuffer authority = new StringBuffer();
-        // 1. 用户id获取所有的权限信息
-        QueryWrapper<SysRole> sysRoleQueryWrapper = new QueryWrapper<>();
-        List<SysRole> roleList = sysRoleService
-                .list(sysRoleQueryWrapper
-                        .inSql("id", "select role_id from sys_user_role where user_id=" + userId));
-        if (!roleList.isEmpty()) {
-            String roleCodeStrs = roleList.stream().map(r -> "ROLE_" + r.getCode()).collect(Collectors.joining(","));
-            authority.append(roleCodeStrs);
-        }
-        // 2. 遍历角色获取所有的菜单权限
-        Set<String> menuCodeSet = new HashSet<>();
-        for (SysRole sysRole : roleList) {
-            List<SysMenu> sysMenuList = sysMenuService
-                    .list(new QueryWrapper<SysMenu>()
-                            .inSql("id", "select menu_id from sys_role_menu where role_id=" + sysRole.getId()));
-            for (SysMenu sysMenu : sysMenuList) {
-                String perms = sysMenu.getPerms();
-                if (StringUtils.isNoneEmpty(perms)) {
-                    menuCodeSet.add(perms);
-                }
-            }
-        }
-
-        if (!menuCodeSet.isEmpty()) {
-            StringBuffer menuCodeStrs = authority.append(",").append(String.join(",", menuCodeSet));
-            authority.append(menuCodeStrs);
-        }
-
-        log.info(authority.toString());
-
-        return authority.toString();
-    }
-}
-```
-
-### 11. 分级菜单
+参考：[Spring Security Servlet 入门](https://docs.spring.io/spring-security/reference/servlet/getting-started.html)、[请求授权](https://docs.spring.io/spring-security/reference/servlet/authorization/authorize-http-requests.html)。

@@ -9,7 +9,7 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efa331c41ff52b964587567007ab846d.jpg
 ---
 
-在安防视频监控项目中，"历史回放"是最考验前端交互与后端稳定性的功能模块。与普通的视频网站不同，NVR 系统需要处理碎片化的视频文件（fmp4）、绝对时间轴的映射以及多片段的无缝衔接。
+录像回放需要把多个 fMP4 文件对应到同一条时间轴。用户选择时间后，页面找到对应文件、换算文件内的播放位置，并在片段结束后继续播放下一段。
 
 下面将录像索引、HTTP 文件访问和 Canvas 时间轴分开说明。代码依赖现有录像模型及文件定位逻辑，播放故障需要结合文件结构、Range 响应和浏览器解码日志排查。
 
@@ -18,7 +18,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/efa
 - 后端：Spring Boot，负责文件检索和基于 RandomAccessFile 的字节流分发。
 - 前端：HTML5 video + Canvas 自绘时间轴。不依赖庞大的第三方播放器库，以保证对底层 Seek 行为的控制。
 
-## 二、 后端：稳健的视频流分发
+## 二、 后端：录像文件读取
 对于 fmp4 格式（安防录像常用格式），Spring Boot 默认的 ResourceRegion 在处理 Chrome 的 Range 请求时，容易因 Content-Length
 计算误差导致 FFmpegDemuxer 崩溃。我们需要手写底层的 IO 处理。
 
@@ -89,7 +89,7 @@ public ResponseEntity<Resource> streamVideo(
 ```HTML
 <video id="player" playsinline preload="none" crossorigin="anonymous"></video>
 ```
-### 2. 渲染循环：实现丝滑的时间轴滚动
+### 2. 渲染循环：更新时间轴
 不要使用 video.ontimeupdate 更新 UI，它的频率太低（250ms/次），会导致时间轴看起来卡顿。使用 requestAnimationFrame。
 ```JavaScript
 let viewTime = Date.now(); // 当前视图中心代表的绝对时间戳
@@ -144,7 +144,7 @@ const pxPerMs = 0.05; // 缩放比例
 
 }
 ```
-### 4. 连贯播放与安全跳转（防 Crash）
+### 4. 片段衔接与时间跳转
 切换片段时清理上一条加载流程，再等待新资源的元数据。
 - 防缓存：URL 加时间戳。
 - 跳转：核对 `duration` 和 `seekable`，不要把任意的前 2 秒禁跳当作格式要求。

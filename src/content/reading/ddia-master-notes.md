@@ -1,5 +1,5 @@
 ﻿---
-title: "Designing Data-Intensive Applications 精读"
+title: "Designing Data-Intensive Applications"
 description: "面向系统设计与数据架构的长期参考书。"
 url: "https://dataintensive.net/"
 source: "DDIA"
@@ -11,4 +11,4 @@ cover: ""
 draft: false
 ---
 
-围绕存储、流处理、一致性与可扩展性的经典资料，适合反复阅读。
+书籍官网，介绍存储、复制、分区、事务与流处理。

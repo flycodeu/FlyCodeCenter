@@ -1,5 +1,5 @@
 ---
-title: "Astro Content Collections 深度实践"
+title: "Astro Content Collections 文档"
 description: "讲清楚如何组织大型文档站的内容模型、类型与渲染链路。"
 url: "https://docs.astro.build/en/guides/content-collections/"
 source: "Astro Docs"

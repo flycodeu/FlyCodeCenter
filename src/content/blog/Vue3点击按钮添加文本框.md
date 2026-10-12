@@ -7,69 +7,51 @@ tags:
   - 前端
 ---
 
-## 界面代码
+在已有 Vue 3 + Element Plus 项目中，把下面保存为 `SpotEditor.vue`。先完成添加、删除和 JSON 预览，再接入自己的保存接口。
+
 ```vue
-<el-form-item v-for="(spot, index) in spots" :label="'景点 ' + (index + 1)" :key="index">
-     <el-input v-model="spot.name"></el-input>
-     <el-button @click="removeSpot(index)" type="danger">删除</el-button>
-</el-form-item>
-	<el-button @click="addSpot" style="margin-right: 10px">添加景点</el-button>
-    <el-button type="primary" @click="handleSubmit">确定</el-button>
-```
+<script setup>
+import { ref } from 'vue'
 
-```js
-// 定义景点列表
-const spots = ref([{name: ''}]);
+let nextId = 1
+const spots = ref([{ id: nextId++, name: '' }])
+const preview = ref('')
 
-// 添加按钮点击事件，添加一个新的景点文本框
-const addSpot = () => {
-  spots.value.push({name: ''}); // 添加一个新的景点文本框项
-};
-
-// 删除按钮点击事件，移除对应的景点文本框
-const removeSpot = (index) => {
-  spots.value.splice(index, 1); // 移除指定索引的景点文本框项
-};
-
-// 确定按钮点击事件，发送列表数据给后端
-const handleSubmit = () => {
-  // 将景点列表数据发送给后端进行处理
-  // 示例代码：requestUtil.post('/api/saveSpots', spots.value)
-  ElMessage.success('景点数据已提交给后端');
-};
-```
-
-![image-20240323165822201](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com//codeCenterImg/image-20240323165822201.png)
-
-此时传递的是Json数组
-
-```json
-[
-    {
-        "name": "ss"
-    },
-    {
-        "name": "sss"
-    },
-    {
-        "name": "ssss"
-    }
-]
-```
-
-如果不希望使用这种方式，可以使用已下方式传递数据
-
-```json
-{
-  "nameList": ["景点1", "景点2", "景点3"]
+function addSpot() {
+  spots.value.push({ id: nextId++, name: '' })
 }
+
+function removeSpot(id) {
+  spots.value = spots.value.filter(spot => spot.id !== id)
+}
+
+function previewData() {
+  const payload = { nameList: spots.value.map(spot => spot.name.trim()) }
+  preview.value = JSON.stringify(payload, null, 2)
+}
+</script>
+
+<template>
+  <el-form>
+    <el-form-item v-for="(spot, index) in spots" :key="spot.id" :label="`景点 ${index + 1}`">
+      <el-input v-model="spot.name" />
+      <el-button type="danger" @click="removeSpot(spot.id)">删除</el-button>
+    </el-form-item>
+    <el-button @click="addSpot">添加景点</el-button>
+    <el-button type="primary" @click="previewData">预览数据</el-button>
+    <pre v-if="preview">{{ preview }}</pre>
+  </el-form>
+</template>
 ```
 
-需要对数据进行处理
+每行有稳定的 `id` 作为 key；删除中间一行后，其他输入框仍对应原来的数据。不要用数组下标标识需要保留状态的行。
 
-```js
-// 取出所有的name 
-const nameList = spots.value.map(spot => spot.name);
-// 转换格式
-const dataToSend = { nameList: nameList };
+预览结果如下：
+
+```json
+{"nameList":["景点1","景点2"]}
 ```
+
+本例只在页面预览，不发送请求。接入后端时将这个对象作为 JSON 请求体，在请求成功后显示保存成功；请求失败要保留输入并展示错误。
+
+参考：[Vue 列表渲染与 key](https://vuejs.org/guide/essentials/list.html#maintaining-state-with-key)。

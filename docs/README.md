@@ -26,8 +26,8 @@
 
 ## 5. 博客总文档
 
-- [系统功能与语法完整使用手册](/article/system-user-guide/)
-- [系统扩展开发手册（插件与语法扩展）](/article/system-extension-guide/)
+- [系统功能与语法完整使用手册](../src/content/blog/系统功能与语法完整使用手册.md)
+- [系统扩展开发手册（插件与语法扩展）](../src/content/blog/系统扩展开发手册.md)
 
 ## 快速定位
 

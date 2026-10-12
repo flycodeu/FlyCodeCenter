@@ -5,29 +5,7 @@ code: t1isiswb9
 permalink: /tutorials/t1isiswb9/
 order: 1
 ---
-# AI 工程基础：从模型到应用
-
-*最后更新：2026 年 3 月。本文把语言模型、上下文、工具调用、RAG 和 Agent 放在同一条工程链路里说明，适合需要快速建立整体概念的开发者。*
-
----
-
-## 目录
-
-- [LLM — 大语言模型](#llm--大语言模型)
-- [Transformer — 驱动 LLM 的架构](#transformer--驱动-llm-的架构)
-- [Token — 模型的最小处理单元](#token--模型的最小处理单元)
-- [Context 与 Context Window — 模型的工作记忆](#context-与-context-window--模型的工作记忆)
-- [Prompt — 与模型对话的语言](#prompt--与模型对话的语言)
-- [Tool / Function Calling — 模型的手脚](#tool--function-calling--模型的手脚)
-- [MCP — 工具接入的统一标准](#mcp--工具接入的统一标准)
-- [Agent — 自主行动的 AI](#agent--自主行动的-ai)
-- [Skills — Agent 的说明书](#skills--agent-的说明书)
-- [多模态 — 不止于文字](#多模态--不止于文字)
-- [RAG — 给模型装上外部记忆](#rag--给模型装上外部记忆)
-- [Embedding — 意义的数学表达](#embedding--意义的数学表达)
-- [Temperature 与采样 — 控制模型的创造力](#temperature-与采样--控制模型的创造力)
-- [幻觉 — 模型最大的陷阱](#幻觉--模型最大的陷阱)
-- [参考资料](#参考资料)
+本文把模型、上下文、工具调用、RAG 和 Agent 放在同一条流程中说明：应用准备输入，模型生成结果，程序按规则处理结果。
 
 ---
 
@@ -37,23 +15,9 @@ LLM（Large Language Model，大语言模型）是在海量文本数据上训练
 
 这个目标听起来简单，但在足够大的模型规模和足够多的训练数据下，会涌现出推理、翻译、编程、总结等几乎覆盖所有文字类任务的能力。这种现象被称为**涌现能力（Emergent Abilities）**，在 Wei et al.（2022）的论文《Emergent Abilities of Large Language Models》中被系统研究。
 
-### 截至 2026 年 3 月的主流模型
+### 选择模型时查看什么
 
-| 模型 | 开发方 | Context Window | 特点 |
-|------|-------|---------------|------|
-| GPT-5 / GPT-5.4 | OpenAI | 400K tokens | 当前 OpenAI 旗舰，推理与编码双强 |
-| o3 / o4-mini | OpenAI | 200K tokens | o 系列推理模型，擅长数学与科学 |
-| GPT-4.1 | OpenAI | 1M tokens | 高性价比，指令遵循强 |
-| Claude Opus 4.6 | Anthropic | 1M tokens | 旗舰级，长上下文性能出色 |
-| Claude Sonnet 4.6 | Anthropic | 1M tokens | 接近 Opus 性能，价格为 Opus 的 60% |
-| Gemini 2.5 Pro | Google DeepMind | 1M tokens | 编码与多模态推理领先 |
-| Gemini 3.1 Pro | Google DeepMind | 1M tokens | 最新一代，已取代 2.5 系列 |
-| Llama 3.3 | Meta | 128K tokens | 开源，可本地部署 |
-| DeepSeek-V3 | 深度求索 | 128K tokens | 高性价比，MoE 架构，开源 |
-
-> 数据来源：OpenAI API 文档（2025～2026）、Anthropic 官方发布公告（2026）、Google DeepMind Gemini 模型页面（2026）
-
----
+先确认任务需要文本、图像还是音频，再查看对应模型版本的输入能力、工具调用支持、上下文与输出上限、价格和可用地区。不同版本和服务平台的限制可能不同，不能只按系列名称套用一张参数表。
 
 ## Transformer — 驱动 LLM 的架构
 
@@ -62,7 +26,7 @@ LLM（Large Language Model，大语言模型）是在海量文本数据上训练
 > *Attention Is All You Need*
 > Vaswani et al., Google Brain / Google Research, NeurIPS 2017
 
-论文提出的核心机制是 **Self-Attention（自注意力）**：模型在处理一个词时，会同时"看"序列中所有其他词并计算相关性权重，而不是像 RNN 那样只能逐词顺序处理。这使得 Transformer 天然支持并行训练，可以扩展到数千亿参数。
+论文提出的核心机制是 **Self-Attention（自注意力）**：Self-Attention 为可见位置之间计算相关性权重。自回归生成使用因果掩码，预测当前位置时不能看到后续文本；训练时可以并行处理多个位置。这使得 Transformer 天然支持并行训练，可以扩展到数千亿参数。
 
 ### 简化架构
 
@@ -90,7 +54,7 @@ E1→E4 的结构称为一个 Transformer Block，在实际模型中会堆叠几
 
 ---
 
-## Token — 模型的最小处理单元
+## Token — 文本如何送入模型
 
 模型不直接处理字符或完整单词，而是处理 **Token**。Tokenizer（分词器）负责将原始文本切分为 Token，并映射到整数 ID；解码时再将整数 ID 还原为文本。
 
@@ -113,20 +77,9 @@ flowchart LR
     T --> A --> B --> C --> D --> E --> F
 ```
 
-### 实际 Token 计数参考
+### 怎样得到准确的 Token 数
 
-| 输入内容 | 约消耗 Token 数 |
-|---------|--------------|
-| `Hello world` | 2 |
-| `你好世界` | 4～6 |
-| `Supercalifragilistic`（罕见长词） | 6 |
-| `def calculate():` | 5 |
-| 1000 个英文单词的文章 | ~1300 |
-| 1000 个中文字的文章 | ~1500～2000 |
-
-可以在 [OpenAI Tokenizer 工具](https://platform.openai.com/tokenizer) 中直观看到任意文本的分词结果。
-
----
+使用目标模型对应的 tokenizer 或服务端 usage 统计。同一段中文、代码或英文，在不同 tokenizer 下可能得到不同结果；不要把字符数按固定比例当作精确的 Token 数。
 
 ## Context 与 Context Window — 模型的工作记忆
 
@@ -154,23 +107,9 @@ graph LR
     end
 ```
 
-### 主流模型 Context Window 对比（2026 年）
+### 上下文窗口与输出上限
 
-| 模型 | Context Window | 备注 |
-|------|---------------|------|
-| Claude Opus 4.6 | 1M tokens | 标准价格，无长上下文溢价 |
-| Claude Sonnet 4.6 | 1M tokens | 标准价格，无长上下文溢价 |
-| GPT-4.1 | 1M tokens | OpenAI API，2025 年 4 月发布 |
-| Gemini 2.5 Pro | 1M tokens（2M 实验性） | Google AI Studio / Vertex AI |
-| GPT-5 | 400K tokens | 旗舰推理，128K 最大输出 |
-| o3 / o4-mini | 200K tokens | OpenAI 推理模型 |
-| Llama 3.3 70B | 128K tokens | Meta 开源 |
-
-> 数据来源：Anthropic 官方发布公告（2026-02）、OpenAI API 文档（2025-04）、Google DeepMind Gemini 模型页面
-
-Anthropic 在 Claude Opus 4.6 和 Sonnet 4.6 发布时明确宣布，标准价格适用于完整的 1M token 窗口，不再有长上下文溢价——相比 Gemini 和 GPT-5 系列在超出一定阈值后收取更高费率的做法，这是一个显著的差异化策略。
-
----
+两者需要分别检查。把历史消息、工具结果和检索片段加入上下文后，还要为回复预留空间。窗口足够大不代表模型一定能找准长文中的每一处细节。
 
 ## Prompt — 与模型对话的语言
 
@@ -220,9 +159,9 @@ Assistant：正面
 
 ---
 
-## Tool / Function Calling — 模型的手脚
+## Tool / Function Calling — 调用外部功能
 
-LLM 本身只能处理文本，无法直接访问外部系统。Tool 机制让模型可以调用外部 API、执行代码、读写文件、查询数据库等。
+模型可以生成工具调用请求，宿主程序校验参数和权限后执行，再把结果交回模型。外部 API、文件和数据库访问都由实际的程序完成。
 
 ### 工作流程
 
@@ -328,7 +267,7 @@ MCP Server 对外暴露三类能力：Tools（模型可调用的函数）、Reso
 
 ---
 
-## Agent — 自主行动的 AI
+## Agent — 循环处理任务
 
 **Agent（智能体）** 是能够自主感知环境、制定计划、调用工具，并循环执行直到完成目标的 AI 系统。与普通单次问答不同，Agent 遵循一个感知 → 思考 → 行动的循环。
 
@@ -379,7 +318,7 @@ graph TD
     C --> O
 ```
 
-Anthropic 在 Claude 的 API 文档中明确描述了多 Agent 系统的构建方式，包括每个子 Agent 拥有独立的上下文和工具权限。Claude Code 中的 `agent team` 功能（随 Opus 4.6 一同发布）正是这一架构的产品化体现。
+每个子任务可以有独立上下文和工具权限；拆分后还需要处理结果合并、失败重试和执行成本。
 
 ---
 
@@ -449,23 +388,11 @@ graph TD
     I1 & I2 & I3 & I4 & I5 & I6 --> M --> O1 & O2 & O3 & O4
 ```
 
-### 各模态代表模型（2025～2026）
+### 按输入和输出区分能力
 
-| 能力 | 代表模型 | 说明 |
-|------|---------|------|
-| 图像理解 | GPT-5、Claude Opus 4.6、Gemini 2.5 Pro | 识别图片内容、OCR、图表解析 |
-| 图像生成 | GPT-image-1（OpenAI）、Imagen 3（Google） | 文字生成图片，支持图片编辑 |
-| 语音识别 | Whisper（OpenAI）、gpt-4o-transcribe | 音频转文字 |
-| 语音合成 | OpenAI TTS、Gemini 2.5 Flash TTS、ElevenLabs | 文字转语音 |
-| 视频理解 | Gemini 2.5 Pro、GPT-5 | 理解视频内容 |
-| 视频生成 | Sora（OpenAI）、Veo 3（Google） | 文字生成视频 |
+图像理解、图像生成、语音识别、语音合成和视频生成是不同能力。一个模型能接收图片，不代表它能生成图片；能读取抽样视频帧，也不等于支持完整的视频与音频理解。调用前检查对应接口。
 
-> *Robust Speech Recognition via Large-Scale Weak Supervision*（Whisper 论文）
-> Radford et al., OpenAI, ICML 2023
-
----
-
-## RAG — 给模型装上外部记忆
+## RAG — 检索资料后再回答
 
 LLM 有两个天然局限：训练数据有截止日期，无法知道最新信息；Context Window 有限，无法将所有私有文档塞入上下文。**RAG（Retrieval-Augmented Generation，检索增强生成）** 是目前解决这两个问题的主流工程方案。
 
@@ -497,12 +424,12 @@ flowchart TD
 
 | 维度 | 无 RAG | 有 RAG |
 |------|-------|-------|
-| 知识来源 | 仅训练数据 | 训练数据 + 实时检索 |
-| 私有数据访问 | 不支持 | 支持检索私有文档 |
-| 知识时效 | 受截止日期限制 | 可实时更新 |
+| 知识来源 | 训练知识 + 已提供的上下文 | 另外加入检索结果 |
+| 私有数据访问 | 可由应用直接提供内容 | 可按权限检索文档片段 |
+| 知识时效 | 取决于训练知识和提供的内容 | 还取决于数据源与索引更新 |
 | 回答可溯源 | 难以验证 | 可标注原文来源 |
 
-上下文窗口的扩大（如 Claude 4.6 的 1M tokens）并不能完全取代 RAG。当文档总量远超窗口大小，或需要精确检索特定段落时，RAG 仍然是更高效的选择。
+上下文窗口的扩大并不能完全取代 RAG。当文档总量远超窗口大小，或需要精确检索特定段落时，RAG 仍然是更高效的选择。
 
 ---
 
@@ -556,11 +483,11 @@ graph LR
 
 ---
 
-## 幻觉 — 模型最大的陷阱
+## 幻觉 — 看似合理的错误答案
 
 **幻觉（Hallucination）** 指模型生成看起来合理但实际上是错误或捏造的内容——如不存在的论文引用、虚假的历史事件、错误的代码逻辑。
 
-根本原因：LLM 的训练目标是预测"下一个 Token 最可能是什么"，而非"是否真实"。模型并不区分"知道的事"和"听起来合理的事"。
+文本生成的概率目标不等于事实核验。资料缺失、上下文误读和推理错误都可能导致不可靠的答案。
 
 ### 幻觉的分类
 
@@ -577,7 +504,7 @@ graph TD
 | 策略 | 原理 |
 |------|------|
 | RAG | 让模型基于检索到的真实文档回答，而非凭训练记忆 |
-| 降低 Temperature | 减少随机性，倾向选择概率最高的 Token |
+| 调整采样 | 可以减少输出变化，但不能作为事实校验 |
 | 要求引用来源 | 在 Prompt 中要求模型标注信息出处，便于核查 |
 | Self-Consistency | 多次采样，取一致性最高的答案 |
 | RLHF / RLAIF | 通过人类或 AI 反馈进行强化学习微调，降低错误输出概率 |

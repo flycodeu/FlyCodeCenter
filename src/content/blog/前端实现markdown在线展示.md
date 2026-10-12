@@ -8,10 +8,13 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/8400a606c77bef17d081cb11ae473277.jpg
 ---
 
+Vue 3 中先把 Markdown 转成 HTML，再清理生成的 HTML 后展示。关闭原始 HTML 解析，并使用 DOMPurify 处理最终输出；语法高亮不是内容安全过滤。
+
 ## Vue使用markdown-it
 我们首先需要引入依赖
 ```bash
-npm install markdown-it markdown-it-highlight.js
+npm install markdown-it highlight.js dompurify
+npm install -D @types/markdown-it
 ```
 
 编写组件
@@ -24,6 +27,7 @@ npm install markdown-it markdown-it-highlight.js
 import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
+import DOMPurify from 'dompurify'
 
 // 引入代码高亮样式
 import 'highlight.js/styles/github.css'
@@ -36,7 +40,7 @@ const props = defineProps<Props>()
 
 // 配置 markdown-it 实例
 const md: MarkdownIt = new MarkdownIt({
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
   highlight: function (str: string, lang: string): string {
@@ -58,7 +62,7 @@ const md: MarkdownIt = new MarkdownIt({
 
 // 计算渲染后的 Markdown
 const renderedMarkdown = computed(() => {
-  return md.render(props.content)
+  return DOMPurify.sanitize(md.render(props.content))
 })
 </script>
 

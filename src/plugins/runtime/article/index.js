@@ -1831,6 +1831,14 @@ export function initArticleRuntime(config = {}) {
           .catch((error) => console.error("video coding demo could not load", error));
       }
 
+      if (article.querySelector("login-crypto-demo")) {
+        import("./login-crypto-demo.js")
+          .then(({ registerLoginCryptoDemo }) => {
+            if (!signal.aborted && article.isConnected) registerLoginCryptoDemo();
+          })
+          .catch((error) => console.error("login crypto demo could not load", error));
+      }
+
       transformDemoShortcodes(article);
       bindTabsSwitch(article);
       bindCodeGroupSwitch(article);

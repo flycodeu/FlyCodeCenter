@@ -8,153 +8,76 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165958.jpg
 ---
 
-## 安装步骤
+pgvector 是 PostgreSQL 的扩展。安装含扩展文件的镜像后，还要在目标数据库执行 `CREATE EXTENSION vector`，才能使用 `vector` 类型。
 
-### 编写脚本
+## 启动 PostgreSQL
 
-```bash
-vim docker-compose-pgvector.yml
+先确认 Docker 与 Compose 可用。在空目录创建 `.env`，设置本地练习密码：
+
+```dotenv
+POSTGRES_PASSWORD=replace-with-your-local-password
 ```
 
-```yml
-version: '3'
+把 `.env` 加入 `.gitignore`。再保存 `compose.yaml`：
+
+```yaml
 services:
   vector_db:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/pgvector:v0.5.0
-    container_name: pgvector
-    restart: always
+    image: pgvector/pgvector:0.8.7-pg16
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=springai
-      - PGPASSWORD=postgres
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
-      - ./pgvector/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    logging:
-      options:
-        max-size: 10m
-        max-file: "3"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在.env中设置POSTGRES_PASSWORD}
+      POSTGRES_DB: springai
     ports:
-      - '5432:5432'
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: "pg_isready -U postgres -d springai"
-      interval: 2s
-      timeout: 20s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d springai"]
+      interval: 5s
+      timeout: 3s
       retries: 10
-    networks:
-      - my-network
-networks:
-  my-network:
-    driver: bridge
-```
-### 运行脚本
-```bash
-docker-compose -f docker-compose-pgvector.yml up -d
-```
 
-### 启动PgVector
+volumes:
+  pgdata:
+```
 
 ```bash
-docker compose -f docker-compose-pgvector.yml start vector_db
+docker compose up -d
+docker compose ps
+docker compose exec vector_db psql -U postgres -d springai
 ```
 
-### 查看运行状态
+进入 `psql` 后，下面是 SQL，不是终端命令。所有步骤都使用同一个数据库 `springai`。
 
-![image-20250605165523607](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250605165523607.png)
+## 验证向量查询
 
-## 连接WSL的PgVector
-
-### 开放远程登录
-
-保存的数据在当前compose文件的同级 pgdata里面，我们需要进入修改如下两个配置。
-
-![image-20250610084336393](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610084336393.png)
-
-1. 配置PostgreSQL服务监听地址。以容器内 `SHOW listen_addresses;` 的实际值为准，Docker 镜像可能已经监听所有地址
-
-```shell
-vim postgresql.conf
-# 添加下面配置行
-listen_addresses = '*'
-```
-
-2. 配置登录方式。默认只允许本地登录
-
-```bash
-vim pg_hba.conf
-# 添加下面配置行
-host    all             all             0.0.0.0/0               scram-sha-256
-```
-
-### 查看当前服务器IP
-
-```bash
-hostname -I
-```
-
-`hostname -I` 可能返回多个地址，顺序不能用来判断哪个可达。Windows 访问 WSL 服务优先核实 localhost 转发或当前网络模式，远程设备则需检查端口转发及防火墙。
-
-### 添加Windows入站规则
-
-新建如下规则
-
-![image-20250610093051870](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610093051870.png)
-
-### 软件连接
-
-使用数据库客户端连接时，分别检查连接成功、目标数据库存在和扩展安装状态。某个客户端的单次报错不能说明其他客户端都不可用。
-
-![image-20250610091712413](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250610091712413.png)
-
-## 安装扩展
-### 1. 创建数据库
-```bash
-docker exec -it pgvector psql -U postgres -d ai-rag-knowledge
-```
-确保数据库 ai-rag-knowledge 已存在。如果没有，可以手动创建：
-```bash
-docker exec -it pgvector psql -U postgres -c "CREATE DATABASE \"ai-rag-knowledge\";"
-```
-### 2. 安装 pgvector 插件（在该数据库里）
-连接成功后，执行：
-```bash
+```sql
 CREATE EXTENSION IF NOT EXISTS vector;
-```
-成功会输出：
+SELECT extversion FROM pg_extension WHERE extname = 'vector';
 
-```bash
-CREATE EXTENSION
-```
-### 3. 创建 vector_store 表（带有 vector 类型字段）
-执行下面的 SQL（建议手动先创建）：
-```bash
-CREATE TABLE IF NOT EXISTS vector_store (
-id TEXT PRIMARY KEY,
-content TEXT,
-metadata JSONB,
-embedding VECTOR(1536)  -- 1536 仅为示例，必须与所选模型的实际输出维度一致
+CREATE TABLE IF NOT EXISTS tutorial_items (
+    id bigserial PRIMARY KEY,
+    embedding vector(3) NOT NULL
 );
+INSERT INTO tutorial_items (embedding) VALUES ('[1,2,3]'), ('[4,5,6]');
+SELECT id, embedding, embedding <-> '[3,1,2]' AS distance
+FROM tutorial_items
+ORDER BY embedding <-> '[3,1,2]'
+LIMIT 5;
 ```
 
-如果建表失败，先根据错误检查扩展、权限和现有表结构。已有数据的表应通过迁移调整；`IF NOT EXISTS` 不会修改旧表，也不应通过删表来处理普通配置错误。
+`<->` 计算欧氏距离，距离越小越接近。这里的三维向量只用于理解查询；接入嵌入模型时，列维度必须与模型输出一致。重复执行 INSERT 会添加新行。
 
-### 4.验证是否成功
-执行：
-```bash
-\d+ vector_store
-```
-你应当看到类似输出：
-```
-ai-rag-knowledge=# \d+ vector_store
-                                           Table "public.vector_store"
-  Column   |     Type     | Collation | Nullable | Default | Storage  | Compression | Stats target | Description
------------+--------------+-----------+----------+---------+----------+-------------+--------------+-------------
- id        | text         |           | not null |         | extended |             |              |
- content   | text         |           |          |         | extended |             |              |
- metadata  | jsonb        |           |          |         | extended |             |              |
- embedding | vector(1536) |           |          |         | extended |             |              |
-Indexes:
-    "vector_store_pkey" PRIMARY KEY, btree (id)
-Access method: heap
-```
+在 `psql` 中执行 `\q` 退出。宿主机数据库客户端填写 `127.0.0.1:5432`、数据库 `springai`、用户名 `postgres` 和 `.env` 中设置的密码。
+
+## 常见问题
+
+- 连接拒绝：看 `docker compose ps` 和 `docker compose logs --tail=100 vector_db`，检查宿主机 5432 是否已被占用。
+- 修改 `.env` 后密码没变：`POSTGRES_*` 初始化变量只对空数据目录生效，已有数据库需要通过 SQL 修改角色密码。
+- 提示没有 vector 类型：确认连接的是 `springai`，并在这个数据库启用扩展。
+- 表已存在但维度不对：`IF NOT EXISTS` 不会修改旧表，需要评估数据迁移。
+
+Windows 使用 Docker Desktop 时先尝试 localhost，不必先开放 Windows 防火墙或把 `pg_hba.conf` 改成允许全部来源。
+
+参考：[pgvector 安装与查询](https://github.com/pgvector/pgvector)、[PostgreSQL 官方镜像初始化说明](https://hub.docker.com/_/postgres)。

@@ -27,7 +27,7 @@ cover: https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&
 对于当前项目，评论问题有三层来源：
 
 ### 第一层：项目配置
-在 [site.config.ts](/D:/FlyLabs/FlyCodeCenter/src/site.config.ts) 中定义。
+在 [site.config.ts](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/site.config.ts) 中定义。
 
 ### 第二层：构建期环境变量
 通过 `PUBLIC_GISCUS_*` 注入，在构建时进入站点配置。
@@ -144,7 +144,7 @@ PUBLIC_TWIKOO_ENV_ID=
 当评论系统是 `giscus` 时，建议按这个顺序查，不要跳：
 
 ### 第 1 步：看页面提示
-当前项目在 [Comments.astro](/D:/FlyLabs/FlyCodeCenter/src/components/Comments.astro) 中会对 giscus 做基础校验。  
+当前项目在 [Comments.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/components/Comments.astro) 中会对 giscus 做基础校验。
 如果缺字段，页面会直接提示缺的是哪一项。
 
 优先看：
@@ -262,28 +262,3 @@ strict = 1
 2. 打开一篇新文章，确认能首次创建 discussion
 3. 切换浅色/深色主题，确认 iframe 同步
 4. 在 Production 域名下实际评论一次
-
-## 本篇结论
-评论系统排错最怕“看起来像前端问题，其实是仓库问题”或者“明明改了环境变量，却忘了重建”。  
-你只要牢牢记住下面这条线：
-
-1. 先看页面提示
-2. 再看站点配置与环境变量
-3. 再看 GitHub 仓库和 giscus app
-4. 最后看高级来源限制
-
-大多数 giscus 问题都能很快定位。
-
-## 系列总结
-到这里，你已经完成了评论系统相关的完整闭环：
-
-- 知道为什么项目采用 provider 机制
-- 知道为什么默认推荐 giscus
-- 能完成从零配置到上线
-- 能在出问题时按统一路径定位
-
-后续如果要继续扩展评论能力，可以再考虑：
-
-- `utterances` 作为回退方案
-- `giscus.json` 的高级控制
-- 更细粒度的评论区埋点与交互统计

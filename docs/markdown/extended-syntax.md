@@ -30,7 +30,7 @@ diagram: {
 
 ## 1) Shortcodes
 
-## Video
+### Video
 
 ```md
 [video url="https://example.com/demo.mp4"][/video]
@@ -38,14 +38,14 @@ diagram: {
 [video url="https://example.com/demo.mp4" autoplay="true"][/video]
 ```
 
-## Checkbox
+### Checkbox
 
 ```md
 [checkbox]todo item[/checkbox]
 [checkbox checked="true"]done item[/checkbox]
 ```
 
-## Hidden text
+### Hidden text
 
 ```md
 [hidden]click to reveal[/hidden]
@@ -53,7 +53,7 @@ diagram: {
 [hidden type="blur" tip="hover tip"]blur text[/hidden]
 ```
 
-## Admonition
+### Admonition
 
 ```md
 [admonition]default notice[/admonition]
@@ -125,14 +125,14 @@ console.log("Hello");
 
 ## 5) Inline mark 和 icon
 
-## Inline mark
+### Inline mark
 
 ```md
 this is ==important=={.tip}
 this is ==danger=={.danger}
 ```
 
-## Inline icon
+### Inline icon
 
 ```md
 icon sample :[mdi:rocket 20px/#0ea5e9]:

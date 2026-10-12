@@ -8,6 +8,6 @@ permalink: /tutorials/数据结构/
 > 由于笔者水平有限，所以有些地方可能会存在问题，欢迎指正
 
 
-[线性数据结构](线性数据结构/README.md)
+[线性数据结构](/tutorials/t4c1tkhzd/)
 
-[树数据结构](树数据结构/README.md)
+[树数据结构](/tutorials/t2e3uuk9r/)

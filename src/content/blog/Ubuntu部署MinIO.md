@@ -5,7 +5,9 @@ code: b14not3qw
 permalink: /blog/b14not3qw/
 ---
 
-下面记录单机 MinIO 的目录、端口和 systemd 配置，并给出 Python SDK 的上传、下载及预签名访问示例：
+MinIO 社区仓库已于 2026-04-25 归档，社区版改为源码分发。下面保留单机实验的服务和 SDK 用法，使用固定历史源码版本；旧的“下载最新二进制”步骤不能再当作当前安装方式。[仓库与发行说明](https://github.com/minio/minio)。
+
+目录与端口如下：
 
 - Server：`/opt/minio/server/minio`
 - Client：`/opt/minio/client/mc`
@@ -28,22 +30,23 @@ permalink: /blog/b14not3qw/
 
 ### 1.2 创建数据目录并设置权限
 
-使用专用用户 `minio-user` 运行服务。先确认该用户已创建，再将数据目录授权给它。
+使用专用用户 `minio-user`。以下命令在 Ubuntu 的 Bash 中执行，先创建账号与完整目录：
 
 ```
-sudo mkdir -p /opt/minio/data
+id minio-user >/dev/null 2>&1 || sudo useradd --system --no-create-home --shell /usr/sbin/nologin minio-user
+sudo mkdir -p /opt/minio/server /opt/minio/client /opt/minio/data
 sudo chown -R minio-user:minio-user /opt/minio/data
 sudo chmod 750 /opt/minio/data
 ```
 
 ## 2. 安装 MinIO Server（二进制）
 
-在 `/opt/minio/server` 目录下载并赋权：
+先按 [Go 官方安装说明](https://go.dev/doc/install) 准备该源码版本所需的 Go 工具链。编译并复制到规划目录：
 
 ```
-cd /opt/minio/server
-wget https://dl.minio.org.cn/server/minio/release/linux-amd64/minio
-chmod +x minio
+go install github.com/minio/minio@RELEASE.2025-10-15T17-29-55Z
+sudo install -m 0755 "$(go env GOPATH)/bin/minio" /opt/minio/server/minio
+/opt/minio/server/minio --version
 ```
 
 ## 3. 前台启动验证（API=8071 / Console=8070）
@@ -53,8 +56,11 @@ chmod +x minio
 ```
 cd /opt/minio/server
 
-MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD='A12345678' \
-./minio server /opt/minio/data \
+export MINIO_ROOT_USER='localadmin'
+read -r -s -p '本地 MinIO 管理密码: ' MINIO_ROOT_PASSWORD
+printf '\n'
+export MINIO_ROOT_PASSWORD
+sudo --preserve-env=MINIO_ROOT_USER,MINIO_ROOT_PASSWORD -u minio-user ./minio server /opt/minio/data \
   --address ":8071" \
   --console-address ":8070"
 ```
@@ -78,13 +84,13 @@ ss -lntp | egrep '8070|8071'
 
 ```
 cd /opt/minio/client
-wget https://dl.minio.org.cn/client/mc/release/linux-amd64/mc
-chmod +x mc
+sudo wget -O mc https://dl.min.io/client/mc/release/linux-amd64/mc
+sudo chmod +x mc
 ```
 
 ### 4.2 强制使用 ./mc（关键点）
 
-- 输入 `mc`：走 `/usr/bin/mc`（文件管理器）
+- 输入 `mc`：由 PATH 决定，可能是 Midnight Commander，也可能是 MinIO 客户端
 - 输入 `./mc`：走当前目录的 MinIO 客户端
 
 验证版本：
@@ -94,11 +100,26 @@ cd /opt/minio/client
 ./mc --version
 ```
 
+前台验证结束后先按 Ctrl+C 停止进程，再配置 systemd，避免两次启动占用同一端口。重新打开终端时，需要再次设置下方 mc 命令使用的环境变量，值与服务配置保持一致。
+
 ## 5. systemd 后台运行 + 开机自启动
 
 systemd 最稳的写法：把 `ExecStart` 参数写清楚，不依赖拼接变量，避免“参数没展开导致启动失败”。
 
-### 5.1 创建 service 文件
+### 5.1 创建服务配置
+
+创建 `/etc/minio/minio.env`，填写自己设置的凭据，并将权限设为仅 root 可读。systemd 以 root 读取该文件后再按 User 运行服务：
+
+```bash
+sudo install -d -m 0700 /etc/minio
+sudo install -m 0600 /dev/null /etc/minio/minio.env
+sudoedit /etc/minio/minio.env
+```
+
+```dotenv
+MINIO_ROOT_USER=localadmin
+MINIO_ROOT_PASSWORD=填写自己的本地管理密码
+```
 
 写入 `/etc/systemd/system/minio.service`：
 
@@ -114,8 +135,7 @@ User=minio-user
 Group=minio-user
 WorkingDirectory=/opt/minio
 
-Environment="MINIO_ROOT_USER=admin"
-Environment="MINIO_ROOT_PASSWORD=A12345678"
+EnvironmentFile=/etc/minio/minio.env
 
 ExecStart=/opt/minio/server/minio server /opt/minio/data --address :8071 --console-address :8070
 
@@ -157,7 +177,7 @@ ss -lntp | egrep '8070|8071'
 ```
 cd /opt/minio/client
 
-./mc alias set myminio http://127.0.0.1:8071 admin 'A12345678'
+./mc alias set myminio http://127.0.0.1:8071 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 ./mc admin info myminio
 ```
 
@@ -209,20 +229,25 @@ cd /opt/minio/client
 ### 7.1 安装 SDK
 
 ```
-pip3 install minio
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install minio
 ```
 
 ### 7.2 初始化 Client（HTTP + 8071）
 
+先设置 `MINIO_APP_SECRET` 为前面创建的业务用户密码。上传、下载和预签名片段在同一个 Python 脚本中依次使用；`local_path` 必须指向实际存在的图片。
+
 > endpoint 建议写 `host:port`，并设置 `secure=False`（因为你当前是 http）。
 
 ```
+import os
 from minio import Minio
 
 client = Minio(
     "127.0.0.1:8071",
     access_key="imgapp",
-    secret_key="ImgAppSecret@123",
+    secret_key=os.environ["MINIO_APP_SECRET"],
     secure=False,
 )
 ```
@@ -230,13 +255,14 @@ client = Minio(
 ### 7.3 上传文件（fput_object）
 
 ```
+import os
 from minio import Minio
 from datetime import datetime
 
 client = Minio(
     "127.0.0.1:8071",
     access_key="imgapp",
-    secret_key="ImgAppSecret@123",
+    secret_key=os.environ["MINIO_APP_SECRET"],
     secure=False,
 )
 
@@ -262,7 +288,7 @@ print("uploaded:", bucket, object_key)
 ```
 client.fget_object(
     bucket_name="images",
-    object_name="uploads/2026/02/27/test.jpg",
+    object_name=object_key,
     file_path="/tmp/test-down.jpg",
 )
 print("download ok")
@@ -279,7 +305,7 @@ from datetime import timedelta
 
 url = client.presigned_get_object(
     bucket_name="images",
-    object_name="uploads/2026/02/27/test.jpg",
+    object_name=object_key,
     expires=timedelta(minutes=30),
 )
 print(url)

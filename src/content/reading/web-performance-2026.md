@@ -1,6 +1,6 @@
 ---
-title: "Web Performance in 2026"
-description: "系统梳理前端性能预算、包体治理和核心体验指标优化。"
+title: "web.dev 性能主题"
+description: "web.dev 的性能主题入口，汇集指标说明与优化文章。"
 url: "https://web.dev/performance/"
 source: "web.dev"
 pubDate: 2026-02-17

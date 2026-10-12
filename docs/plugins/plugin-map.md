@@ -4,12 +4,12 @@
 
 ## 一、构建期插件（Build-Time）
 
-## `src/plugins/build/integrations.plugin.mjs`
+### `src/plugins/build/integrations.plugin.mjs`
 
 - 负责：`mdx` / `partytown` / `sitemap` 集成装配
 - 适用：新增或关闭 Astro integration
 
-## `src/plugins/build/markdown.plugin.mjs`
+### `src/plugins/build/markdown.plugin.mjs`
 
 - 负责：remark/rehype 链路装配
 - 管理能力：
@@ -19,18 +19,18 @@
   - math + katex
   - image enhance
 
-## `src/plugins/build/code-highlight.plugin.mjs`
+### `src/plugins/build/code-highlight.plugin.mjs`
 
 - 负责：代码高亮 provider 装配（expressive / shiki / prism / rehype-pretty-code）
 - 依赖：`src/plugins/code-highlight/resolve-config.ts`
 
-## `src/plugins/core/build-pipeline.mjs`
+### `src/plugins/core/build-pipeline.mjs`
 
 - 负责：聚合所有 build 插件输出，供 `astro.config.mjs` 使用
 
 ## 二、Markdown 语法插件
 
-## `src/plugins/markdown/build/*`
+### `src/plugins/markdown/build/*`
 
 - `remark-include.ts`：Markdown include 语法
 - `remark-normalize-code-lang.ts`：代码块语言标准化
@@ -39,7 +39,7 @@
 
 ## 三、文章页运行时插件（Article Runtime）
 
-## `src/plugins/runtime/article/index.js`
+### `src/plugins/runtime/article/index.js`
 
 - 负责：文章页全部运行时增强
 - 主要能力：
@@ -55,7 +55,7 @@
 
 ## 四、样式层
 
-## `src/styles/global.css`
+### `src/styles/global.css`
 
 - 负责：代码块容器、复制按钮、diagram 容器、md-tabs、md-steps、mdx-shortcode 样式
 
@@ -72,4 +72,4 @@
 
 - 脚本：`scripts/quality-guard.mjs`
 - 入口：`npm run guard:quality`
-- 构建链路：`npm run build` 会先执行 quality guard，再执行 frontmatter lint
+- 构建链路：`npm run build` 依次同步 frontmatter、执行 quality guard、生成 Minisearch 索引、处理加密内容和构建 Astro；`npm run lint:frontmatter` 单独执行

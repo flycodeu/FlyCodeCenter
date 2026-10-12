@@ -37,20 +37,24 @@ npm run dev
 
 ```bash
 npm run build
-npm run preview
 ```
 
-`build` 完成后会自动执行 `postbuild`：
+构建过程中先生成 Minisearch 索引到 `public/search/minisearch.json`，Astro 将它复制到站点输出；`postbuild` 再为完整 HTML 页面生成 Pagefind 索引。
 
-1. 生成 `minisearch` 索引（`public/search/minisearch.json` 与 `dist/search/minisearch.json`）
-2. 生成 `pagefind` 索引（`/pagefind/pagefind.js`）
+日常预览使用 `npm run dev`。本项目使用 Vercel adapter，当前 `astro preview` 无法启动；检查构建后的静态文章可用已安装的 Python：
+
+```bash
+python -m http.server 4329 --bind 127.0.0.1 --directory dist/client
+```
+
+访问 `http://127.0.0.1:4329`。静态服务器不执行服务端接口，线上接口需要在 Vercel 预览部署中验证。
 
 ## Deploy to Vercel / 部署到 Vercel
 
 1. 将仓库推到 GitHub。
 2. 在 Vercel 新建 Project 并导入仓库。
 3. Framework Preset 选择 Astro。
-4. Build Command 使用 `npm run build`，Output Directory 使用 `dist`。
+4. Build Command 使用 `npm run build`，保留 Astro / Vercel adapter 自动识别的输出设置。
 5. 在 Vercel Project Settings 配置可选环境变量（见下文）。
 6. 点击 Deploy。
 
@@ -135,8 +139,8 @@ sortDirection: desc
 - 系统配置：`docs/config/system-config.md`
 - Markdown 扩展：`docs/markdown/extended-syntax.md`
 - 插件地图：`docs/plugins/plugin-map.md`
-- 功能与语法总手册（博客）：`/article/system-user-guide/`
-- 扩展开发总手册（博客）：`/article/system-extension-guide/`
+- 功能与语法总手册（博客）：`/blog/b2macc470/`
+- 扩展开发总手册（博客）：`/blog/b14svvi5q/`
 
 ## License
 

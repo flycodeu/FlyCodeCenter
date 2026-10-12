@@ -2,7 +2,7 @@
 title: "中转站列表"
 description: "基于 30 天监测数据整理的中转站可用性与模板信息。"
 category: "中转站"
-order: 5
+order: 6
 featured: true
 tags: ["relay", "gateway", "status"]
 cards:

@@ -1,5 +1,5 @@
 ---
-title: Jmeter使用
+title: JMeter使用
 createTime: '2026/03/01 19:23:46'
 code: b2eswgrcv
 permalink: /blog/b2eswgrcv/
@@ -7,13 +7,13 @@ tags:
   - 压力测试
 ---
 
-## Jmeter下载
+## JMeter下载
 
-[Jemter官网下载](https://jmeter.apache.org/download_jmeter.cgi)
+[JMeter官网下载](https://jmeter.apache.org/download_jmeter.cgi)
 
 解压文件，进入bin目录，找到jmeter.bat，双击运行
 
-## Jemter使用
+## JMeter使用
 
 1. 创建线程组
 

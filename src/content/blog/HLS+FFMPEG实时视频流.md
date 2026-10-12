@@ -11,374 +11,92 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/a496989751bfb3e14c29f07b9ec99116.jpg
 ---
 
-在本地网络中接入多路大华摄像头时，如果想在浏览器中低成本播放实时画面，一个简单可行的方案是使用 **FFmpeg 将 RTSP 重新封装为 HLS（m3u8 播放列表与媒体分片）**，再通过 **Spring Boot 提供静态资源映射**。
+HLS 用 HTTP 分发播放列表和媒体分片。先用 FFmpeg 生成一条 HLS，再用浏览器播放，最后把测试源换成相机。下面命令在 Windows PowerShell 中执行，需要 FFmpeg、Python 3 和能访问 CDN 的浏览器。
 
-下面的示例使用 Java 管理 FFmpeg 子进程：
+## 生成可播放的测试源
 
-- 不依赖 Nginx 或 Wowza；
-- 可配置多路摄像头，具体容量需结合码率、磁盘和客户端并发实测；
-- 自动守护、掉线重启；
-- 浏览器可通过 hls.js 播放（Safari 等环境可原生播放 HLS）。
+在空目录创建 `hls` 文件夹：
 
-## 一、方案原理
-
-大华、海康等摄像头通常输出 **RTSP** 流，浏览器无法直接播放。
-HLS（HTTP Live Streaming）是苹果提出的基于 HTTP 的流式传输协议，核心思想是：
-
-1. FFmpeg 从摄像头拉取 RTSP 码流；
-2. 切割为一系列小的 `.ts` 文件；
-3. 生成索引文件 `.m3u8`；
-4. 浏览器通过 HTTP 轮询下载播放。
-
-工作流程示意：
-
-```
-摄像头 → RTSP → FFmpeg → HLS片段(.ts) → index.m3u8 → 浏览器
+```powershell
+New-Item -ItemType Directory -Path hls -Force | Out-Null
+ffmpeg -f lavfi -i "testsrc2=size=640x360:rate=25" -t 12 -an -c:v libx264 -pix_fmt yuv420p -g 50 -keyint_min 50 -sc_threshold 0 -f hls -hls_time 2 -hls_list_size 6 -hls_flags independent_segments+temp_file -hls_segment_filename "hls/segment_%03d.ts" "hls/index.m3u8"
 ```
 
-优点：
+这会生成约 12 秒的画面。`-g 50` 配合 25 FPS 和关闭场景切换，安排约 2 秒一个关键帧；HLS 在合适的关键帧附近切片。`independent_segments` 声明各分片可独立解码，不会自己创建关键帧。
 
-- Safari 等环境可原生播放，其他支持 MSE 的浏览器通常配合 hls.js；
-- 通过 HTTP 传输，容易跨域、兼容 CDN；
-- 可回放或做录像功能。
+打开 `hls/index.m3u8`，应能看到 `#EXTM3U` 和 `segment_000.ts` 等文件名。播放列表不是视频文件，它告诉播放器去哪里下载分片。
 
-缺点：
+## 创建播放器
 
-- 播放延迟受 GOP、分片时长、网络和播放器缓冲共同影响；
-- 对实时性要求高的场景（如监控控制）不太合适；
-- 需要持续磁盘写入（碎片化 I/O 较多）。
-
----
-安装ffmpeg的build版本
-
-https://ffmpeg.org/download.html
-
-进入bin目录下，记住运行目录，设置环境变量：
-![环境变量](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20251022160026.png)
-
-命令行输入
-
-`ffmpeg -version`
-
-运行成功后，会看到如下信息：
-
-![ffmpeg](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20251022160201.png)
-
-后续即可直接使用ffmpeg
-
-## 二、Spring Boot 静态映射配置
-
-我们将 FFmpeg 输出的 HLS 文件存放在 `./hls-stream` 目录下，然后通过 Spring Boot 的 `WebMvcConfigurer` 将其映射为 `/hls/**` 访问路径。
-
-```java
-@Configuration(proxyBeanMethods = false)
-public class DahuaStaticMappingConfig implements WebMvcConfigurer {
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String userDir = System.getProperty("user.dir");
-        Path hlsDir = Paths.get(userDir, "hls-stream").toAbsolutePath();
-        String fileLocation = "file:" + hlsDir + "/";
-
-        registry.addResourceHandler("/hls/**")
-                .addResourceLocations(fileLocation)
-                .setCachePeriod(0); // 禁止缓存，确保实时性
-    }
-}
-```
-
-这样，`hls-stream/ip/channel1/index.m3u8`
-就能通过 `http://localhost:8080/hls/ip/channel1/index.m3u8` 访问。
-
-## 三、批量 FFmpeg 管理器（DahuaStreamManager）
-
-这部分核心是自动启动、监控、重启所有 FFmpeg 拉流任务。
-
-每个摄像头的两路码流（主码流 + 子码流）分别运行一个独立的 FFmpeg 进程：
-
-```java
-@Component
-public class DahuaStreamManager {
-    private static final String USER = "xxx";
-    private static final String PASS = "xxxxx";
-    private static final int SUBTYPE = 0; // 0主码流 1子码流
-    private static final List<String> IPS = Arrays.asList(
-        "IP"
-    );
-
-    private final Map<String, DahuaStreamProcess> processes = new ConcurrentHashMap<>();
-    private ScheduledExecutorService watchdog;
-
-    @PostConstruct
-    public void startAll() {
-        String userDir = System.getProperty("user.dir");
-        File hlsRoot = new File(userDir, "hls-stream");
-
-        for (String ip : IPS) {
-            for (int ch = 1; ch <= 2; ch++) {
-                String name = ip + "-ch" + ch;
-                String rtsp = String.format("rtsp://%s:%s@%s:554/cam/realmonitor?channel=%d&subtype=%d", USER, PASS, ip, ch, SUBTYPE);
-                File outDir = new File(new File(hlsRoot, ip), "channel" + ch);
-                processes.put(name, new DahuaStreamProcess(name, rtsp, outDir, 2, 3));
-            }
-        }
-
-        // 启动所有进程
-        processes.values().forEach(proc -> {
-            try { proc.start(); } catch (Exception e) { e.printStackTrace(); }
-        });
-
-        // 看门狗：每10秒检查异常进程并重启
-        watchdog = Executors.newSingleThreadScheduledExecutor();
-        watchdog.scheduleAtFixedRate(this::checkAndHeal, 10, 10, TimeUnit.SECONDS);
-    }
-
-    private void checkAndHeal() {
-        processes.forEach((name, proc) -> {
-            if (!proc.isAlive()) {
-                try {
-                    proc.restart();
-                } catch (Exception e) {
-                    System.err.println("Restart failed: " + name);
-                }
-            }
-        });
-    }
-
-    @PreDestroy
-    public void stopAll() {
-        if (watchdog != null) watchdog.shutdownNow();
-        processes.values().forEach(DahuaStreamProcess::stop);
-    }
-}
-```
-
-## 四、FFmpeg 调用封装（DahuaStreamProcess）
-
-每一路摄像头使用一个独立的 FFmpeg 命令：
-
-```bash
-ffmpeg -rtsp_transport tcp -i rtsp://admin:pass@ip:554/cam/realmonitor?channel=1&subtype=0 \
- -fflags +genpts -c:v copy -an -f hls -hls_time 2 -hls_list_size 3 \
- -hls_flags delete_segments+independent_segments ./hls-stream/ip/channel1/index.m3u8
-```
-
-关键参数说明：
-
-| 参数                                              | 说明                                    |
-| ------------------------------------------------- | --------------------------------------- |
-| `-rtsp_transport tcp`                             | 使用 TCP 拉流，更稳定（UDP 容易丢包）   |
-| `-c:v copy`                                       | 不解码和重编码，但仍有封装、网络和 I/O 开销 |
-| `-an`                                             | 不保留音频                              |
-| `-f hls`                                          | 输出格式为 HLS                          |
-| `-hls_time 2`                                     | 目标分片时长 2 秒，实际切点还受关键帧位置影响                       |
-| `-hls_list_size 3`                                | 播放列表中保留 3 个片段                 |
-| `-hls_flags delete_segments+independent_segments` | 删除过期分片；independent_segments 声明独立性，不会生成关键帧      |
-
-`-c:v copy` 不改变编码和 GOP，不能修复不兼容的视频编码，也不能强制每两秒产生关键帧。只有确认所有分片都可独立解码时才声明 `independent_segments`。参数含义见 [FFmpeg HLS muxer](https://ffmpeg.org/ffmpeg-formats.html#hls)。
-
-## 五、浏览器播放
-
-支持原生 HLS 的浏览器可设置 `<video src>`；其他浏览器使用下面的 hls.js 分支：
+在 `hls` 文件夹同级保存 `player.html`：
 
 ```html
-<video
-  src="http://localhost:8080/hls/IP/channel1/index.m3u8"
-  controls
-  autoplay
-  muted
-  playsinline>
-</video>
-
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
-  const video = document.querySelector('video');
-  if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(video.src);
-      hls.attachMedia(video);
-  }
-</script>
-```
-详细代码
-```html
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <title>大华相机 20 路 HLS 预览</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- hls.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
-    header { padding: 10px 16px; background: #1b1b1b; position: sticky; top: 0; z-index: 10; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-auto-rows: 180px;
-      gap: 8px;
-      padding: 10px;
-    }
-    .card {
-      position: relative; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid #333;
-    }
-    .card video { width: 100%; height: 100%; object-fit: cover; background: #000; }
-    .label {
-      position: absolute; left: 8px; bottom: 8px; padding: 4px 6px;
-      background: rgba(0,0,0,0.5); border-radius: 4px; font-size: 12px;
-    }
-    .card:hover { outline: 2px solid #4caf50; cursor: pointer; }
-    .modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center;
-    }
-    .modal .inner { width: 80vw; height: 60vh; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid #444; position: relative; }
-    .modal .inner video { width: 100%; height: 100%; object-fit: contain; background: #000; }
-    .close { position: absolute; top: 8px; right: 8px; background: #222; color: #eee; border: 1px solid #555; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
-    .tips { font-size: 12px; opacity: .8; }
-  </style>
-</head>
-<body>
-<header>
-  <div>大华相机 HLS 预览（20 路，点击单路放大）</div>
-  <div class="tips">需要服务端 ffmpeg 在 PATH 中可执行；流地址格式：/hls/<IP>/channel{1|2}/index.m3u8</div>
-</header>
-
-<div class="grid" id="grid"></div>
-
-<div class="modal" id="modal">
-  <div class="inner">
-    <button class="close" id="closeBtn">关闭</button>
-    <video id="modalVideo" controls playsinline></video>
-  </div>
-</div>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HLS 练习</title>
+<video id="video" controls muted playsinline style="width:100%;max-width:800px"></video>
+<p id="status">正在加载</p>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.7.3/dist/hls.min.js"></script>
 <script>
-  const ips = [
-    "xxx"
-  ];
-  const channels = [1, 2];
-
-  const BASE_URL = "http://localhost:80"; // 后端地址
-  const streams = [];
-  for (const ip of ips) {
-    for (const ch of channels) {
-      streams.push({
-        label: ip + " / ch" + ch,
-        url: BASE_URL + "/hls/" + ip + "/channel" + ch + "/index.m3u8"
-      });
-    }
-  }
-
-  const grid = document.getElementById('grid');
-
-  function createCard(stream) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const video = document.createElement('video');
-    video.muted = true;           // 多路自动播放需要静音
-    video.autoplay = true;
-    video.playsInline = true;
-    video.controls = false;
-
-    const label = document.createElement('div');
-    label.className = 'label';
-    label.textContent = stream.label;
-
-    card.appendChild(video);
-    card.appendChild(label);
-
-    // 初始化 hls 播放
-    function attachHls(videoEl, url) {
-      if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-        videoEl.src = url;
-        videoEl.play().catch(()=>{});
-        return { destroy(){} };
-      }
-      if (Hls.isSupported()) {
-        const hls = new Hls({ liveDurationInfinity: true, lowLatencyMode: true });
-        hls.loadSource(url);
-        hls.attachMedia(videoEl);
-        hls.on(Hls.Events.ERROR, (ev, data) => {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
-              case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
-              default: hls.destroy(); attachHls(videoEl, url);
-            }
-          }
-        });
-        return hls;
-      } else {
-        console.warn('HLS not supported in this browser');
-        return { destroy(){} };
-      }
-    }
-
-    const hls = attachHls(video, stream.url);
-
-    // 点击放大
-    card.addEventListener('click', () => openModal(stream.url, stream.label));
-
-    // 简单的可见性处理：不可见时暂停（可按需启用）
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          video.play().catch(()=>{});
-        } else {
-          video.pause();
-        }
-      });
-    }, { threshold: 0.2 });
-    io.observe(card);
-
-    return card;
-  }
-
-  streams.forEach(s => grid.appendChild(createCard(s)));
-
-  // 放大播放
-  const modal = document.getElementById('modal');
-  const modalVideo = document.getElementById('modalVideo');
-  const closeBtn = document.getElementById('closeBtn');
-  let modalHls = null;
-
-  function openModal(url, label) {
-    modal.style.display = 'flex';
-    if (modalVideo.canPlayType('application/vnd.apple.mpegurl')) {
-      modalVideo.src = url;
-      modalVideo.play().catch(()=>{});
-    } else if (Hls.isSupported()) {
-      modalHls = new Hls({ liveDurationInfinity: true, lowLatencyMode: true });
-      modalHls.loadSource(url);
-      modalHls.attachMedia(modalVideo);
-      modalHls.on(Hls.Events.MANIFEST_PARSED, () => modalVideo.play().catch(()=>{}));
-    }
-  }
-  function closeModal() {
-    modal.style.display = 'none';
-    modalVideo.pause();
-    modalVideo.removeAttribute('src');
-    if (modalHls) { modalHls.destroy(); modalHls = null; }
-  }
-  closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+const video = document.getElementById('video');
+const status = document.getElementById('status');
+const url = './hls/index.m3u8';
+let hls;
+if (video.canPlayType('application/vnd.apple.mpegurl')) {
+  video.src = url;
+} else if (window.Hls && Hls.isSupported()) {
+  hls = new Hls();
+  hls.loadSource(url);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.ERROR, (_, data) => {
+    if (data.fatal) { status.textContent = '播放失败：' + data.type; hls.destroy(); }
+  });
+} else {
+  status.textContent = '当前浏览器不支持，或播放器脚本未加载';
+}
+video.addEventListener('loadedmetadata', () => { status.textContent = '已加载，请点击播放'; });
+video.addEventListener('error', () => { status.textContent = '媒体加载失败，请检查网络请求'; });
+window.addEventListener('pagehide', () => { hls?.destroy(); });
 </script>
-</body>
 </html>
 ```
 
-## 六、HLS 与 WebRTC 的对比
+启动 HTTP 服务，保持终端运行：
 
-| 特性       | HLS                  | WebRTC               |
-| ---------- | -------------------- | -------------------- |
-| 延迟 | 取决于分片、GOP 和播放缓冲 | 取决于采集、编码、网络和播放缓冲 |
-| 编解码 | 编码兼容时可直接封装 | 编码兼容时可直接转发 |
-| 浏览器支持 | 通过 hls.js 实现     | 原生支持             |
-| 网络连接 | HTTP 分发，需配置跨域和缓存 | 通过 ICE 建立连接，按网络条件使用 STUN/TURN |
-| 适合场景   | 监控回放、直播、预览 | 实时交互、对讲、控制 |
-| CPU 占用 | 转码时显著增加，封装仍有开销 | 是否转码、加密和连接数都会影响开销 |
+```powershell
+python -m http.server 8090 --bind 127.0.0.1
+```
 
-**结论：**
+访问 `http://127.0.0.1:8090/player.html`，点击播放。不要直接双击 HTML 使用 `file://`，播放器需要通过 HTTP 下载播放列表与分片。
 
-- 若主要用于视频预览、非强实时场景（如施工监控、设备可视化），HLS 简单稳定；
-- 若需低延迟或双向互动，推荐 WebRTC。
+## 替换为相机 RTSP
+
+先用 VLC 或 ffprobe 确认相机地址、账号和编码。将地址放到当前 PowerShell 进程的变量中，完整 URI 作为一个参数传入，避免 `&` 被当作命令符号：
+
+```powershell
+$env:RTSP_URL = 'rtsp://用户名:密码@相机IP:554/实际路径'
+ffprobe -v error -rtsp_transport tcp -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of json $env:RTSP_URL
+```
+
+相机输出 H.264 且满足目标浏览器的编码要求时，可尝试只封装：
+
+```powershell
+ffmpeg -rtsp_transport tcp -i $env:RTSP_URL -map 0:v:0 -c:v copy -an -f hls -hls_time 2 -hls_list_size 6 -hls_flags delete_segments+temp_file -hls_segment_filename "hls/live_%03d.ts" "hls/index.m3u8"
+```
+
+这条命令持续运行，Ctrl+C 停止。复制码流不会改变 GOP，实际分片时长可能超过 2 秒。源为 H.265 或浏览器无法解码时，用 `-c:v libx264 -pix_fmt yuv420p -r 25 -g 50 -sc_threshold 0` 替换 `-c:v copy`，代价是持续转码开销。
+
+相机的 channel 表示通道，subtype 通常表示某通道的主/子码流，具体 URI 以厂商或 ONVIF 返回结果为准，不能把“通道 1、通道 2”当作“主码流、子码流”。
+
+## 排查顺序
+
+1. ffprobe 能否拉取源：排查地址、认证、编码和网络。
+2. FFmpeg 是否生成 m3u8 和 TS：看退出码与错误日志。
+3. 浏览器 Network 中列表及分片是否返回 200：排查 HTTP 路径、跨域和缓存。
+4. 文件能下载但不能播放：检查编码、浏览器能力和 hls.js 错误。
+
+HLS 的延迟来自 GOP、分片、网络与缓冲。滑动播放列表和删除分片用于直播窗口，不能直接当作长期录像归档。多路接入、自动重连和容量规划应在单路流程确认后另行实现。
+
+参考：[FFmpeg HLS muxer](https://ffmpeg.org/ffmpeg-formats.html#hls)、[hls.js](https://github.com/video-dev/hls.js)。需要流媒体服务器统一接入时，可继续阅读 [ZLMediaKit 入门](/blog/zlmediakit-start/) 或 [MediaMTX 入门](/blog/b2cajl4xw/)。

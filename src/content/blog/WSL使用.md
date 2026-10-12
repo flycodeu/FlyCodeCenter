@@ -8,116 +8,65 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250606090922.jpg
 ---
 
-## 一、安装 WSL
+WSL 让 Windows 运行 Linux 环境。下面使用 Ubuntu，PowerShell 命令在 Windows 执行，Linux 命令在 Ubuntu 终端执行。
 
-微软官方文档地址：[WSL 安装指南](https://learn.microsoft.com/zh-cn/windows/wsl/install)
+## 安装与进入 Ubuntu
 
-### 1. 确认是否开启虚拟化支持
+以管理员身份打开 PowerShell：
 
-在 BIOS 或系统信息中确认是否已启用虚拟化技术。
-
-![image-20250604162406351](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250604162406351.png)
-
-### 2. 启用 WSL 功能
-
-打开“控制面板” → “程序” → “启用或关闭 Windows 功能”，勾选以下选项：
-
-- 适用于 Linux 的 Windows 子系统
-- 虚拟机平台（推荐）
-
-然后重启电脑。
-
-![image-20250604162529259](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250604162529259.png)
-
-### 3. 安装 WSL
-
-打开 PowerShell 或 CMD，输入以下命令：
-
-```cmd
-wsl --install
-```
-
-默认会安装 Ubuntu 发行版。安装完成后需要设置用户名和密码。
-
-## 二、常用 WSL 命令
-
-### 查看当前已安装的 WSL 系统
-
-```bash
-wsl --list -v
-```
-
-![image-20250604163420164](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250604163420164.png)
-
-### 查看 WSL 支持的所有系统
-
-```bash
-wsl --list --online
-```
-
-![image-20250604163239154](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250604163239154.png)
-
-### 安装指定系统（如 Ubuntu）
-
-```cmd
+```powershell
 wsl --install -d Ubuntu
 ```
 
-### 设置默认运行的系统
+按安装提示重启，首次启动 Ubuntu 时创建 Linux 用户和密码。输入 Linux 密码时终端不会显示字符。
 
-```cmd
-wsl --set-default CentOS7
+在 PowerShell 检查并进入环境：
+
+```powershell
+wsl --list --verbose
+wsl --status
+wsl -d Ubuntu
 ```
 
-### 注销某个系统（删除）
+列出的发行版名称以本机输出为准，例如 `Ubuntu-24.04`，后续命令需要使用相同名称。要使用 WSL 2，可运行 `wsl --set-version Ubuntu 2`，并确认系统开启虚拟化。
 
-```cmd
-wsl --unregister CentOS7
-```
-
-### 导出系统为 tar 包
-
-```cmd
-wsl --export CentOS7 D:\WSLFile\CentOS7\CentOS7.tar
-```
-
-### 导入系统
-
-```cmd
-wsl --import CentOS7 D:\WSLFile\CentOS7 D:\WSLFile\CentOS7\CentOS7.tar --version 2
-```
-
-### 在 PowerShell 中切换到指定系统
-
-```cmd
-wsl -d CentOS7
-```
-
-## 三、安装 CentOS 7（非官方支持）
-
-由于 CentOS 7 已停止维护，官方不再提供直接安装方式。你可以通过第三方项目进行安装。
-
-GitHub 地址：[CentOS 7 for WSL](https://github.com/mishamosher/CentOS-WSL/releases/tag/7.9-2211)
-
-详细安装教程可参考：[CSDN 教程](https://blog.csdn.net/qq_72363261/article/details/145737342)
-
-⚠️ **注意**：此方法存在系统损坏风险，例如重启后可能出现异常。建议在安装完成后立即执行导出备份，并通过重新导入使用。
-
-### 替换为阿里云 YUM 源（加速下载）
+进入 Linux 后检查：
 
 ```bash
-curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+cat /etc/os-release
+pwd
+uname -m
 ```
 
-### 清理缓存并重建
+Windows 的 D 盘通常挂载在 `/mnt/d`。Linux 项目也可放在自己的主目录，避免混用 Windows 与 Linux 的依赖目录。输入 `exit` 返回 PowerShell。
 
-```bash
-yum clean all
-yum makecache
+## 更新、停止和备份
+
+下面仍在 PowerShell 执行：
+
+```powershell
+wsl --update
+wsl --set-default Ubuntu
+wsl --terminate Ubuntu
+New-Item -ItemType Directory -Path 'D:\WSLBackups' -Force | Out-Null
+wsl --export Ubuntu 'D:\WSLBackups\ubuntu.tar'
 ```
 
-### 安装 yum-utils 工具包
+`--terminate` 停止该发行版内的所有进程，应先保存工作。导出前停止服务可降低数据不一致风险；数据库仍应使用自身的备份工具。
 
-```bash
-yum install -y yum-utils
+导入为一个新的发行版，保留原环境：
+
+```powershell
+wsl --import Ubuntu-Restore 'D:\WSL\Ubuntu-Restore' 'D:\WSLBackups\ubuntu.tar' --version 2
+wsl -d Ubuntu-Restore
 ```
+
+`wsl --unregister 发行版名` 会删除该发行版及其数据，不能当作退出或重启命令。
+
+## 服务和网络
+
+新版 WSL 支持 systemd，但是否启用要检查当前发行版。按 [微软 systemd 配置说明](https://learn.microsoft.com/en-us/windows/wsl/systemd) 操作；不要将“WSL 不支持 systemd”当成通用结论。
+
+Windows 访问 Linux 服务时先试 `localhost:端口`。是否需要 WSL IP、端口代理或防火墙配置，取决于 NAT/镜像网络、服务监听地址和访问来源。
+
+参考：[安装 WSL](https://learn.microsoft.com/en-us/windows/wsl/install)、[WSL 网络](https://learn.microsoft.com/en-us/windows/wsl/networking)。

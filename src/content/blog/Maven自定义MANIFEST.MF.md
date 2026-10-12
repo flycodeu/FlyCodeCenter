@@ -9,7 +9,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d01
 ---
 
 ## 简介
-MANIFEST.MF 是一个在 Java 的 JAR 文件中常见的文件，位于 JAR 文件的 META-INF 目录下。它是一个纯文本文件，主要用于描述 JAR 文件的内容、元数据和配置信息。它是 JAR 文件的“清单文件”，类似于一种元数据文件，为运行时环境（如 JVM）或其他工具提供了必要的信息。
+`META-INF/MANIFEST.MF` 是 JAR 的清单文件。它以文本属性记录入口类、版本等信息；例如 `Main-Class` 决定 `java -jar` 启动哪个类。
 
 ## 主要用途
 - 描述JAR文件的用途：例如，是否是一个可执行的 JAR 文件。

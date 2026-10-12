@@ -7,109 +7,61 @@ tags:
   - 前端
 ---
 
-## 官方文档地址
+这里使用 Vue 3、wangEditor 5 和它的 Vue 3 适配包。编辑器只负责提交图片和插入返回的 URL，实际保存由后端完成。
 
-https://www.wangeditor.com/v5/getting-started.html
-
-### 1. 引入依赖
-
-```sh
-yarn add @wangeditor/editor
-# 或者 npm install @wangeditor/editor --save
-
-yarn add @wangeditor/editor-for-vue@next
-# 或者 npm install @wangeditor/editor-for-vue@next --save
+```bash
+npm install @wangeditor/editor@5 @wangeditor/editor-for-vue@5
 ```
 
-### 2. 引入组件vue3
+在已有 Vue 3 项目保存组件：
 
-```js
-import {Editor, Toolbar} from "@wangeditor/editor-for-vue";
-```
+```vue
+<template>
+  <Toolbar :editor="editor" :defaultConfig="toolbarConfig" mode="default" />
+  <Editor v-model="html" :defaultConfig="editorConfig"
+    mode="default" @onCreated="created" style="height:400px" />
+</template>
 
-```html
-          <Toolbar
-              style="border-bottom: 1px solid #ccc"
-              :editor="editorRef"
-              :defaultConfig="toolbarConfig"
-              mode="default"
-          />
-          <Editor
-              style="height: 500px; overflow-y: hidden"
-              v-model="form.description"
-              :defaultConfig="editorConfig"
-              mode="default"
-              @onCreated="handleCreated"
-          />
-```
+<script setup>
+import { onBeforeUnmount, ref, shallowRef } from 'vue'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import '@wangeditor/editor/dist/css/style.css'
 
-```js
-// 编辑器实例，必须用 shallowRef
-const editorRef = shallowRef();
-const toolbarConfig = {};
+const editor = shallowRef()
+const html = ref('')
+const toolbarConfig = {}
 const editorConfig = {
-  MENU_CONF: {},
-  placeholder: "请输入内容...",
-}
-
-editorConfig.MENU_CONF['uploadImage'] = {
-    // fieldName必须要和下面后端接口的参数名一致
-  fieldName: 'file',
-    // 只允许图片
-  allowedFileTypes: ['image/*'],
-  server: "http://localhost:8100/api/picture/uploadEditor",  // 后端地址
-    // 请求头
-  headers: {
-    token: store.getters.GET_TOKEN
+  placeholder: '请输入正文',
+  MENU_CONF: {
+    uploadImage: {
+      server: '/api/images',
+      fieldName: 'file',
+      maxFileSize: 5 * 1024 * 1024,
+      maxNumberOfFiles: 1,
+      allowedFileTypes: ['image/png', 'image/jpeg'],
+      timeout: 20000,
+    },
   },
-  withCredentials: false,
-  timeout: 5 * 1000, // 5 秒
-
 }
-onBeforeUnmount(() => {
-  const editor = editorRef.value;
-  if (editor == null) return;
-  editor.destroy();
-});
-const handleCreated = (editor) => {
-  editorRef.value = editor; // 记录 editor 实例，重要！
-};
+function created(instance) { editor.value = instance }
+onBeforeUnmount(() => editor.value?.destroy())
+</script>
 ```
 
-### 3. 后端上传
+`/api/images` 使用同源地址。Vite 开发时可配置 `/api` 代理到后端，部署时配置反向代理；开发代理不会自动进入生产。认证请求头和 CSRF 参数按实际项目添加，不引用不存在的 store 或假设所有项目使用 token。
 
-返回的数据格式必须是
+## 返回格式
+
+成功响应必须是合法 JSON，errno 为数字 0：
 
 ```json
-{
-    "errno": 0, // 注意：值是数字，不能是字符串
-    "data": {
-        "url": "xxx", // 图片 src ，必须
-        "alt": "yyy", // 图片描述文字，非必须
-        "href": "zzz" // 图片的链接，非必须
-    }
-}
+{"errno":0,"data":{"url":"https://example.com/images/demo.png","alt":"示例图片"}}
 ```
 
-所以我们需要自己拼接请求
+失败使用该编辑器支持的失败响应或 HTTP 错误，不返回 errno=0 加空 URL。后端参考 [七牛图片上传](/blog/bzjza4ilr/)；其中临时签名 URL 适合即时预览，正式文章需要持久访问策略或展示时重新生成地址，不能直接保存五分钟后失效的外链。
 
-```java
-    @PostMapping("/uploadEditor")
-    public HashMap<String, Object> uploadEditorImage(MultipartFile file) {
-        if (ObjectUtils.isEmpty(file)) {
-            throw new BusinessException(ErrorCode.PARAMS_EMPTY_ERROR, "请选择文件");
-        }
-        // 上传之七牛云，可以自己配置
-        String url = imageUtils.uploadImageQiniu(file);
-        HashMap<String, Object> map = new HashMap<>();
-        HashMap<String, Object> hashMap = new HashMap<>();
-        hashMap.put("url", url);
-        map.put("errno", 0);
-        map.put("data", hashMap);
-        return map;
-    }
+检查上传请求的 multipart 字段是否为 file、响应是否匹配、URL 能否访问。还要确认卸载组件后编辑器销毁，前端限制之外的超大和伪造文件能被后端拒绝。
 
-```
+编辑器 HTML 不直接视为可信内容；最终展示按自己的允许标签与属性规则处理。
 
-imageUtils可查看
-[SpringBoot结合七牛云完成文件上传](SpringBoot结合七牛云.md)
+参考：[Vue 3 接入](https://www.wangeditor.com/v5/for-frame.html#vue3)、[图片上传配置](https://www.wangeditor.com/v5/menu-config.html#上传图片)。

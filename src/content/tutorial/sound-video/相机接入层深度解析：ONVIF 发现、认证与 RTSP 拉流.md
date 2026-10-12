@@ -4,23 +4,7 @@ createTime: '2026/03/17 10:38:13'
 code: t1ya3tyeg
 permalink: /tutorials/t1ya3tyeg/
 ---
-# 相机接入层深度解析：ONVIF 发现、认证与 RTSP 拉流
-
 > **摘要**：本文系统梳理 IP 网络摄像头接入层的完整技术栈——从设备自动发现（ONVIF / WS-Discovery）、身份认证（WS-UsernameToken / HTTP Digest），到媒体会话建立（RTSP）与实时数据传输（RTP/RTCP）。每个环节均基于原始规范文档，配合协议交互图、状态机和报文示例，力图让读者真正理解"接摄像头"这件事在协议层面究竟发生了什么。
-
----
-
-## 目录
-
-1. [背景：为什么 IP 摄像头接入如此复杂？](#1-背景为什么-ip-摄像头接入如此复杂)
-2. [ONVIF 标准：历史、架构与 Profile 体系](#2-onvif-标准历史架构与-profile-体系)
-3. [ONVIF 设备发现：WS-Discovery 协议详解](#3-onvif-设备发现ws-discovery-协议详解)
-4. [ONVIF 认证机制：从 WS-UsernameToken 到 HTTP Digest](#4-onvif-认证机制从-ws-usernametoken-到-http-digest)
-5. [RTSP 协议：多媒体流的"远程遥控器"](#5-rtsp-协议多媒体流的远程遥控器)
-6. [RTP 与 SDP：媒体数据的传输与描述](#6-rtp-与-sdp媒体数据的传输与描述)
-7. [完整接入流程：从零到拉流](#7-完整接入流程从零到拉流)
-8. [工程实践：常见问题与调试方法](#8-工程实践常见问题与调试方法)
-9. [参考资料](#9-参考资料)
 
 ---
 

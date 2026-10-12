@@ -35,7 +35,7 @@ cover: https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&
 这意味着评论相关配置有两类来源：
 
 ### 第一类：站点构建期配置
-来源于 [site.config.ts](/D:/FlyLabs/FlyCodeCenter/src/site.config.ts) 及其读取的 `PUBLIC_GISCUS_*` 环境变量。
+来源于 [site.config.ts](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/site.config.ts) 及其读取的 `PUBLIC_GISCUS_*` 环境变量。
 
 这类配置包括：
 

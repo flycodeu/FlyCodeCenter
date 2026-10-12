@@ -10,7 +10,7 @@ coverStyle:
   layout: left
 ---
 
-本文介绍了Centos7安装Jenkins以及相关使用步骤。
+本文保留 CentOS 7、Java 11 环境下的历史部署记录。新安装请按 [Jenkins 的 Java 支持表](https://www.jenkins.io/doc/book/platform-information/support-policy-java/) 选择版本；Jenkins 自身的运行 JDK 与构建项目所用的 JDK 是两项配置。
 
 <!-- more -->
 ## 环境
@@ -400,13 +400,13 @@ cat /root/.jenkins/secrets/initialAdminPassword
 
 ![image-20250303141244159](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250303141244159.png)
 
-###### 数据流重定向
+##### 数据流重定向
 
 将某个命令执行后要出现在屏幕上的数据传输到其他地方
 
-标准输出(stdin):代码为0，使用<或者<<
+标准输入（stdin）：文件描述符为 0，使用 `<` 或 `<<` 重定向输入。
 
-标准输入(stdout): 代码为1，使用>或>>
+标准输出（stdout）：文件描述符为 1，使用 `>` 或 `>>` 重定向输出。
 
 标准错误输出(stderr): 代码为2,使用2> 或者2>>
 
@@ -414,7 +414,7 @@ cat /root/.jenkins/secrets/initialAdminPassword
 
 \>>追加
 
-###### 运行结果
+##### 运行结果
 
 可以在指定步骤1中配置的目录查看当前生成的jar包。
 

@@ -8,201 +8,66 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/0a234e4682107e18d9eba574bc12c263.jpg
 ---
 
-## 简介
+LangChain4j 是 Java 的模型应用框架。先学模型调用，再根据需要加入 AI Services、会话记忆、检索和工具；不要把其他框架的类名直接套进来。
 
-[LangChain4j](https://docs.langchain4j.dev/intro/) 是面向 Java 的独立 LLM 应用框架，提供模型调用、RAG、工具调用等能力。它并非 Python LangChain 的 Java 移植版；各模型支持的输入和工具能力需分别核对。
+## 一个完整的模型调用
 
-## 核心组件
+本例使用 JDK 21、LangChain4j 1.22.0 和本机 Ollama。先按 [Ollama 教程](/blog/b2lb91htk/) 下载 `llama3.2:1b`。
 
-### 1. ChatModel
+在 Maven 项目加入：
 
-`ChatModel` 是与 LLM 通信的接口，支持调用大语言模型生成回复。
-
-```java
-ChatModel model = QwenChatModel.withApiKey("your-key");
-ChatResponse response = model.chat(UserMessage.from("你好"));
-System.out.println(response.aiMessage().text());
+```xml
+<dependency>
+  <groupId>dev.langchain4j</groupId><artifactId>langchain4j-ollama</artifactId><version>1.22.0</version>
+</dependency>
 ```
 
-### 2. AiService 接口
-
-通过注解定义 AI 接口。
+保存 `src/main/java/LangChainDemo.java`，在 IDE 运行 main：
 
 ```java
-@AiService
-interface AiCodeHelperService {
-    @SystemMessage(fromResource = "system-prompt.txt")
-    String chat(String userMessage);
-}
-```
+import java.time.Duration;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 
-### 3. ChatMemory（聊天记忆）
-
-用于实现上下文记忆支持。
-
-```java
-ChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
-AiService service = AiServices.builder(MyService.class)
-    .chatModel(chatModel)
-    .chatMemory(memory)
-    .build();
-```
-
-### 4. 多模态支持
-
-LangChain4j 支持文本、图像混合输入：
-
-```java
-UserMessage userMessage = UserMessage.from(
-    TextContent.from("描述图片"),
-    ImageContent.from("https://example.com/image.jpg")
-);
-```
-
-## 相关技术概念
-
-### 1. RAG（Retrieval-Augmented Generation）检索增强生成
-
-RAG 是 LangChain 中最核心的应用场景之一，其基本思想是：
-
-> 在生成回答前，先“检索”相关信息，再把这些信息交给大模型进行“生成”。
-
-**工作流程：**
-
-1. 用户提出问题（Query）
-2. 系统通过向量数据库进行语义检索
-3. 检索出的文本作为上下文加入 prompt
-4. 大模型生成回答
-
-**在 LangChain4j 中支持：**
-
-* `Retriever` 接口
-* `EmbeddingModel`（向量生成）
-* `VectorStore`（向量存储与检索）
-* `RetrievalAugmentedChatMemory`（记忆+检索结合）
-
-### 2. MCP（模块上下文协议）
-
-LangChain4j 支持与外部 MCP 工具链进行集成，以扩展其上下文能力和工具调度能力。
-
-```java
-McpTransport transport = new HttpMcpTransport.Builder()
-    .sseUrl("https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=" + apiKey)
-    .logRequests(true)
-    .logResponses(true)
-    .build();
-McpClient mcpClient = new DefaultMcpClient.Builder()
-    .key("clientKey")
-    .transport(transport)
-    .build();
-```
-
-```java
-AiServices.builder(AiCodeHelperService.class)
-    .toolProvider(McpToolProvider.builder().mcpClients(mcpClient).build())
-    .build();
-```
-
-### 3. Prompt Template（提示词模板）
-
-用于构造动态 prompt，便于参数化。
-
-```java
-PromptTemplate template = PromptTemplate.from("你是一个{role}，请帮助我{task}");
-String prompt = template.apply(Map.of("role", "程序员", "task", "写一个冒泡排序"));
-```
-
-### 4. Memory（记忆系统）
-
-* `MessageWindowChatMemory`: 限制消息数量
-* `TokenWindowChatMemory`: 限制 token 长度
-* `ChatMemoryStore`: 可持久化记忆（支持 Redis、MongoDB 等）
-
-### 5. Tool & Function Call
-
-LangChain4j 支持函数调用与工具集成：
-
-```java
-Tool weatherTool = Tool.builder()
-    .name("getWeather")
-    .description("获取城市天气")
-    .executor(city -> getWeather(city))
-    .build();
-```
-
-工具可以用于 Agent 执行环境中。
-
-### 6. Agent 智能体
-
-Agent 是具备推理和决策能力的智能体，LangChain4j 通过 ReAct 方式支持多工具调用。
-
-```java
-Agent agent = Agent.builder()
-    .chatModel(chatModel)
-    .tools(List.of(searchTool, calcTool))
-    .build();
-```
-
-Agent 可根据上下文自动决定使用哪些工具。
-
-### 7. Guardrails（输入输出防护）
-
-用于控制 AI 输入或输出的安全与合规性。
-
-```java
-public class SafeInputGuardrail implements InputGuardrail {
-    @Override
-    public InputGuardrailResult validate(UserMessage userMessage) {
-        // 检测敏感词、SQL注入等
-        return success();
+public class LangChainDemo {
+    public static void main(String[] args) {
+        ChatModel model = OllamaChatModel.builder()
+                .baseUrl("http://127.0.0.1:11434")
+                .modelName("llama3.2:1b")
+                .timeout(Duration.ofSeconds(60))
+                .build();
+        System.out.println(model.chat("用一句话解释视频转码"));
     }
 }
 ```
 
-### 8. ChatModelListener（日志与可观测性）
+`ChatModel` 负责一次对话请求，模型名要与实际下载的模型一致。返回文字并不代表其中的事实已经验证。
 
-监听模型请求、响应、错误：
+## 各组件的作用
 
-```java
-@Bean
-ChatModelListener chatModelListener() {
-    return new ChatModelListener() {
-        public void onRequest(ChatModelRequestContext ctx) {
-            log.info("Request: {}", ctx.chatRequest());
-        }
-        public void onResponse(ChatModelResponseContext ctx) {
-            log.info("Response: {}", ctx.chatResponse());
-        }
-        public void onError(ChatModelErrorContext ctx) {
-            log.error("Error: {}", ctx.error());
-        }
-    };
-}
-```
+| 组件 | 做什么 |
+| --- | --- |
+| ChatModel / StreamingChatModel | 调用模型，分别返回完整或逐段结果 |
+| AiServices | 把自己的 Java 接口方法映射为模型调用 |
+| MessageWindowChatMemory | 限制某个会话保留的消息数量 |
+| EmbeddingModel | 将文本转成向量 |
+| EmbeddingStore 与 ContentRetriever | 存储向量并检索相关内容 |
+| `@Tool` 方法 | 定义应用允许调用的业务操作 |
 
-### 9. SSE 流式输出
+这些能力并非全都默认启用。图像、工具和结构化输出是否可用，还取决于模型与对应模块。
 
-支持以响应式方式输出 AI 响应内容：
+## 容易混淆的写法
+
+LangChain4j 中不要把 Spring AI 的 VectorStore 名称当作相同接口，也不要假设存在通用的 `Tool.builder()` 或 `Agent.builder()`。具体 Agent 模块与模型能力需要按版本文档接入。
+
+PromptTemplate 的占位符使用 `{{name}}` 这类模板语法，`apply(...)` 得到的是 Prompt，不是直接得到 Java String。例如在加入 `langchain4j` 核心依赖后，方法体里可以使用：
 
 ```java
-@GetMapping("/chat")
-public Flux<ServerSentEvent<String>> chat(int memoryId, String message) {
-    return aiCodeHelperService.chatStream(memoryId, message)
-        .map(chunk -> ServerSentEvent.<String>builder().data(chunk).build());
-}
+var template = dev.langchain4j.model.input.PromptTemplate.from("你好，{{name}}");
+var prompt = template.apply(java.util.Map.of("name", "FlyCode"));
+System.out.println(prompt.text());
 ```
 
-需要启用 streaming-chat-model:
+会话记忆的完整实践见 [LangChain4j 多轮对话](/blog/br6an5kff/)。
 
-```yaml
-langchain4j:
-  community:
-    dashscope:
-      streaming-chat-model:
-        model-name: qwen-max
-        api-key: xxx
-```
-
-## 结论
-
-流式回调、记忆、检索和工具调用分别解决不同问题。接入时先确认所用集成模块及模型的支持范围，再组合需要的能力。
+参考：[LangChain4j 文档](https://docs.langchain4j.dev/intro/)、[Ollama 集成](https://docs.langchain4j.dev/integrations/language-models/ollama)、[AI Services](https://docs.langchain4j.dev/tutorials/ai-services)。

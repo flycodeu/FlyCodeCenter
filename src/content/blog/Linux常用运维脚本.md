@@ -7,245 +7,110 @@ tags:
   - Linux
 ---
 
-> 本文作者：运维网工
->
-> 转自地址：[https://mp.weixin.qq.com/s/_mqjaxvWibfXzpNbqHM0XQ](https://mp.weixin.qq.com/s/_mqjaxvWibfXzpNbqHM0XQ)
+下面是 Bash 中常用的检查、备份和日志维护命令。安装示例适用于使用 APT 的 Debian / Ubuntu；先确认系统版本和软件包，再执行安装。
 
-## 一键安装Apache服务器
-
-自动化安装并启动Apache服务器。
+## 查看资源占用
 
 ```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y apache2
-sudo systemctl start apache2
-sudo systemctl enable apache2
-echo "Apache服务器已安装并启动"
+df -h
+free -h
+top
 ```
 
-## 一键安装MySQL数据库
+- `df -h` 查看文件系统容量。
+- `free -h` 查看内存使用情况。
+- `top` 查看进程，按 `q` 退出。
 
-自动化安装MySQL数据库，并提示进行安全配置。
+查找指定目录下超过 100 MiB 的文件：
 
 ```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y mysql-server
-sudo mysql_secure_installation
-sudo systemctl start mysql
-sudo systemctl enable mysql
-echo "MySQL数据库已安装并启动"
+find /var/log -type f -size +100M -exec ls -lh -- {} +
 ```
 
-## 一键备份MySQL数据库
+把 `/var/log` 换成需要检查的目录。此命令只列出文件，不清理文件。
 
-备份指定的MySQL数据库到指定目录。
+## 检查和安装软件包
+
+先检查发行版和软件源中的候选版本：
 
 ```bash
-#!/bin/bash
-USER="your_mysql_user"
-PASSWORD="your_mysql_password"
-DB_NAME="your_database_name"
-BACKUP_DIR="/path/to/backup"
-DATE=$(date +"%Y-%m-%d")
-mysqldump -u $USER -p$PASSWORD $DB_NAME > $BACKUP_DIR/$DB_NAME-$DATE.sql
-echo "数据库已备份到 $BACKUP_DIR"
+cat /etc/os-release
+apt-cache policy nginx
 ```
 
-## 一键安装Nginx
-
-自动化安装并启动Nginx服务器。
+确认后安装 Nginx：
 
 ```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
-echo "Nginx服务器已安装并启动"
-```
-
-## 一键配置防火墙
-
-配置防火墙以允许Nginx和SSH服务
-
-```bash
-#!/bin/bash
-sudo ufw allow 'Nginx Full'
-sudo ufw allow 'OpenSSH'
-sudo ufw enable
-sudo ufw status
-echo "防火墙已配置并启用"
-```
-
-## 一键更新系统
-
-更新系统软件包，并重启系统以应用更改。
-
-```BASH
-#!/bin/bash
-sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get dist-upgrade -y
-sudo reboot
-echo "系统已更新并重启"
-```
-
-## 一键安装Docker
-
-自动化安装Docker，并将当前用户添加到docker组。
-
-```BASH
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install -y docker-ce
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker $USER
-echo "Docker已安装并启动，用户已添加到docker组"
-```
-
-## 一键清理系统日志
-
-```bash
-#!/bin/bash
-sudo find /var/log/ -type f -name "*.log" -exec truncate -s 0 {} \;
-echo "系统日志已清理"
-```
-
-## 一键安装PHP
-
-```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y php libapache2-mod-php php-mysql
-sudo systemctl restart apache2
-echo "PHP已安装并配置为Apache模块"
-```
-
-## **一键监控CPU和内存使用率**
-
-```bash
-#!/bin/bash
-watch -n 1 'free -m && top -bn1 | grep "Cpu(s)"'
-```
-
-## 一键查找大文件
-
-查找系统中大于100MB的文件。
-
-```bash
-#!/bin/bash
-sudo find / -type f -size +100M -exec ls -lh {} \; | awk '{ print $9 ": " $5 }'
-```
-
-## 一键安装Git
-
-自动化安装 Git，并输出版本用于确认安装结果。
-
-```bash
-#!/bin/bash
 sudo apt-get update
-sudo apt-get install -y git
-git --version
+sudo apt-get install nginx
+sudo systemctl enable --now nginx
+systemctl status nginx --no-pager
 ```
 
-## 一键安装Node.js
+`enable --now` 同时设置开机启动并立即启动服务。Docker、Node.js、MongoDB 等软件的仓库配置随发行版变化，应使用各项目的安装文档，不复用旧版的 `apt-key` 脚本。
 
-通过 NodeSource 软件源安装指定主版本的 Node.js。
+## 备份 MySQL
+
+使用 `mysql_config_editor` 保存一个名为 `backup` 的连接配置；密码由命令交互读取：
 
 ```bash
-#!/bin/bash
-VERSION="node_22.x" # 根据项目要求选择受支持的 LTS 主版本
-DISTRO=$(lsb_release -s -c)
-echo "deb https://deb.nodesource.com/$VERSION $DISTRO main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-sudo apt-get update
-sudo apt-get install -y nodejs
-echo "Node.js已安装"
+mysql_config_editor set --login-path=backup --host=127.0.0.1 --user=backup_user --password
 ```
 
-## 一键安装Redis
-
-自动化安装并启动Redis服务器
+将下方脚本保存为 `backup-mysql.sh`，把库名和目录改为自己的值：
 
 ```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y redis-server
-sudo systemctl start redis
-sudo systemctl enable redis
-echo "Redis已安装并启动"
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+db_name="your_database"
+backup_dir="$HOME/db-backups"
+mkdir -p -- "$backup_dir"
+backup_file="$backup_dir/$db_name-$(date +%Y%m%d-%H%M%S).sql"
+
+mysqldump --login-path=backup --single-transaction --databases "$db_name" > "$backup_file"
+printf '备份完成：%s\n' "$backup_file"
 ```
 
-## 一键安装MongoDB
+`--single-transaction` 适合 InnoDB 一致性备份；备份期间避免修改表结构。非事务表不能靠该选项保证一致性。备份账号还需要相应权限，备份成功后应在独立测试库验证恢复。[MySQL 备份说明](https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html)
 
-自动化安装并启动MongoDB数据库
+## 压缩指定目录
 
 ```bash
-#!/bin/bash
-wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -sc)/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-sudo apt-get update
-sudo apt-get install -y mongodb-org
-sudo systemctl start mongod
-sudo systemctl enable mongod
-echo "MongoDB已安装并启动"
+source_dir="/path/to/data"
+archive_file="$HOME/data-backup.tar.gz"
+tar -czf "$archive_file" -C "$(dirname -- "$source_dir")" -- "$(basename -- "$source_dir")"
+tar -tzf "$archive_file" | head
 ```
 
-## 一键配置SSH无密码登录
+输出文件放在源目录之外。第二条命令列出归档内容，先确认需要的文件已写入。
 
-将本地SSH密钥复制到远程主机，实现无密码登录
+## 查看与维护日志
+
+对于 systemd journal：
 
 ```bash
-#!/bin/bash
-read -p "请输入要配置的SSH密钥文件路径: " KEY_PATH
-ssh-copy-id -i $KEY_PATH user@remote_host # 替换user和remote_host为实际值
-echo "SSH无密码登录已配置"
+journalctl --disk-usage
+journalctl -u nginx --since today --no-pager
 ```
 
-## 一键安装Python虚拟环境
+需要清理已归档的 journal 时，先确定保留期限。例如保留最近 14 天：
 
 ```bash
-#!/bin/bash
-PYTHON_VERSION="3.8" # 可以根据需要更改版本
-sudo apt-get update
-sudo apt-get install -y python3-$PYTHON_VERSION python3-venv
-echo "Python虚拟环境工具已安装"
+sudo journalctl --rotate --vacuum-time=14d
 ```
 
-## 一键压缩目录
+这会删除超出期限的归档日志。普通文本日志交给 [logrotate](https://github.com/logrotate/logrotate) 轮转，不要批量截空正在写入的 `/var/log/*.log`。[journalctl 手册](https://www.freedesktop.org/software/systemd/man/latest/journalctl.html)
 
-压缩指定目录为tar.gz格式文件
+## 创建 Python 虚拟环境
 
 ```bash
-#!/bin/bash
-read -p "请输入要压缩的目录路径: " DIR_PATH
-read -p "请输入压缩文件的名称: " ARCHIVE_NAME
-tar -czvf $ARCHIVE_NAME.tar.gz -C $(dirname $DIR_PATH) $(basename $DIR_PATH)
-echo "目录已压缩为 $ARCHIVE_NAME.tar.gz"
+sudo apt-get install python3 python3-venv
+python3 -m venv .venv
+source .venv/bin/activate
+python --version
+deactivate
 ```
 
-## **一键安装Java**
-
-安装OpenJDK 11
-
-```bash
-#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y openjdk-11-jdk
-echo "Java已安装"
-```
-
-## 一键检查磁盘空间
-
-检查并显示系统中各磁盘分区的使用情况，排除临时文件系统、光盘等
-
-```bash
-#!/bin/bash
-df -h | grep -Ev '^Filesystem|tmpfs|cdrom'
-```
+进入虚拟环境后再安装项目依赖。Python 的实际版本由当前发行版的软件源决定。

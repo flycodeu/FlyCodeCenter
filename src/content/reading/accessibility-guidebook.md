@@ -1,5 +1,5 @@
 ﻿---
-title: "The Accessibility Guidebook"
+title: "The A11Y Project"
 description: "从语义化结构、键盘可达性到屏幕阅读器实践。"
 url: "https://www.a11yproject.com/"
 source: "The A11Y Project"

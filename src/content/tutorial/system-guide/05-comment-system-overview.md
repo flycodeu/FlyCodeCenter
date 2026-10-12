@@ -24,7 +24,7 @@ cover: https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&
 如果你是第一次接触 GitHub Discussions / giscus，这一篇先建立整体认知，下一篇再进入完整实操。
 
 ## 当前项目的评论入口
-评论系统统一由 [site.config.ts](/D:/FlyLabs/FlyCodeCenter/src/site.config.ts) 中的 `comment` 配置驱动：
+评论系统统一由 [site.config.ts](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/site.config.ts) 中的 `comment` 配置驱动：
 
 ```ts
 comment: {
@@ -35,9 +35,9 @@ comment: {
 实际渲染路径如下：
 
 1. `site.config.ts` 决定当前启用哪个 provider。
-2. [Comments.astro](/D:/FlyLabs/FlyCodeCenter/src/components/Comments.astro) 负责分发到具体实现。
-3. 例如 `provider: "giscus"` 时，会挂载 [Giscus.astro](/D:/FlyLabs/FlyCodeCenter/src/components/Giscus.astro)。
-4. 文章页底部的评论区由 [PostLayout.astro](/D:/FlyLabs/FlyCodeCenter/src/layouts/PostLayout.astro) 注入。
+2. [Comments.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/components/Comments.astro) 负责分发到具体实现。
+3. 例如 `provider: "giscus"` 时，会挂载 [Giscus.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/components/Giscus.astro)。
+4. 文章页底部的评论区由 [PostLayout.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/layouts/PostLayout.astro) 注入。
 
 这个结构的好处是：你后面切换评论方案时，不需要重写文章页布局，只需要切换 provider 和对应配置。
 
@@ -95,10 +95,10 @@ comment: {
 如果你是第一次接入评论系统，建议按下面顺序走，不要跳步：
 
 1. 先看本篇，理解 provider 和选型。
-2. 再看下一篇 [06-giscus-setup-and-theme-sync.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/06-giscus-setup-and-theme-sync.md)，完成 giscus 从零配置。
+2. 再看下一篇 [06-giscus-setup-and-theme-sync.md](/tutorials/t1ggztolg/)，完成 giscus 从零配置。
 3. 本地确认评论能加载、能发表评论。
-4. 再看 [20-github-vercel-deploy-full-workflow.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/20-github-vercel-deploy-full-workflow.md)，把评论配置带到线上。
-5. 如果线上不显示，再看 [21-env-vars-troubleshooting-and-release-checklist.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/21-env-vars-troubleshooting-and-release-checklist.md) 做排错。
+4. 再看 [20-github-vercel-deploy-full-workflow.md](/tutorials/t25e9rug5/)，把评论配置带到线上。
+5. 如果线上不显示，再看 [21-env-vars-troubleshooting-and-release-checklist.md](/tutorials/tp6h6dnk0/) 做排错。
 
 ## 选择前先回答这三个问题
 如果你还没确定评论方案，先回答下面三个问题：

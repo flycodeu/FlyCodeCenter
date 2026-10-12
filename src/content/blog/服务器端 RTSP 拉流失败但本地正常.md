@@ -12,7 +12,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/5f0
 
 在一套基于 MediaMTX + FFmpeg 的视频汇聚与播放系统中，部分摄像头（大华设备）在 Windows 本地可以稳定播放 RTSP，但在服务器端却无法拉流，表现为 MediaMTX 日志持续 `timed out` / `EOF`，FFprobe 报 `Invalid data found when processing input`。最终定位为服务器对相机网段配置了错误的静态路由，导致出口网卡与源 IP 异常（走虚拟网卡 `Meta`，源地址变为 `198.18.0.1`），相机端或中间策略设备对该源地址的 RTSP 会话不返回应用层响应并主动断开。将相机网段路由改为走业务物理网卡 `ens3f0` 并使用正确源地址后，故障立刻消失。
 
-本文给出完整可发布版复盘：现象、证据链、根因、修复方案、复查方法与长期预防建议，适用于同类“端口通但协议不通、本地可用但服务器不可用”的排障场景。
+排查时依次检查 RTSP 响应、路由和实际使用的网卡，再验证修复后的拉流结果。
 
 ## 1. 系统背景
 

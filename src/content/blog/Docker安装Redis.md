@@ -9,166 +9,63 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165953.jpg
 ---
 
-## 安装Redis
+先安装 Docker，并确认 `docker version` 能显示 Server 信息、`docker compose version` 有输出。Windows 的 Docker Desktop 需要使用 Linux 容器。
 
-### 创建compose脚本
+## 创建服务
 
-```bash
-vim docker-compose-redis6.yml
-```
+在一个空目录保存 `compose.yaml`。下面使用 Redis 7.4 系列作本地练习，只允许本机连接，数据写入独立卷。
 
-```yml
-version: '3'
+```yaml
 services:
   redis:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/redis:6.2
-    container_name: redis
-    restart: always
-    hostname: redis
-    privileged: true
+    image: redis:7.4-alpine
     ports:
-      - 16379:6379
+      - "127.0.0.1:16379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - my-network
+      - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 3
-networks:
-  my-network:
-    driver: bridge                                                                 
+
+volumes:
+  redis_data:
 ```
 
-### 运行compose脚本
-```bash
- docker-compose -f docker-compose-redis6.yml up -d
-```
+`16379` 是宿主机端口，`6379` 是容器端口。同一 Compose 网络里的其他服务用 `redis:6379`，宿主机程序用 `127.0.0.1:16379`。
 
-### 启动Redis
-```bash
-docker start redis
-```
+## 启动与验证
 
-### 查看运行状态
-
-可以使用Portainer
-
-![image-20250605163256509](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250605163256509.png)
-
-也可以在`docker ps`查看运行状态
-
-### 进入Redis容器
+在 `compose.yaml` 所在目录运行：
 
 ```bash
-docker exec -it redis /bin/bash
+docker compose config
+docker compose up -d
+docker compose ps
+docker compose exec redis redis-cli ping
+docker compose exec redis redis-cli SET tutorial:greeting hello
+docker compose exec redis redis-cli GET tutorial:greeting
 ```
 
-## 安装Redis-Admin
-
-### 创建compose脚本
+`PING` 返回 `PONG`，`GET` 返回 `hello`。重启后再读一次，检查持久化：
 
 ```bash
-vim docker-compose-redis-admin.yml
+docker compose restart redis
+docker compose exec redis redis-cli GET tutorial:greeting
 ```
+
+启动失败先看 `docker compose logs --tail=100 redis`。端口被占用时，修改映射左边的 `16379`；右边仍为 `6379`。
+
+## 停止与数据保留
 
 ```bash
-version: '3'
-services:
-  redis-admin:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/redis-commander:0.8.0
-    container_name: redis-admin
-    hostname: redis-commander
-    restart: always
-    ports:
-      - "8081:8081"
-    environment:
-      - REDIS_HOSTS=local:host.docker.internal:6379
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin
-      - LANG=C.UTF-8
-      - LANGUAGE=C.UTF-8
-      - LC_ALL=C.UTF-8
-    networks:
-      - my-network
-
-networks:
-  my-network:
-    driver: bridge 
+docker compose down
 ```
 
-### 运行脚本
+这会停止并删除容器，命名卷仍保留。`down -v` 会额外删除数据卷，不能把它当作普通重启命令。
 
-```bash
- docker-compose -f docker-compose-redis-admin.yml up -d
-```
+本例没有配置远程访问或认证。需要给其他设备使用时，先设计认证、访问来源和网络限制，再修改监听范围。
 
-### 启动Redis-Admin
-
-```bash
-docker start  redis-admin
-```
-
-## 两者合并
-
-我们可以将两个配置进行合并，减少代码量
-
-```bash
-version: '3'
-services:
-  ollama:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/ollama:0.5.10
-    container_name: ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-  redis:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/redis:6.2
-    container_name: redis
-    restart: always
-    hostname: redis
-    privileged: true
-    ports:
-      - 16379:6379
-    volumes:
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - my-network
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-  # RedisAdmin https://github.com/joeferner/redis-commander
-  # 账密 admin/admin
-  redis-admin:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/redis-commander:0.8.0
-    container_name: redis-admin
-    hostname: redis-commander
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-      - HTTP_USER=admin
-      - HTTP_PASSWORD=admin
-      - LANG=C.UTF-8
-      - LANGUAGE=C.UTF-8
-      - LC_ALL=C.UTF-8
-    networks:
-      - my-network
-    depends_on:
-      redis:
-        condition: service_healthy
-
-networks:
-  my-network:
-    driver: bridge
-```
-
-## 连接WSL中的Redis
-详情参考[Docker 安装PgVector](Docker安装PgVector.md)
+参考：[Redis Docker 安装](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/docker/)、[Redis 持久化](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/)。

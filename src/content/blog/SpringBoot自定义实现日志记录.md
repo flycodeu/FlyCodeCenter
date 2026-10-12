@@ -7,285 +7,93 @@ tags:
   - SpringBoot
 ---
 
-## 创建logs表
+日志切面可以记录操作名称、方法、结果和耗时。计时必须从业务方法调用前开始，并在异常时也记录结果。下面只写应用日志，先验证切面行为，再按需要加入审计存储。
 
-```sql
-CREATE TABLE `logs` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键id',
-  `operateUserId` bigint NOT NULL COMMENT '操作者id',
-  `operateTime` varchar(255) DEFAULT NULL COMMENT '操作时间',
-  `className` varchar(255) DEFAULT NULL COMMENT '操作类名',
-  `methodName` varchar(255) DEFAULT NULL COMMENT '操作方法名',
-  `methodParams` varchar(255) DEFAULT NULL COMMENT '操作方法参数',
-  `returnValue` varchar(1024) DEFAULT NULL COMMENT '操作方法返回值',
-  `costTime` varchar(255) DEFAULT NULL COMMENT '操作耗时',
-  `ip` varchar(255) DEFAULT NULL COMMENT '用户ip',
-  `logType` varchar(255) DEFAULT NULL COMMENT '日志类型',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='操作日志'
+## 运行条件
 
-```
+已有 Spring Boot 3.x Web 项目，加入 `spring-boot-starter-aop`。三个文件位于启动类扫描的 `example` 包中。
 
-## 创建实体
+`OperationLog.java`：
 
 ```java
-package com.sky.pono.entity;
-
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-
-import java.io.Serializable;
-
-import lombok.Data;
-
-/**
- * 操作日志
- *
- * @TableName logs
- */
-@TableName(value = "logs")
-@Data
-public class Logs implements Serializable {
-    /**
-     * 主键id
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
-    /**
-     * 操作者id
-     */
-    private Long operateuserid;
-
-    /**
-     * 操作时间
-     */
-    private String operatetime;
-
-    /**
-     * 操作类名
-     */
-    private String classname;
-
-    /**
-     * 操作方法名
-     */
-    private String methodname;
-
-    /**
-     * 操作方法参数
-     */
-    private String methodparams;
-
-    /**
-     * 操作方法返回值
-     */
-    private String returnvalue;
-
-    /**
-     * 操作耗时
-     */
-    private String costtime;
-
-    private String ip;
-
-    private String logtype;
-
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
-}
-```
-
-## 注解Log
-
-```java
-import com.sky.enumeration.OperationType;
+package example;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * 自定义注解
- */
-@Retention(RetentionPolicy.RUNTIME)//运行时有效
-@Target(ElementType.METHOD)//作用在方法上
-public @interface Log {
-    //数据库操作类型
-    OperationType value();
-}
-
-```
-
-## 操作类型
-
-```java
-package com.sky.enumeration;
-
-/**
- * 数据库操作类型
- */
-public enum OperationType {
-
-    /**
-     * 更新操作
-     */
-    UPDATE,
-
-    /**
-     * 插入操作
-     */
-    INSERT,
-
-    SELECT,
-
-    DELETE,
-    UPLOAD,
-    LOGIN,
-    LOGOUT
-
-}
-
-```
-
-## 获取Ip
-
-```java
-package com.sky.utils;
-
-import javax.servlet.http.HttpServletRequest;
-
-/**
- * IP工具类
- */
-public class IpUtils {
-
-    public static String getIpAddr(HttpServletRequest request) {
-        String ip = request.getHeader("x-forwarded-for");
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Forwarded-For");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return "0:0:0:0:0:0:0:1".equals(ip) ? "127.0.0.1" : ip;
-    }
-
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface OperationLog {
+    String value();
 }
 ```
 
-## 执行切面方法
+`OperationLogAspect.java`：
 
 ```java
-package com.sky.utils;
+package example;
 
-import cn.hutool.core.thread.ThreadUtil;
-import com.alibaba.fastjson.JSONObject;
-import com.sky.annotation.Log;
-import com.sky.constant.JwtClaimsConstant;
-import com.sky.context.BaseContext;
-import com.sky.enumeration.OperationType;
-import com.sky.pono.entity.Logs;
-import com.sky.properties.JwtProperties;
-import com.sky.service.impl.LogsServiceImpl;
-import io.jsonwebtoken.Claims;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Method;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 
 @Aspect
 @Component
-@Slf4j
-public class LogAsper {
-    @Autowired
-    private LogsServiceImpl logsService;
-    @Autowired
-    private HttpServletRequest request;
+public class OperationLogAspect {
+    private static final Logger LOG = LoggerFactory.getLogger(OperationLogAspect.class);
 
-    @Autowired
-    private JwtProperties jwtProperties;
-
-
-    @Around("@annotation(com.sky.annotation.Log)")//匹配加了Log注解的方法
-    public Object recordLog(ProceedingJoinPoint joinPoint) throws Throwable {
-        //方法开始前的操作
-        Logs logs = new Logs();
-        String token;
-
-        token = request.getHeader(jwtProperties.getAdminTokenName());
-
-        Object result = joinPoint.proceed();
-
+    @Around("@annotation(operation)")
+    public Object record(ProceedingJoinPoint call, OperationLog operation) throws Throwable {
+        long started = System.nanoTime();
+        boolean succeeded = false;
+        String errorType = "";
         try {
-            log.info("jwt校验:{}", token);
-            Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
-            Long userId = Long.valueOf(claims.get(JwtClaimsConstant.EMP_ID).toString());
-            log.info("当前用户的id：{}", userId);
-            BaseContext.setCurrentId(userId);
-            // 1. 获取用户id
-            logs.setOperateuserid(userId);
-            // 2 设置操作时间
-            logs.setOperatetime(LocalDateTime.now().toString());
-            //获取操作类名
-            logs.setClassname(joinPoint.getTarget().getClass().getName());
-            //获取操作方法名
-            logs.setMethodname(joinPoint.getSignature().getName());
-            //获取操作方法参数
-            logs.setMethodparams(Arrays.toString(joinPoint.getArgs()));
-            //获取开始时间
-            long begin = System.currentTimeMillis();
-            //获取操作方法返回值
-            //String returnValue = JSONObject.toJSONString(result);
-            //logs.setReturnvalue(returnValue.toString());
-            //获取操作结束时间
-            long end = System.currentTimeMillis();
-            //获取操作耗时
-            logs.setCosttime(String.valueOf(end - begin));
-
-            logs.setIp(IpUtils.getIpAddr(request));
-            // 获取方法上的@Log注解
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            Method method = signature.getMethod();
-            Log logAnnotation = method.getAnnotation(Log.class);
-            if (logAnnotation != null) {
-                OperationType operationType = logAnnotation.value();
-                // 设置操作类型到日志实体中
-                logs.setLogtype(operationType.toString());
-            }
-            // 异步保存
-            ThreadUtil.execAsync(() -> {
-                boolean save = logsService.save(logs);
-                if (!save) {
-                    log.info("日志记录失败");
-                }
-            });
-        } catch (Exception ex) {
-            log.info("jwt校验失败:{}", token, ex);
+            Object result = call.proceed();
+            succeeded = true;
+            return result;
+        } catch (Throwable error) {
+            errorType = error.getClass().getSimpleName();
+            throw error;
+        } finally {
+            long elapsedMs = (System.nanoTime() - started) / 1_000_000;
+            LOG.info("operation={} method={} succeeded={} elapsedMs={} errorType={}",
+                    operation.value(), call.getSignature().toShortString(),
+                    succeeded, elapsedMs, errorType);
         }
-        return result;
-
     }
 }
 ```
+
+`LogDemoController.java`：
+
+```java
+package example;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class LogDemoController {
+    @OperationLog("读取演示状态")
+    @GetMapping("/log-demo")
+    public String read() { return "ok"; }
+}
+```
+
+启动应用并访问 `http://localhost:8080/log-demo`，检查应用日志中是否出现 operation、method 和 elapsedMs。日志描述的是一次方法调用，不代表数据库事务已提交或异步任务已完成。
+
+## 接入业务审计时
+
+- 操作者从已经认证的上下文获取；日志切面不重新解析并打印 Token。
+- 请求参数、响应内容按字段白名单提取并限制长度，不直接序列化全部对象。
+- X-Forwarded-For 等代理头只有来自可信代理时才可用于识别来源，不能直接信任任意客户端提供的值。
+- 异步入库要有有界队列、失败处理和关闭流程；审计是否允许丢失由业务决定。
+
+Spring AOP 依靠代理拦截调用，同一个对象里的 `this.method()` 通常不会再次经过代理。对异步、响应式方法计时，需要覆盖实际任务生命周期，不能仅测返回 Future 或 Flux 的速度。
+
+参考：[Spring AOP 代理机制](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html)。

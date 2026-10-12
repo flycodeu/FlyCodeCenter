@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>浏览器与 Java 的登录加密示例</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #18312d; background: #f4f5ef; }
+    body { margin: 0; padding: 7vh 20px; } main { max-width: 800px; margin: auto; }
+    .eyebrow { color: #51766b; font-size: 13px; letter-spacing: .1em; }
+    h1 { font-size: clamp(25px, 4vw, 37px); font-weight: 650; line-height: 1.4; margin: 15px 0; }
+    p { line-height: 1.8; color: #536660; } .panel { margin-top: 28px; padding: 25px; background: white; border: 1px solid #d6e1d9; border-radius: 14px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; } button { padding: 11px 16px; border: 1px solid #b8c9c0; border-radius: 7px; background: white; color: #254d40; cursor: pointer; font: inherit; }
+    button:first-child { background: #285c4b; color: white; border-color: #285c4b; } button:disabled { opacity: .5; cursor: wait; }
+    button:focus-visible { outline: 3px solid #78b49c; outline-offset: 3px; }
+    output { display: block; margin-top: 20px; padding: 16px; background: #f4f7f4; border-radius: 6px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 70px; }
+    .note { font-size: 14px; } code { font-family: ui-monospace, monospace; } a { color: #285c4b; }
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">WEB CRYPTO / JAVA 21</div>
+  <h1>一次登录请求，怎样变成密文？</h1>
+  <p>浏览器先取得临时公钥，再用 ECDH 协商、HKDF 派生和 AES-GCM 加密；Java 解密并检查固定演示数据。</p>
+  <section class="panel" aria-label="运行演示">
+    <div class="actions">
+      <button data-case="normal">正常提交</button>
+      <button data-case="tamper">篡改密文</button>
+      <button data-case="replay">重复提交</button>
+    </div>
+    <output id="result" aria-live="polite">选择一个场景。仅使用代码中的虚构数据，无需输入账号或密码。</output>
+    <p class="note">响应区域只显示结果，不显示私钥、AES 密钥或解密内容。每次演示重新获取挑战；同一浏览器的标签页共享会话，新挑战会替换旧挑战。</p>
+  </section>
+  <p class="note">这是协议互通示例。没有真实用户库、验证码签发、Redis、登录态、权限或风控。演示数据公开固定，不能作为生产认证。请从 <code>http://127.0.0.1:8080</code> 打开，勿使用 file://；生产环境仍需 HTTPS。</p>
+  <script type="module" src="./demo.mjs"></script>
+</main></body>
+</html>

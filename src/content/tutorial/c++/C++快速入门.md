@@ -6,10 +6,6 @@ permalink: /tutorials/t1iynjrx3/
 tags:
   - C++
 ---
-> 本文作者：程序员飞云
->
-> 本站地址：[https://www.flycode.icu](https://flycode.icu)
-
 ## 简单上手
 
 编译输入HelloWorld
@@ -76,6 +72,10 @@ int main() {
 编写一个简单的用户交互程序
 
 ```c++
+#include <iostream>
+#include <string>
+using namespace std;
+
 /*
 *	主函数运行
 */
@@ -116,9 +116,14 @@ void welcome() {
 我们定义了一个函数，可以直接调用
 
 ```c++
+#include <iostream>
+using namespace std;
+
 /*
 *	主函数运行
 */
+void welcome() { cout << "欢迎学习 C++" << endl; }
+
 int main() {
 	cout << "hello world" << endl;
 	// 调用函数
@@ -588,6 +593,9 @@ std::cout << num << std::endl;
 ### 1. 输出九九乘法表
 
 ```c++
+#include <iostream>
+using namespace std;
+
 bool isPrime(unsigned int num) {
 	bool res = true;
 
@@ -619,19 +627,27 @@ int main() {
 随机生成0-100的数字，用户输入数字来猜是否正确，一共5次机会。
 
 ```c++
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+
 int main() {
 	cout << "0-100整数数，有5次机会" << endl;
 	// 当前时间的随机种子,伪随机
 	srand(time(0));
 	// 生成0-100整数
-	int target = rand() % 100;
+	int target = rand() % 101;
 	// 循环次数
 	int n = 0;
 	while (n < 5) {
 		int num;
 		cout << "请输入数字：" << endl;
 
-		cin >> num;
+		if (!(cin >> num)) {
+            cout << "输入不是整数或已结束" << endl;
+            return 1;
+        }
 		if (num > target) {
 			cout << "猜大了" << endl;
 		}

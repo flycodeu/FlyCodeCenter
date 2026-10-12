@@ -17,45 +17,14 @@ showOnHome: false
 
 这套教程既讲 FFmpeg 的常见操作，也讲视频本身怎样组成、压缩和传输。可以按眼前的问题选择入口。
 
-## 先用一张图把名词放对位置
-
-FFmpeg 文档难读，往往不是某个词本身太难，而是不同层的词同时出现。先只看这条从画面到播放器的路径：
-
-```text
-原始画面 Frame
-    ↓ 编码器按 H.264 / H.265 等规则压缩
-Packet（携带编码码流）
-    ↓ 写入容器，或者按传输协议分包
-MP4 / MKV 文件，或者 RTP 等实时媒体数据
-    ↓ 从容器取出，或者从网络分片重组
-Packet
-    ↓ 解码
-解码画面 Frame
-    ↓ Filter 处理或播放器显示
-```
-
-这些词各自只回答一种问题：
-
-| 名词 | 它回答的问题 | 它不是什么 |
-| --- | --- | --- |
-| Frame | 某个时间点的画面或音频数据是什么 | 不是网络包 |
-| H.264 / H.265 | 画面怎样压缩、怎样解码 | 不是文件容器，也不是网络协议 |
-| MP4 / MKV | 音视频、字幕和时间信息怎样装在文件里 | 不是视频编码 |
-| Packet | FFmpeg 读到的一段压缩数据 | 不保证等于一帧，也不等于一个 RTP 包 |
-| RTSP | 客户端怎样申请和控制一次实时播放 | 通常不直接承载画面像素 |
-| RTP | 实时媒体怎样分包、编号和标记时间 | 不负责决定画面采用 H.264 还是 H.265 |
-| Filter | 解码后怎样处理画面或声音 | 不能和 `-c copy` 同时修改同一条流的内容 |
-
-第一次阅读不需要记住 NAL、SPS、PPS、DTS、time base 等缩写。先知道它们属于哪一层，等文章用到时再展开。
-
 ## 从哪里开始读
 
 **想先理解视频原理，不熟悉 I/P/B、RTSP 等缩写：** 从下面四篇连续阅读，不需要先学转码命令。
 
 | 顺序 | 文章 | 从什么问题讲起 |
 | --- | --- | --- |
-| 一 | [I、P、B 帧究竟是什么](/tutorials/tffmpeg-bitstream/) | 原始画面怎样变成编码数据，解码器又怎样得到完整画面 |
-| 二 | [H.264、H.265、MP4 和 GB 分别是什么](/tutorials/tffmpeg-codecs/) | 编码、容器与协议怎么区分，H.265+、裸码流、NAL 和参数集是什么 |
+| 一 | [I、P、B 帧究竟是什么](/tutorials/tffmpeg-bitstream/) | 三种帧怎样使用参考画面，为什么 B 帧会改变解码顺序 |
+| 二 | [H.264、H.265、MP4 和 GB 分别是什么](/tutorials/tffmpeg-codecs/) | H.264/H.265 负责什么，为什么它们和 MP4 不是一回事 |
 | 三 | [RTSP、网络分包与直播传输](/tutorials/tffmpeg-transport/) | 地址和请求长什么样，网络传的是什么，服务器怎样送到浏览器 |
 | 四 | [丢包、花屏、黑屏、绿屏与闪烁](/tutorials/tffmpeg-playback/) | 为什么一个包影响多帧，怎样区分传输、解码、采集与显示问题 |
 
@@ -63,31 +32,43 @@ Packet
 
 本系列保留 `Filter`、`Filterchain`、`Filtergraph`、`Bitstream Filter` 等 FFmpeg 原文术语，并在首次讲解时说明作用。例如 `Filter` 是处理画面或声音的节点，`scale` 用于缩放，`overlay` 用于叠加。
 
-## 先看懂总流程
+## 视频和 FFmpeg 先看这一条过程
 
-先用 `ffprobe` 确认输入，再按输出要求选择流和处理方式。下面是文件处理的常见流程；复制或转码的选择针对每条流，视频和音频可以采用不同方式。
+视频播放时，屏幕连续显示一幅幅 Frame。文件中通常保存的是压缩数据，播放器先解码，再得到可以显示的 Frame。
 
-```mermaid
-flowchart LR
-  A[输入文件] --> B[ffprobe<br/>先确认事实]
-  B --> C[ffmpeg<br/>选流并处理]
-  C --> D{该流需要改编码<br/>或处理画面、声音吗?}
-  D -->|否，且容器兼容| E[-c copy<br/>Stream Copy]
-  D -->|是| F[Decode → Filter 可选 → Encode]
-  E --> G[Muxer<br/>重新封装]
-  F --> G
-  G --> H[输出文件]
-  H --> I[探测结构 → 完整解码 → 播放检查]
+[FFmpeg 官方文档](https://ffmpeg.org/ffmpeg.html#Detailed-description)把处理过程分成几个连续步骤。入门时先记下面这条即可：
+
+```text
+输入文件或实时输入
+        ↓
+读取输入，分出视频、音频、字幕等 Stream
+        ↓
+不改内容：直接复制压缩数据 ─────────────┐
+要改内容：Decode → Frame → Filter → Encode │
+                                          ↓
+                                      写入输出
 ```
 
-| 图中节点 | 你需要确认的内容 |
+这里有四个最常用的名词：
+
+| 名称 | 在这条过程里表示什么 |
 | --- | --- |
-| `ffprobe` | 容器、轨道、编码、时长是否可读 |
-| `-map` | 输出需要哪些视频、音频、字幕 |
-| `-c copy` | 内容不变时复制压缩包，避免无意义转码 |
-| `Filter` | 缩放、裁剪、抽帧、叠加、调音量 |
-| `Muxer` | 目标容器能不能装选中的流 |
-| 验收 | 退出码、结构探测、完整解码、播放器分别检查 |
+| Frame | 解码后的画面或音频数据；画面 Filter 处理的是 Frame |
+| Stream | 输入中的一条连续轨道，例如一条视频、一路声音或一条字幕 |
+| H.264 / H.265 | 视频 Stream 采用的压缩和解码规则 |
+| MP4 / MKV | 把视频、音频和时间信息组织在一起的容器 |
+
+FFmpeg 内部还会用 Packet 表示一段压缩数据。Packet 不等于屏幕上的一帧，也不等于一个 RTP 网络包。等需要查看时间戳、码流或网络分包时，再进入这层。
+
+### “视频流”可能指什么
+
+日常交流里的“视频流”并不是一个足够精确的对象：
+
+- `ffprobe` 输出中的 `Stream #0:0`，表示输入里的某一条轨道；
+- “H.264 码流”指按 H.264 规则组织的压缩数据；
+- “RTSP 实时流”通常指持续到达的一路实时媒体。
+
+排查问题时要说明说的是哪一层。后面的文章会按 Stream、编码数据、网络传输的顺序展开，不会在同一节里混着讲。
 
 ## 建议阅读顺序
 
@@ -103,7 +84,7 @@ flowchart LR
 | 06 | [Filterchain 与 Filtergraph](/tutorials/tffmpeg-filters/) | Filter、Pad、Link Label 与分支 |
 | 07 | [Timeline editing、framesync 与 Audio Filters](/tutorials/tffmpeg-filters-2/) | enable、runtime command、多输入同步和音频处理 |
 | 08 | [FFprobe 查询手册](/tutorials/t2er6pk59/) | 容器、流、Packet、Frame 和 JSON，随用随查 |
-| 09 | [视频基础一：I、P、B 帧究竟是什么](/tutorials/tffmpeg-bitstream/) | 原始画面、编码数据、预测、残差、显示顺序与起播 |
+| 09 | [视频基础一：I、P、B 帧究竟是什么](/tutorials/tffmpeg-bitstream/) | 三种参考关系，以及 B 帧为什么改变解码顺序 |
 | 10 | [视频基础二：编码与格式](/tutorials/tffmpeg-codecs/) | H.264/H.265、厂商名称、容器、NAL、参数集与 GB |
 | 11 | [视频基础三：网络与直播](/tutorials/tffmpeg-transport/) | RTSP/SDP/RTP、UDP/TCP、直播方式和延迟 |
 | 12 | [视频基础四：播放异常](/tutorials/tffmpeg-playback/) | 丢包传播、花屏、黑屏、绿屏、闪烁和卡顿 |

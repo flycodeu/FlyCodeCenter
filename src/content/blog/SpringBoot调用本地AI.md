@@ -8,333 +8,168 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250506145712.jpg
 ---
 
-> 本文将手把手教你如何用 Spring Boot + Ollama + Spring AI 快速搭建一个支持**流式输出**的本地 AI 对话系统，**无需联网、支持私有部署**，还能扩展接入 OpenAI、DeepSeek 等模型。
+下面从一个空 Maven 项目调用本机 Ollama，再把结果显示到网页。代码基线是 Java 21、Spring Boot 3.5.16、Spring AI 1.1.8，避免混用早期 milestone Starter 与新版 API。
 
-## 第一步：安装 Ollama，开启本地大模型
+## 准备模型
 
-Ollama 是一个简洁好用的本地大模型运行工具，你可以在自己的电脑上直接部署和运行 LLM。
+先按 [Ollama Docker 教程](/blog/b2lb91htk/) 启动服务并下载 `llama3.2:1b`。也可安装本机 Ollama，在它的终端执行相同的 pull 命令。模型名必须出现在 `ollama list` 中。
 
-### 安装 Ollama
+## Maven 项目
 
-访问官网下载安装（支持 Windows/Mac/Linux）：
-
-👉 https://ollama.com/download
-
-### 启动并验证是否成功
-
-打开终端，运行：
-
-```bash
-ollama run gemma3:1b
-```
-
-浏览器访问：http://localhost:11434/，看到如下页面代表 Ollama 已运行：
-
-![Ollama运行成功](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250506133601162.png)
-
-## 第二步：Spring Boot 调用本地模型
-
-[Spring AI](https://docs.spring.io/spring-ai/reference/index.html) 是由 Spring 团队推出的 AI 接口库，提供模型调用抽象。以下示例使用文中指定的依赖版本，升级时需同步检查配置和 API。
-
-我们需要创建一个SpringBoot项目，进行如下配置
-
-### 添加依赖（Maven）
+创建 `pom.xml`：
 
 ```xml
-<dependency>
-  <groupId>org.springframework.ai</groupId>
-  <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
-  <version>1.0.0-M6</version>
-</dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+  <groupId>example</groupId><artifactId>local-ai</artifactId><version>1.0.0</version>
+  <properties><java.version>21</java.version></properties>
+  <dependencyManagement><dependencies>
+    <dependency>
+      <groupId>org.springframework.ai</groupId><artifactId>spring-ai-bom</artifactId>
+      <version>1.1.8</version><type>pom</type><scope>import</scope>
+    </dependency>
+  </dependencies></dependencyManagement>
+  <dependencies>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webflux</artifactId></dependency>
+    <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-starter-model-ollama</artifactId></dependency>
+  </dependencies>
+  <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>
+</project>
 ```
 
-### 配置 application.yml
+创建 `src/main/resources/application.yaml`：
 
-```yml
+```yaml
 spring:
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: http://127.0.0.1:11434
       chat:
-        model: gemma3:1b
+        options:
+          model: llama3.2:1b
+          num-predict: 256
+    retry:
+      max-attempts: 1
 ```
 
-> ✅ 模型名需和你本地运行的一致！
+`num-predict` 限制本次生成 token 数，不是字符数；`max-attempts` 控制框架重试次数。下载模型与构建依赖需要网络，准备好后推理在本机执行。
 
-### 创建一个简单的对话接口
+## 启动类与接口
+
+`src/main/java/example/DemoApplication.java`：
 
 ```java
-@RequestMapping("/ollama")
-@RestController
-public class LocalAIInvokeTest {
-    @Resource
-    private OllamaChatModel ollamaChatModel;
+package example;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-    /**
-     * 根据用户提问输出回答
-     *
-     * @param prompt
-     * @return
-     */
-    @GetMapping("/test")
-    public String testChat(String prompt) {
-        ChatResponse chatResponse = ollamaChatModel
-                .call(new Prompt(prompt,
-                        OllamaOptions.builder()
-                                .model("gemma3:1b")
-                                .build()));
-        return chatResponse.getResult().getOutput().getText();
+@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
     }
 }
 ```
 
-效果示例：
-
-http://localhost:8080/test?prompt=你好
-
-🖼️ 接口返回效果：
-
-![普通输出效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625134809668.png)
-
-## 第三步：实现流式对话（像 ChatGPT 一样输出）
-
-相比普通一次性输出，流式输出体验更丝滑，可以边生成边展示内容。
-
-Spring Boot 使用 `Flux + TEXT_EVENT_STREAM_VALUE` 即可实现：
+`src/main/java/example/LocalChatController.java`：
 
 ```java
-@GetMapping(value = "/testStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-public Flux<ChatResponse> testChatStream(String prompt) {
-    return ollamaChatModel.stream(
-        new Prompt(prompt, OllamaOptions.builder().model("gemma3:1b").build()));
+package example;
+
+import java.time.Duration;
+import java.util.Map;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+@RestController
+public class LocalChatController {
+    private final ChatClient client;
+    public LocalChatController(ChatClient.Builder builder) { client = builder.build(); }
+
+    @GetMapping("/chat")
+    public Mono<Map<String, String>> chat(@RequestParam String prompt) {
+        return Mono.fromCallable(() -> Map.of("answer", client.prompt().user(prompt).call().content()))
+                .subscribeOn(Schedulers.boundedElastic()).timeout(Duration.ofSeconds(60));
+    }
+
+    @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<Map<String, String>>> stream(@RequestParam String prompt) {
+        return client.prompt().user(prompt).stream().content()
+                .timeout(Duration.ofSeconds(60))
+                .map(text -> ServerSentEvent.<Map<String, String>>builder(Map.of("d", text)).build())
+                .concatWith(Mono.just(ServerSentEvent.<Map<String, String>>builder(Map.of("d", ""))
+                        .event("done").build()));
+    }
 }
 ```
 
-📸 效果图：
+同步模型调用放到 boundedElastic，避免阻塞 WebFlux 事件循环。流式 timeout 是等待下一条信号的超时，不等于整个任务的总时长上限。框架取消订阅后，模型端是否立即停止仍要核对实际服务行为。
 
-![流式输出效果](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625141037247.png)
+## 网页播放文本流
 
-## 第四步：用原生 HTML 打造可交互前端
-
-无需 Vue/React，只用 HTML + JS 实现一个支持**实时流式展示**的聊天界面👇
-
-👉 功能包含：
-
-- 自动滚动
-- 支持 Markdown 渲染
-- 支持 Enter 发送、Shift+Enter 换行
-- 自动伸缩输入框
-
-🔧 代码如下
+保存 `src/main/resources/static/index.html`：
 
 ```html
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8" />
-  <title>本地 AI 对话系统</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 48px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .chat-wrapper {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 1200px;
-      height: 100%;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-
-    .chat-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message {
-      max-width: 70%;
-      padding: 12px 16px;
-      margin: 8px 0;
-      border-radius: 16px;
-      word-break: break-word;
-      line-height: 1.5;
-    }
-
-    .user {
-      align-self: flex-end;
-      background-color: #dcfce7;
-      color: #0f5132;
-      border: 1px solid #badbcc;
-    }
-
-    .ai {
-      align-self: flex-start;
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-    }
-
-    .input-bar {
-      display: flex;
-      padding: 16px 24px;
-      border-top: 1px solid #ddd;
-      background-color: #ffffff;
-    }
-
-    #promptInput {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      resize: none;
-      height: 48px;
-      line-height: 1.5;
-    }
-
-    #sendBtn {
-      margin-left: 12px;
-      padding: 12px 20px;
-      font-size: 16px;
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    #sendBtn:hover {
-      background-color: #45a049;
-    }
-
-    pre code {
-      background: #f6f8fa;
-      padding: 8px;
-      border-radius: 6px;
-      display: block;
-      overflow-x: auto;
-    }
-  </style>
-</head>
-<body>
-  <div class="chat-wrapper">
-    <div class="chat-container" id="chatContainer"></div>
-    <div class="input-bar">
-      <textarea id="promptInput" placeholder="请输入你的问题..." rows="3"></textarea>
-      <button id="sendBtn">发送</button>
-    </div>
-  </div>
-
-  <script>
-    const chatContainer = document.getElementById('chatContainer');
-    const input = document.getElementById('promptInput');
-    const button = document.getElementById('sendBtn');
-
-    function appendMessage(className) {
-      const div = document.createElement('div');
-      div.className = `message ${className}`;
-      chatContainer.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      return div;
-    }
-
-    function sendMessage() {
-      const prompt = input.value.trim();
-      if (!prompt) return;
-
-      const userDiv = document.createElement('div');
-      userDiv.className = 'message user';
-      userDiv.textContent = prompt;
-      chatContainer.appendChild(userDiv);
-
-      input.value = '';
-      input.style.height = '48px'; // 重置高度
-
-      const aiDiv = appendMessage('ai');
-      let markdownBuffer = '';
-
-      const eventSource = new EventSource(`http://localhost:8090/ollama/testStream?prompt=${encodeURIComponent(prompt)}`);
-
-      eventSource.onmessage = (event) => {
-        const json = JSON.parse(event.data);
-        const text = json.result.output.text;
-        markdownBuffer += text;
-        aiDiv.innerHTML = DOMPurify.sanitize(marked.parse(markdownBuffer));
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      };
-
-      eventSource.onerror = () => {
-        eventSource.close();
-      };
-    }
-
-    // 点击发送按钮
-    button.onclick = sendMessage;
-
-    // 按回车键发送（Shift+Enter换行）
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // 自动调整 textarea 高度
-    input.addEventListener('input', () => {
-      input.style.height = 'auto';
-      input.style.height = input.scrollHeight + 'px';
-    });
-  </script>
-</body>
-</html>
-
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>本地模型练习</title>
+<form id="form"><input id="prompt" value="用一句话解释视频转码"><button>发送</button></form>
+<pre id="answer"></pre><p id="status"></p>
+<script>
+const form = document.getElementById('form');
+const answer = document.getElementById('answer');
+const status = document.getElementById('status');
+let active;
+form.addEventListener('submit', event => {
+  event.preventDefault(); active?.close(); answer.textContent = ''; status.textContent = '生成中';
+  const params = new URLSearchParams({prompt: document.getElementById('prompt').value});
+  const source = new EventSource('/chat/stream?' + params); active = source;
+  source.onmessage = event => {
+    if (active !== source) return;
+    try { answer.textContent += JSON.parse(event.data).d; }
+    catch { source.close(); status.textContent = '响应格式错误'; }
+  };
+  source.addEventListener('done', () => {
+    source.close(); if (active === source) status.textContent = '完成';
+  });
+  source.onerror = () => {
+    source.close(); if (active === source) status.textContent = '连接中断，请检查应用日志';
+  };
+});
+window.addEventListener('pagehide', () => active?.close());
+</script></html>
 ```
 
-页面效果如下：
+使用 textContent 显示结果，避免把模型返回的 HTML 直接当作可信页面执行。
 
-![页面效果展示](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250625144432562.png)
+## 自己运行与排查
 
-## 第五步：接入 OpenAI、DeepSeek 等云模型（可选）
+在项目根目录执行：
 
-如需调用云端大模型（如 GPT-4、DeepSeek），只需：
-
-### 申请对应的key
-
-### 引入依赖
-
-```xml
-<dependency>
-  <groupId>org.springframework.ai</groupId>
-  <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
-</dependency>
+```powershell
+mvn -version
+mvn spring-boot:run
 ```
 
-### 配置 API Key
+确认 Maven 使用 JDK 21，访问 `http://localhost:8080/`，点击发送。先检查 `/chat?prompt=hello` 能否返回 JSON，再检查流式页面。
 
-```yml
-spring:
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
-```
+- 连接拒绝：确认 Ollama 在 11434，应用日志中没有指向容器内部的错误 localhost。
+- 模型不存在：核对 `ollama list` 和 yaml 中的模型名。
+- 超时：检查模型大小、内存与日志，不直接无限重试。
+- 网页没有逐段显示：看 `/chat/stream` 响应和代理缓冲。
 
-> 若使用国产模型（如通义千问），推荐使用阿里封装的SpringAI [Spring AI Alibaba](https://java2ai.com/docs/1.0.0-M6.1/overview/?spm=4347728f.6476bf87.0.0.a3c1556bHVEtNK)。
+这是本机练习接口。给其他用户使用时，还需加入身份校验、请求限额和会话管理。
+
+参考：[Spring AI 1.1.8 Ollama 文档源码](https://github.com/spring-projects/spring-ai/blob/v1.1.8/spring-ai-docs/src/main/antora/modules/ROOT/pages/api/chat/ollama-chat.adoc)、[ChatClient](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html)。

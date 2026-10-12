@@ -16,7 +16,7 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/202
 
 VoidTab 是一个基于 Vue 3 + TypeScript 构建的极简、赛博朋克风浏览器起始页（New Tab Extension）。
 
-它摒弃传统导航页的臃肿与广告，强调极致视觉与高效操作，提供 GUI/CLI 双模、沉浸式 HUD、毛玻璃 UI 与多端数据同步能力。
+页面提供 GUI/CLI 切换、数据面板、毛玻璃样式和 WebDAV 同步。
 
 ## 当前进展
 

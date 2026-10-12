@@ -1,5 +1,5 @@
 ﻿---
-title: "Refactoring UI 思路整理"
+title: "Refactoring UI"
 description: "从视觉拆解到组件抽象，系统化提升 UI 质量。"
 url: "https://www.refactoringui.com/"
 source: "Refactoring UI"

@@ -61,7 +61,7 @@ if (!encrypted) {
 }
 
 const reading = summarizeReading(entry.body);
-const githubEditUrl = `${siteConfig.theme.social.github.replace(/\/$/, "")}/blob/main/${getEntryRepoRelativePath(entry) || `src/content/projects/${entry.id}`}`;
+const githubEditUrl = `https://github.com/flycodeu/FlyCodeCenter/edit/master/${getEntryRepoRelativePath(entry) || `src/content/projects/${entry.id}`}`;
 ---
 
 <PostLayout

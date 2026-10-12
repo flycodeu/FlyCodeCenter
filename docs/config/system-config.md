@@ -1,32 +1,32 @@
-﻿# 系统配置总览
+# 系统配置总览
 
-`src/site.config.ts` 是系统唯一配置入口。  
+`src/site.config.ts` 集中管理站点功能与外观配置。
 规则是：先改配置，再到对应插件目录改实现。
 
 ## 配置总原则
 
-1. 所有开关、默认值、展示策略都在 `src/site.config.ts`
+1. 站点功能的开关、默认值和展示策略主要在 `src/site.config.ts`
 2. 构建期能力在 `src/plugins/build/*` 与 `src/plugins/markdown/build/*`
 3. 文章页运行时能力在 `src/plugins/runtime/article/index.js`
 
 ## 常用配置分区
 
-## 站点基础
+### 站点基础
 
 - 路径：`site.*`
 - 作用：站点标题、描述、域名、favicon、head meta
 
-## 主题与导航
+### 主题与导航
 
 - 路径：`theme.*`
 - 作用：主题列表、导航、页脚、TOC、字体预设
 
-## 文章与列表
+### 文章与列表
 
 - 路径：`article.*`、`blog.*`、`home.*`
 - 作用：文章页间距、反爬设置、分页、卡片布局
 
-## Markdown 能力
+### Markdown 能力
 
 - 路径：`markdown.*`
 - 作用：GFM、include、math、image 增强、扩展语法、复制开关
@@ -34,7 +34,7 @@
   - `src/plugins/build/markdown.plugin.mjs`
   - `src/plugins/markdown/build/*`
 
-## 代码块高亮
+### 代码块高亮
 
 - 路径：`codeHighlight.*`、`codeTheme.*`
 - 作用：provider、语言白名单、行号、窗口头样式、主题色
@@ -42,21 +42,21 @@
   - `src/plugins/build/code-highlight.plugin.mjs`
   - `src/plugins/code-highlight/resolve-config.ts`
 
-## 图形与图表
+### 图形与图表
 
 - 路径：`features.diagram.*`、`diagram.*`、`markdown.extended.chartjs.*`
 - 作用：Mermaid / Draw.io / ECharts / Chart.js 开关、bundle、source(local/cdn)、fallback
 - 实现目录：
   - `src/plugins/runtime/article/index.js`
 
-## 搜索 / 评论 / 统计
+### 搜索 / 评论 / 统计
 
 - 路径：`search.*`、`comment.*`、`stats.*`
 - 作用：搜索 provider、评论 provider、阅读统计接口
 
 ## 常见修改示例
 
-## 1) 切换默认字体为像素字体
+### 1) 切换默认字体为像素字体
 
 ```ts
 theme: {
@@ -66,7 +66,7 @@ theme: {
 }
 ```
 
-## 2) 切换默认字体为常规字体
+### 2) 切换默认字体为常规字体
 
 ```ts
 theme: {
@@ -76,7 +76,7 @@ theme: {
 }
 ```
 
-## 3) 关闭 Markdown 扩展语法
+### 3) 关闭 Markdown 扩展语法
 
 ```ts
 markdown: {
@@ -86,7 +86,7 @@ markdown: {
 }
 ```
 
-## 4) 切换代码高亮 provider
+### 4) 切换代码高亮 provider
 
 ```ts
 codeHighlight: {
@@ -94,7 +94,7 @@ codeHighlight: {
 }
 ```
 
-## 5) 关闭 Mermaid
+### 5) 关闭 Mermaid
 
 ```ts
 features: {
@@ -104,7 +104,7 @@ features: {
 }
 ```
 
-## 6) 图表资源优先走本地 bundle
+### 6) 图表资源优先走本地 bundle
 
 ```ts
 diagram: {
@@ -114,7 +114,7 @@ diagram: {
 }
 ```
 
-## 7) 质量门禁
+### 7) 质量门禁
 
 - 命令：`npm run guard:quality`
 - 作用：校验 `mermaid/chart/drawio/demo` 语法与关键 frontmatter，失败即阻断构建

@@ -8,94 +8,69 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/22678c319934c0e968b1ef06041698b.jpg
 ---
 
-## 创建空仓库
+下面在一个已有的本地仓库中创建笔记、提交并推送。先理解 [JGit 克隆仓库](/blog/b1ncetof4/)，并准备自己的测试仓库，不能把示例指向别人的仓库。
 
-空仓库不要求包含 `README.md`。首次提交需要先暂存至少一个文件，也可以显式创建空提交；推送时还要指定实际分支名。参见 [git init](https://git-scm.com/docs/git-init)。
+## 前置条件
 
-![image-20250327090020163](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090020163.png)
+- Maven 项目使用 JDK 21，依赖 `org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r`。
+- 本地仓库已克隆，当前检出普通分支，远程名为 `origin`。
+- 已在该仓库配置提交者：`git config user.name "Your Name"`、`git config user.email "you@example.com"`。
+- HTTPS 推送凭据由 `GIT_USERNAME`、`GIT_TOKEN` 环境变量提供，并拥有该仓库的写入权限。
 
-## 创建token
+## 代码
 
-https://github.com/settings/personal-access-tokens
-
-![image-20250327090450110](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090450110.png)
-
-![image-20250327090556582](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090556582.png)
-
-![image-20250327090723607](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090723607.png)
-
-复制生成的token到![image-20250327090834790](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327090834790.png)
-
-## 引入依赖
-
-```xml
-     <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>5.13.0.202109080827-r</version>
-        </dependency>
-```
-
-## Java代码
-
-主要步骤：
-
-1. 克隆 Git 仓库
-2. 创建文件夹和日志文件
-3. 提交暂存区、提交commit、提交代码
-
-里面的token就是刚才创建的
+保存为 `src/main/java/CommitDemo.java`：
 
 ```java
-   private static String writeLogs(String token, String log) throws GitAPIException {
-        // 1. 连接Git仓库
-        Git git = Git.cloneRepository()
-                .setURI("https://github.com/flycodeu/openai-code-review-logs.git")
-                .setDirectory(new File("repo"))
-                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, ""))
-                .call();
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RemoteRefUpdate;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
-        // 2. 创建文件夹
-        String dateFolderName = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        File dateFolder = new File("repo/" + dateFolderName);
-        if (!dateFolder.exists()) {
-            dateFolder.mkdirs();
+public class CommitDemo {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 1) throw new IllegalArgumentException("参数：已有本地仓库目录");
+        String username = System.getenv("GIT_USERNAME");
+        String token = System.getenv("GIT_TOKEN");
+        if (username == null || token == null) throw new IllegalStateException("请设置推送凭据环境变量");
+        try (Git git = Git.open(new File(args[0]))) {
+            String branch = git.getRepository().getFullBranch();
+            if (branch == null || !branch.startsWith(Constants.R_HEADS)) {
+                throw new IllegalStateException("请先检出一个普通分支，不能在 detached HEAD 推送");
+            }
+            if (!git.status().call().isClean()) throw new IllegalStateException("请先处理仓库现有修改");
+            String relative = "notes/" + UUID.randomUUID() + ".md";
+            Path file = git.getRepository().getWorkTree().toPath().resolve(relative);
+            Files.createDirectories(file.getParent());
+            Files.write(file, "Git tutorial\n".getBytes(StandardCharsets.UTF_8));
+            git.add().addFilepattern(relative).call();
+            git.commit().setMessage("docs: add tutorial note").call();
+            Iterable<PushResult> results = git.push().setRemote("origin").add(branch)
+                    .setTimeout(60)
+                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, token))
+                    .call();
+            for (PushResult result : results) {
+                for (RemoteRefUpdate update : result.getRemoteUpdates()) {
+                    if (update.getStatus() != RemoteRefUpdate.Status.OK
+                            && update.getStatus() != RemoteRefUpdate.Status.UP_TO_DATE) {
+                        throw new IllegalStateException("推送未成功：" + update.getStatus());
+                    }
+                }
+            }
+            System.out.println("已推送：" + relative);
         }
-
-        // 3. 写入日志文件
-        String fileName = generateRandomString(12) + ".md";
-        File file = new File(dateFolder, fileName);
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write(log);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        // 4. 提交并推送更改
-        git.add().addFilepattern(dateFolderName + "/" + fileName).call();
-        git.commit().setMessage("Add new log via Github Actions").call();
-        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, "")).call();
-
-        return "https://github.com/flycodeu/openai-code-review-logs/blob/master/" + dateFolderName + "/" + fileName;
-
     }
-
-
-    /**
-     * 随机字母作为名称
-     *
-     * @param length
-     * @return
-     */
-    private static String generateRandomString(int length) {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(characters.charAt(random.nextInt(characters.length())));
-        }
-        return sb.toString();
-    }
+}
 ```
 
-![image-20250327094157784](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250327094157784.png)
+在 IDE 设置运行参数为本地测试仓库路径，再设置上述环境变量。推送不接受时，先检查 Token 权限、目标分支和远程新提交。推送失败不会自动撤销本地 commit；修复原因后继续推送，不要反复创建同一笔记或关闭分支保护。
+
+`git.add()` 只暂存本次生成的文件；`commit()` 创建本地提交；`push()` 才更新远程。`call()` 返回并不保证每条远程引用都更新成功，因此检查 `RemoteRefUpdate` 状态。
+
+参考：[JGit API](https://download.eclipse.org/jgit/site/7.8.0.202609011348-r/apidocs/)、[GitHub HTTPS 认证](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github)。

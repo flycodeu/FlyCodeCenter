@@ -9,11 +9,9 @@ tags:
   - Godot
 category: 游戏开发
 ---
-# Godot入门
 
+[绘制地形](/tutorials/t1jy3yg2z/)
 
-[绘制地形](绘制地形.md)
+[人物移动](/tutorials/ttzdbg3w1/)
 
-[人物移动](人物移动.md)
-
-[创建房屋](创建房屋.md)
+[创建房屋](/tutorials/tmybt16zd/)

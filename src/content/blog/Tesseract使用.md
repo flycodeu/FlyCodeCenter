@@ -17,12 +17,9 @@ cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/d63
 
 ## 一、安装与环境配置
 
-### 官方安装包（推荐方式）
+### Windows 安装包
 
-下载地址：
-👉 [https://github.com/tesseract-ocr/tesseract/releases](https://github.com/tesseract-ocr/tesseract/releases)
-
-下载安装包（`.exe`）后运行即可快速完成安装。支持自定义路径及免安装模式。
+官方安装文档将 Windows 用户引导到 [UB Mannheim 提供的安装包](https://github.com/UB-Mannheim/tesseract/wiki)。这是第三方构建，按系统架构选择安装程序和语言数据。参见 [Tesseract 安装说明](https://tesseract-ocr.github.io/tessdoc/Installation.html#windows)。
 
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20251110140609.png)
 
@@ -54,7 +51,7 @@ leptonica-1.85.0
 Found libcurl/8.11.0 ...
 ```
 
-> ⚠️ 若命令无效，请尝试重新启动计算机。
+若提示找不到命令，先重新打开终端，再检查 `Path` 中的目录是否包含 `tesseract.exe`。
 
 ## 二、使用 Chocolatey 一键安装（Windows）
 

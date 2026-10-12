@@ -8,117 +8,61 @@ tags:
 cover: https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250605165730.jpg
 ---
 
-## Ollama 官网
+Ollama 服务负责加载模型并提供推理接口。容器启动成功只说明服务在运行，第一次使用模型还需要下载模型文件。
 
-访问 Ollama 官方网站 获取更多关于 Ollama 的信息和支持。
+## 启动本地服务
 
-## Docker Compose 脚本
+先确认 Docker 已启动。创建 `compose.yaml`，下面从 CPU 模式开始：
 
-首先，我们需要创建一个 Docker Compose 文件来定义服务。打开终端并输入以下命令以创建 docker-compose-ollama.yml 文件：
-
-```bash
-vim docker-compose-ollama.yml
-```
-
-接着，在文件中添加如下内容：
-
-```yml
-version: '3'
+```yaml
 services:
   ollama:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/ollama:0.5.10
-    container_name: ollama
-    restart: unless-stopped
+    image: ollama/ollama:latest
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+volumes:
+  ollama_models:
 ```
-
-### 运行 Docker Compose 文件
-
-保存并退出编辑器后，运行以下命令启动服务：
 
 ```bash
-docker-compose -f docker-compose-ollama.yml up -d
+docker compose up -d
+docker compose exec ollama ollama --version
+docker compose exec ollama ollama pull llama3.2:1b
+docker compose exec ollama ollama run llama3.2:1b
 ```
 
-这将以后台模式启动 Ollama 服务。
+输入问题后按回车，输入 `/bye` 退出交互。模型下载需要网络、磁盘空间和足够内存；速度取决于硬件、模型大小和上下文长度。
 
-### 检查服务是否正常运行
+容器已经运行 `ollama serve`，不要在同一容器内再次启动服务。`latest` 会变化，长期使用应记录版本与镜像摘要。
 
-可以通过浏览器访问以下地址来确认 Ollama 是否已经成功运行：
+## 从程序访问
 
-http://localhost:11434/
+PowerShell 中执行：
 
-可以在 Portainer 中查看 Ollama 的运行状态。参考以下截图示例：
-
-![Check Status in Portainer](https://broadscope-dialogue-new.oss-cn-beijing.aliyuncs.com/output/20250605/b13109b4ce1b1e779eda99d0e05821a1.png?Expires=1780646934&OSSAccessKeyId=LTAI5tL97mBYzVcjkG1cUyin&Signature=pNe3nIuAvLnFP3ujMxxdRpDTv88%3D)
-
-### 使用命令行进入容器
-
-为了执行命令或者进行调试，可以使用以下命令进入 Ollama 容器的交互式 shell：
-
-```
-docker exec -it ollama /bin/bash
+```powershell
+$payload = @{
+    model = 'llama3.2:1b'
+    prompt = '用一句话解释视频转码'
+    stream = $false
+} | ConvertTo-Json
+Invoke-RestMethod -Uri 'http://127.0.0.1:11434/api/generate' -Method Post -ContentType 'application/json' -Body ([Text.Encoding]::UTF8.GetBytes($payload))
 ```
 
-或者使用Portainer的命令行工具运行命令
+返回 JSON 中的 `response` 是生成文本。`stream=false` 表示等本次生成结束后一次返回；流式模式的解析方式不同。
 
-![Enter Command Console](https://broadscope-dialogue-new.oss-cn-beijing.aliyuncs.com/output/20250605/9a631a85e17e768cc0a7e95a41b55fa1.png?Expires=1780646934&OSSAccessKeyId=LTAI5tL97mBYzVcjkG1cUyin&Signature=%2BFNha82iB2BFR7LFy%2FU%2BQA5xz58%3D)
+## 管理模型和故障定位
 
-### Ollama 相关命令
-
-在容器内部或通过 API 可以使用一系列 Ollama 命令来管理模型和服务：
-
-- **启动服务**：
-
-  ```
-  ollama serve
-  ```
-
-- **拉取模型**：
-
-  ```
-  ollama pull deepseek-r1:1.5b
-  ollama pull nomic-embed-text
-  ```
-
-- **列出所有已下载模型**：
-
-  ```
-  ollama list
-  ```
-
-- **显示特定模型的信息**：
-
-  ```
-  ollama show model_name
-  ```
-
-- **运行特定模型**：
-
-  ```
-  ollama run --gpu model_name
-  ```
-
-- **停止正在运行的模型**：
-
-  ```
-  ollama stop model_id
-  ```
-
-- **删除指定模型**：
-
-  ```
-  ollama rm model_name
-  ```
-
-可以通过查看 Ollama 的日志来帮助诊断。对于 Docker 容器，可以使用 docker logs`命令查看输出的日志信息。
-
-```
-docker logs ollama
+```bash
+docker compose exec ollama ollama list
+docker compose exec ollama ollama ps
+docker compose exec ollama ollama show llama3.2:1b
+docker compose exec ollama ollama stop llama3.2:1b
+docker compose logs --tail=100 ollama
 ```
 
-![image-20250605162045266](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/image-20250605162045266.png)
+`stop` 卸载正在运行的模型，保留下载文件。删除下载文件用 `ollama rm 模型名`。
 
-## 连接WSL中的Ollama
-详情参考[Docker 安装PgVector](Docker安装PgVector.md)
+NVIDIA GPU 需要驱动和 NVIDIA Container Toolkit，并在创建容器时授予 GPU；不是在 `ollama run` 后添加 `--gpu`。按 [Ollama Docker 官方说明](https://docs.ollama.com/docker) 配置。宿主机程序访问 localhost；同一 Compose 网络里的程序访问 `http://ollama:11434`。

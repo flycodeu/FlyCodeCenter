@@ -5,4 +5,4 @@ code: t2ieb31re
 permalink: /tutorials/linux/
 ---
 
-- [logrotate日志使用](logrotate日志使用.md)
+- [logrotate日志使用](/tutorials/t2lj69xo0/)

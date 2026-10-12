@@ -44,7 +44,7 @@ theme: {
 
 ## 三、如何切换字体
 
-## 1) 通过配置切换（推荐）
+### 1) 通过配置切换（推荐）
 
 在 `src/site.config.ts` 修改：
 
@@ -58,7 +58,7 @@ fontPresetDefault: "regular"
 fontPresetDefault: "pixel"
 ```
 
-## 2) 浏览器临时切换（调试）
+### 2) 浏览器临时切换（调试）
 
 在控制台执行：
 

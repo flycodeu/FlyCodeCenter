@@ -3,7 +3,7 @@ title: Giscus 从零配置到上线：GitHub Discussions 评论系统完整指�
 createTime: '2026/03/05 12:57:01'
 code: t1ggztolg
 permalink: /tutorials/t1ggztolg/
-summary: 站在第一次接触 giscus 的用户角度，完成从 GitHub 仓库准备、官方配置页生成参数、项目字段填写、主题同步到上线验证与排错的完整闭环。
+summary: 配置 GitHub Discussions 和 giscus 参数，验证评论显示、主题同步与线上访问。
 series: system-guide
 order: 6
 tags:
@@ -14,8 +14,8 @@ tags:
 cover: https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=80
 ---
 
-## 先说结论：如果你是第一次接入，按这个默认方案走
-对于当前项目，推荐你先用下面这组默认值，不要一上来就做高级定制：
+## 先配置评论入口
+下面以 `pathname` 映射文章路径。请替换仓库和分类参数：
 
 ```ts
 comment: {
@@ -41,13 +41,11 @@ comment: {
 
 原因：
 
-- `pathname` 最稳定，适合博客、教程和 Vercel 部署。
+- `pathname` 按页面路径关联评论，适合文章路径长期保持不变的站点；修改路径前需要迁移映射。
 - `strict: "1"` 能避免错绑到其他 discussion。
 - `loading: "lazy"` 对静态站更友好。
 - `emitMetadata: "0"` 适合大多数站点，本项目默认不监听 giscus 元数据事件。
 - `themeLight/themeDark` 明确写死，比依赖自动推断更可控。
-
-如果你照着本文一步一步做，第一次接入优先使用这一组参数。
 
 ## 官方文档与本文的关系
 这篇教程以 giscus 官方文档为基础，再补上当前项目里的具体落点。
@@ -285,7 +283,7 @@ themeDark = dark
 当前项目已经做了主题同步逻辑，所以你需要关注的是“映射成什么”，而不是“能不能同步”。
 
 ## 第四步：把参数填进当前项目
-当前项目的配置入口在 [site.config.ts](/D:/FlyLabs/FlyCodeCenter/src/site.config.ts)。
+当前项目的配置入口在 [site.config.ts](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/site.config.ts)。
 
 ### 方案 A：直接写进 `site.config.ts`
 适合本地开发、个人站点、单环境维护。
@@ -339,8 +337,8 @@ PUBLIC_GISCUS_THEME_DARK=dark
 
 实现位置：
 
-- [Giscus.astro](/D:/FlyLabs/FlyCodeCenter/src/components/Giscus.astro)
-- [ThemeToggle.astro](/D:/FlyLabs/FlyCodeCenter/src/components/ThemeToggle.astro)
+- [Giscus.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/components/Giscus.astro)
+- [ThemeToggle.astro](https://github.com/flycodeu/FlyCodeCenter/blob/master/src/components/ThemeToggle.astro)
 
 同步逻辑是：
 
@@ -509,6 +507,6 @@ giscus 除了页面配置，还支持仓库级的 `giscus.json`。
 只要这四步不跳，giscus 在这个项目里通常能一次接通。
 
 ## 下一步怎么走
-- 想了解评论系统的第二条 GitHub 路线：看 [07-utterances-and-fallback-strategy.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/07-utterances-and-fallback-strategy.md)
-- 想把当前配置带到线上：看 [20-github-vercel-deploy-full-workflow.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/20-github-vercel-deploy-full-workflow.md)
-- 已经上线但评论还是不正常：看 [21-env-vars-troubleshooting-and-release-checklist.md](/D:/FlyLabs/FlyCodeCenter/src/content/tutorial/system-guide/21-env-vars-troubleshooting-and-release-checklist.md)
+- 想了解评论系统的第二条 GitHub 路线：看 [07-utterances-and-fallback-strategy.md](/tutorials/t2cdz8kv2/)
+- 想把当前配置带到线上：看 [20-github-vercel-deploy-full-workflow.md](/tutorials/t25e9rug5/)
+- 已经上线但评论还是不正常：看 [21-env-vars-troubleshooting-and-release-checklist.md](/tutorials/tp6h6dnk0/)

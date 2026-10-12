@@ -18,14 +18,13 @@ VoidTab 是一个基于 Vue 3 + TypeScript 构建的极简、赛博朋克风格�
 仓库地址：
 https://github.com/flycodeu/VoidTab
 
-它摒弃了传统导航页的臃肿与广告，专注于极致的视觉体验与纯粹的效率。拥有高度定制化的毛玻璃 UI、沉浸式的数据控制台（HUD）、**
-双模切换（GUI/CLI）**以及支持多端同步的数据存储。
+页面提供毛玻璃样式、数据面板、GUI/CLI 切换和 WebDAV 同步。
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084255.png)
-> Fun Fact: 本项目 99% 的代码由 AI (Google Gemini, ChatGPT) 辅助编写，是一个探索 AI 辅助独立开发的实验性项目。
+开发过程中使用了 AI 辅助编码。
 
 ## 功能特性 (Features)
 
-### 极致视觉
+### 外观与布局
 
 - **毛玻璃拟态** ：全局采用高斯模糊与半透明设计，质感细腻。
 - **动态主题**：支持浅色/深色模式切换，深色模式下拥有独特的赛博霓虹光效。
@@ -34,14 +33,13 @@ https://github.com/flycodeu/VoidTab
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084352.png)
 ### 命令行终端
 
-专为开发者与极客打造的双模体验：
+终端模式提供以下交互：
 
-- **GUI/CLI 热切换**：在图形化界面与纯命令行模式之间无缝切换。
+- **GUI/CLI 热切换**：在图形化界面与纯命令行模式之间切换。
 - **沉浸式终端**：全屏 CRT 风格终端，支持命令输入、历史记录与自动补全。
-- **黑客体验**：像操作 Linux 终端一样控制你的浏览器起始页，效率与格调并存。
 
 ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084452.png)
-### 丰富的组件生态
+### 内置组件
 
 内置多样化的小组件，满足各种场景需求：
 
@@ -65,7 +63,7 @@ https://github.com/flycodeu/VoidTab
 - **书签导入**：支持从 Chrome/Edge 导出的 HTML 书签文件一键导入，自动解析文件夹为分组。
 - **拖拽管理**：支持分组排序、图标跨分组拖拽，完全自定义你的工作台。
 - **聚合搜索**：内置多种搜索引擎（Google, Bing, Baidu 等），支持自定义添加，并带有搜索历史记录。
-- **专注模式**：一键隐藏所有杂项，仅保留时间与搜索框，提供极致的沉浸式体验。
+- **专注模式**：一键隐藏所有杂项，仅保留时间与搜索框。
 - **右键菜单**：全局自定义右键菜单，提供便捷的操作入口。
   ![](https://flycodeu-1314556962.cos.ap-nanjing.myqcloud.com/codeCenterImg/20260203084711.png)
 ## 安装与使用

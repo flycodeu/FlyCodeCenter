@@ -1,5 +1,5 @@
 ---
-title: "Designing Search UX for Documentation"
+title: "Algolia InstantSearch.js 文档"
 description: "文档搜索体验设计：快捷键、结果摘要、高亮与键盘导航。"
 url: "https://www.algolia.com/doc/guides/building-search-ui/what-is-instantsearch/js/"
 source: "Algolia Docs"

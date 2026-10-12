@@ -2,7 +2,7 @@
 title: "静态部署"
 description: "接近 Vercel 体验的静态站部署平台分层推荐，覆盖从托管到轻量方案。"
 category: "静态部署"
-order: 5
+order: 7
 featured: true
 tags: ["hosting", "static", "deploy"]
 cards:
