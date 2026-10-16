@@ -18,13 +18,32 @@ pnpm-debug.log*
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
+!.env.*.example
+
+# local runtimes and compiler output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+target/
+*.tsbuildinfo
+.cache/
+coverage/
+
+# downloaded face model weights (not website assets)
+/public/examples/face-recognition/models/
+/public/examples/face-recognition/*.onnx
+/public/examples/face-recognition/*.pth
 
 # local todo / progress tracking
 todo/
 
 # macOS-specific files
 .DS_Store
+Thumbs.db
+Desktop.ini
 
 # jetbrains setting folder
 .idea/

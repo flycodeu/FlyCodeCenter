@@ -31,6 +31,8 @@
 
 ## 快速定位
 
+- [仓库维护与提交检查](./development/repository.md)
+
 - 改系统配置项：`src/site.config.ts`
 - 改 Astro 构建入口：`astro.config.mjs`
 - 改 Markdown 构建解析：`src/plugins/markdown/build/*`

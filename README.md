@@ -33,6 +33,13 @@ npm run dev
 
 默认开发地址：`http://localhost:4321`
 
+## 仓库维护
+
+文章放 `src/content/`，网站公开资源放 `public/`，独立示例工程放 `examples/`。
+`public/` 中的文件会原样发布，即使它们被 Git 忽略，也不要在其中安装依赖或生成编译产物。
+
+提交前运行 `npm run check` 和 `npm run build`。目录职责、忽略规则和页面验证见[仓库维护](./docs/development/repository.md)。
+
 ## Build & Preview / 构建与预览
 
 ```bash
