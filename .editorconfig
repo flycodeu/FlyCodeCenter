@@ -10,5 +10,8 @@ indent_size = 2
 [*.py]
 indent_size = 4
 
+[public/examples/usb-relay/relay_demo.py]
+charset = utf-8-bom
+
 [*.{ps1,bat,cmd}]
 end_of_line = crlf

@@ -1,11 +1,9 @@
 ---
-title: USB 单路继电器零基础入门：从认识端子到 Python 空载测试
+title: USB 单路继电器入门：用 Python 分别控制开和关
 createTime: '2026/10/20 10:15:54'
 code: b2kz8iy4i
 permalink: /blog/b2kz8iy4i/
-summary: >-
-  以实物标识为 TONG LING JQC-3FF-S-Z 的 USB 串口继电器为例，从电路、COM/NO/NC 和串口基础讲起，完成 Windows
-  环境准备、Python 代码演练与空载测试，并说明真实记录、验证方法和安全边界。
+summary: 从认识继电器、找到 Windows 串口开始，用一个短程序分别执行开和关，不再自动两秒后关闭。包含实际空载发送记录、逐段代码解释和常见报错排查。
 tags:
   - Python
   - USB
@@ -13,746 +11,344 @@ tags:
   - 硬件入门
 ---
 
-拿到一块 USB 继电器，插进电脑，指示灯亮了，下一步该做什么？
+把 USB 继电器插进电脑，PWR 灯亮了。接下来，怎样用电脑打开它，再由自己决定什么时候关闭？
 
-这篇文章从这里开始。不要求你会接线，也不要求你写过 Python。读完后，你应该能分清电源与开关，认识三个接线端子，找到正确的串口，并看懂电脑发出的控制指令。
+这篇文章只学两个独立操作：**开（吸合）**和**关（释放）**。程序运行一次，只发送你选择的那个动作，不定时切换，不自动两秒后关闭。你不需要先学完 Python，也不需要先读懂模块附带的程序。
 
-本文的第一轮实验只做**空载测试**：三个螺丝接线端子全部空着，模块只连接 USB。不要接市电、插座、电机、门锁或正在运行的设备。后面的小灯电路只是解释接线原理的示例，不是已完成的实验。
+先做一件事：让板上的 **COM、NO、NC 三个接线端子全部空着，只连接 USB**。这叫“空载测试”，也就是暂时不接灯、电机或其他设备。把裸板放在干燥、绝缘的表面，本次不接市电和现场机器。
 
-文章依据是使用者提供的实物照片、原有 `Usb_Test.py`、2026 年 10 月 20 日的本机操作记录，以及文中链接的厂家和软件官方资料。没有完整板卡说明书的地方，会直接写明限制。
+## 一、先把继电器理解成一个开关
 
-## 一、先认识手里的这块板
+普通开关需要用手按；继电器可以由电信号控制。USB 控制板的作用，就是接收电脑指令，让板上的继电器切换。
 
-### 1. 实物上能看见什么
+你手里的板上，几个部分分别负责这些事情：
 
-使用者提供的正面照片中，可以读到继电器外壳上的这些字样：
+| 部分 | 你现在需要知道的作用 |
+| --- | --- |
+| USB 插头 | 连接电脑，给控制板供电并传输数据 |
+| 蓝色继电器 | 里面有可以切换连接的金属接点，也叫“触点” |
+| COM、NO、NC 端子 | 把这个开关接入外部电路的位置；第一次练习先不接 |
+| PWR 灯 | 电源指示；亮了不等于电脑已经能控制开关 |
 
-```text
-TONGLING
-5VDC
-10A 250VAC
-15A 125VAC
-JQC-3FF-S-Z
-```
+本例的继电器外壳标有 **TONGLING（通灵）JQC-3FF-S-Z、5VDC**，板背面标有 `1 Channel USB Serial Relay`。
 
-背面写着：
+要分清两件事：`JQC-3FF-S-Z` 是**继电器元件型号**，不是整块 USB 控制板的型号；`5VDC` 是它的线圈电压标识，不是说三个接线端子会输出 5V。外壳上的电流、电压额定标识，也不能直接当成整块裸板的使用能力。
 
-```text
-1 Channel
-USB Serial Relay
-```
+“单路”表示只有一个独立控制的开关，不是三个端子各控制一路。
 
-背面的三个端子标识是 `NC`、`COM`、`NO`。按原背面照片的方向——USB 插头朝右、端子在左——从上到下是 **NC、COM、NO**。把板翻面或转向后，视觉顺序会变化，所以接线要认字母，不要死记“上面那个”或“左边那个”。
+## 二、COM、NO、NC 到底怎么用
 
-这几处标识各自回答不同的问题：
+先记两个词：
 
-| 标识 | 可以说明什么 | 不能据此确认什么 |
-| --- | --- | --- |
-| TONGLING / JQC-3FF-S-Z | 板上继电器元件的品牌和型号 | 整块 USB 板的控制协议 |
-| 5VDC | 继电器线圈的额定直流电压 | 三个接线端子会输出 5V |
-| 10A 250VAC 等 | 继电器元件的相应触点额定标识 | 裸板、端子和线材都能安全承受同样负载 |
-| USB Serial Relay | 这是一块 USB 串口型继电器控制板 | 一定兼容某一套串口指令 |
-| 1 Channel | 一路可控制的继电器通道 | 三个端子可以分别独立控制 |
+- **释放**：继电器没有被驱动，机构处于正常返回的位置。
+- **吸合**：继电器被驱动，机构切换到另一个位置，通常可以听到切换声。
 
-[通灵厂家产品页](https://www.tonglingrelay.com/product/1034.html?productCateId=23)可以帮助辨认 JQC-3FF 系列元件，但链接中的具体产品为 12V 版本，不能拿它替代本次实物上清楚标出的 5V 版本，也不能把元件资料当成整板说明书。
+三个端子中，COM 是公共端。它在这两个位置之间切换：
 
-### 2. 蓝色方块和整块板不是同一个东西
-
-蓝色大方块是机械继电器。它本身不认识 Python，也不认识 USB。
-
-整块控制板还需要接收电脑的数据，再驱动继电器动作。本次电脑实际识别到了 `USB-SERIAL CH340 (COM7)`，说明它通过 CH340 这一类 USB 转串口接口与电脑通信。[沁恒的 CH340 产品资料](https://www.wch.cn/products/CH340.html)介绍的是这个通信芯片，不是继电器开关协议。
-
-照片不足以可靠辨认板上所有小芯片的完整型号，因此这里不猜测单片机型号，也不编造电路原理图、光耦隔离规格或保护电路配置。
-
-## 二、继电器到底是怎样的开关
-
-### 1. 先用一盏小灯理解电路
-
-一盏普通低压直流小灯要亮，需要有匹配的电源，并形成完整的回路：
-
-```text
-电源正极 → 小灯 → 电源负极
-```
-
-在这条回路中间加入一个开关：
-
-```text
-电源正极 → 开关 → 小灯 → 电源负极
-```
-
-开关闭合时，回路可以导通；开关断开时，这条回路被切断。这里假设电源、小灯及连接本身都正常。
-
-继电器可以承担这个“开关”的角色。不同之处在于，你不需要用手拨动它，而是用电信号驱动内部机构改变触点连接。
-
-### 2. 什么是线圈、触点、吸合、释放
-
-对于本文这种电磁继电器，可以先记住两个部分：
-
-- **线圈**是控制部分。通入合适的驱动电流后产生磁场，使内部机构动作。
-- **触点**是开关部分。两个金属接点接触或分离，改变外部电路的通断。
-
-本文用“吸合”和“释放”描述继电器机构的两个状态：
-
-- **吸合**：线圈被驱动，内部机构切换到动作位置。
-- **释放**：驱动撤去，正常情况下机构回到释放位置。
-
-不要把这里的“释放”直接理解成“所有外设都关闭”，因为还要看外设接的是 NO 还是 NC。继电器及触点基础术语可对照 [OMRON 通用继电器技术说明](https://www.ia.omron.com/support/guide/17/further_information.html)。这些资料用于解释通用原理，不代表本模块由 OMRON 制造。
-
-### 3. USB 控制回路和外部负载回路要分开理解
-
-“负载”就是你想控制的用电对象，例如一盏灯。模块自身的 USB 供电，与负载需要的电源，是两个不同的问题。
-
-```mermaid
-flowchart TB
-    P[电脑上的 Python 程序] --> S[USB 串口接口]
-    S --> B[控制板驱动继电器]
-    B -. 改变触点连接 .-> C[COM 与 NO 或 NC]
-    E[外部电源] --> C
-    C --> L[匹配的外部负载]
-    L --> E
-```
-
-图中的虚线表示“控制触点动作”，不是 USB 电能流向负载。外部回路是原理示意，本次空载实验并不接入它。
-
-本文把 COM/NO/NC 当作无源开关触点使用：**这三个端子不是 USB 的 5V 电源输出口**。同时，机械触点与线圈分开，也不等于这块裸板已经获得适合市电使用的整板安全认证。
-
-## 三、彻底分清 COM、NO、NC
-
-### 1. 三个字母分别是什么意思
-
-| 字母 | 英文 | 中文 | 以线圈未励磁、机构处于释放位置为参照 |
-| --- | --- | --- | --- |
-| COM | Common | 公共端 | 在两个切换位置间共用的接点 |
-| NO | Normally Open | 常开端 | 与 COM 断开 |
-| NC | Normally Closed | 常闭端 | 与 COM 接通 |
-
-“常开”“常闭”里的“常”，是指继电器的正常释放状态，不是“程序还没运行”，也不是“USB 插上后一定是什么状态”。板卡上电时如何驱动线圈，要看具体固件，本文没有独立验证它的上电默认行为。
-
-### 2. 对照两个稳定状态看通断
-
-下表描述正常器件在相应机械状态下的触点关系，不是本次已经测得的电阻值。
-
-| 继电器机械状态 | COM ↔ NO | COM ↔ NC |
+| 继电器状态 | COM 与 NO（常开） | COM 与 NC（常闭） |
 | --- | --- | --- |
 | 释放 | 断开 | 接通 |
 | 吸合 | 接通 | 断开 |
 
-例如只接 COM 和 NO，吸合后才导通；如果改接 COM 和 NC，释放时反而导通。使用 NC 时，给模块断电也可能使外部回路接通，因此“拔掉 USB”不能被笼统地当成“外设一定断电”。
+如果想让一条回路在吸合时才接通，就使用 COM 和 NO；如果用 COM 和 NC，效果正好相反。这里说的是正常器件的稳定状态，通用定义可对照 [OMRON 继电器术语](https://www.ia.omron.com/support/guide/17/further_information.html)。
 
-触点切换还涉及机械时间、抖动和磨损。这里讨论的是稳定状态，不能用这个简化表推导出精确切换时序或无抖动保证。
+**本文把“开”称作吸合，把“关”称作释放。** 这样便于理解 COM—NO 的通断，但不是说“开继电器”就一定是开机器；接 NC 时关系相反，现场机器的控制方式也可能不同。
 
-### 3. 三个常见误会
+注意：**“释放”不等于“所有外设都关闭”**，还要看接的是 NO 还是 NC。上电后实际处于哪种状态，也要看控制板，不能只凭这个表猜。
 
-**COM 不是 GND。** GND 通常指某个电路的地或参考电位；这里的 COM 是开关公共端，不是让你把它接到电脑地线。
+找端子时认板上的字母，不记“上面那个”或“左边那个”。另外，板上的 `COM` 不是地线 `GND`，也不是接下来会看到的 Windows 串口名 `COM7`。
 
-**COM 端子不是 COM7。** 前者是板上的螺丝端子；后者是 Windows 分配给串口的设备名称。名字里都有 COM，但含义完全不同。
+## 三、在 Windows 中找到这块板
 
-**三个端子不是三个通道。** 这是一路转换触点，不是三个可独立开关的输出。初学时不要同时给 NO 和 NC 接两路电源，更不要尝试切换不同电压的电源。
+电脑需要先知道“指令发给哪个设备”。Windows 给串口设备分配的名字通常是 `COM` 加一个数字，例如 `COM7`。
 
-## 四、第一次练习前的安全条件
+### 第 1 步：打开设备管理器
 
-第一轮的目标仅仅是：让电脑识别设备，发出一次有限时长的控制指令，再观察或测量动作。
+右键点击 Windows 开始菜单，打开“设备管理器”，展开“端口（COM 和 LPT）”。
 
-开始前检查：
-
-1. COM、NO、NC 三个端子没有接任何外部电源或负载。
-2. 模块放在干燥、稳定、绝缘的表面，不接触螺丝、钥匙等金属物。
-3. 拿板边，不用手触碰裸露焊点，不对 USB 插头施加扭力。
-4. 不接市电、不拆插座、不控制门锁、加热器或其他可能伤人的设备。
-5. 如果模块异味、异常发热、冒烟或不断抖动，应停止使用并断开 USB 检查，不继续反复试指令。
-
-外壳上的额定值不能直接变成裸板的实用负载上限。整板走线、接线端子、导线、散热和外壳防护都需要核对。电机、电磁阀等感性负载还涉及启动电流和断开时的能量释放，不能照搬电阻性负载参数。[OMRON 的通用继电器安全注意事项](https://www.ia.omron.com/product/cautions/36/safety_precautions.html)说明了这类区别；它不能替代本板的专用规格书。
-
-## 五、电脑是怎样找到这块板的
-
-### 1. PWR 灯亮，说明到了哪一步
-
-本次使用者确认：插入 USB 后，`PWR` 灯亮了。这是供电指示，不是“控制成功”的证明。
-
-可以把检查分成四层：
-
-| 层次 | 检查对象 | 可以确认的范围 |
-| --- | --- | --- |
-| 供电 | PWR 指示灯 | 存在相应供电指示，不能证明数据通信正常 |
-| 识别 | Windows 中出现 CH340 串口 | 操作系统识别到了串口设备 |
-| 发送 | 程序完成串口写入 | 软件完成了指令发送，不等于模块正确执行 |
-| 动作 | 声音、SW 灯及触点测量 | 分别提供机构、驱动指示或触点通断证据 |
-
-这四层不要合并成一句“设备已经正常”。
-
-### 2. 用设备管理器查看串口
-
-在 Windows 中：
-
-1. 右键开始菜单，打开“设备管理器”。
-2. 展开“端口（COM 和 LPT）”。
-3. 找到类似 `USB-SERIAL CH340 (COM7)` 的条目。
-4. 记录括号里的串口号；换 USB 口或换电脑后，编号可能不同。
-
-本次实测编号是 **COM7**，不是原脚本默认写的 COM9。
-
-如果只看到蓝牙串口，不要拿它们来试。仅有灰色的历史 CH340 条目，也不能当成当前设备已在线；应查看当前连接的设备，并在空载条件下对比拔插前后的变化。
-
-如果出现未知设备或驱动警告，再检查驱动。CH340 的 Windows 驱动可从 [沁恒官方 CH341SER 下载页](https://www.wch.cn/downloads/ch341ser_exe.html)取得；名称中写 CH341，不代表它不支持 CH340。驱动状态正常、程序也能列出设备时，不需要仅为跟教程而重新安装驱动。
-
-### 3. 本次实际枚举到了什么
-
-本次原脚本 `--list` 输出中的设备行如下，省略了无关的蓝牙串口：
+本例电脑上看到的设备是：
 
 ```text
-COM7: USB-SERIAL CH340 (COM7) [USB VID:PID=1A86:7523 SER= LOCATION=1-1]
+USB-SERIAL CH340 (COM7)
 ```
 
-`VID:PID=1A86:7523` 是这一 USB 接口的厂商/产品标识。它可以帮助排除误选蓝牙串口，但不是整块板的唯一身份证，也不证明固件兼容 LCUS-1 协议。两块相同 USB 转串口芯片的板可能具有同样标识。
+`CH340` 是 USB 转串口芯片的名称；括号中的 **COM7 才是代码要填写的串口号**。你的电脑可能是 COM3、COM8，按自己看到的填写，不要照抄编号。
 
-## 六、先准备 Python，不急着控制硬件
+### 第 2 步：确认没有选错设备
 
-### 1. Python、pip、pyserial 分别是什么
+如果电脑有多个串口，可以在端子没有接线的条件下拔下、插回这块板，对比哪个条目消失又出现。不要拿蓝牙串口逐个试发指令。
 
-| 名称 | 在本文中负责什么 |
-| --- | --- |
-| Python | 运行 `.py` 程序 |
-| pip | 给这个 Python 安装第三方库 |
-| pyserial | 让 Python 访问串口的库 |
-| PowerShell | 输入启动命令的窗口，不是 Python 解释器 |
-| `.venv` | 给这组练习单独准备的 Python 环境 |
+如果没有出现对应设备，或者有黄色警告，再检查 USB 连接和驱动。CH340 驱动可从 [沁恒官方 CH341SER 下载页](https://www.wch.cn/downloads/CH341SER_EXE.html)取得。已经正常识别时，不必为了跟教程而重新装驱动。
 
-安装的包叫 `pyserial`，代码里写的却是 `import serial`，这是正常的。不要为了消除导入错误而随意安装一个叫 `serial` 的其他包。
+**这一节做到：知道本次设备的实际串口号。** 找不到设备时，先停在这里，不急着运行控制代码。
 
-打开 PowerShell，先输入：
+## 四、准备运行 Python 的环境
+
+这一节只用到三个名称：Python 负责运行程序，pip 负责安装工具，pySerial 负责让 Python 访问串口。
+
+### 第 1 步：打开练习文件夹中的 PowerShell
+
+在“文档”中新建一个文件夹，命名为 `UsbRelayDemo`，以后把代码放在这里。打开这个文件夹，在文件资源管理器的地址栏输入 `powershell`，按回车。
+
+这样打开的命令窗口就在这个文件夹里。下面所有标为 PowerShell 的命令，都在这个窗口中**逐条输入，按回车执行**，不要一起粘进 Python 程序。
+
+### 第 2 步：确认 Python 能运行
 
 ```powershell
 python --version
 ```
 
-本次电脑实际输出为 `Python 3.11.5`。其他电脑不必完全相同；本文教学代码按 Python 3.11 编写和验证。没有 Python 时，可先按 [Python 官方 Windows 使用说明](https://docs.python.org/3.11/using/windows.html)完成安装，并确认命令能运行。
+正常时会显示类似 `Python 3.11.5` 的版本号；这是本例使用的版本，不要求你的版本号完全相同。
 
-注意输入位置：看到 `PS C:\...>` 通常是 PowerShell；看到 `>>>` 则是在 Python 交互解释器里。本文标成 `powershell` 的命令应在 PowerShell 中运行，不要粘进 `>>>`。
+如果找不到 `python`，或跳到了商店而没有显示版本，先按 [Python 官方 Windows 安装说明](https://docs.python.org/3/using/windows.html)安装并确认命令可用，再继续。安装后需要重新打开 PowerShell。看到 `>>>` 表示误进了 Python 交互窗口，输入 `exit()` 回到 PowerShell。
 
-### 2. 创建练习目录和独立环境
-
-下面的变量会指向当前用户目录下的 `Documents\UsbRelayDemo`，不需要把示例中的用户名改成自己的名字。如果你把练习放在别的位置，后续要进入实际保存代码的目录。
+### 第 3 步：安装串口工具
 
 ```powershell
-$relayDemoDir = Join-Path $env:USERPROFILE 'Documents\UsbRelayDemo'
-New-Item -ItemType Directory -Path $relayDemoDir -Force | Out-Null
-Set-Location -LiteralPath $relayDemoDir
-python -m venv .venv
-& .\.venv\Scripts\python.exe -m pip install --index-url https://pypi.org/simple pyserial==3.5
+python -m pip install pyserial==3.5
 ```
 
-逐行理解：第一行记住目录，第二行确保目录存在，第三行进入目录，第四行创建独立环境，最后一行只向这个环境安装依赖。`3.5` 是本次实际安装并使用的 pySerial 版本，不是在声称它永远是最新版本。
+这条命令给当前这个 Python 安装 pySerial。安装包叫 `pyserial`，稍后代码写的是 `import serial`，这两个名字不同是正常的。
 
-如果你正在使用本次已经准备好的目录，而且 `.venv\Scripts\python.exe` 能正常运行，就不必重复创建环境和安装依赖。可先检查：
+再运行一次只查看设备、不发送指令的命令：
 
 ```powershell
-& .\.venv\Scripts\python.exe -c "import sys, serial; print(sys.version.split()[0]); print(serial.VERSION)"
+python -m serial.tools.list_ports
 ```
 
-本次输出为：
+输出中应能找到你在设备管理器确认过的串口。如果报错，先看后面的排障表。这里统一使用 `python`，避免安装依赖和运行程序时用了不同的 Python。
 
-```text
-3.11.5
-3.5
-```
+### 文件夹里已经有 `.venv`，为什么还提示缺少 serial？
 
-这里使用明确的 Python 路径，所以不需要运行 `Activate.ps1`，也不需要为了激活环境去放宽 PowerShell 执行策略。开头的 `&` 是 PowerShell 的调用运算符，用来执行后面的程序路径。虚拟环境的用途和无需激活的运行方式见 [Python venv 文档](https://docs.python.org/3.11/library/venv.html)。
+`.venv` 是这个项目自己的 Python 环境。**进入文件夹不会自动启用它。** 如果 pySerial 装在 `.venv` 里，直接输入 `python` 仍可能调用另一个没装依赖的 Python。
 
-以后重新打开 PowerShell 时，先回到代码目录，再执行后文的相对路径命令：
+本次实际排查 `D:\demo\UsbRelayDemo` 时就遇到了这种情况：普通 `python` 指向 `D:\Developer Tools\Python311\python.exe`，没有 pySerial；`.venv\Scripts\python.exe` 已经安装 pySerial 3.5。
+
+最直接的办法是指定这个环境的 Python，不需要先学激活命令，也不用修改 PowerShell 的执行策略。进入项目文件夹后，先做一个**不会操作继电器**的检查：
 
 ```powershell
-Set-Location -LiteralPath (Join-Path $env:USERPROFILE 'Documents\UsbRelayDemo')
+.\.venv\Scripts\python.exe -c "import sys, serial; print(sys.executable); print(serial.__version__)"
 ```
 
-### 3. 用 Python 只查看串口
+正常会显示这个文件夹内的 Python 路径和 `3.5`。如果这个环境也缺少依赖，再运行：
 
 ```powershell
-& .\.venv\Scripts\python.exe -m serial.tools.list_ports -v
+.\.venv\Scripts\python.exe -m pip install pyserial==3.5
 ```
 
-这是 pySerial 提供的枚举工具，不是控制命令。查看名称、描述和硬件标识即可，不必打开所有端口测试。[pySerial 串口枚举文档](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports)说明了这些字段。
+使用哪一个 Python 运行程序，就用同一个 Python 的 `-m pip` 安装依赖。后面出现的 `python`，也要替换成 `.\.venv\Scripts\python.exe`。这符合 [Python 官方虚拟环境说明](https://docs.python.org/3/library/venv.html#how-venvs-work)：不激活也可以直接调用环境里的解释器。
 
-## 七、电脑究竟发了什么
+## 五、一个程序，两个独立操作
 
-### 1. 本文使用的协议范围
+安装好前面的环境、保存好代码后，日常只需要区分这两条命令：
 
-使用者原有 `Usb_Test.py` 按 LCUS-1 风格协议编写，串口设置是 **9600、8N1、无流控**。本文保留这套设置与两条指令，不把它扩展成“所有 CH340 继电器都适用”。
-
-| 参数 | 本文设置 | 入门理解 |
+| 想做什么 | 在 PowerShell 输入 | 程序只发送什么 |
 | --- | --- | --- |
-| 波特率 | 9600 | 双方约定的通信速率参数 |
-| 数据位 | 8 | 每个数据单元包含 8 个数据位 |
-| 校验 | N / None | 不使用串口奇偶校验位 |
-| 停止位 | 1 | 使用 1 个停止位 |
-| 流控 | 关闭 | 不启用本文未使用的软/硬件流控 |
+| 开：让继电器吸合 | `python .\relay_demo.py on` | `A0 01 01 A2` |
+| 关：让继电器释放 | `python .\relay_demo.py off` | `A0 01 00 A1` |
 
-这些是让两端正确交换数据的约定，不能理解成“设置越大越好”。它们的名称与 Python 配置项可对照 [pySerial 的入门示例](https://pyserial.readthedocs.io/en/latest/shortintro.html)。
+**`on` 不会顺便执行 `off`。** 两条命令是两次独立操作，不需要修改代码里的指令，也没有两秒后自动释放的步骤。
 
-### 2. 两条指令
+### 第 1 步：保存代码，只改串口号
 
-| 希望模块执行的动作 | 发送的四个原始字节 | 正常动作后对应的触点关系 |
-| --- | --- | --- |
-| 释放 | `A0 01 00 A1` | COM 与 NO 断开，COM 与 NC 接通 |
-| 吸合 | `A0 01 01 A2` | COM 与 NO 接通，COM 与 NC 断开 |
+可以直接下载 [relay_demo.py：入门示例](/examples/usb-relay/relay_demo.py)，放进刚才的 `UsbRelayDemo` 文件夹，用记事本打开编辑。也可以新建文件，复制下面的完整代码。
 
-原脚本引用的 [LCUS-1 社区项目](https://github.com/diyism/usb-controlled-relay-lcus1)及其 [实际发送脚本](https://github.com/diyism/usb-controlled-relay-lcus1/blob/master/deaf_alarm.sh)使用了相同字节序列。它是可核对的参考实现，不是本次这块板的厂家验收证明。
+文件名必须是 **relay_demo.py**，不是 `relay_demo.py.txt`。可以用代码块右上角的复制按钮复制完整代码。下载文件采用 **UTF-8 BOM** 编码，带有帮助 Windows 工具识别中文的文件头；它不会作为继电器指令发送。
 
-以吸合帧为例，`A0` 用作帧起始标识，`01` 是第一路，后面的 `01` 表示吸合，末尾 `A2` 是校验字节。对本文这两帧，前三个字节之和的低 8 位与末字节相同：
+如果自己复制保存，在记事本“另存为”中选择“所有文件”和“带有 BOM 的 UTF-8”（不同版本也可能叫“UTF-8 with BOM”）。不要保存为 ANSI。如果中文已经变成不认识的字符，重新下载或复制本页代码，不要仅把乱码文件改存为 UTF-8；改编码不会自动还原已经损坏的文字。
 
-```text
-0xA0 + 0x01 + 0x00 = 0xA1
-0xA0 + 0x01 + 0x01 = 0xA2
-```
-
-`0x` 表示十六进制，例如 `0xA0` 的十进制值是 160。你暂时只需知道：这些是约定好的数值，不是随意写的字符串。
-
-### 3. 不是发送字母 A、数字 0 和空格
-
-这段 Python 会得到四个字节：
+**适用范围：**下面两条指令已在本例 COM7 设备上实际发送，通信速率为 9600；使用者已确认听到了本次测试的切换声。其他 USB 继电器即使同样写着 CH340 或 JQC-3FF-S-Z，也不一定适用；应先对照整块板的卖家协议，不能只看继电器外壳型号判断。
 
 ```python
-command = bytes.fromhex("A0 01 01 A2")
-print(len(command))           # 4
-print(command.hex(" "))      # a0 01 01 a2
-```
-
-而下面这一行得到的是一串可读文字对应的字节，并不相同：
-
-```python
-wrong_command = b"A0 01 01 A2"
-print(len(wrong_command))     # 11，不是 4
-```
-
-因此既不要直接发送字符串 `"1"`，也不要把 `"A0 01 01 A2"` 当普通文本发出去，更不要自行添加回车换行。`bytes.fromhex()` 的作用见 [Python 字节类型文档](https://docs.python.org/3.11/library/stdtypes.html#bytes.fromhex)。
-
-## 八、先下载教学代码，离线演练一遍
-
-本文提供四个文件：
-
-- [relay_control.py：控制程序](/examples/usb-relay/relay_control.py)
-- [requirements.txt：依赖版本](/examples/usb-relay/requirements.txt)
-- [test_relay_control.py：不连接硬件的单元测试](/examples/usb-relay/test_relay_control.py)
-- [README.md：简短操作说明](/examples/usb-relay/README.md)
-
-把文件保存到前面创建的 `UsbRelayDemo` 目录。浏览器如果直接显示源码，可使用“另存为”；确认文件名是 `relay_control.py`，不是 `relay_control.py.txt`。也可以打开记事本，粘贴下一节的完整代码，以 UTF-8 编码、文件类型“所有文件”保存。
-
-在该目录打开 PowerShell：
-
-```powershell
-Get-ChildItem -Name
-& .\.venv\Scripts\python.exe .\relay_control.py --help
-& .\.venv\Scripts\python.exe .\relay_control.py pulse --dry-run
-```
-
-最后一行是**演练**，不打开串口、不发送数据，也不真的等待 2 秒。它打印的是程序计划执行的指令，不是硬件测量结果：
-
-```text
-[演练/未连接硬件] 释放: A0 01 00 A1
-[演练/未连接硬件] 吸合: A0 01 01 A2
-[演练] 计划保持 2 秒，本次跳过等待
-[演练/未连接硬件] 释放: A0 01 00 A1
-结束：未读取实际触点状态。
-```
-
-即使电脑没有连接继电器，也应该能完成这一步。演练路径甚至不需要导入 pySerial；安装 Python 后，使用普通 `python .\relay_control.py pulse --dry-run` 也可以练习。
-
-## 九、完整教学代码
-
-这是为本文整理的新程序，**不是把使用者原脚本直接改名**。它增加了无硬件演练、明确选择端口、空载确认、USB 标识检查、有限时长脉冲和离线测试。新程序没有在本次写作中再次驱动实体继电器，其硬件表现仍需要空载确认。
-
-真实发送时，程序只接受本次记录的 `1A86:7523` USB 标识。其他标识的板即使同样使用 CH340，也不在这段程序的当前适用范围内；不要为了绕过检查而盲目修改标识。
-
-如果网页将长代码折叠，可以点击代码块底部的箭头展开；不想手动复制时，直接下载上面的 `relay_control.py`。
-
-```python
-"""LCUS-1 风格协议的 USB 串口继电器教学程序。
-
-仅供端子不接外部电路的空载练习。CH340 的 VID/PID 不能证明固件协议。
-默认不操作设备；真实发送必须指定端口并提供 --confirm-no-load。
-程序不读取机械触点状态，发送成功不等于继电器已动作。
-"""
-
-import argparse
-import math
 import sys
-import time
-
-
-BAUDRATE = 9600
-EXPECTED_USB_ID = (0x1A86, 0x7523)
-COMMANDS = {
-    0: bytes.fromhex("A0 01 00 A1"),
-    1: bytes.fromhex("A0 01 01 A2"),
-}
-
-
-def build_command(value):
-    """只构造指令，不接触硬件；拒绝 True、False、字符串等输入。"""
-    if type(value) is not int or value not in COMMANDS:
-        raise ValueError("状态必须是整数 0（释放）或 1（吸合）")
-    return COMMANDS[value]
-
-
-def checked_seconds(value):
-    """限制为一次短时练习；也拒绝 nan、inf。"""
-    seconds = float(value)
-    if not math.isfinite(seconds) or not 0.1 <= seconds <= 10:
-        raise ValueError("保持时间必须在 0.1～10 秒之间")
-    return seconds
-
-
-def list_ports():
-    """仅枚举串口，不打开串口，也不发送指令。"""
-    from serial.tools.list_ports import comports
-
-    ports = sorted(comports(), key=lambda item: item.device)
-    if not ports:
-        print("未发现串口，请检查 USB 连接和驱动。")
-    for item in ports:
-        print(f"{item.device}: {item.description} [{item.hwid}]")
-
-
-def check_target(port):
-    """校验本教程这块板的 USB 标识，避免误选蓝牙等其他串口。"""
-    from serial.tools.list_ports import comports
-
-    matches = [item for item in comports()
-               if item.device.casefold() == port.casefold()]
-    if len(matches) != 1:
-        raise ValueError(f"未找到唯一的在线串口：{port}")
-    if (matches[0].vid, matches[0].pid) != EXPECTED_USB_ID:
-        raise ValueError("该端口不是本教程预期的 1A86:7523 设备，停止发送")
-
-
-def send_state(value, port=None, *, dry_run=False):
-    """发送一次状态指令；返回的是指令字节，不是实际继电器状态。"""
-    command = build_command(value)
-    action = "吸合" if value else "释放"
-    if dry_run:
-        print(f"[演练/未连接硬件] {action}: {command.hex(' ').upper()}")
-        return command
-    if not port:
-        raise ValueError("真实发送必须明确指定串口")
-
+try:
     import serial
-
-    with serial.Serial(
-        port=port,
-        baudrate=BAUDRATE,
-        bytesize=serial.EIGHTBITS,
-        parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE,
-        timeout=1,
-        write_timeout=1,
-        xonxoff=False,
-        rtscts=False,
-        dsrdtr=False,
-    ) as connection:
-        written = connection.write(command)
-        if written != len(command):
-            raise OSError(f"发送不完整：{written}/{len(command)} 字节")
-        connection.flush()
-    print(f"[仅发送，未回读触点] {port} {action}: {command.hex(' ').upper()}",
-          flush=True)
-    return command
-
-
-def pulse(port=None, seconds=2, *, dry_run=False):
-    """释放 → 吸合 → 等待 → 尝试释放；不做无限循环。"""
-    seconds = checked_seconds(seconds)
-    send_state(0, port, dry_run=dry_run)
-    if not dry_run:
-        time.sleep(1)
-    try:
-        send_state(1, port, dry_run=dry_run)
-        if dry_run:
-            print(f"[演练] 计划保持 {seconds:g} 秒，本次跳过等待")
-        else:
-            time.sleep(seconds)
-    finally:
-        # 即使吸合发送/等待出错，也尝试释放；断线、掉电等仍可能使其失败。
-        send_state(0, port, dry_run=dry_run)
-
-
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", nargs="?", choices=("on", "off", "pulse"))
-    modes = parser.add_mutually_exclusive_group()
-    modes.add_argument("--list", action="store_true", help="只列出串口")
-    modes.add_argument("--dry-run", action="store_true", help="只打印指令，不连接硬件")
-    parser.add_argument("--port", help="实际串口，例如 COM7；没有默认值")
-    parser.add_argument("--seconds", default="2", help="pulse 保持时间，0.1～10 秒")
-    parser.add_argument("--confirm-no-load", action="store_true",
-                        help="确认三个接线端子均未连接外部电路")
-    args = parser.parse_args(argv)
-    if args.list and args.action:
-        parser.error("--list 不能与 on/off/pulse 同时使用")
-    if args.action is None and not args.list:
-        parser.print_help()
-        return 0
-    if args.action and not args.dry_run:
-        if not args.port:
-            parser.error("请先 --list，再使用 --port 明确指定串口")
-        if not args.confirm_no_load:
-            parser.error("仅供空载练习；确认端子空置后添加 --confirm-no-load")
-
-    try:
-        seconds = checked_seconds(args.seconds) if args.action == "pulse" else 2
-        if args.list:
-            list_ports()
-            return 0
-        if not args.dry_run:
-            check_target(args.port)
-        if args.action == "pulse":
-            pulse(args.port, seconds, dry_run=args.dry_run)
-        else:
-            send_state(1 if args.action == "on" else 0, args.port,
-                       dry_run=args.dry_run)
-        print("结束：未读取实际触点状态。")
-        return 0
-    except ImportError:
-        print("缺少依赖，请用运行本程序的同一个 Python 安装 pyserial。", file=sys.stderr)
-    except KeyboardInterrupt:
-        print("已中断；不能保证实际已释放，请检查设备。", file=sys.stderr)
-        return 130
-    except (OSError, ValueError) as exc:
-        print(f"操作失败：{exc}；实际状态未知，请检查设备。", file=sys.stderr)
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+except ModuleNotFoundError:
+    raise SystemExit(f"缺少 pySerial，请在 PowerShell 执行：\n& '{sys.executable}' -m pip install pyserial==3.5") from None
+PORT = "COM7"  # 改成设备管理器中确认过的串口号
+COMMANDS = {"on": "A0 01 01 A2", "off": "A0 01 00 A1"}
+if len(sys.argv) != 2 or sys.argv[1] not in COMMANDS:
+    raise SystemExit("用法：python relay_demo.py on（开）或 off（关）")
+if input("确认三个端子都没有接线，输入 yes 后回车：") != "yes":
+    raise SystemExit("已取消，没有打开串口。")
+with serial.Serial(PORT, 9600, write_timeout=1) as relay:
+    written = relay.write(bytes.fromhex(COMMANDS[sys.argv[1]]))
+    if written != 4:
+        raise OSError("指令没有完整写出，请检查设备。")
+    relay.flush()
+print("已发送开（吸合）指令。" if sys.argv[1] == "on" else "已发送关（释放）指令。")
 ```
 
-## 十、从零看懂这段代码
+第一次只改 `PORT = "COM7"` 中的编号。例如设备管理器显示 COM8，就把它改成 `PORT = "COM8"`，然后保存。不要改代码缩进，也不用修改指令中的数字。
 
-### 1. import：把需要的工具引进来
+### 第 2 步：先单独执行“开”
 
-`argparse` 负责理解命令行参数；`time` 用来等待；`math` 帮助排除无穷大和无效时长；`sys` 用来返回退出码和输出错误。这四个都是 Python 标准库，不需要另外安装。
-
-`serial` 则来自安装的 pySerial。它被放到真实发送分支中再导入，因此 `--dry-run` 不依赖它。
-
-### 2. def：把一项工作起个名字
-
-`def build_command(value):` 定义一个函数。调用 `build_command(1)` 时，`value` 取得整数 1，函数返回对应的四字节指令。
-
-程序里的 `0` 和 `1` 表示本协议中的释放与吸合。它们不是灯的通用开关值：接 NC 的负载，其通断关系与接 NO 时相反。
-
-`COMMANDS` 是字典，用一个值查找另一份数据；`COMMANDS[1]` 就是取出吸合指令。`return` 把结果交给调用者，不是向设备发指令。
-
-### 3. 串口参数为什么写得这么明确
-
-`serial.Serial(...)` 在指定端口后会打开串口，`connection.write(command)` 才发送数据。`bytesize`、`parity`、`stopbits` 对应前文的 8N1。
-
-`timeout=1` 是读超时设置，`write_timeout=1` 是写超时设置。**写了读超时不代表程序真的读取过设备回复**，这段程序没有调用触点状态读取逻辑。
-
-`written` 保存 pySerial 报告写出的字节数；不是 4 就报错。`flush()` 等待待发送数据写出，不是在等待触点动作，更不是“继电器已吸合”的确认。串口构造、字节写入和 `flush()` 的准确行为见 [pySerial API 文档](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)。
-
-关闭流控也不等于把所有串口控制线固定为低电平。pySerial 文档提醒，某些系统或驱动在打开端口时可能改变 RTS/DTR，甚至出现短暂跳变。没有完整板卡电路和实测，不能据此保证打开串口时设备绝不会产生其他动作，这也是本文只允许空载练习的原因之一。
-
-### 4. with：用完关闭串口
-
-`with serial.Serial(...) as connection:` 管理这一段串口资源。离开代码块时关闭端口，即使块内抛出异常也会执行相应清理。
-
-**关闭串口不等于释放继电器。** 关闭的是电脑与设备的通信句柄，不是向模块发送 `A0 01 00 A1`。模块是否维持先前驱动状态由固件决定，不能靠退出 Python 来代替释放指令。
-
-### 5. try / finally：等待出错也尝试释放
-
-`pulse()` 先发释放，等待 1 秒，再进入包含吸合与保持的代码段。无论吸合发送或保持阶段是否抛出异常，`finally` 都会尝试再发一次释放。
-
-这里使用“尝试”而不是“保证”：设备掉线、端口打不开、电脑掉电、进程被强制终止或触点故障时，软件都可能无法完成预期动作。普通 Python 程序不能取代安全联锁或硬件急停。
-
-`--seconds 2` 控制的是两次发送之间的程序等待时间，正常运行时约 2 秒，并不是经过标定的触点闭合时长。操作系统调度、串口发送和机构动作都会影响实际时序。
-
-### 6. 命令行参数怎样对应函数
-
-| 命令部分 | 程序中的意思 |
-| --- | --- |
-| `--list` | 调用 `list_ports()`，只枚举 |
-| `on` | 调用 `send_state(1, ...)` |
-| `off` | 调用 `send_state(0, ...)` |
-| `pulse` | 调用 `pulse(...)`，执行有限时长序列 |
-| `--port COM7` | 指定本次实际检查过的串口 |
-| `--dry-run` | 打印指令，不连接硬件 |
-| `--confirm-no-load` | 操作者确认端子没有外部接线；不是软件自动检测结果 |
-
-代码中的 `*` 表示后续参数按名字传入，例如 `dry_run=True`；代码缩进表示哪些语句属于哪个函数或分支，复制时不要删掉行首空格。文件末尾的 `if __name__ == "__main__":` 让直接运行文件时执行命令行入口，供测试导入时则不自动操作设备。
-
-## 十一、四个循序渐进的练习
-
-以下命令都假设你在保存了代码的 `UsbRelayDemo` 目录中。**真实发送前必须重新确认端口号，并确保三个端子没有外部接线。** 若实际端口不是 COM7，应替换命令中的编号，而不是把设备名称硬改成 COM7。
-
-### 练习 1：只枚举，不发送
+再次看一眼：**三个端子都没有接线，串口号已经核实，其他串口调试工具已经关闭。** 然后在 PowerShell 输入：
 
 ```powershell
-& .\.venv\Scripts\python.exe .\relay_control.py --list
+python .\relay_demo.py on
 ```
 
-对照设备管理器找到 CH340 条目。没有找到就停在这一层，不要猜端口、不遍历发送。
+程序会停在确认提示处，不会立即打开串口。确实满足空载条件后，输入小写的 `yes`，按回车；输入其他内容会取消。
 
-### 练习 2：不接硬件，改变保持时间
-
-```powershell
-& .\.venv\Scripts\python.exe .\relay_control.py pulse --seconds 1 --dry-run
-```
-
-观察输出中的“计划保持 1 秒”。程序为教学练习限制在 0.1～10 秒；这是本文自行设置的使用限制，不是厂家公布的最大吸合时间。
-
-### 练习 3：真实空载脉冲
-
-确认实物和端口后，一次只运行下面这一条：
-
-```powershell
-& .\.venv\Scripts\python.exe .\relay_control.py pulse --port COM7 --seconds 2 --confirm-no-load
-```
-
-程序计划执行：释放 → 等待 1 秒 → 吸合 → 等待约 2 秒 → 尝试释放。
-
-执行前先留意模块，观察 `SW` 灯是否随指令变化，听有没有切换声。通常初始释放时若原本已释放，不会再有一次明显切换声；不能机械地认为发三条指令就一定听到三声。`SW` 的具体电路连接没有完整板卡资料，因此它只能作为指示观察，不能直接当成触点测量。
-
-没有声音或指示变化时，不要开启无限循环“多试几次”。先按后面的排障表检查协议、串口和供电。
-
-### 练习 4：分别理解 on 与 off
-
-仍然只允许空载。先读完两条命令及说明，再操作：
-
-```powershell
-& .\.venv\Scripts\python.exe .\relay_control.py on --port COM7 --confirm-no-load
-```
-
-这条只发送一次吸合指令，**不会自动定时释放**。观察后，执行：
-
-```powershell
-& .\.venv\Scripts\python.exe .\relay_control.py off --port COM7 --confirm-no-load
-```
-
-这条只发送释放指令。如果你不熟悉手动分两次操作，先使用练习 3 的 `pulse`。
-
-## 十二、怎样确认触点真的通断
-
-只听声音能提供机构动作的线索；只看 SW 灯能提供指示电路变化的线索。要检查 COM 与 NO/NC 的电连接，需要测量触点。
-
-### 1. 使用万用表前的条件
-
-这一步是待执行的验证方法，**本次没有实际万用表读数**。你需要先看所用万用表的说明书，认识通断档或电阻档。
-
-- 不连接任何外部负载或外部电源，尤其不能接市电。
-- 表笔插在说明书要求的 COM 和 V/Ω 插孔，不要留在 A/mA 电流插孔。
-- 不对带外部电压的电路使用通断/电阻档。
-- USB 只给控制部分供电；测量只接触已与外部电路断开的 COM、NO、NC 触点，不去碰其他焊点。
-- 如果不能确认被测端子没有外加电压，停下，请熟悉仪表的人协助。
-
-### 2. 比较两个状态，而不是编一个“标准实测值”
-
-先固定表笔位置，再运行一次空载脉冲；不要一边移动表笔一边输入命令。
-
-| 测量对象 | 释放时预期 | 吸合时预期 |
-| --- | --- | --- |
-| COM 与 NO | 不导通 | 导通 |
-| COM 与 NC | 导通 | 不导通 |
-
-不同万用表的蜂鸣阈值、显示符号和响应速度不同，按仪表说明判断。本文不编造“测得 0.0Ω”或其他读数；这种方法也是入门通断检查，不是四线法触点电阻检测、绝缘测试或整板安全认证。
-
-## 十三、一个低压小灯的接线原理实例
-
-本节用于解释“电源从哪里来、开关放在哪里”，**不是本次已接线并点亮的实验**。接入任何负载前，仍需取得板卡资料并核对电压、电流、端子、线材和必要保护。本教程的代码特意要求空载确认，接入小灯后便不再符合它的使用前提，不要带着外部接线虚假填写 `--confirm-no-load`。
-
-假设以后选择一盏额定 5V 直流、内部已包含限流设计的小功率成品 LED 指示灯，并使用与它匹配、具有适当限流或保护的独立 5V 电源，开关原理如下：
+正常写出后会提示：
 
 ```text
-外部 5V 电源正极 ── COM
-                       继电器触点
-                    NO ── 成品 5V 指示灯正极
-外部 5V 电源负极 ───────── 成品 5V 指示灯负极
-
-NC：这个示例中不接
-USB：单独连接电脑，给控制板供电并通信
+已发送开（吸合）指令。
 ```
 
-需要先把 USB 与外部电源都断开，再由确认了端子含义的人接线、检查，不能带电调整。实作时电源保护与布线不能因为本图省略了细节就省略。
+这时留意继电器是否有切换声、SW 指示灯是否变化。程序随后结束，**不会再补发关指令**；程序退出和继电器释放是两回事。
 
-正常释放时 COM 与 NO 断开，这条灯的回路不完整；正常吸合后两者接通，外部电源才能沿这条回路给灯供电。电流来自**外部电源**，不是 COM 自己产生的。
+### 第 3 步：需要关闭时，再单独执行“关”
 
-这里不把外部电源负极接到电脑 USB 的 GND；对于这种单纯串联机械触点的回路，不应为了“看起来需要共地”就额外连线。也不要把外部电源正负极直接接在 COM 与 NO 两端：触点一旦闭合，就可能把电源短路。
-
-示例中的“成品 5V 指示灯”不是一颗裸 LED。裸 LED 需要按其正向压降和额定电流设计限流，不能直接接 5V；不了解这些参数时，不用裸 LED 替代。电压低也不代表短路不会发热，接入负载后的实际操作应作为另外一次有明确器材和条件的实验。
-
-## 十四、本次到底验证到了哪一步
-
-下面记录的是写作前在使用者电脑上的操作，不是为文章虚构的完整成功案例。
-
-| 项目 | 本次证据或状态 |
-| --- | --- |
-| 实物标识 | 使用者提供了正反面照片，读到 JQC-3FF-S-Z、5VDC、USB Serial Relay 和端子标识 |
-| 外部接线 | 照片中的三个端子为空；操作前已要求继续保持空载 |
-| PWR 灯 | 使用者明确反馈“已插好，PWR 灯亮了” |
-| USB 识别 | 发现在线的 USB-SERIAL CH340 (COM7)，设备状态为 OK |
-| USB 标识 | 1A86:7523 |
-| 运行环境 | Python 3.11.5，独立虚拟环境中的 pySerial 3.5 |
-| 指令发送 | 原有 Usb_Test.py 的函数完成释放、吸合、再次释放发送，过程无报错 |
-| 控制间隔 | 原测试在吸合发送后等待约 2 秒，再发送释放 |
-| 动作声音 / SW 灯 | 截至写作时，尚未收到使用者的动作确认 |
-| 触点通断 | 没有万用表实测证据 |
-| 外部负载 | 未连接、未测试 |
-| 本文新教学程序 | 完成离线软件验证，没有为写作而再次驱动实体板卡 |
-
-原测试实际输出中的发送记录为：
-
-```text
-Initial RELEASE command sent: A0 01 00 A1
-ENERGIZE command sent: A0 01 01 A2
-Final RELEASE command sent: A0 01 00 A1
-Test finished. Commands sent only; physical relay state has not been read back.
-```
-
-因此准确的说法是：**本机已识别 USB 串口设备，并成功完成这三条指令的串口发送；实体动作及触点通断仍待确认。** 不能写成“实测继电器工作正常”“灯已经点亮”或“已证明这块板完全兼容 LCUS-1”。
-
-原脚本默认 COM9，本次通过显式指定 COM7 使用，没有改动原文件。原脚本的 `1/0` 与本文教学程序的 `on/off` 参数形式不同，不能混着使用；也不要把本文的 `--dry-run`、`pulse` 等新参数传给原脚本。
-
-## 十五、报错和没有动作时，按什么顺序排查
-
-| 现象 | 先检查什么 | 不应直接下的结论 |
-| --- | --- | --- |
-| PWR 不亮 | USB 是否插牢、接口是否供电；换一个正常接口对比 | 不能只凭此确定继电器元件坏了 |
-| PWR 亮，但没有 CH340 串口 | 当前连接的是哪台电脑、USB 数据连接、设备管理器警告和官方驱动 | 灯亮不代表数据连接正常；也不能直接认定一定缺驱动 |
-| 只有灰色 COM7 历史条目 | 看当前设备列表，空载拔插前后对比 | 历史记录不等于设备在线 |
-| `No module named 'serial'` | 使用运行脚本的同一个 `.venv\Scripts\python.exe` 安装 pyserial | 不能仅因为其他 Python 装过就认为当前环境也有 |
-| 找不到 `relay_control.py` | 当前目录、下载位置、是否被保存成 `.py.txt` | 不是串口或硬件故障 |
-| 提示必须指定端口/确认空载 | 先核实端子空置及实际端口，再补参数 | 不要在没有确认条件时随手加确认参数 |
-| 找不到指定 COM 口 | 设备是否仍在线、端口号是否变化 | 不要改成另一个蓝牙 COM 口碰碰运气 |
-| 拒绝访问、端口打不开 | 其他 Python 程序、串口工具是否占用，设备是否掉线 | 不应把一切都归因于权限，也不要立即强杀未知进程 |
-| USB 标识检查不通过 | 是否选错设备、是否是不同板型 | 相同外壳继电器不代表同一块控制板 |
-| 发送无报错，但无动作线索 | 协议是否匹配、9600/8N1 是否对应说明书、供电和板卡状态 | 四字节写入成功不证明固件接收并执行 |
-| 有声音，但外部电路没变化 | 在无外部电源的条件下核对端子和通断；负载问题另行检查 | 声音不能证明所有触点都正常 |
-| 程序结束后状态仍不明确 | 查看最后是否成功发出释放，并独立检查；不再连接危险负载 | 退出进程、关闭串口不保证外设断电 |
-
-串口被占用时，先正常关闭自己打开的串口工具或程序，再试一次。遇到“发送成功但不动作”，应向卖家索取**整块板的型号、协议、波特率及说明书**。不要连续猜测其他设备协议，更不要在接着负载时自动扫描指令。
-
-本文没有实现设备状态查询。网上看到某个板支持查询指令，并不能据此断言这块板也支持；即使固件返回“ON”，也需要区分它报告的是内部控制状态，还是独立测量的机械触点状态。
-
-## 十六、怎样自己验证程序，又不让硬件动作
-
-将下载的 `relay_control.py` 与 `test_relay_control.py` 放在同一目录，运行：
+仍然保持空载，在同一窗口输入：
 
 ```powershell
-& .\.venv\Scripts\python.exe -B -m unittest discover -s . -p test_relay_control.py -v
+python .\relay_demo.py off
 ```
 
-这组测试用替身模拟串口，不连接真实设备。它检查指令字节、参数校验、只枚举不打开端口、写入不完整时报错、脉冲顺序，以及吸合或保持阶段异常后尝试释放等行为。
+确认端子未接线后，输入小写 `yes`，按回车。正常写出后会提示：
 
-`-B` 表示不生成 Python 字节码缓存。测试通过只能说明这些软件逻辑符合测试预期，不能代替 USB 驱动测试、实体触点测量、负载试验或电气安全验收。
+```text
+已发送关（释放）指令。
+```
 
-这次练习完成的判断依据应当是：能找到正确串口，知道每条指令准备做什么，能说明 COM/NO/NC 的关系，并对实际观察到的动作保留记录。如果目前只有“发送无报错”，就把记录停在这里，不补写未发生的成功结果。
+这条命令只发送关指令，不会先开一次。以后要再开，就重新运行 `on`；要再关，就运行 `off`。
 
-## 资料来源与适用边界
+如果前面检查用的是 `.venv`，这里也指定它。确认仍然空载后，**只选择当前需要的一条执行**，不是让你把两条一起粘贴：
 
-资料核对日期：2026 年 10 月 20 日。
+```powershell
+.\.venv\Scripts\python.exe .\relay_demo.py on
+.\.venv\Scripts\python.exe .\relay_demo.py off
+```
 
-- [通灵 JQC-3FF-S-Z 产品资料](https://www.tonglingrelay.com/product/1034.html?productCateId=23)：用于区分继电器元件与控制板；链接为 12V 产品，不替代本文 5V 实物标识。
-- [沁恒 CH340 产品资料](https://www.wch.cn/products/CH340.html)、[官方 CH341SER 驱动](https://www.wch.cn/downloads/ch341ser_exe.html)：USB 转串口芯片及 Windows 驱动来源。
-- [LCUS-1 社区参考项目](https://github.com/diyism/usb-controlled-relay-lcus1)：与原脚本一致的协议参考，不是本板的厂家兼容证明。
-- [Python 3.11 Windows 使用说明](https://docs.python.org/3.11/using/windows.html)、[venv](https://docs.python.org/3.11/library/venv.html)、[bytes.fromhex](https://docs.python.org/3.11/library/stdtypes.html#bytes.fromhex)：运行环境与字节构造依据。
-- [pySerial 入门](https://pyserial.readthedocs.io/en/latest/shortintro.html)、[API](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)、[串口枚举](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports)：串口编程依据。
-- [OMRON 通用继电器术语](https://www.ia.omron.com/support/guide/17/further_information.html)、[通用继电器安全注意事项](https://www.ia.omron.com/product/cautions/36/safety_precautions.html)：解释通用触点原理与负载限制，不提供本控制板的额定能力保证。
+如果原本已经释放，再发关指令可能没有声音；已经吸合时再发开也一样。**控制状态，不等于每执行一次就切换一下。** 没有预期动作时，先按后面的表排查，不反复猜指令。
 
-本文不提供 220V 接线步骤，不声称验证过断电默认状态、上电状态、整板最大负载、长期寿命、绝缘等级或安全联锁能力。
+## 六、看懂代码里的“开”和“关”
+
+### 1. 导入工具，记住设备地址
+
+`import sys` 用来取得命令后面写的 `on` 或 `off`，`import serial` 提供串口功能。`PORT` 是一个变量，可以理解成“给串口号起一个名字”，后面不用反复填写它。
+
+`try` / `except ModuleNotFoundError` 用来处理缺少串口工具的情况：没有安装时，程序给出安装命令后退出，不打开串口。提示中的 `sys.executable` 是本次实际使用的 Python 路径，方便把依赖装进正确环境；路径外的引号和前面的 `&` 是 PowerShell 调用带空格路径的写法。
+
+`COMMANDS` 是一张小对照表，也叫“字典”：`on` 对应吸合指令，`off` 对应释放指令。你不需要运行两份不同代码，只要在命令后面选一个动作。
+
+`sys.argv` 保存命令行参数，`sys.argv[1]` 取出程序名后面的那个词。只接受一个参数，并且只能是小写 `on` 或 `off`；没写、拼错或多写时，程序显示用法并退出，不打开串口。后面的 `COMMANDS[sys.argv[1]]` 就是在对照表里查找本次动作的指令。[Python 官方参数说明](https://docs.python.org/3/library/sys.html#sys.argv)解释了这个列表。
+
+`input(...)` 会显示提示并等待你输入；`!= "yes"` 表示输入的内容不是小写 yes。若条件成立，`SystemExit` 结束程序。**这只是人工确认，程序不能自动检查端子有没有接线。**
+
+### 2. 打开串口
+
+`serial.Serial(PORT, 9600, write_timeout=1)` 的意思是：打开指定设备，用 9600 的通信速率发送，写入超时设为 1 秒。
+
+没有另外写出的数据格式使用 pySerial 默认值：8 个数据位、无奇偶校验、1 个停止位，流控关闭。第一次先按模块约定使用，不要把 9600 改得越大越好。
+
+`with ... as relay:` 给打开的串口起名为 `relay`，离开这段缩进代码时会关闭串口。它关闭的是通信连接，**不是自动向继电器发释放指令**。[pySerial API](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)说明了这些参数和方法。
+
+### 3. 发送两种动作指令
+
+| 代码中的选择 | 取出的四字节指令 | 本例协议要表达的动作 |
+| --- | --- | --- |
+| `COMMANDS["on"]` | `A0 01 01 A2` | 开：吸合 |
+| `COMMANDS["off"]` | `A0 01 00 A1` | 关：释放 |
+
+可以先把它们当成遥控器的两个按键编码，不需要先学会计算每个数字。
+
+`bytes.fromhex(...)` 把写给人看的十六进制数字转换成真正要发的四个字节；`relay.write(...)` 负责发送。不要把这一句改成发送字符串 `"1"`，也不要自行加回车换行。[Python 字节类型说明](https://docs.python.org/3/library/stdtypes.html#bytes.fromhex)可用于继续了解这种写法。
+
+`written` 是串口库报告写出的字节数。每条指令应当是 4 个字节，数量不对就报错；`relay.flush()` 等待待发送数据写出。它们都不是在查询真实触点。
+
+### 4. 为什么没有等待和“退出时自动关”
+
+因为这次要的是两个独立操作，而不是做一段自动演示。`on` 只写吸合，`off` 只写释放，所以程序里不需要等待几秒，也不在结束或出错时悄悄发送另一个动作。
+
+最后一行只打印本次发送的动作，**没有读取实际触点状态**。如果写入或等待写出失败，程序会先报错，不会显示正常完成的提示。遇到异常，实际状态可能不明确，需要现场检查；不能靠“把 Python 窗口关掉”代替关指令。
+
+Python 用行首空格区分代码属于哪一段，所以复制时要保留缩进。先练习说清楚：**端口是给谁发，动作是发什么，发送结束不是触点回读。** 不需要为了操作开关而学习循环、定时器或复杂参数框架。
+
+## 七、继电器没有动作时，检查这几项
+
+| 现象 | 下一步做什么 |
+| --- | --- |
+| PWR 亮，设备管理器没有对应串口 | 检查 USB 数据连接和驱动；灯亮只能说明有供电指示 |
+| 提示找不到 COM 口 | 重新看设备管理器，检查 USB 是否仍连接、端口号是否变化 |
+| 打开串口时提示拒绝访问 | 关闭占用该串口的调试工具或其他控制程序，再检查 USB 连接 |
+| 程序无报错，但没有预期动作 | 先确认不是重复发送当前状态，再核对串口号、供电和整板协议；不要猜其他指令反复发送 |
+
+想进一步检查开关是否真的导通，可以请熟悉万用表的人协助：**端子不接外部电源或负载，USB 只给控制板供电**，按万用表说明书使用通断档，比较释放与吸合时 COM—NO、COM—NC 的变化。不要对带外部电压的电路使用通断档，也不要把表笔插在电流档插孔中测量。
+
+声音是机构动作的线索，SW 灯是指示线索，触点测量才是在检查电连接。记录自己实际观察到什么，不把“没有报错”写成“设备已经验证正常”。
+
+## 八、用一个小灯例子理解接线
+
+这一节只解释原理，不是本次已经接线成功的实验。前面的程序仍然只用于空载，不要接了灯还输入 yes。
+
+假设有一盏**额定 5V、已内置限流的成品直流指示灯**和匹配的独立电源，把开关串进回路：
+
+```text
+外部电源正极 → COM → 继电器内部触点 → NO → 指示灯正极
+外部电源负极 ←──────────────────────── 指示灯负极
+
+NC 不接；USB 单独连接电脑。
+```
+
+正常释放时，COM—NO 断开，灯的回路被切断；正常吸合时，它们接通，外部电源才可以给灯供电。**电来自外部电源，不来自 COM 端子。**
+
+不要把电源正负极直接接在 COM、NO 两端，那样闭合后会短路；也不要用裸 LED 代替成品指示灯直接接 5V。真正接负载时，需要另外核对整板能力、灯的参数、线材及保护措施，断开电源后再接线。本文不提供市电接线步骤。
+
+## 九、以后怎样与网页系统联动
+
+读到这里，先完成本地空载练习就够了。下面是接入项目时的方向，不需要现在复制额外代码。
+
+如果 Spring Boot 部署在远端，继电器插在现场 Windows 电脑上，可以让现场电脑运行一个后台控制程序：
+
+```text
+已有异常结果 → Spring Boot → 现场后台程序 → USB 继电器 → 机器控制输入
+网页上的用户确认 → Spring Boot → 现场后台程序 → 解除停止信号
+```
+
+网页负责显示和确认，现场程序负责操作 USB。它应独立运行，不能依赖用户一直开着网页。远端与现场可以通过 WebSocket 等方式通信，Spring 有[官方支持](https://docs.spring.io/spring-framework/reference/web/websocket.html)。
+
+本篇已经把两个动作分开，但**这仍不是完整的现场常驻控制服务**。实际接入还需要保留停止状态、断线重连、指令结果和确认恢复处理，并根据机器输入要求决定使用持续接点还是脉冲。不能把 `off` 固定写成“停机器”，也不能把 `on` 固定写成“开机器”；解除停止信号不一定等于机器自动启动，现场独立按钮仍按原有方式工作。
+
+## 十、这次练习到哪里才算完成
+
+你至少应该能回答：自己的设备是哪个串口？COM 与 NO 在什么时候接通？代码哪一行发送吸合，哪一行发送释放？程序提示和实际动作有什么区别？
+
+2026 年 10 月 20 日，在使用者确认“只有 USB，三个端子没有外部接线”之后，先进行实物串口测试，再修订本节文档。Windows 识别到 `USB-SERIAL CH340 (COM7)`，USB 标识为 `1A86:7523`。
+
+| 本地时间（UTC+8） | 实际运行的短程序 | 软件检查结果 |
+| --- | --- | --- |
+| 13:50:09 | `relay_demo.py on` | 吸合指令的 4 个字节写出，等待写出完成，程序正常退出 |
+| 13:50:23 | `relay_demo.py off` | 释放指令的 4 个字节写出，等待写出完成，程序正常退出 |
+
+这是两个独立进程，中间约 14 秒是本次手动安排的间隔，不是程序定时功能，也不是经过测量的触点保持时间。测试最后发送的是关（释放）指令。
+
+**使用者已确认听到了本次测试的切换声。** 这属于现场反馈，不是作者通过程序听到了声音。触点通断未做万用表测量，没有万用表实测证据，也没有测试任何外部负载、电脑断电或上电默认状态。
+
+模块附带文件仅用于核对协议，不是本文的授课主线，也不要求读者阅读它。表中是独立开、关短程序的实际执行记录；后续修订补充了编码标识和缺少依赖时的提示，并精简输出，串口控制逻辑未改，修订后只做离线验证，没有再向设备发送指令。
+
+## 参考资料与可选下载
+
+资料核对日期：2026 年 10 月 20 日。这里区分通用知识、软件接口与本例板卡；没有整板说明书的部分，不推测负载能力、上电默认状态或状态查询指令。
+
+- [OMRON 通用继电器术语](https://www.ia.omron.com/support/guide/17/further_information.html)：常开、常闭和触点的基础定义，不是本板的产品说明。
+- [沁恒 CH340 资料](https://www.wch.cn/products/CH340.html)、[Windows 驱动](https://www.wch.cn/downloads/CH341SER_EXE.html)：USB 转串口芯片及驱动来源，不能据此判断继电器控制协议。
+- [Python Windows 使用说明](https://docs.python.org/3/using/windows.html)、[命令行参数](https://docs.python.org/3/library/sys.html#sys.argv)、[字节类型](https://docs.python.org/3/library/stdtypes.html#bytes.fromhex)：环境与语法依据。
+- [pySerial 入门](https://pyserial.readthedocs.io/en/latest/shortintro.html)、[API](https://pyserial.readthedocs.io/en/latest/pyserial_api.html)：串口枚举、打开、发送和关闭的依据。
+
+<details>
+<summary>可选：其他文件与原工具（第一次练习可以跳过）</summary>
+
+正文只需要 `relay_demo.py`。下面保留依赖文件、离线测试和参数更多的原教学工具，方便以后查看，不要求新手先学习它们。
+
+- [requirements.txt：依赖版本](/examples/usb-relay/requirements.txt)
+- [README.md：操作说明](/examples/usb-relay/README.md)
+- [test_relay_demo.py：短示例的离线测试](/examples/usb-relay/test_relay_demo.py)
+- [relay_control.py：带参数检查的原教学工具](/examples/usb-relay/relay_control.py)
+- [test_relay_control.py：原工具的离线测试](/examples/usb-relay/test_relay_control.py)
+
+原工具仍保留只枚举、不连接硬件的演练、USB 标识检查和空载确认参数，具体命令见 README。离线测试使用串口替身，不驱动实物；测试通过不等于硬件验收。
+
+</details>

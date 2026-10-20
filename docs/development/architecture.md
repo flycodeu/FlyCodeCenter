@@ -207,15 +207,15 @@ Markdown / MDX + frontmatter + src/site.config.ts
 
 ### DELIVERY.TEACHING_EXAMPLES 教学示例与 USB 继电器教程
 
-已有实现：USB 教程、仅空载教学程序与离线测试；仓库另有人脸算法源码及登录加密示例工程。
+已有实现：按初学者操作顺序重写的 USB 教程、17 行独立开/关空载示例（含缺少依赖时的安装提示与 UTF-8 BOM 下载）、可选的原命令行工具与离线测试；仓库另有人脸算法源码及登录加密示例工程。
 
-入口：`src/content/blog/USB单路继电器零基础入门与Python实操.md`、`public/examples/usb-relay/relay_control.py`、`public/examples/usb-relay/test_relay_control.py`、`public/examples/face-recognition/algorithms.py`、`examples/login-encryption/pom.xml`。
+入口：`src/content/blog/USB单路继电器零基础入门与Python实操.md`、`public/examples/usb-relay/relay_demo.py`、`public/examples/usb-relay/test_relay_demo.py`、`public/examples/usb-relay/relay_control.py`、`public/examples/usb-relay/test_relay_control.py`、`public/examples/face-recognition/algorithms.py`、`examples/login-encryption/pom.xml`。
 
-- `USB_DRY_RUN`：离线演练继电器指令。不打开串口；真实 CLI 指令另需显式端口、USB 标识检查与人工空载确认。
-- `USB_LEARNING`：按步骤学习并记录证据。解释端子、Windows 环境、协议、排障及待执行的触点验证。
+- `USB_DRY_RUN`：可选原工具提供离线指令演练，不打开串口；该工具的真实 CLI 指令另需显式端口、USB 标识检查与人工空载确认。短示例不提供 dry-run，由串口替身测试验证。
+- `USB_LEARNING`：先认识开关和端子，再找串口，分别运行短程序的 on 和 off，最后逐段解释和排障。短程序必须人工输入小写 yes 才打开指定串口，检查 4 字节完整写出，但不执行 USB 标识检查或自动反向动作；原长工具折叠为可选下载，现场联动仅说明方向。
 - `OTHER_EXAMPLES`：取得其他教学源码。公开下载与独立工程按仓库职责分开保存，不把演示模型测试当成真实外部系统验收。
 
-验证边界：USB 程序 20 项离线测试通过。此前原脚本仅完成三条串口指令发送；动作声音、SW 灯变化、触点和外部负载均没有完成确认。本轮不再次驱动硬件。
+验证边界：2026-10-20 13:50:09 / 13:50:23 在实际 COM7 分别执行当时的短程序 on / off，均完整写出 4 字节并正常退出，最后发关；使用者随后确认听到了本次测试的切换声。后续只补充编码与依赖提示、环境说明并离线验证，没有再次向硬件发送指令；没有触点测量、外部负载、断电默认状态或现场常驻控制服务验收。各轮离线测试结果见发布验证记录。
 
 ## ForgeFlow 同步规则
 
