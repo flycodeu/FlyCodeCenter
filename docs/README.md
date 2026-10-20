@@ -17,6 +17,7 @@
 
 ## 3. 插件架构
 
+- [当前架构与功能基线](./development/architecture.md)
 - [插件功能地图](./plugins/plugin-map.md)
 - [插件开发指南](./plugins/plugin-dev-guide.md)
 
