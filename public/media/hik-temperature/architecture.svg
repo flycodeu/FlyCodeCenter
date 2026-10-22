@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">海康测温报警到飞书图文通知</title><desc id="desc">相机报警经海康平台回调到接收服务器，后台下载图片保存到SQLite，再上传飞书并发送图文卡片。</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0L10 4L0 8" fill="none" stroke="#397560" stroke-width="1.5"/></marker></defs>
+  <rect width="1280" height="720" rx="24" fill="#f4f7f3"/>
+  <g font-family="Segoe UI,Microsoft YaHei,Arial,sans-serif" fill="#20392f">
+    <text x="56" y="73" font-size="15" letter-spacing="3" fill="#45735e">HIKVISION → PYTHON → FEISHU</text>
+    <text x="56" y="128" font-size="38" font-weight="700">一条报警，两张图片，一次图文通知</text>
+    <text x="56" y="171" font-size="22" fill="#697c70">回调先入库，后台完成图片下载和飞书上传</text>
+    <g stroke="#d0ded2" stroke-width="2">
+      <rect x="56" y="240" width="242" height="212" rx="16" fill="white"/>
+      <rect x="365" y="240" width="242" height="212" rx="16" fill="white"/>
+      <rect x="674" y="240" width="242" height="212" rx="16" fill="#e8f1e9" stroke="#739a7c"/>
+      <rect x="983" y="240" width="242" height="212" rx="16" fill="white"/>
+    </g>
+    <g font-size="16" fill="#46745b"><text x="80" y="277">01 / EVENT</text><text x="389" y="277">02 / PLATFORM</text><text x="698" y="277">03 / RECEIVER</text><text x="1007" y="277">04 / MESSAGE</text></g>
+    <g font-size="27" font-weight="700"><text x="80" y="326">热成像相机</text><text x="389" y="326">海康平台</text><text x="698" y="326">接收服务器</text><text x="1007" y="326">飞书应用</text></g>
+    <g font-size="20" fill="#60766a">
+      <text x="80" y="371">测温规则触发</text><text x="80" y="407">温度 / 阈值 / 图片</text>
+      <text x="389" y="371">事件码 192517</text><text x="389" y="407">OpenAPI + 回调</text>
+      <text x="698" y="371">Python + SQLite</text><text x="698" y="407">端口 8769</text>
+      <text x="1007" y="371">文字 + image_key</text><text x="1007" y="407">保存 message_id</text>
+    </g>
+    <g stroke="#397560" stroke-width="3" fill="none" marker-end="url(#arrow)"><path d="M305 345H354"/><path d="M614 345H663"/><path d="M923 345H972"/><path d="M795 459V512"/></g>
+    <rect x="56" y="532" width="551" height="126" rx="14" fill="#eef2fa" stroke="#d0daee"/>
+    <rect x="674" y="532" width="551" height="126" rx="14" fill="white" stroke="#d0ded2"/>
+    <text x="80" y="571" font-size="23" font-weight="650">图片下载链路</text>
+    <text x="80" y="609" font-size="21">图片入口 → HTTP 301 → 实际存储节点</text>
+    <text x="80" y="638" font-size="17" fill="#68798c">先取文件内容，再向飞书上传；飞书不直连海康内网</text>
+    <text x="698" y="571" font-size="23" font-weight="650">SQLite：可恢复的接收与发送状态</text>
+    <text x="698" y="609" font-size="21">配置 · 回调原文 · 报警 · 图片 · 推送结果</text>
+    <text x="698" y="638" font-size="17" fill="#697c70">同一 eventId 的补图和状态变化更新原卡片</text>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="580" viewBox="0 0 1280 580" role="img" aria-labelledby="title desc">
+  <title id="title">Docker 网段重叠导致图片访问走错路由</title><desc id="desc">调整前，172.17网段图片流量被送入Docker网桥。为Docker配置不重叠子网并重建网络后，访问图片走内网网关，顺序访问6120入口和6501存储节点。</desc>
+  <defs><marker id="red" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0 0L9 4L0 8" fill="none" stroke="#b86c60" stroke-width="1.5"/></marker><marker id="green" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0 0L9 4L0 8" fill="none" stroke="#42765b" stroke-width="1.5"/></marker></defs>
+  <rect width="1280" height="580" rx="22" fill="#f5f6f3"/>
+  <g font-family="Segoe UI,Microsoft YaHei,Arial,sans-serif" fill="#294234">
+    <text x="46" y="62" font-size="30" font-weight="700">No route to host：先看数据包走哪张网卡</text>
+    <rect x="46" y="94" width="571" height="433" rx="16" fill="#fff4ef" stroke="#e1b9ad"/>
+    <rect x="663" y="94" width="571" height="433" rx="16" fill="#ecf4ee" stroke="#bad0bc"/>
+    <text x="72" y="140" font-size="24" font-weight="700" fill="#9b554a">调整前 / 设备网段被 Docker 覆盖</text>
+    <text x="689" y="140" font-size="24" font-weight="700" fill="#42765b">调整后 / Docker 使用不重叠的子网</text>
+    <g font-size="22"><text x="72" y="188">目标：172.17.8.23:6120</text><text x="689" y="188">目标：172.17.8.23:6120</text></g>
+    <rect x="72" y="223" width="519" height="74" rx="9" fill="white"/><rect x="689" y="223" width="519" height="74" rx="9" fill="white"/>
+    <text x="94" y="268" font-size="23">命中 Docker 的 172.17.0.0/16 路由</text><text x="711" y="268" font-size="23">使用正常内网网卡和网关</text>
+    <path d="M330 305V343" stroke="#b86c60" stroke-width="3" marker-end="url(#red)"/><path d="M948 305V343" stroke="#42765b" stroke-width="3" marker-end="url(#green)"/>
+    <rect x="72" y="355" width="519" height="79" rx="9" fill="#f8e1d9"/><rect x="689" y="355" width="519" height="79" rx="9" fill="#d8eadc"/>
+    <text x="94" y="389" font-size="22">发往 br-xxxxxxxxxxxx 网桥</text><text x="94" y="418" font-size="18" fill="#9b554a">无法到达实际图片设备</text>
+    <text x="711" y="389" font-size="22">图片入口 6120 → 存储节点 6501</text><text x="711" y="418" font-size="18" fill="#42765b">跟随 HTTP 301，下载实际 JPEG</text>
+    <text x="72" y="482" font-size="18" fill="#95645a">UFW 规则不会纠正错误的出站路由</text><text x="689" y="482" font-size="18" fill="#57765f">重建关联网络后，再检查 ip route get 和端口</text>
+    <text x="46" y="557" font-size="16" fill="#7b8a7e">地址为演示值；Docker 新子网需结合实际公司网络、VPN 和现有容器网络确认。</text>
+  </g>
+</svg>

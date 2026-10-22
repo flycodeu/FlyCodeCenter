@@ -1,0 +1,26 @@
+[Unit]
+Description=Hikvision temperature receiver and Feishu notifications
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=hik-temperature
+Group=hik-temperature
+WorkingDirectory=/opt/hik-temperature
+EnvironmentFile=/etc/hik-temperature.env
+Environment=PYTHONUNBUFFERED=1
+StateDirectory=hik-temperature
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/hik-temperature/server.py --port 8769 --data-dir /var/lib/hik-temperature --public-url http://10.20.0.40:8769 --admin-token-env HIK_WORKBENCH_ADMIN_TOKEN
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

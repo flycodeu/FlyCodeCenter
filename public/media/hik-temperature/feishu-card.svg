@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="1050" viewBox="0 0 980 1050" role="img" aria-labelledby="title desc">
+  <title id="title">飞书温度报警图文卡片结构示意</title><desc id="desc">卡片显示相机、时间、温度和阈值，随后展示热成像和可见光两张图片。缺失的地点和等级不显示。图片区域为结构示意，不是真实抓拍。</desc>
+  <defs><linearGradient id="thermal" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#222b54"/><stop offset=".42" stop-color="#80508d"/><stop offset=".72" stop-color="#e39b68"/><stop offset="1" stop-color="#f9de8d"/></linearGradient></defs>
+  <rect width="980" height="1050" rx="22" fill="#f1f4f8"/>
+  <g font-family="Segoe UI,Microsoft YaHei,Arial,sans-serif">
+    <text x="62" y="64" font-size="18" fill="#63758a" letter-spacing="2">MESSAGE / 图文卡片结构示意</text>
+    <rect x="62" y="96" width="856" height="894" rx="18" fill="white" stroke="#d8e0e8" stroke-width="2"/>
+    <path d="M80 96H900Q918 96 918 114V188H62V114Q62 96 80 96" fill="#e7edf2"/>
+    <text x="94" y="154" font-size="32" font-weight="700" fill="#283d50">温度报警</text>
+    <g fill="#314b5e" font-size="24">
+      <text x="94" y="238">事件来源：垃圾房防火监控（热成像）</text>
+      <text x="94" y="282">发生时间：2026-10-22 08:32:37</text>
+      <text x="94" y="326">状态：瞬时</text>
+    </g>
+    <rect x="94" y="356" width="365" height="88" rx="10" fill="#fff3e8"/>
+    <rect x="485" y="356" width="401" height="88" rx="10" fill="#f0f5f1"/>
+    <text x="114" y="389" font-size="18" fill="#8b6042">温度</text><text x="114" y="425" font-size="32" font-weight="700" fill="#bd693b">76.3 ℃</text>
+    <text x="505" y="389" font-size="18" fill="#60796b">报警阈值</text><text x="505" y="425" font-size="32" font-weight="700" fill="#3c6d53">70 ℃</text>
+    <text x="94" y="490" font-size="21" font-weight="650" fill="#314b5e">热成像图</text>
+    <rect x="94" y="508" width="792" height="188" rx="10" fill="url(#thermal)"/>
+    <g opacity=".32" fill="#f8d9a3"><rect x="156" y="559" width="136" height="82" rx="6"/><rect x="326" y="540" width="202" height="117" rx="7"/><rect x="563" y="572" width="253" height="82" rx="5"/></g>
+    <text x="118" y="677" font-size="17" fill="white">img_thermal_example · 图片区域示意</text>
+    <text x="94" y="741" font-size="21" font-weight="650" fill="#314b5e">可见光图</text>
+    <rect x="94" y="759" width="792" height="168" rx="10" fill="#dce5e2"/>
+    <path d="M94 857L240 798L392 853L575 791L886 858V927H94Z" fill="#a2b7ac"/>
+    <rect x="452" y="802" width="209" height="92" rx="5" fill="#7c998a"/>
+    <text x="118" y="909" font-size="17" fill="#324f42">img_visible_example · 图片区域示意</text>
+    <text x="94" y="966" font-size="17" fill="#748391">每张图片使用独立 image_key，缺失字段直接省略</text>
+  </g>
+</svg>
