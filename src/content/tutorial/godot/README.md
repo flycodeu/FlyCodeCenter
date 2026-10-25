@@ -3,7 +3,7 @@ title: Godot
 createTime: '2026/03/08 15:17:37'
 code: t1zpoagnb
 permalink: /tutorials/godot/
-description: 鉴于目前团结引擎各种搞事情，所以决定学习Godot引擎。
+description: 开源轻量跨平台游戏引擎实战，涵盖 2D/3D 场景节点设计、物理碰撞、角色移动与独立游戏原型开发。
 order: 5
 tags:
   - Godot

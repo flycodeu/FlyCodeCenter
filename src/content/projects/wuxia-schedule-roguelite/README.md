@@ -8,6 +8,8 @@ tags:
   - 游戏
   - Roguelite
   - 独立开发
+cover: /covers/projects/wuxia-schedule-roguelite.svg
+projectStage: planned
 ---
 
 ## 项目设定

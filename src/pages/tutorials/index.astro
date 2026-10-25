@@ -33,7 +33,6 @@ const columns = {
   md: Number(overview.columns?.md ?? 1)
 };
 const gap = Number(overview.gap ?? 16);
-const cardStyle = overview.cardStyle ?? "cover-top";
 const coverAspectRatio = overview.coverAspectRatio ?? "16 / 9";
 const showEntryCount = overview.showEntryCount ?? true;
 const showLastUpdated = overview.showLastUpdated ?? true;
@@ -51,257 +50,221 @@ const seriesList = [...seriesMap.values()]
 ---
 
 <ListLayout
-  title={pageConfig.title ?? "教程总览"}
-  description={pageConfig.description ?? "系统化学习各技术栈的完整教程系列。"}
+  title={pageConfig.title ?? "专栏与系统教程"}
+  description={pageConfig.description ?? "系统化沉淀的技术专栏与实战指南，涵盖音视频开发、计算机视觉、系统编程与全栈架构。"}
   stats={[
-    { title: "教程总数", value: tutorials.length },
-    { title: "系列数量", value: seriesList.length }
+    { title: "专栏总数", value: seriesList.length },
+    { title: "教程篇数", value: tutorials.length }
   ]}
   tags={tags}
 >
-  <div
-    class={`series-grid style-${cardStyle}`}
-    style={`--series-grid-gap:${gap}px;--series-col-xl:${columns.xl};--series-col-lg:${columns.lg};--series-col-md:${columns.md};--series-cover-ratio:${coverAspectRatio};`}
-  >
-    {
-      seriesList.map((bucket) => {
-        const href = `/tutorials/${encodeURIComponent(toSeriesRouteKey(bucket.key))}`;
-        const metaParts = [];
-        if (showEntryCount) metaParts.push(`${bucket.entries.length} 篇`);
-        if (showLastUpdated) metaParts.push(`更新于 ${formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")}`);
-        const metaText = metaParts.join(" · ");
-        const coverSources = buildResponsiveImageSources(bucket.cover, [320, 480, 640, 960], 640);
-        return (
-          <article class="surface series-card">
-            <a class="series-cover" href={href} aria-label={bucket.label}>
-              <ContentCover
-                title={bucket.label}
-                image={coverSources.src}
-                srcset={coverSources.srcset}
-                sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1200px) 38vw, 280px"
-                kindLabel="教程系列"
-                topic={bucket.category}
-                loading="lazy"
-                fetchpriority="low"
-                variant="regular"
-              />
-            </a>
+  <div class="tutorials-page">
+    <div
+      class="series-grid"
+      style={`--series-grid-gap:${gap}px;--series-col-xl:${columns.xl};--series-col-lg:${columns.lg};--series-col-md:${columns.md};--series-cover-ratio:${coverAspectRatio};`}
+    >
+      {
+        seriesList.map((bucket) => {
+          const href = `/tutorials/${encodeURIComponent(toSeriesRouteKey(bucket.key))}`;
+          const metaParts = [];
+          if (showEntryCount) metaParts.push(`${bucket.entries.length} 篇`);
+          if (showLastUpdated) metaParts.push(`更新于 ${formatDate(new Date(bucket.latestAt), "YYYY-MM-DD")}`);
+          const metaText = metaParts.join(" · ");
+          const coverSources = buildResponsiveImageSources(bucket.cover, [320, 480, 640, 960], 640);
+          return (
+            <article class="surface series-card">
+              <a class="series-cover" href={href} aria-label={bucket.label}>
+                <ContentCover
+                  title={bucket.label}
+                  image={coverSources.src}
+                  srcset={coverSources.srcset}
+                  sizes="(max-width: 900px) calc(100vw - 64px), (max-width: 1200px) 38vw, 280px"
+                  kindLabel="专栏"
+                  topic={bucket.category}
+                  loading="lazy"
+                  fetchpriority="low"
+                  variant="regular"
+                />
+                {showCategory && bucket.category && (
+                  <span class="cover-category-badge">{bucket.category}</span>
+                )}
+              </a>
 
-            <div class="series-body">
-              <header class="series-head">
-                <h2>
-                  <a href={href}>{bucket.label}</a>
-                </h2>
-                {showCategory && bucket.category && <span class="category-chip">{bucket.category}</span>}
-              </header>
+              <div class="series-body">
+                <header class="series-head">
+                  <h2 class="series-title">
+                    <a href={href}>{bucket.label}</a>
+                  </h2>
+                </header>
 
-              {showDescription && bucket.description && (
-                <p class="series-description">{bucket.description}</p>
-              )}
+                {showDescription && bucket.description && (
+                  <p class="series-description">{bucket.description}</p>
+                )}
 
-              <footer class="series-foot">
-                {metaText && <span class="series-meta">{metaText}</span>}
-                <a href={href}>开始学习</a>
-              </footer>
-            </div>
-          </article>
-        );
-      })
-    }
+                <footer class="series-foot">
+                  {metaText && <span class="series-meta">{metaText}</span>}
+                  <a href={href} class="series-enter-link">
+                    阅读专栏 <span class="arrow" aria-hidden="true">→</span>
+                  </a>
+                </footer>
+              </div>
+            </article>
+          );
+        })
+      }
+    </div>
   </div>
 </ListLayout>
 
-<style>
-  .series-grid {
+<style is:global>
+  .tutorials-page {
+    width: 100%;
+  }
+
+  .tutorials-page .series-grid {
     display: grid;
     grid-template-columns: repeat(var(--series-col-xl), minmax(0, 1fr));
     gap: var(--series-grid-gap);
   }
 
-  .series-card {
-    --series-title-lines: 2;
-    --series-desc-lines: 3;
-    border-radius: calc(var(--radius-lg) * var(--layout-radius-scale, 1));
-    border: 1px solid var(--line);
+  .tutorials-page .series-card {
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     overflow: hidden;
-    contain: layout paint;
-    isolation: isolate;
     background: var(--surface-1);
-    display: grid;
-    gap: clamp(0.9rem, 1.2vw, 1.3rem);
-    padding: clamp(1rem, 1.6vw, 1.5rem);
-    box-shadow: 0 4px 12px color-mix(in oklab, var(--line) 40%, transparent 60%);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  }
-
-  .series-card:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
-    box-shadow: 0 12px 24px color-mix(in oklab, var(--line) 60%, transparent 40%);
-  }
-
-  .series-card > * {
-    min-width: 0;
-  }
-
-  .series-grid.style-cover-top .series-card,
-  .series-grid.style-compact .series-card {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-
-  .series-grid.style-cover-left .series-card {
-    grid-template-columns: minmax(160px, 42%) minmax(0, 1fr);
-  }
-
-  .series-cover {
-    display: block;
-    background: color-mix(in oklab, var(--surface-2) 86%, transparent 14%);
-    overflow: hidden;
-    border-radius: calc(var(--radius-md) * var(--layout-radius-scale, 1));
-  }
-
-  .series-grid.style-cover-top .series-cover,
-  .series-grid.style-compact .series-cover {
-    aspect-ratio: var(--series-cover-ratio);
-    border-bottom: 0;
-  }
-
-  .series-grid.style-cover-left .series-cover {
-    height: 100%;
-    min-height: 164px;
-    border-right: 0;
-  }
-
-  .series-body {
-    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    min-width: 0;
     height: 100%;
+    padding: 0;
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   }
 
-  .series-head {
-    display: grid;
-    gap: 0.55rem;
-    min-width: 0;
+  .tutorials-page .series-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--brand) 45%, var(--line) 55%);
+    box-shadow: 0 6px 20px color-mix(in oklab, var(--line) 35%, transparent 65%);
   }
 
-  .series-head h2 {
+  .tutorials-page .series-cover {
+    display: block;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 145px;
+    height: auto;
+    flex: 0 0 auto; /* 保证在 Flex 列布局中绝对不会被压缩成一条细缝 */
+    overflow: hidden;
+    background: var(--surface-2);
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .tutorials-page .cover-category-badge {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    z-index: 4;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.48rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .tutorials-page .series-body {
+    padding: 1.05rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 0.65rem;
+  }
+
+  .tutorials-page .series-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .tutorials-page .series-title {
     margin: 0;
-    font-size: 1.12rem;
-    line-height: 1.42;
-    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: 650;
+    line-height: 1.35;
   }
 
-  .series-head h2 a {
+  .tutorials-page .series-title a {
     color: var(--text);
     text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .tutorials-page .series-title a:hover {
+    color: var(--brand);
+  }
+
+  .tutorials-page .series-description {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    line-height: 1.65;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    overflow-wrap: anywhere;
-    word-break: break-word;
   }
 
-  .series-head h2 a:hover {
-    color: var(--brand);
-  }
-
-  .category-chip {
-    min-width: 0;
-    max-width: min(60%, 220px);
-    border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in oklab, var(--brand) 36%, var(--line) 64%);
-    color: var(--brand);
-    background: color-mix(in oklab, var(--brand-soft) 84%, transparent 16%);
-    font-size: 0.74rem;
-    font-weight: 640;
-    line-height: 1;
-    padding: 0.28rem 0.6rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    justify-self: flex-start;
-  }
-
-  .series-description {
-    margin: 0;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    line-height: 1.6;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .series-meta {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .series-foot {
+  .tutorials-page .series-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-    min-width: 0;
+    gap: 0.5rem;
     margin-top: auto;
+    padding-top: 0.85rem;
+    border-top: 1px dashed color-mix(in oklab, var(--line) 65%, transparent 35%);
   }
 
-  .series-foot a {
+  .tutorials-page .series-meta {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tutorials-page .series-enter-link {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
     display: inline-flex;
     align-items: center;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--line);
-    padding: 0.46rem 0.88rem;
-    font-size: 0.82rem;
-    color: var(--text-soft);
-    text-decoration: none;
-    background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
+    gap: 0.25rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: gap 0.15s ease;
   }
 
-  .series-foot a:hover {
-    color: var(--brand);
-    border-color: color-mix(in oklab, var(--brand) 42%, var(--line) 58%);
+  .tutorials-page .series-card:hover .series-enter-link .arrow {
+    transform: translateX(2px);
   }
 
-  @media (max-width: 1200px) {
-    .series-grid {
+  .tutorials-page .arrow {
+    transition: transform 0.15s ease;
+  }
+
+  @media (max-width: 1160px) {
+    .tutorials-page .series-grid {
       grid-template-columns: repeat(var(--series-col-lg), minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 900px) {
-    .series-grid {
+  @media (max-width: 780px) {
+    .tutorials-page .series-grid {
       grid-template-columns: repeat(var(--series-col-md), minmax(0, 1fr));
     }
-
-    .series-grid.style-cover-left .series-card {
-      grid-template-columns: 1fr;
-    }
-
-    .series-grid.style-cover-left .series-cover {
-      border-right: 0;
-      border-bottom: 0;
-      aspect-ratio: var(--series-cover-ratio);
-      min-height: 0;
-    }
-
-    .series-card {
-      padding: 1rem;
-      gap: 0.9rem;
-    }
-
   }
 </style>

@@ -4,11 +4,13 @@ createTime: '2026/03/08 15:17:37'
 code: t1lcr5mzj
 permalink: /tutorials/rust/
 summary: 从第一个 Cargo 项目开始，学习类型、控制流程、Ownership、Borrowing，再完成猜数游戏和模块化测试。
+description: 从第一个 Cargo 项目开始，系统掌握 Ownership、Borrowing、生命周期与高并发编程，构建可靠的系统级应用。
 order: 0
 tags:
   - Rust
   - Cargo
   - 入门教程
+category: 编程语言
 ---
 
 这套教程面向刚开始使用 Rust 的读者。先运行短程序，再看值怎样传递、函数怎样借用数据，最后把这些知识用到猜数游戏和多文件项目中。

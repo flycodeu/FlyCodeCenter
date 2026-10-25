@@ -42,6 +42,26 @@ function normalizeCoverMode(value: unknown): CoverMode | undefined {
   return undefined;
 }
 
+function extractExcerpt(body?: string): string {
+  if (!body) return "";
+  const abstractMatch = body.match(/>\s*(?:\*\*)?(?:摘要|简介|概述)[：:]\s*(?:\*\*)?\s*([^\r\n]+)/);
+  if (abstractMatch && abstractMatch[1]) {
+    return abstractMatch[1].replace(/[*_#`[\]]/g, "").trim();
+  }
+  const clean = body
+    .replace(/^---[\s\S]*?---/, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^#+.*$/gm, "")
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[([^\]]+)\]\(.*?\)/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/^>\s*/gm, "")
+    .replace(/[*_~`]/g, "")
+    .trim();
+  const firstPara = clean.split(/\n\s*\n/).find((p) => p.trim().length > 10) || "";
+  return firstPara.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
 const pageOverride = siteConfig.blog.pageCardOverrides[kind === "tutorial" ? "tutorial" : "blog"];
 const entryData = entry.data as { coverMode?: string; coverPosition?: string };
 const meta = resolveArticleMeta(
@@ -62,10 +82,12 @@ const link =
     : kind === "tutorial"
       ? getTutorialEntryUrl(entry as CollectionEntry<"tutorial">)
       : getProjectEntryUrl(entry as CollectionEntry<"projects">);
-const outline = (meta.outline || "").trim();
+const rawBody = (entry as { body?: string }).body;
+const fallbackExcerpt = rawBody ? extractExcerpt(rawBody) : "";
+const outline = (meta.summary || meta.description || meta.outline || fallbackExcerpt).trim();
 const dateText = formatDate(meta.createTime, "YYYY-MM-DD");
 
-const inlineSize = listCard.coverInlineSize ?? listCard.coverWidth ?? 224;
+const inlineSize = listCard.coverInlineSize ?? listCard.coverWidth ?? 208;
 const topMaxHeight = coverHeight ?? listCard.coverTopMaxHeight ?? listCard.coverHeight ?? 150;
 const ratio = listCard.coverAspectRatio ?? listCard.coverRatio ?? "16 / 9";
 const showCover = mode !== "none";
@@ -123,6 +145,7 @@ const outlineLines = listCard.outlineLines ?? 2;
 
 <style>
   .post-card {
+    position: relative;
     border-radius: var(--radius-md);
     overflow: hidden;
     padding: 1rem 1.1rem;
@@ -150,6 +173,11 @@ const outlineLines = listCard.outlineLines ?? 2;
   .post-card:hover {
     transform: translateY(-2px);
     border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
+    box-shadow: 0 12px 28px -18px color-mix(in oklab, var(--brand) 22%, transparent 78%);
+  }
+
+  .post-card:hover .cover-wrap :global(img) {
+    transform: scale(1.04);
   }
 
   .post-card.style-minimal:hover {
@@ -158,11 +186,11 @@ const outlineLines = listCard.outlineLines ?? 2;
   }
 
   .post-card.mode-right {
-    grid-template-columns: minmax(0, 1fr) minmax(158px, var(--cover-inline-size));
+    grid-template-columns: minmax(0, 1fr) minmax(180px, var(--cover-inline-size));
   }
 
   .post-card.mode-left {
-    grid-template-columns: minmax(158px, var(--cover-inline-size)) minmax(0, 1fr);
+    grid-template-columns: minmax(180px, var(--cover-inline-size)) minmax(0, 1fr);
   }
 
   .post-card.mode-left .cover-wrap {
@@ -248,6 +276,27 @@ const outlineLines = listCard.outlineLines ?? 2;
     -webkit-line-clamp: var(--title-lines);
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .title::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    cursor: pointer;
+  }
+
+  .post-card:hover .title {
+    color: var(--brand);
+  }
+
+  .pin,
+  .tags,
+  .cover-wrap {
+    position: relative;
+    z-index: 2;
   }
 
   .tags {
@@ -258,20 +307,23 @@ const outlineLines = listCard.outlineLines ?? 2;
   }
 
   .tag-chip {
-    font-size: 0.7rem;
-    padding: 0.16rem 0.5rem;
+    font-size: 0.72rem;
+    padding: 0.16rem 0.52rem;
+    border-radius: 6px;
     white-space: nowrap;
-    max-width: 132px;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: var(--font-tech);
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border-color: color-mix(in oklab, var(--line) 84%, transparent 16%);
   }
 
   .outline {
     margin: 0;
     color: var(--text-soft);
-    line-height: 1.48;
-    font-size: 0.84rem;
+    line-height: 1.6;
+    font-size: 0.86rem;
     display: -webkit-box;
     -webkit-line-clamp: var(--outline-lines);
     -webkit-box-orient: vertical;
@@ -307,8 +359,9 @@ const outlineLines = listCard.outlineLines ?? 2;
     .post-card.collapse-mobile-top.mode-right .cover-wrap,
     .post-card.collapse-mobile-top.mode-left .cover-wrap {
       width: 100%;
-      aspect-ratio: auto;
-      height: var(--cover-top-max-height);
+      aspect-ratio: var(--cover-aspect-ratio, 16 / 9);
+      max-height: var(--cover-top-max-height, 180px);
+      height: auto;
     }
   }
 

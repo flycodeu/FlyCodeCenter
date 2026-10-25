@@ -259,6 +259,7 @@ function setupSearchModal() {
       setActiveSurface(true);
       try {
         if (!dialog.open) dialog.showModal();
+        document.body.classList.add("has-overlay");
       } catch (error) {
         console.warn("search modal showModal failed, fallback to panel", error);
         if (dialog.open) dialog.close();
@@ -302,6 +303,7 @@ function setupSearchModal() {
     ) {
       dialog.close();
     }
+    document.body.classList.remove("has-overlay");
     unmountFallback();
 
     if (document.activeElement === nativeInput) nativeInput.blur();
@@ -338,7 +340,30 @@ function setupSearchModal() {
       },
       { signal }
     );
+    dialog.addEventListener(
+      "cancel",
+      (event) => {
+        event.preventDefault();
+        closeSearch();
+      },
+      { signal }
+    );
+    dialog.addEventListener(
+      "close",
+      () => {
+        closeSearch();
+      },
+      { signal }
+    );
   }
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      closeSearch(false);
+    },
+    { signal }
+  );
 
   fallback?.addEventListener(
     "pointerdown",

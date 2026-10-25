@@ -4,7 +4,7 @@ createTime: '2026/08/31 10:00:00'
 code: tffmpeg01
 permalink: /tutorials/ffmpeg/
 summary: 学会 FFmpeg 常见操作，并从零理解视频组成、帧间预测、编码差异、直播传输和播放异常。
-description: 两条阅读入口：FFmpeg 工具入门，以及从画面到网络的视频基础；术语先解释，命令用于观察和验证。
+description: 从音视频基础、帧结构与转码参数，到流媒体录制、推流与画面监看实测，命令先测试后归纳。
 order: 2
 tags:
   - FFmpeg

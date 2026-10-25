@@ -8,6 +8,8 @@ tags:
   - 工具平台
   - Web
   - App
+cover: /covers/projects/tools-platform.svg
+projectStage: planned
 ---
 
 ## 项目定位

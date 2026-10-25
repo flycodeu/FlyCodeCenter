@@ -27,9 +27,9 @@ const getEntryLink = (entry: ArchiveEntry) =>
     ? getBlogEntryUrl(entry as CollectionEntry<"blog">)
     : getTutorialEntryUrl(entry as CollectionEntry<"tutorial">);
 
-const yearGroups = years.map((yearBucket) => {
-  const items = yearBucket.months.flatMap((monthBucket) =>
-    monthBucket.days.flatMap((dayBucket) =>
+const timeline = years.map((yearBucket) => {
+  const months = yearBucket.months.map((monthBucket) => {
+    const items = monthBucket.days.flatMap((dayBucket) =>
       dayBucket.entries.map((entry) => {
         const meta = resolveArticleMeta(entry as ArchiveEntry);
         return {
@@ -37,48 +37,116 @@ const yearGroups = years.map((yearBucket) => {
           meta,
           link: getEntryLink(entry as ArchiveEntry),
           dateLabel: `${String(dayBucket.month).padStart(2, "0")}-${String(dayBucket.day).padStart(2, "0")}`,
+          dayNum: String(dayBucket.day).padStart(2, "0"),
           dayKey: dayBucket.key
         };
       })
-    )
-  );
-  return { year: yearBucket.year, count: items.length, items };
+    );
+    return {
+      month: monthBucket.month,
+      key: monthBucket.key,
+      count: monthBucket.total,
+      items
+    };
+  });
+  return {
+    year: yearBucket.year,
+    count: yearBucket.total,
+    months
+  };
 });
 ---
 
-<ListLayout title="归档" description="博客与教程统一归档，按年份倒序排列。" tags={tags}>
-  <section class="archive-list" id="archive-timeline">
-    {
-      yearGroups.map((group) => (
-        <section class="archive-year">
-          <header class="year-head">
-            <h2>{group.year}</h2>
-            <span class="year-count">{group.count} 篇</span>
-          </header>
-          <ul class="year-list">
-            {group.items.map((item) => (
-              <li class="timeline-item" data-day={item.dayKey}>
-                <a class="entry-row" href={item.link}>
-                  <time class="entry-date" datetime={item.meta.createTime.toISOString()}>
-                    {item.dateLabel}
-                  </time>
-                  <span class="entry-title">{item.meta.title}</span>
-                  <span class={`entry-kind kind-${item.entry.collection}`}>
-                    {item.entry.collection === "blog" ? "博客" : "教程"}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))
-    }
-    <section class="archive-lock" id="archive-lock" hidden>
-      <h2>访问已受限</h2>
-      <p>检测到异常访问行为，归档内容已临时受限。</p>
-      <p class="archive-lock-reason" id="archive-lock-reason"></p>
+<ListLayout
+  title="归档"
+  description="博客与教程统一归档，按年份与月份倒序排列。"
+  stats={[
+    { title: "归档年份", value: years.length },
+    { title: "收录文章", value: entries.length },
+    { title: "涵盖标签", value: tags.length, href: "/tags" }
+  ]}
+  tags={tags}
+>
+  <div class="archive-page-root">
+    <!-- 顶部年份快速跳转面板 -->
+    <nav class="archive-quick-nav surface" aria-label="归档年份快速导航">
+      <div class="nav-title-group">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
+        <span class="nav-label">快速跳转</span>
+      </div>
+      <div class="nav-chips-track">
+        {
+          timeline.map((group) => (
+            <a href={`#year-${group.year}`} class="year-jump-chip">
+              <span class="chip-year">{group.year}</span>
+              <span class="chip-count">{group.count} 篇</span>
+            </a>
+          ))
+        }
+      </div>
+      <div class="nav-total-pill">
+        共 <strong>{entries.length}</strong> 篇
+      </div>
+    </nav>
+
+    <!-- 时间线主内容 -->
+    <section class="archive-list" id="archive-timeline">
+      {
+        timeline.map((group) => (
+          <section class="archive-year" id={`year-${group.year}`}>
+            <header class="year-head">
+              <div class="year-title-line">
+                <span class="year-dot" aria-hidden="true"></span>
+                <h2>{group.year}</h2>
+              </div>
+              <span class="year-count">全年共 {group.count} 篇</span>
+            </header>
+
+            <div class="year-months-flow">
+              {
+                group.months.map((month) => (
+                  <section class="archive-month-block" id={`month-${month.key}`}>
+                    <header class="month-head">
+                      <span class="month-pill">{month.month} 月</span>
+                      <span class="month-count">{month.count} 篇</span>
+                    </header>
+                    <ul class="month-list">
+                      {
+                        month.items.map((item) => (
+                          <li class="timeline-item" data-day={item.dayKey}>
+                            <a class="entry-row" href={item.link}>
+                              <time class="entry-date" datetime={item.meta.createTime.toISOString()}>
+                                {item.dateLabel}
+                              </time>
+                              <span class="entry-title" title={item.meta.title}>{item.meta.title}</span>
+                              <span class={`entry-kind kind-${item.entry.collection}`}>
+                                {item.entry.collection === "blog" ? "博客" : "教程"}
+                              </span>
+                            </a>
+                          </li>
+                        ))
+                      }
+                    </ul>
+                  </section>
+                ))
+              }
+            </div>
+          </section>
+        ))
+      }
+
+      <section class="archive-lock" id="archive-lock" hidden>
+        <h2>访问已受限</h2>
+        <p>检测到异常访问行为，归档内容已临时受限。</p>
+        <p class="archive-lock-reason" id="archive-lock-reason"></p>
+      </section>
     </section>
-  </section>
+  </div>
 </ListLayout>
 
 <script id="archive-anti-crawl-config" type="application/json" set:html={JSON.stringify(antiCrawlRuntime)} />
@@ -86,7 +154,95 @@ const yearGroups = years.map((yearBucket) => {
   import "@/scripts/archive-anti-crawl-runtime.js";
 </script>
 
-<style>
+<style is:global>
+  .archive-page-root {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .archive-quick-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.65rem 0.95rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    background: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: calc(var(--layout-header-height, 72px) + var(--space-2));
+    z-index: 20;
+    box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.08);
+  }
+
+  .archive-quick-nav .nav-title-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .archive-quick-nav .nav-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand);
+  }
+
+  .archive-quick-nav .nav-chips-track {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.1rem 0;
+    scrollbar-width: none;
+  }
+
+  .archive-quick-nav .nav-chips-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .archive-quick-nav .year-jump-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.58rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    text-decoration: none;
+    color: var(--text);
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    transition: all 0.16s ease;
+    white-space: nowrap;
+  }
+
+  .archive-quick-nav .year-jump-chip:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
+    transform: translateY(-1px);
+  }
+
+  .archive-quick-nav .chip-count {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+  }
+
+  .archive-quick-nav .nav-total-pill {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .archive-quick-nav .nav-total-pill strong {
+    color: var(--brand);
+    font-family: var(--font-tech);
+  }
+
   .archive-list {
     display: grid;
     gap: var(--space-5);
@@ -94,35 +250,104 @@ const yearGroups = years.map((yearBucket) => {
 
   .archive-year {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    scroll-margin-top: calc(var(--layout-header-height, 72px) + 60px);
   }
 
   .year-head {
     display: flex;
     align-items: baseline;
-    gap: var(--space-2);
-    padding-bottom: var(--space-1);
-    border-bottom: 1px solid var(--line);
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: 0.45rem;
+    border-bottom: 1.5px solid color-mix(in oklab, var(--line) 85%, transparent 15%);
+  }
+
+  .year-title-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .year-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand) 25%, transparent 75%);
   }
 
   .year-head h2 {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    letter-spacing: 0;
+    font-family: var(--font-tech);
+    letter-spacing: -0.01em;
     color: var(--text);
   }
 
   .year-count {
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+    font-family: var(--font-tech);
   }
 
-  .year-list {
+  .year-months-flow {
+    display: grid;
+    gap: var(--space-4);
+    padding-left: 0.35rem;
+  }
+
+  .archive-month-block {
+    display: grid;
+    gap: 0.5rem;
+    scroll-margin-top: calc(var(--layout-header-height, 72px) + 60px);
+    position: relative;
+  }
+
+  .archive-month-block::before {
+    content: "";
+    position: absolute;
+    left: 21px;
+    top: 24px;
+    bottom: 8px;
+    width: 1px;
+    background: color-mix(in oklab, var(--line) 65%, transparent 35%);
+  }
+
+  .month-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.15rem 0;
+  }
+
+  .month-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.12rem 0.52rem;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--brand);
+    background: color-mix(in oklab, var(--brand-soft) 45%, var(--bg-elev) 55%);
+    border: 1px solid color-mix(in oklab, var(--brand) 28%, var(--line) 72%);
+    position: relative;
+    z-index: 1;
+  }
+
+  .month-count {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+  }
+
+  .month-list {
     margin: 0;
-    padding: 0;
+    padding: 0 0 0 1.25rem;
     list-style: none;
     display: grid;
+    gap: 0.25rem;
   }
 
   .entry-row {
@@ -130,30 +355,35 @@ const yearGroups = years.map((yearBucket) => {
     grid-template-columns: 52px minmax(0, 1fr) auto;
     align-items: baseline;
     gap: var(--space-3);
-    padding: 0.52rem 0.5rem;
-    border-radius: 10px;
+    padding: 0.46rem 0.6rem;
+    border-radius: 8px;
     text-decoration: none;
-    transition: background-color 160ms ease;
+    border: 1px solid transparent;
+    transition: all 140ms ease;
   }
 
   .entry-row:hover {
-    background: color-mix(in oklab, var(--brand-soft) 36%, transparent 64%);
+    background: color-mix(in oklab, var(--surface-2) 65%, transparent 35%);
+    border-color: color-mix(in oklab, var(--line) 80%, transparent 20%);
+    transform: translateX(2px);
   }
 
   .entry-date {
     color: var(--text-muted);
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
+    font-family: var(--font-tech);
     white-space: nowrap;
   }
 
   .entry-title {
     color: var(--text);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     line-height: 1.5;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: color 140ms ease;
   }
 
   .entry-row:hover .entry-title {
@@ -161,17 +391,19 @@ const yearGroups = years.map((yearBucket) => {
   }
 
   .entry-kind {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     border-radius: var(--radius-pill);
-    padding: 0.08rem 0.46rem;
+    padding: 0.04rem 0.44rem;
     white-space: nowrap;
+    background: color-mix(in oklab, var(--surface-1) 80%, transparent 20%);
   }
 
   .entry-kind.kind-tutorial {
-    color: color-mix(in oklab, var(--accent) 70%, var(--text-soft) 30%);
-    border-color: color-mix(in oklab, var(--accent) 34%, var(--line) 66%);
+    color: color-mix(in oklab, var(--accent) 76%, var(--text-soft) 24%);
+    border-color: color-mix(in oklab, var(--accent) 36%, var(--line) 64%);
+    background: color-mix(in oklab, var(--accent) 8%, var(--surface-1) 92%);
   }
 
   .archive-lock {
@@ -213,6 +445,10 @@ const yearGroups = years.map((yearBucket) => {
   }
 
   @media (max-width: 760px) {
+    .archive-quick-nav {
+      flex-wrap: wrap;
+    }
+
     .entry-row {
       grid-template-columns: 46px minmax(0, 1fr);
       gap: var(--space-2);

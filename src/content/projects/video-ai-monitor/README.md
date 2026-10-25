@@ -9,6 +9,8 @@ tags:
   - 视频流
   - AI推理
   - 告警
+cover: /covers/projects/video-ai-monitor.svg
+projectStage: planned
 ---
 
 ## 项目定位

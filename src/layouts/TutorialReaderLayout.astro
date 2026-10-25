@@ -110,7 +110,10 @@ const layoutPreset = (siteConfig.theme as {
 const sidebarEnable = sidebar.enable ?? true;
 const sidebarPosition = sidebar.position === "right" ? "right" : "left";
 const sidebarWidth = Number(sidebar.width ?? layoutPreset?.tutorialSidebarWidth ?? 320);
-const tocEnable = (toc.enable ?? true) && siteConfig.theme.toc.enable;
+const visibleHeadingCount = headings.filter(
+  (item) => item.depth >= siteConfig.theme.toc.minDepth && item.depth <= siteConfig.theme.toc.maxDepth
+).length;
+const tocEnable = !encrypted && (toc.enable ?? true) && siteConfig.theme.toc.enable && visibleHeadingCount > 0;
 const tocPosition = toc.position === "left" ? "left" : "right";
 const tocWidth = Number(toc.width ?? layoutPreset?.tutorialTocWidth ?? 280);
 const contentMaxWidth = Number(content.maxWidth ?? layoutPreset?.tutorialContentMaxWidth ?? 780);
@@ -254,7 +257,7 @@ const articleRuntimeConfig = {
         {
           showPrevNext && (prev || next) && (
             <section class="surface tutorial-card tutorial-nav-card reading-panel">
-              <nav class="prev-next reading-switcher">
+              <nav class="prev-next">
                 {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
                 {next ? <a href={next.url}>{next.title} →</a> : <span />}
               </nav>
@@ -262,7 +265,7 @@ const articleRuntimeConfig = {
           )
         }
 
-        <section class="surface tutorial-card tutorial-comment-card reading-panel">
+        <section class="tutorial-card tutorial-comment-card">
           <Comments deferUntilEvent={deferUntilEvent} />
         </section>
       </section>
@@ -304,7 +307,7 @@ const articleRuntimeConfig = {
   }
 
   .tutorial-reader {
-    --tutorial-sidebar-width: clamp(272px, var(--tutorial-sidebar-width-base, 300px), 280px);
+    --tutorial-sidebar-width: clamp(240px, var(--tutorial-sidebar-width-base, 300px), 340px);
     --tutorial-sidebar-track: var(--tutorial-sidebar-width);
     --tutorial-toc-width: var(--tutorial-toc-width-base, 260px);
     --tutorial-content-max: var(--tutorial-content-max-base, 900px);
@@ -576,6 +579,9 @@ const articleRuntimeConfig = {
     background: transparent;
     border: 0;
     box-shadow: none;
+  }
+  .tutorial-comment-card:empty {
+    display: none;
   }
 
   @media (max-width: 1280px) {

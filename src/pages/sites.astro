@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchSitesEntries } from "@/utils/query";
@@ -52,91 +52,110 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 ---
 
 <BaseLayout title={siteConfig.pages.sites.title} description={siteConfig.pages.sites.description}>
-  <section class={`vault-shell ${showFilter ? "" : "no-nav"}`} aria-labelledby="sites-page-title">
-    <h1 id="sites-page-title" class="sr-only">{siteConfig.pages.sites.title}</h1>
-    {
-      showFilter && (
-        <aside class="vault-nav surface" id="vault-nav">
-          <button
-            type="button"
-            class={`nav-item${resolvedDefaultCategory === "all" ? " active" : ""}`}
-            data-filter="all"
-          >
-            <span class="nav-label">全部</span>
-            <span class="nav-count">{totalSiteCount}</span>
-          </button>
+  <div class="sites-page-root">
+    <section class={`vault-shell ${showFilter ? "" : "no-nav"}`} aria-labelledby="sites-page-title">
+      <h1 id="sites-page-title" class="sr-only">{siteConfig.pages.sites.title}</h1>
+      {
+        showFilter && (
+          <aside class="vault-nav surface" id="vault-nav">
+            <button
+              type="button"
+              class={`nav-item${resolvedDefaultCategory === "all" ? " active" : ""}`}
+              data-filter="all"
+            >
+              <span class="nav-label">全部收藏</span>
+              <span class="nav-count">{totalSiteCount}</span>
+            </button>
+            {
+              groups.map((group) => (
+                <button
+                  type="button"
+                  class={`nav-item${group.category === resolvedDefaultCategory ? " active" : ""}`}
+                  data-filter={group.category}
+                  style={getTagColorVars(group.category)}
+                >
+                  <span class="nav-label">{group.category}</span>
+                  <span class="nav-count">{group.cards.length}</span>
+                </button>
+              ))
+            }
+          </aside>
+        )
+      }
+
+      <section class="vault-content">
+        <section class="vault-groups" id="vault-groups" data-default={resolvedDefaultCategory}>
           {
             groups.map((group) => (
-              <button
-                type="button"
-                class={`nav-item${group.category === resolvedDefaultCategory ? " active" : ""}`}
-                data-filter={group.category}
-                style={getTagColorVars(group.category)}
+              <section
+                class={`vault-group surface${resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? " is-active" : ""}`}
+                data-group={group.category}
+                aria-hidden={resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? "false" : "true"}
               >
-                <span class="nav-label">{group.category}</span>
-                <span class="nav-count">{group.cards.length}</span>
-              </button>
+                <div class="group-summary">
+                  <div class="summary-text-wrap">
+                    <h2 class="group-title">{group.category}</h2>
+                    <p class="group-desc">{group.entry.data.description || "按该技术主题精选的高质量站点与实用工具。"}</p>
+                  </div>
+                  <span class="group-count">{group.cards.length} 个站点</span>
+                </div>
+
+                <div class="group-grid">
+                  {
+                    group.cards.map((card) => {
+                      return (
+                        <a
+                          class="site-card"
+                          href={card.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={`访问 ${card.title}`}
+                        >
+                          <header class="site-card-head">
+                            <div class="site-icon-box">
+                              <img
+                                src={defaultSiteIcon}
+                                data-icon-src={resolveIcon(card.url, card.icon, card.iconFetch)}
+                                data-icon-key={getHost(card.url)}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                referrerpolicy="no-referrer"
+                              />
+                            </div>
+                            <div class="site-title-wrap">
+                              <h3 title={card.title}>{card.title}</h3>
+                              <span class="site-domain">{getHost(card.url)}</span>
+                            </div>
+                            <span class="site-external-arrow" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="7" y1="17" x2="17" y2="7"></line>
+                                <polyline points="7 7 17 7 17 17"></polyline>
+                              </svg>
+                            </span>
+                          </header>
+
+                          <p class="site-desc">{card.desc || "暂无描述"}</p>
+
+                          <div class="site-card-foot">
+                            <div class="site-tags-line" aria-label="标签">
+                              {card.tags.slice(0, 3).map((tag) => (
+                                <span class="tag-badge meta-tag" style={getTagColorVars(tag)}>{tag}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })
+                  }
+                </div>
+              </section>
             ))
           }
-        </aside>
-      )
-    }
-
-    <section class="vault-content">
-      <section class="vault-groups" id="vault-groups" data-default={resolvedDefaultCategory}>
-        {
-          groups.map((group) => (
-            <section
-              class={`vault-group surface${resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? " is-active" : ""}`}
-              data-group={group.category}
-              aria-hidden={resolvedDefaultCategory === "all" || group.category === resolvedDefaultCategory ? "false" : "true"}
-            >
-              <h2 class="sr-only">{group.entry.data.title}</h2>
-              <div class="group-summary">
-                <p class="group-desc">{group.entry.data.description || "按该主题组织的网站收藏清单。"}</p>
-                <span class="group-count">{group.cards.length} 个站点</span>
-              </div>
-
-              <div class="group-grid">
-                {
-                  group.cards.map((card) => {
-                    return (
-                    <article class="site-card">
-                      <header class="site-card-head">
-                        <img
-                          src={defaultSiteIcon}
-                          data-icon-src={resolveIcon(card.url, card.icon, card.iconFetch)}
-                          data-icon-key={getHost(card.url)}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          referrerpolicy="no-referrer"
-                        />
-                        <div class="site-title-wrap">
-                          <h3 title={card.title}>{card.title}</h3>
-                        </div>
-                      </header>
-
-                      <p class="site-desc">{card.desc || "暂无描述"}</p>
-
-                      <div class="site-tags-line" aria-label="标签">
-                        {card.tags.slice(0, 3).map((tag) => <span class="tag-badge meta-tag" style={getTagColorVars(tag)}>{tag}</span>)}
-                      </div>
-
-                      <footer class="site-foot">
-                        <a class="visit-btn" href={card.url} target="_blank" rel="noreferrer">在线访问</a>
-                      </footer>
-                    </article>
-                    );
-                  })
-                }
-              </div>
-            </section>
-          ))
-        }
+        </section>
       </section>
     </section>
-  </section>
+  </div>
 </BaseLayout>
 
 <script is:inline define:vars={{ defaultSiteIcon }}>
@@ -275,15 +294,15 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
   initSiteIconCache();
 </script>
 
-<style>
-  :global(main.container) {
-    width: min(1480px, calc(100% - var(--space-6)));
+<style is:global>
+  .sites-page-root {
+    width: 100%;
   }
 
   .vault-shell {
     display: grid;
-    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-    gap: 1.2rem;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    gap: 1.5rem;
     align-items: start;
   }
 
@@ -293,29 +312,26 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 
   .vault-nav {
     position: sticky;
-    top: 78px;
+    top: calc(var(--layout-header-height, 72px) + var(--space-3));
     display: grid;
-    gap: 0.5rem;
+    gap: 0.4rem;
     padding: 0.75rem;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    background: color-mix(in oklab, var(--bg-elev) 95%, transparent 5%);
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    background: color-mix(in oklab, var(--bg-elev) 94%, transparent 6%);
     backdrop-filter: blur(10px);
     max-height: calc(100vh - 120px);
-    overflow: auto;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.06);
   }
 
-  .nav-item {
-    --nav-border: color-mix(in oklab, var(--line) 86%, transparent 14%);
-    --nav-bg: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
-    --nav-text: var(--text-soft);
-
+  .vault-nav .nav-item {
     width: 100%;
-    border: 1px solid var(--tag-border, var(--nav-border));
-    background: var(--tag-bg, var(--nav-bg));
-    color: var(--tag-text, var(--nav-text));
-    border-radius: 12px;
-    padding: 0.42rem 0.6rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-soft);
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
     font-size: 0.82rem;
     display: flex;
     align-items: center;
@@ -323,29 +339,44 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     gap: 0.5rem;
     cursor: pointer;
     text-align: left;
-    transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+    transition: all 140ms ease;
   }
 
-  .nav-item.active {
-    border-color: color-mix(in oklab, var(--brand) 35%, var(--nav-border) 65%);
+  .vault-nav .nav-item:hover {
     color: var(--brand);
-    box-shadow: 0 10px 20px -16px color-mix(in oklab, var(--brand) 26%, transparent 74%);
+    background: color-mix(in oklab, var(--surface-2) 65%, transparent 35%);
   }
 
-  .nav-label {
+  .vault-nav .nav-item.active {
+    border-color: color-mix(in oklab, var(--brand) 32%, var(--line) 68%);
+    background: color-mix(in oklab, var(--brand-soft) 42%, var(--bg-elev) 58%);
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  .vault-nav .nav-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .nav-count {
+  .vault-nav .nav-count {
     border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     border-radius: 999px;
-    padding: 0.02rem 0.38rem;
+    padding: 0.02rem 0.4rem;
     font-size: 0.68rem;
-    background: var(--tag-count-bg, color-mix(in oklab, var(--bg) 90%, transparent 10%));
+    font-family: var(--font-tech);
+    background: color-mix(in oklab, var(--bg) 90%, transparent 10%);
+    color: var(--text-muted);
     white-space: nowrap;
+    transition: all 140ms ease;
+  }
+
+  .vault-nav .nav-item.active .nav-count {
+    border-color: color-mix(in oklab, var(--brand) 30%, transparent 70%);
+    color: var(--brand);
+    background: color-mix(in oklab, var(--brand-soft) 50%, var(--bg) 50%);
   }
 
   .vault-content {
@@ -354,13 +385,17 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
 
   .vault-groups {
     display: grid;
-    gap: 1.1rem;
+    gap: 1.5rem;
   }
 
   .vault-group {
-    padding: 0.9rem;
+    padding: 1.15rem 1.35rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    background: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
     display: none;
-    gap: 0.95rem;
+    gap: 1.1rem;
+    box-shadow: 0 4px 14px -6px rgb(0 0 0 / 0.06);
   }
 
   .vault-group.is-active {
@@ -371,160 +406,179 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.9rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.6rem;
+    gap: 1rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+    padding-bottom: 0.75rem;
+  }
+
+  .summary-text-wrap {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .group-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
   }
 
   .group-desc {
     margin: 0;
-    color: var(--text-soft);
-    font-size: 0.88rem;
-    line-height: 1.5;
-    flex: 1;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.4;
   }
 
   .group-count {
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     border-radius: 999px;
-    padding: 0.08rem 0.38rem;
-    font-size: 0.71rem;
-    color: var(--text-soft);
-    background: color-mix(in oklab, var(--bg) 92%, transparent 8%);
+    padding: 0.12rem 0.52rem;
+    font-size: 0.72rem;
+    font-family: var(--font-tech);
+    color: var(--text-muted);
+    background: color-mix(in oklab, var(--surface-2) 70%, transparent 30%);
     white-space: nowrap;
+    align-self: flex-start;
   }
 
   .group-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
   }
 
   .site-card {
-    border: 1px solid color-mix(in oklab, var(--line) 86%, var(--brand) 14%);
-    border-radius: 11px;
-    background: color-mix(in oklab, var(--bg-elev) 96%, transparent 4%);
-    padding: 0.74rem;
+    border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--surface-1) 95%, transparent 5%);
+    padding: 0.95rem;
     display: flex;
     flex-direction: column;
-    gap: 0.56rem;
-    min-height: 188px;
-    transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
+    gap: 0.65rem;
+    text-decoration: none;
+    min-height: 145px;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .site-card:hover {
-    border-color: color-mix(in oklab, var(--line) 68%, var(--brand) 32%);
-    box-shadow: 0 12px 22px -16px color-mix(in oklab, var(--brand) 18%, transparent 82%);
-    transform: translateY(-1px);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    background: color-mix(in oklab, var(--surface-2) 65%, transparent 35%);
+    box-shadow: 0 8px 18px -8px color-mix(in oklab, var(--brand) 22%, transparent 78%);
+    transform: translateY(-2px);
   }
 
   .site-card-head {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.65rem;
   }
 
-  .site-card-head img {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    border: 1px solid var(--line);
+  .site-icon-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     background: var(--bg);
-    padding: 2px;
-    object-fit: contain;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
+    overflow: hidden;
+    padding: 2px;
+  }
+
+  .site-icon-box img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
   }
 
   .site-title-wrap {
     min-width: 0;
+    flex: 1;
     display: grid;
-    gap: 0.24rem;
+    gap: 0.15rem;
   }
 
   .site-title-wrap h3 {
     margin: 0;
     font-size: 0.92rem;
-    line-height: 1.32;
-    min-height: calc(1.32em * 2);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.35;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 140ms ease;
   }
 
+  .site-card:hover .site-title-wrap h3 {
+    color: var(--brand);
+  }
+
+  .site-domain {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-external-arrow {
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 160ms ease;
+    opacity: 0.7;
+    flex: 0 0 auto;
+  }
+
+  .site-card:hover .site-external-arrow {
+    color: var(--brand);
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
 
   .site-desc {
     margin: 0;
     color: var(--text-soft);
-    font-size: 0.76rem;
-    line-height: 1.38;
-    min-height: calc(1.38em * 2);
+    font-size: 0.8rem;
+    line-height: 1.45;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    flex: 1;
+  }
+
+  .site-card-foot {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-top: 0.2rem;
   }
 
   .site-tags-line {
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    min-height: 1.1rem;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  .site-foot {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.7rem;
-  }
-
-  .meta-tag {
-    font-size: 0.64rem;
-    padding: 0.03rem 0.34rem;
-    border-radius: 6px;
+  .site-tags-line .meta-tag {
+    font-size: 0.65rem;
+    padding: 0.05rem 0.38rem;
+    border-radius: 5px;
     flex: 0 0 auto;
-    max-width: 120px;
+    max-width: 110px;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .visit-btn {
-    border: 1px solid color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
-    border-radius: 7px;
-    background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
-    color: color-mix(in oklab, var(--text) 68%, var(--brand) 32%);
-    text-align: center;
-    padding: 0.24rem 0.5rem;
-    font-size: 0.7rem;
-    white-space: nowrap;
-    transition: background-color 150ms ease, color 150ms ease;
-  }
-
-  .visit-btn:hover {
-    background: color-mix(in oklab, var(--brand-soft) 54%, var(--bg-elev) 46%);
-    color: color-mix(in oklab, var(--text) 62%, var(--brand) 38%);
-  }
-
-  @media (max-width: 1500px) {
-    .group-grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 1280px) {
-    .group-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 1100px) {
-    .group-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
   }
 
   @media (max-width: 900px) {
@@ -538,28 +592,26 @@ const resolveIcon = (url: string, icon: string, iconFetch?: boolean) => {
       display: flex;
       overflow-x: auto;
       overflow-y: hidden;
-      gap: 0.6rem;
-      padding: 0.6rem;
+      gap: 0.5rem;
+      padding: 0.5rem;
     }
 
-    .nav-item {
+    .vault-nav .nav-item {
       flex: 0 0 auto;
       white-space: nowrap;
-    }
-
-    .group-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: auto;
     }
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 600px) {
+    .group-grid {
+      grid-template-columns: 1fr;
+    }
+
     .group-summary {
       flex-direction: column;
       align-items: flex-start;
-    }
-
-    .group-grid {
-      grid-template-columns: 1fr;
+      gap: 0.4rem;
     }
   }
 </style>

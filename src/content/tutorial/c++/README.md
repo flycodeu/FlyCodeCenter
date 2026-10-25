@@ -3,6 +3,11 @@ title: C++
 createTime: '2026/03/08 15:17:37'
 code: t1kznc3jq
 permalink: /tutorials/cpp/
+description: 现代 C++ 核心语法与进阶实战，深入指针与内存管理、STL 核心组件应用与底层系统开发经验。
+tags:
+  - C++
+  - 系统编程
+category: 编程语言
 ---
 [尚硅谷C++]( https://www.bilibili.com/video/BV1eL41187JS/?p=73&spm_id_from=pageDriver&vd_source=55b76e8cedb662a6ef106a57375e7ac3)
 

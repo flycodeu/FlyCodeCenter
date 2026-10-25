@@ -3,6 +3,13 @@ title: VPS 部署与迁移：3x-ui 与 Mihomo
 createTime: '2026/09/17 08:29:51'
 code: b24f7gc42
 permalink: /blog/b24f7gc42/
+summary: 整理 Debian VPS 上 3x-ui（Xray Reality）、Nginx 反代与 Mihomo 订阅的部署、备份、跨机迁移与常见网络排障实战。
+tags:
+  - VPS
+  - Linux
+  - 运维
+  - 网络
+cover: https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80
 ---
 
 本文整理 Debian VPS 上 3x-ui、Xray Reality、Nginx 和 Mihomo 订阅的部署、备份、迁移与排障步骤。

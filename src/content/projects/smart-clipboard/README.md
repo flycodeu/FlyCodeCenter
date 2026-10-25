@@ -8,6 +8,8 @@ tags:
   - 工具
   - 多端同步
   - 生产力
+cover: /covers/projects/smart-clipboard.svg
+projectStage: planned
 ---
 
 ## 项目定位

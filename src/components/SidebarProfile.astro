@@ -159,15 +159,13 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
   .profile-card {
     width: 100%;
     min-width: 0;
-    min-height: 560px;
-    padding: 2rem 1.35rem 1.45rem;
+    padding: 1.6rem 1.25rem 1.35rem;
     border-radius: var(--radius-md);
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
+    gap: 1.15rem;
   }
   .profile-identity {
     display: flex;
@@ -176,15 +174,15 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
     width: 100%;
   }
   .avatar-wrap {
-    margin-bottom: 1.05rem;
+    margin-bottom: 0.85rem;
   }
   .avatar {
-    width: 100px;
-    height: 100px;
+    width: 88px;
+    height: 88px;
     object-fit: cover;
     border: 2px solid var(--line);
     background: var(--bg-elev);
-    padding: 0.25rem;
+    padding: 0.2rem;
   }
   .avatar.circle {
     border-radius: 50%;
@@ -225,24 +223,21 @@ const isCopyAccount = (social: { icon?: string; link?: string }) => {
     gap: 0.42rem;
   }
   .stack-tag {
-    padding: 0.34rem 0.64rem;
+    padding: 0.22rem 0.52rem;
     font-size: 0.72rem;
     letter-spacing: 0;
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--brand-soft) 72%, transparent 28%),
-        color-mix(in oklab, var(--surface-1) 92%, transparent 8%)
-      );
-    border-color: color-mix(in oklab, var(--brand) 34%, var(--line) 66%);
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border-color: color-mix(in oklab, var(--line) 84%, transparent 16%);
   }
   .quote {
     margin: 0;
-    padding: 0.5rem 0.75rem;
-    font-style: italic;
-    color: var(--brand);
-    font-size: 0.84rem;
-    background: var(--brand-soft);
+    padding: 0.55rem 0.75rem;
+    font-style: normal;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    background: color-mix(in oklab, var(--surface-2) 65%, transparent 35%);
     border-radius: 8px;
     border-left: 2px solid var(--brand);
     text-align: left;

@@ -1,0 +1,43 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tools Platform Blueprint">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1923"/>
+      <stop offset="50%" stop-color="#0a121a"/>
+      <stop offset="100%" stop-color="#050a0f"/>
+    </linearGradient>
+    <radialGradient id="tradial" cx="85%" cy="15%" r="65%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="tgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#162736" stroke-width="1" opacity="0.65"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="675" fill="url(#tbg)"/>
+  <rect width="1200" height="675" fill="url(#tradial)"/>
+  <rect width="1200" height="675" fill="url(#tgrid)"/>
+  
+  <!-- Editor Window Container -->
+  <rect x="90" y="70" width="1020" height="535" rx="14" fill="#080e15" stroke="#162b3d" stroke-width="1.5"/>
+  
+  <!-- Window Header -->
+  <circle cx="130" cy="112" r="7" fill="#ef4444" opacity="0.85"/>
+  <circle cx="155" cy="112" r="7" fill="#f59e0b" opacity="0.85"/>
+  <circle cx="180" cy="112" r="7" fill="#10b981" opacity="0.85"/>
+  <text x="220" y="118" fill="#587691" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="16">modules / developer-toolbox.ts</text>
+  <line x1="90" y1="145" x2="1110" y2="145" stroke="#162b3d" stroke-width="1"/>
+  
+  <!-- Code Lines -->
+  <text x="140" y="215" fill="#38bdf8" font-family="'JetBrains Mono', monospace" font-size="23">const</text>
+  <text x="215" y="215" fill="#f8fafc" font-family="'JetBrains Mono', monospace" font-size="23">toolbox = new DeveloperToolboxHub({</text>
+  <text x="180" y="265" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">runtime: <tspan fill="#38bdf8">"WebAssembly High-Performance Offline Engine"</tspan>,</text>
+  <text x="180" y="310" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">modules: <tspan fill="#38bdf8">"JSON/YAML | Codec | Crypto | Hash Tools"</tspan>,</text>
+  <text x="180" y="355" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">platform: <tspan fill="#38bdf8">"Responsive PWA + Desktop Client Packaging"</tspan>,</text>
+  <text x="180" y="400" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">telemetry: <tspan fill="#38bdf8">"Zero Remote Data Tracking / Local-Only"</tspan></text>
+  <text x="140" y="450" fill="#f8fafc" font-family="'JetBrains Mono', monospace" font-size="23">});</text>
+  
+  <!-- Status Chip -->
+  <rect x="140" y="500" width="220" height="42" rx="8" fill="#0d2438" stroke="#0ea5e9" stroke-width="1"/>
+  <circle cx="165" cy="521" r="5" fill="#38bdf8"/>
+  <text x="260" y="527" fill="#38bdf8" font-family="'Noto Sans SC', sans-serif" font-size="15" font-weight="600" text-anchor="middle">离线工具集 · 研发中</text>
+</svg>

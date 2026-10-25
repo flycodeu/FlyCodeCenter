@@ -43,43 +43,55 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
   ]}
   tags={tags}
 >
-  <section class="tag-filter" id="tag-filter-root">
-    <header class="tag-filter-head">
-      <h2>标签</h2>
-      <p id="tag-filter-status">全部标签 {entries.length} 篇文章</p>
-    </header>
+  <div class="tags-page-root">
+    <section class="tag-filter surface" id="tag-filter-root">
+      <header class="tag-filter-head">
+        <div class="tag-head-title">
+          <span class="tag-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+          </span>
+          <h2>技术主题索引</h2>
+        </div>
+        <p id="tag-filter-status" class="tag-status-badge">全部标签 · {entries.length} 篇文章</p>
+      </header>
 
-    <div class={`tag-graph layout-${graphConfig.layout}`} role="listbox" aria-label="标签筛选">
-      <button type="button" class="tag-node is-all active" data-tag="all" style="--node-size:1.06rem;--node-weight:680;--node-hue:214;--node-alpha:0.99;--node-accent:98%;">
-        <span>全部 {entries.length}</span>
-      </button>
-      {
-        graphItems.map((item) => (
-          <button type="button" class="tag-node" data-tag={item.name} title={item.name} style={item.style}>
-            <span>{item.name} {item.count}</span>
-          </button>
-        ))
-      }
-    </div>
-  </section>
+      <div class={`tag-graph layout-${graphConfig.layout}`} role="listbox" aria-label="标签筛选">
+        <button type="button" class="tag-node is-all active" data-tag="all">
+          <span class="node-label">全部</span>
+          <span class="node-count">{entries.length}</span>
+        </button>
+        {
+          graphItems.map((item) => (
+            <button type="button" class="tag-node" data-tag={item.name} title={item.name}>
+              <span class="node-label">{item.name}</span>
+              <span class="node-count">{item.count}</span>
+            </button>
+          ))
+        }
+      </div>
+    </section>
 
-  <section class="tag-result-section" id="tag-result-section">
-    <div class="result-list" id="tag-result-list" data-list-mode={listMode} data-page-size={String(pageSize)}>
-      {
-        entries.map((entry, idx) => (
-          <div
-            data-entry-item
-            data-entry-index={String(idx)}
-            data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}
-          >
-            <PostCard entry={entry} kind={entry.collection} coverMode={tagCoverMode} />
-          </div>
-        ))
-      }
-    </div>
-    <nav class="surface pager-shell tag-pager" id="tag-result-pager" hidden></nav>
-    <div id="tag-result-sentinel" aria-hidden="true"></div>
-  </section>
+    <section class="tag-result-section" id="tag-result-section">
+      <div class="result-list" id="tag-result-list" data-list-mode={listMode} data-page-size={String(pageSize)}>
+        {
+          entries.map((entry, idx) => (
+            <div
+              data-entry-item
+              data-entry-index={String(idx)}
+              data-tags={resolveArticleMeta(entry).tags.map((tag) => tag.trim().toLowerCase()).join("||")}
+            >
+              <PostCard entry={entry} kind={entry.collection} coverMode={tagCoverMode} />
+            </div>
+          ))
+        }
+      </div>
+      <nav class="surface pager-shell tag-pager" id="tag-result-pager" hidden></nav>
+      <div id="tag-result-sentinel" aria-hidden="true"></div>
+    </section>
+  </div>
 </ListLayout>
 
 <script is:inline>
@@ -126,7 +138,7 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     const updateStatus = () => {
       const activeButton = buttons.find((button) => normalize(button.getAttribute("data-tag")) === currentTag);
       const label = currentTag === "all" ? "全部标签" : activeButton?.getAttribute("data-tag") || currentTag;
-      status.textContent = `${label} ${filteredItems.length} 篇文章`;
+      status.textContent = `${label} · ${filteredItems.length} 篇文章`;
     };
 
     const renderPager = () => {
@@ -282,106 +294,188 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
   initTagFilter();
 </script>
 
-<style>
-  .tag-filter {
-    padding: 0.2rem 0 0.8rem;
-    display: grid;
-    gap: 0.78rem;
-  }
-
-  .tag-filter-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.8rem;
-    flex-wrap: wrap;
-  }
-
-  .tag-filter-head h2 {
-    margin: 0;
-    font-size: 1.03rem;
-    font-family: var(--font-sans);
-  }
-
-  .tag-filter-head p {
-    margin: 0;
-    color: var(--text-soft);
-    font-size: 0.86rem;
-  }
-
-  .tag-graph {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.48rem 0.76rem;
-  }
-
-  .tag-node {
-    border: 0;
-    background: transparent;
-    padding: 0.08rem 0.12rem;
-    cursor: pointer;
-    line-height: 1.35;
-    letter-spacing: 0.01em;
-    font-size: var(--node-size, 0.96rem);
-    font-weight: var(--node-weight, 500);
-    opacity: var(--node-alpha, 0.88);
-    color: color-mix(
-      in oklab,
-      hsl(var(--node-hue, 212) 84% 56%) var(--node-accent, 56%),
-      var(--text-soft) calc(100% - var(--node-accent, 56%))
-    );
-    transition: color 160ms ease, opacity 160ms ease, transform 160ms ease;
-    text-align: left;
-  }
-
-  .tag-node:hover {
-    opacity: 1;
-    transform: translateY(-1px);
-    color: color-mix(in oklab, hsl(var(--node-hue, 212) 88% 52%) 84%, var(--text) 16%);
-  }
-
-  .tag-node span {
-    display: inline;
-    border-bottom: 1px solid transparent;
-  }
-
-  .tag-node.active {
-    opacity: 1;
-    color: color-mix(in oklab, var(--brand) 72%, var(--text) 28%);
-  }
-
-  .tag-node.active span {
-    border-bottom-color: color-mix(in oklab, var(--brand) 74%, transparent 26%);
-  }
-
-  .tag-node.is-all {
-    letter-spacing: 0.02em;
-  }
-
-  .tag-result-section {
-    margin-top: 0.26rem;
-    display: grid;
-    gap: 0.9rem;
-  }
-
-  .result-list {
+<style is:global>
+  .tags-page-root {
     display: grid;
     gap: var(--space-4);
   }
 
-  .tag-pager {
+  .tags-page-root .tag-filter {
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    background: color-mix(in oklab, var(--bg-elev) 92%, transparent 8%);
+    display: grid;
+    gap: 0.95rem;
+    box-shadow: 0 4px 12px -6px rgb(0 0 0 / 0.06);
+  }
+
+  .tags-page-root .tag-filter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .tags-page-root .tag-head-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tags-page-root .tag-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand);
+  }
+
+  .tags-page-root .tag-head-title h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .tags-page-root .tag-status-badge {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+    font-family: var(--font-tech);
+  }
+
+  .tags-page-root .tag-graph {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.55rem;
+    padding: 0.15rem 0;
+  }
+
+  .tags-page-root .tag-node {
+    border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border-radius: 999px;
+    padding: 0.28rem 0.68rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  .tags-page-root .tag-node:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -4px color-mix(in oklab, var(--brand) 25%, transparent 75%);
+  }
+
+  .tags-page-root .node-label {
+    min-width: 0;
+  }
+
+  .tags-page-root .node-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.04rem 0.36rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-family: var(--font-tech);
+    color: var(--text-muted);
+    background: color-mix(in oklab, var(--bg) 85%, transparent 15%);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    transition: all 160ms ease;
+  }
+
+  .tags-page-root .tag-node.active {
+    background: var(--brand) !important;
+    color: #fff !important;
+    border-color: var(--brand) !important;
+    box-shadow: 0 4px 14px -3px var(--brand);
+    transform: translateY(-1px);
+  }
+
+  .tags-page-root .tag-node.active .node-count {
+    background: rgb(255 255 255 / 0.22);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .tags-page-root .tag-result-section {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .tags-page-root .result-list {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .tags-page-root .tag-pager {
     margin-top: 0.1rem;
+    padding: 0.5rem 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+  }
+
+  .tags-page-root .pager-pages {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .tags-page-root .pager-btn {
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    padding: 0.28rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+
+  .tags-page-root .pager-btn:hover:not(:disabled) {
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+
+  .tags-page-root .pager-btn.is-active {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+
+  .tags-page-root .pager-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .tags-page-root .pager-ellipsis {
+    color: var(--text-muted);
+    padding: 0 0.2rem;
   }
 
   #tag-result-sentinel {
     width: 100%;
     height: 2px;
-  }
-
-  @media (max-width: 760px) {
-    .tag-graph {
-      gap: 0.4rem 0.56rem;
-    }
   }
 </style>

@@ -1,4 +1,4 @@
-﻿---
+---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import SidebarProfile from "@/components/SidebarProfile.astro";
 
@@ -17,6 +17,7 @@ interface Props {
 }
 
 const { title, description, stats = [], tags = [], hideSidebar = false } = Astro.props;
+const topTags = tags.slice(0, 16);
 ---
 
 <BaseLayout title={title} description={description}>
@@ -30,22 +31,165 @@ const { title, description, stats = [], tags = [], hideSidebar = false } = Astro
       !hideSidebar && (
         <aside class="profile-rail list-side" data-tag-count={String(tags.length)}>
           <SidebarProfile />
+
+          {stats.length > 0 && (
+            <section class="surface list-sidebar-panel">
+              <header class="sidebar-panel-header">
+                <h3>数据概览</h3>
+              </header>
+              <div class="stats-mini-grid">
+                {stats.map((s) => (
+                  <div class="stat-mini-item">
+                    <span class="stat-mini-value">{s.value}</span>
+                    <span class="stat-mini-label">{s.title}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {topTags.length > 0 && (
+            <section class="surface list-sidebar-panel">
+              <header class="sidebar-panel-header">
+                <h3>热门标签</h3>
+                <a href="/tags" class="panel-more-link">全部 →</a>
+              </header>
+              <div class="sidebar-tags-cloud">
+                {topTags.map((t) => (
+                  <a href={t.href} class="sidebar-tag-item">
+                    <span>{t.name}</span>
+                    <span class="tag-num">{t.count}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
         </aside>
       )
     }
   </div>
 </BaseLayout>
 
-<style>
+<style is:global>
   .list-layout-shell {
     position: relative;
+    align-items: stretch;
   }
 
   .list-main {
     display: grid;
     gap: var(--space-4);
+    min-width: 0;
   }
+
   .no-side {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list-side {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    min-width: 0;
+    position: sticky;
+    top: calc(var(--layout-header-height, 72px) + var(--space-3));
+    height: fit-content;
+  }
+
+  .list-sidebar-panel {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-3);
+    background: var(--surface-1);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+  }
+
+  .sidebar-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 60%, transparent 40%);
+  }
+
+  .sidebar-panel-header h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .panel-more-link {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .panel-more-link:hover {
+    color: var(--brand);
+  }
+
+  .stats-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .stat-mini-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 0.4rem;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--surface-2) 70%, transparent 30%);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .stat-mini-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-family: var(--font-tech);
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .stat-mini-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+  }
+
+  .sidebar-tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .sidebar-tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    padding: 0.22rem 0.52rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-soft);
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .sidebar-tag-item:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
+  }
+
+  .tag-num {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-family: var(--font-tech);
   }
 </style>

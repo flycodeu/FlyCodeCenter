@@ -4,7 +4,7 @@ createTime: '2026/10/16 12:00:00'
 code: tface01
 permalink: /tutorials/face-recognition/
 summary: 两张图片怎样判断同一个人，一张图片怎样判断真假脸。
-description: 人脸检测、对齐、身份特征、距离计算、单图防伪和姿态估计的原理与 Python 实现。
+description: 计算机视觉实战：人脸检测、特征提取与比对、单目静默活体防伪及模型调优原理与 Python 实操。
 order: 3
 tags:
   - 人脸识别

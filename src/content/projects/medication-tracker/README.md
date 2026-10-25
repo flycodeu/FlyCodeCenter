@@ -8,6 +8,8 @@ tags:
   - 健康
   - 提醒
   - 多端
+cover: /covers/projects/medication-tracker.svg
+projectStage: planned
 ---
 
 ## 项目定位

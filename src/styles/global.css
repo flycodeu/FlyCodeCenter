@@ -1269,6 +1269,19 @@ main pre.has-global-copy {
   background: var(--code-panel) !important;
   background-color: var(--code-panel) !important;
   color: var(--code-text) !important;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--code-border) 80%, transparent 20%) transparent;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar,
+.prose .expressive-code .frame > pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-thumb,
+.prose .expressive-code .frame > pre::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--code-border) 80%, transparent 20%);
+  border-radius: 3px;
 }
 
 .code-block-wrapper pre[data-line-numbers="1"] {
@@ -1311,6 +1324,19 @@ main pre.has-global-copy {
   font-size: 0.8rem;
   color: var(--code-muted);
   overflow: hidden;
+}
+
+.code-block-wrapper[data-window="mac"] .code-block-header::before,
+.prose .expressive-code .frame > figcaption.header::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 14px 0 0 #ffbd2e, 28px 0 0 #27c93f;
+  margin-right: 36px;
+  flex-shrink: 0;
 }
 
 .code-block-title {
@@ -1517,6 +1543,8 @@ main pre.has-global-copy {
   background: var(--code-panel) !important;
   background-color: var(--code-panel) !important;
   color: var(--code-text) !important;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--code-border) 80%, transparent 20%) transparent;
 }
 
 .prose .expressive-code .frame > pre code {

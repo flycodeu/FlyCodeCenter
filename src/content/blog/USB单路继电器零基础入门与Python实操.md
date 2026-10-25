@@ -9,6 +9,7 @@ tags:
   - USB
   - 继电器
   - 硬件入门
+cover: https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80
 ---
 
 把 USB 继电器插进电脑，PWR 灯亮了。接下来，怎样用电脑打开它，再由自己决定什么时候关闭？

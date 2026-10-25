@@ -8,6 +8,8 @@ tags:
   - 像素风
   - 生成式
   - 动画
+cover: /covers/projects/pixel-character-generator.svg
+projectStage: planned
 ---
 
 ## 项目定位

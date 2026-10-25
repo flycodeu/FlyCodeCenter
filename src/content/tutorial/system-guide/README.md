@@ -3,7 +3,7 @@ title: 系统运行与配置教程
 createTime: '2026/03/05 20:18:38'
 code: t27j84w8u
 permalink: /tutorials/system-guide/
-description: 从配置入口到部署上线，系统化掌握 FlyCodeCenter 的完整运行机制。
+description: 个人技术站与博客系统的全栈架构设计，涵盖静态化优化、CI/CD 自动化构建、搜索引擎集成与运维实战。
 order: 0
 tags:
   - tutorial

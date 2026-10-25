@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="userBgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#userBgGrad)" stroke="#60a5fa" stroke-width="2.5"/>
+  <!-- User Silhouette / Developer Badge -->
+  <circle cx="60" cy="46" r="20" fill="#ffffff" opacity="0.95"/>
+  <path d="M26 104 C28 78, 44 72, 60 72 C76 72, 92 78, 94 104 Z" fill="#ffffff" opacity="0.95"/>
+</svg>

@@ -1,4 +1,4 @@
-﻿---
+---
 import siteConfig from "@/site.config";
 
 interface Heading {
@@ -365,6 +365,11 @@ const list: TocItem[] = filtered.map((item) => {
         document.addEventListener("astro:page-load", () => {
           initToc();
         });
+        document.addEventListener("astro:before-swap", () => {
+          if (typeof window[cleanupKey] === "function") {
+            window[cleanupKey]();
+          }
+        });
       }
     </script>
   )
@@ -466,10 +471,7 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-overlay {
     position: fixed;
-    top: var(--layout-header-height, 68px);
-    right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
-    left: 0;
+    inset: 0;
     background: rgba(8, 10, 18, 0.45);
     backdrop-filter: blur(2px);
     z-index: 90;
@@ -488,15 +490,15 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-panel {
     position: fixed;
-    top: calc(var(--layout-header-height, 68px) + 0.5rem);
+    top: 0;
     right: 0;
     width: min(88vw, 360px);
-    bottom: calc(env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px) + 0.5rem);
-    height: auto;
+    height: 100vh;
+    height: 100dvh;
     z-index: 91;
     transform: translateX(100%);
     transition: transform 180ms ease;
-    padding: 0 0.65rem 0;
+    padding: 0.75rem;
   }
 
   .toc-mobile-panel.open {

@@ -75,6 +75,7 @@ const coverHue = Math.abs(titleHash) % 360;
     display: block;
     width: 100%;
     height: 100%;
+    min-height: 140px;
     min-width: 0;
     overflow: hidden;
     isolation: isolate;
@@ -84,58 +85,85 @@ const coverHue = Math.abs(titleHash) % 360;
   .content-cover-fallback {
     position: absolute;
     inset: 0;
-    display: grid;
-    align-items: end;
-    padding: 0.78rem 0.82rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1rem 1.25rem;
     overflow: hidden;
-    background: 
-      radial-gradient(circle at 100% 0%, hsl(var(--cover-hue, 220) 80% 65% / 0.5) 0%, transparent 60%),
-      radial-gradient(circle at 0% 100%, hsl(calc(var(--cover-hue, 220) + 60) 80% 60% / 0.4) 0%, transparent 70%),
-      color-mix(in oklab, var(--surface-2) 78%, var(--brand-soft) 22%);
+    background:
+      radial-gradient(130% 130% at 50% 30%, color-mix(in oklab, hsl(var(--cover-hue) 60% 50%) 16%, transparent 84%) 0%, transparent 70%),
+      linear-gradient(145deg, color-mix(in oklab, var(--surface-1) 85%, var(--surface-2) 15%) 0%, var(--surface-2) 100%);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .content-cover-fallback::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(color-mix(in oklab, var(--line) 45%, transparent 55%) 1px, transparent 1px);
+    background-size: 14px 14px;
+    opacity: 0.35;
+    pointer-events: none;
   }
 
   .content-cover-copy {
     position: relative;
     z-index: 2;
-    display: grid;
-    gap: 0.28rem;
-    min-width: 0;
-    padding-left: 0.42rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: 100%;
+    max-width: 92%;
   }
 
   .content-cover-eyebrow {
-    color: color-mix(in oklab, var(--brand) 74%, var(--text-soft) 26%);
+    color: var(--brand);
     font-family: var(--font-tech);
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     font-weight: 650;
     line-height: 1.2;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: color-mix(in oklab, var(--brand-soft) 45%, var(--surface-1) 55%);
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--brand) 22%, transparent 78%);
   }
 
   .content-cover-title {
-    max-width: 82%;
+    width: 100%;
     color: var(--text);
     font-family: var(--font-display);
     font-size: 0.92rem;
-    font-weight: 700;
-    line-height: 1.34;
+    font-weight: 650;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     overflow-wrap: anywhere;
+    text-align: center;
   }
 
   .content-cover-mark {
+    display: block;
     position: absolute;
-    right: -0.08em;
-    bottom: -0.3em;
-    z-index: 1;
-    color: hsl(var(--cover-hue, 220) 80% 50% / 0.15);
-    font-family: var(--font-display);
-    font-size: 4.6rem;
-    font-weight: 800;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    font-weight: 900;
+    font-family: var(--font-tech);
+    color: color-mix(in oklab, var(--text) 5%, transparent 95%);
     line-height: 1;
+    pointer-events: none;
     user-select: none;
+    letter-spacing: -0.05em;
+    z-index: 1;
   }
 
   .content-cover img {

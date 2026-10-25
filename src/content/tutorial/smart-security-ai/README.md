@@ -4,7 +4,7 @@ createTime: '2026/03/06 12:49:19'
 code: t16fveqbr
 permalink: /tutorials/smart-security-ai/
 summary: 理解相机接入、视频分发、模型推理与事件保存，按已完成章节逐步学习。
-description: 视频智能分析的前置知识与后续学习方向。
+description: 工业视觉安防平台完整演进：相机 RTSP 接入、MediaMTX 视频分发、多路模型推理调度与事件告警闭环。
 order: 0
 tags:
   - tutorial

@@ -8,6 +8,7 @@ tags:
   - ZLMediaKit
   - FFmpeg
   - 视频流
+cover: https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80
 ---
 
 ZLMediaKit，简称 ZLM，是一个流媒体服务器。它接收视频流，再把这路视频提供给不同的播放器。摄像头、FFmpeg 或 OBS 可以提供视频，VLC、FFplay 和网页播放器负责观看。

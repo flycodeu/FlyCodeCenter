@@ -1,4 +1,4 @@
-﻿export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
+export type SearchProvider = "off" | "pagefind" | "minisearch" | "algolia";
 export type CommentProvider = "off" | "giscus" | "waline" | "twikoo" | "utterances";
 export type GiscusMapping = "pathname" | "url" | "title" | "og:title" | "specific" | "number";
 export type GiscusInputPosition = "top" | "bottom";
@@ -147,10 +147,10 @@ const layoutPresets = {
     postMainWidth: 900,
     postTocWidth: 360,
     postGap: 32,
-    tutorialShellWidth: 1420,
-    tutorialSidebarWidth: 340,
-    tutorialTocWidth: 300,
-    tutorialContentMaxWidth: 840,
+    tutorialShellWidth: 1520,
+    tutorialSidebarWidth: 300,
+    tutorialTocWidth: 260,
+    tutorialContentMaxWidth: 880,
     cardBorderWidth: 1,
     radiusScale: 1.15
   },
@@ -222,6 +222,14 @@ const siteConfig = defineSiteConfig({
       enable: true,
       durationMs: 1800,
       position: "bottom-right" as "bottom-right" | "bottom-center"
+    },
+    mascot: {
+      enable: true,
+      defaultOpen: true,
+      position: "bottom-right" as "bottom-right" | "bottom-left",
+      defaultModel: "rem" as "rem",
+      enableDialogue: true,
+      allowDrag: true
     }
   },
   articlePrefix: "/article",
@@ -830,7 +838,7 @@ const siteConfig = defineSiteConfig({
       hoverState: "active" as "idle" | "active"
     },
     floatingOrb: {
-      enable: true,
+      enable: false,
       label: "JARVIS",
       position: "left" as "left" | "right",
       offsetX: 16,
@@ -841,7 +849,7 @@ const siteConfig = defineSiteConfig({
       activeText: "连接中",
       modelPresetKey: "deepseek-chat",
       actionId: "open-settings",
-      excludeRoutes: ["/jarvis", "/blog/*", "/projects/*", "/tutorial/*", "/tutorials/*", "/interview/*"]
+      excludeRoutes: ["/", "/jarvis", "/blog", "/blog/*", "/projects/*", "/tutorial/*", "/tutorials/*", "/interview/*", "/tags", "/archives"]
     },
     personaPresets: [
       {
@@ -970,8 +978,8 @@ const siteConfig = defineSiteConfig({
       },
       unlock: {
         password: "flycode",
-        title: "进入面试中心",
-        description: "输入密码后进入面试中心。"
+        title: "题库访问验证",
+        description: "请输入访问密码以解锁技术复盘与题目正文。"
       },
       search: {
         exclude: true

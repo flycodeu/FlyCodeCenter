@@ -3,7 +3,7 @@ title: 音视频专栏
 createTime: '2026/03/11 21:43:57'
 code: t2khgvywu
 permalink: /tutorials/sound-video/
-description: 开这个栏目原因是目前相关教程比较少，资源较为分散。
+description: 系统梳理音视频开发核心链路，涵盖流媒体传输协议、编解码原理、RTMP/RTSP 推拉流服务与实战避坑笔记。
 order: 3
 tags:
   - 音视频

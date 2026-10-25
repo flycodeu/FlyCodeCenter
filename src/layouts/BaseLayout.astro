@@ -4,6 +4,7 @@ import Header from "@/components/Header.astro";
 import SearchModal from "@/components/SearchModal.astro";
 import Watermark from "@/components/Watermark.astro";
 import JarvisOrb from "@/components/JarvisOrb.astro";
+import MascotWidget from "@/components/MascotWidget.astro";
 import { makePageTitle, resolveCanonical } from "@/utils/seo";
 import { ClientRouter } from "astro:transitions";
 
@@ -153,7 +154,18 @@ const copyToastConfig = (siteConfig.ui as {
     durationMs?: number;
     position?: "bottom-right" | "bottom-center";
   };
+  mascot?: {
+    enable?: boolean;
+    defaultOpen?: boolean;
+  };
 }).copyToast;
+const mascotConfig = (siteConfig.ui as {
+  mascot?: {
+    enable?: boolean;
+    defaultOpen?: boolean;
+  };
+})?.mascot;
+const mascotEnable = mascotConfig?.enable ?? true;
 const copyToastEnable = copyToastConfig?.enable ?? true;
 const copyToastDurationMs = Math.max(1000, Number(copyToastConfig?.durationMs ?? 1800));
 const copyToastPosition = copyToastConfig?.position === "bottom-center" ? "bottom-center" : "bottom-right";
@@ -576,6 +588,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     </footer>
     <SearchModal />
     {showJarvisOrb && <JarvisOrb />}
+    {mascotEnable && <MascotWidget />}
     {copyToastEnable && (
       <div
         id="global-copy-toast"
@@ -601,6 +614,12 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
   :global(html) {
     --layout-header-height: 72px;
     --layout-footer-height: 56px;
+  }
+
+  @media (max-width: 900px) {
+    :global(html) {
+      --layout-header-height: 106px;
+    }
   }
 
   :global(body) {

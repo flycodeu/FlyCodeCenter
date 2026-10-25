@@ -1,19 +1,43 @@
-<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planned Project Cover">
+<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System Architecture Blueprint">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f2f6fb"/>
-      <stop offset="100%" stop-color="#e3ecf7"/>
+    <linearGradient id="pbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#141824"/>
+      <stop offset="50%" stop-color="#0f131c"/>
+      <stop offset="100%" stop-color="#090c12"/>
     </linearGradient>
+    <radialGradient id="pradial" cx="80%" cy="20%" r="65%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="pgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#222b3d" stroke-width="1" opacity="0.55"/>
+    </pattern>
   </defs>
-  <rect width="1200" height="675" fill="url(#bg)"/>
-  <rect x="56" y="56" width="1088" height="563" rx="26" fill="#ffffff" fill-opacity="0.55" stroke="#c3d4e8"/>
-  <g fill="none" stroke="#d4e0ee">
-    <path d="M92 174H1110"/>
-    <path d="M92 490H1110"/>
-    <path d="M330 92V583"/>
-    <path d="M870 92V583"/>
-  </g>
-  <text x="96" y="148" fill="#7d93ad" font-family="'JetBrains Mono', monospace" font-size="26">PROJECT STAGE</text>
-  <text x="96" y="382" fill="#33506e" font-family="'Noto Sans SC', sans-serif" font-size="72" font-weight="700">规划中 · Planned</text>
-  <text x="96" y="440" fill="#6d84a0" font-family="'Noto Sans SC', sans-serif" font-size="30">已确定方向，按优先级逐步启动</text>
+  <rect width="1200" height="675" fill="url(#pbg)"/>
+  <rect width="1200" height="675" fill="url(#pradial)"/>
+  <rect width="1200" height="675" fill="url(#pgrid)"/>
+  
+  <!-- Editor Window Container -->
+  <rect x="90" y="70" width="1020" height="535" rx="14" fill="#0d111a" stroke="#222b3d" stroke-width="1.5"/>
+  
+  <!-- Window Header -->
+  <circle cx="130" cy="112" r="7" fill="#ef4444" opacity="0.85"/>
+  <circle cx="155" cy="112" r="7" fill="#f59e0b" opacity="0.85"/>
+  <circle cx="180" cy="112" r="7" fill="#10b981" opacity="0.85"/>
+  <text x="220" y="118" fill="#64748b" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="16">architecture / system-blueprint.spec</text>
+  <line x1="90" y1="145" x2="1110" y2="145" stroke="#222b3d" stroke-width="1"/>
+  
+  <!-- Blueprint Content -->
+  <text x="140" y="215" fill="#38bdf8" font-family="'JetBrains Mono', monospace" font-size="23">export namespace</text>
+  <text x="390" y="215" fill="#f8fafc" font-family="'JetBrains Mono', monospace" font-size="23">ProjectSystemBlueprint {</text>
+  <text x="180" y="265" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">phase: <tspan fill="#38bdf8">"Phase 1: Architecture Specification &amp; Tech Feasibility"</tspan>,</text>
+  <text x="180" y="310" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">pipeline: <tspan fill="#38bdf8">"Requirement Analysis -&gt; Domain Model -&gt; Prototype Verification"</tspan>,</text>
+  <text x="180" y="355" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">standards: <tspan fill="#38bdf8">"High Cohesion, Low Coupling, Modern Engineering Practice"</tspan>,</text>
+  <text x="180" y="400" fill="#94a3b8" font-family="'JetBrains Mono', monospace" font-size="19">milestone: <tspan fill="#38bdf8">"Ready for Core Implementation"</tspan></text>
+  <text x="140" y="450" fill="#f8fafc" font-family="'JetBrains Mono', monospace" font-size="23">}</text>
+  
+  <!-- Status Chip -->
+  <rect x="140" y="500" width="220" height="42" rx="8" fill="#122438" stroke="#38bdf8" stroke-width="1"/>
+  <circle cx="165" cy="521" r="5" fill="#38bdf8"/>
+  <text x="260" y="527" fill="#38bdf8" font-family="'Noto Sans SC', sans-serif" font-size="15" font-weight="600" text-anchor="middle">规划与预研 · 构想孵化</text>
 </svg>

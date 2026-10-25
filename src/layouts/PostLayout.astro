@@ -74,7 +74,7 @@ const antiCrawlRuntime = resolveAntiCrawlRuntimeConfig(
 );
 const spacing = siteConfig.article.ui.spacing;
 const tocPosition = siteConfig.theme.toc.position === "left" ? "left" : "right";
-const tocWidth = Math.min(280, Math.max(220, Number(siteConfig.theme.toc.width ?? 280)));
+const tocWidth = Math.min(340, Math.max(240, Number(siteConfig.theme.toc.width ?? 280)));
 const isBlog = articleUrl.startsWith("/blog/");
 const visibleHeadingCount = headings.filter(
   (item) => item.depth >= siteConfig.theme.toc.minDepth && item.depth <= siteConfig.theme.toc.maxDepth
@@ -216,12 +216,12 @@ const articleRuntimeConfig = {
 <BaseLayout title={title} description={description} canonicalPath={articleUrl} image={cover}>
   <ReadingProgress />
   <div
-    class={`grid-main post-layout post-layout-${tocPosition} reading-page${isBlog && !showToc ? " post-layout-no-toc" : ""}`}
+    class={`grid-main post-layout post-layout-${tocPosition} reading-page${!showToc ? " post-layout-no-toc" : ""}`}
     data-reading-kind={isBlog ? "blog" : undefined}
     style={`--toc-width:${tocWidth}px;--post-top-gap:${spacing.topBarBottom};--post-hero-gap:${spacing.heroBottom};--post-head-pt:${spacing.headPaddingTop};--post-head-pb:${spacing.headPaddingBottom};--post-head-gap:${spacing.headGap};--post-head-mb:${spacing.headBottom};--post-article-pb:${spacing.articleBottom};--post-summary-size:${spacing.summarySize};--post-p-margin:${spacing.paragraphMargin};--post-h2-top:${spacing.h2Top};--post-h2-bottom:${spacing.h2Bottom};--post-h3-top:${spacing.h3Top};--post-h3-bottom:${spacing.h3Bottom};`}
   >
-    <section class="post-main">
-      <section class="surface post-card-shell post-info-card reading-sheet">
+    <section class="post-main reading-sheet">
+      <section class="post-card-shell post-info-card">
         <div class="post-top-bar">
           <a href="javascript:history.back()" class="back-link reading-back-link">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -267,7 +267,7 @@ const articleRuntimeConfig = {
         </header>
       </section>
 
-      <section class="surface post-card-shell post-body-card reading-panel">
+      <section class="post-card-shell post-body-card">
         <article class="prose article-body reading-body" data-article-encrypted={encrypted ? "1" : "0"}>
           {
             encrypted && siteConfig.encrypt.enable ? (
@@ -279,12 +279,12 @@ const articleRuntimeConfig = {
         </article>
       </section>
 
-      <section class="surface post-card-shell post-meta-card reading-panel">
+      <section class="post-card-shell post-meta-card">
         <Copyright title={title} url={absoluteUrl(articleUrl)} editUrl={githubEditUrl} />
 
         {
           siteConfig.prevNext.enable && (prev || next) && (
-            <nav class="prev-next reading-switcher">
+            <nav class="prev-next">
               {prev ? <a href={prev.url}>← {prev.title}</a> : <span />}
               {next ? <a href={next.url}>{next.title} →</a> : <span />}
             </nav>
@@ -292,7 +292,7 @@ const articleRuntimeConfig = {
         }
       </section>
 
-      <section class="surface post-card-shell post-comment-card reading-panel">
+      <section class="post-card-shell post-comment-card">
         <Comments deferUntilEvent={deferUntilEvent} />
       </section>
     </section>
@@ -319,17 +319,18 @@ const articleRuntimeConfig = {
 
   .post-layout {
     --post-main-width: var(--layout-post-main-width, 860px);
-    --toc-width: var(--layout-post-toc-width, 332px);
+    --toc-width: var(--layout-post-toc-width, 320px);
     padding-bottom: 1.2rem;
     column-gap: var(--layout-post-gap, 1.7rem);
     row-gap: 1rem;
     align-items: start;
+    justify-content: center;
   }
   .post-layout.post-layout-right {
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--post-main-width)) minmax(260px, var(--toc-width));
+    grid-template-columns: minmax(0, var(--post-main-width)) minmax(240px, var(--toc-width));
   }
   .post-layout.post-layout-left {
-    grid-template-columns: minmax(260px, var(--toc-width)) minmax(0, var(--post-main-width)) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, var(--toc-width)) minmax(0, var(--post-main-width));
   }
   .post-layout.post-layout-no-toc {
     grid-template-columns: minmax(0, var(--post-main-width));
@@ -345,10 +346,13 @@ const articleRuntimeConfig = {
   }
   .post-layout > section.post-main {
     width: 100%;
+    grid-column: 1;
+  }
+  .post-layout.post-layout-left > section.post-main {
     grid-column: 2;
   }
   .post-layout.post-layout-right > aside.post-toc-rail {
-    grid-column: 3;
+    grid-column: 2;
   }
   .post-layout.post-layout-left > aside.post-toc-rail {
     grid-column: 1;
@@ -381,6 +385,9 @@ const articleRuntimeConfig = {
     border-top: 1px solid var(--line-soft);
     padding-top: 1.25rem;
   }
+  .post-comment-card:empty {
+    display: none;
+  }
   .post-comment-card :global(.comment-section) {
     background: transparent;
     border: 0;
@@ -409,7 +416,8 @@ const articleRuntimeConfig = {
       grid-template-columns: minmax(0, 1fr);
       gap: 1rem;
     }
-    .post-layout > section.post-main {
+    .post-layout > section.post-main,
+    .post-layout.post-layout-left > section.post-main {
       grid-column: auto;
     }
     .post-layout > aside.post-toc-rail {
@@ -420,9 +428,6 @@ const articleRuntimeConfig = {
     }
     .post-layout[data-reading-kind="blog"] > aside.post-toc-rail {
       grid-column: 1;
-    }
-    .post-card-shell {
-      padding: 1rem;
     }
   }
   .post-top-bar {
@@ -1112,19 +1117,28 @@ const articleRuntimeConfig = {
     padding: 0.9rem 0 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    border-top: 1px solid var(--line);
+    gap: 0.9rem;
+    border-top: 1px solid var(--line-soft);
   }
   .prev-next a {
     color: var(--brand);
     font-weight: 500;
     text-decoration: none;
-    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border-radius: calc(var(--radius-md) * var(--layout-radius-scale, 1));
+    border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
+    background: color-mix(in oklab, var(--surface-1) 88%, transparent 12%);
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
   }
   .prev-next a:hover {
     color: var(--text);
+    border-color: color-mix(in oklab, var(--brand) 24%, var(--line) 76%);
+    background: color-mix(in oklab, var(--brand-soft) 34%, var(--surface-1) 66%);
   }
   .prev-next a:last-child {
+    justify-content: flex-end;
     text-align: right;
   }
   :global(.diagram-host) {

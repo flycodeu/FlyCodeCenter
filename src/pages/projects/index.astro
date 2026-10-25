@@ -55,7 +55,6 @@ const stageGroups = stageOrder.map((stage) => ({
   entries: entries.filter((entry) => getMeta(entry).projectStage === stage).sort(sortByPriority)
 }));
 
-// 空阶段（如"进行中 0 项"）不渲染，避免占位噪音
 const visibleStageGroups = stageGroups.filter((group) => group.entries.length > 0);
 const completedCount = stageGroups.find((group) => group.stage === "completed")?.entries.length ?? 0;
 const plannedCount = stageGroups.find((group) => group.stage === "planned")?.entries.length ?? 0;
@@ -66,7 +65,6 @@ const topPriorityMeta = topPriorityEntry ? getMeta(topPriorityEntry) : undefined
 const resolveCardCover = (meta: ReturnType<typeof resolveArticleMeta>) => {
   return meta.cover || coverFallback[meta.projectStage] || "";
 };
-
 ---
 
 <ListLayout
@@ -79,336 +77,540 @@ const resolveCardCover = (meta: ReturnType<typeof resolveArticleMeta>) => {
   ]}
   tags={tags}
 >
-  <section class="surface command-panel">
-    <div class="panel-head">
-      <div>
-        <h2>{highlights.title}</h2>
-        {highlights.subtitle && <p>{highlights.subtitle}</p>}
-      </div>
-      {topPriorityMeta && <span class="chip alert-chip">{highlights.topPriorityLabel}</span>}
-    </div>
-
+  <div class="projects-container">
+    <!-- 1. 核心重点推进项目 (Featured Pipeline) -->
     {topPriorityMeta && topPriorityEntry && (
-      <article class="top-priority surface">
-        <img
-          class="priority-cover"
-          src={resolveCardCover(topPriorityMeta)}
-          alt={topPriorityMeta.title}
-          loading="lazy"
-          decoding="async"
-          referrerpolicy="no-referrer"
-        />
-        <div class="priority-body">
-          <div class="priority-title-row">
-            <h3>{topPriorityMeta.title}</h3>
-            <span class="chip priority-chip">{labels.priorityPrefix}{topPriorityMeta.priority}</span>
+      <section class="surface featured-panel">
+        <header class="featured-head">
+          <div class="featured-title-wrap">
+            <span class="accent-line"></span>
+            <h2>{highlights.title}</h2>
           </div>
-          <p>{topPriorityMeta.description || topPriorityMeta.summary || labels.noDescription}</p>
-          <div class="priority-meta">
-            <span class="chip">{sections[topPriorityMeta.projectStage].title}</span>
-            <span class="chip">{labels.publishDate} {formatDate(topPriorityMeta.createTime)}</span>
-          </div>
-          <div class="priority-actions">
-            <a class="chip" href={getProjectEntryUrl(topPriorityEntry)}>{labels.detail}</a>
-            {topPriorityMeta.repoUrl && (
-              <a class="chip" href={topPriorityMeta.repoUrl} target="_blank" rel="noreferrer">{labels.repo}</a>
-            )}
-          </div>
-        </div>
-      </article>
-    )}
-  </section>
+          <span class="featured-status-pill">{highlights.topPriorityLabel}</span>
+        </header>
 
-  <section class="project-sections">
-    {
-      visibleStageGroups.map((group) => (
-        <section class={`surface stage-section stage-${group.stage}`}>
-          <header class="stage-head">
-            <div>
-              <h2>{group.section.title}</h2>
-              {group.section.description && <p>{group.section.description}</p>}
+        <article class="featured-card">
+          <a href={getProjectEntryUrl(topPriorityEntry)} class="featured-cover-link" aria-label={topPriorityMeta.title}>
+            <img
+              class="featured-cover"
+              src={resolveCardCover(topPriorityMeta)}
+              alt={topPriorityMeta.title}
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+            />
+          </a>
+          <div class="featured-body">
+            <div class="featured-header-row">
+              <h3>
+                <a href={getProjectEntryUrl(topPriorityEntry)}>{topPriorityMeta.title}</a>
+              </h3>
             </div>
-            <span class="chip count-chip">
-              {group.entries.length} {labels.sectionCountSuffix}
-            </span>
+
+            <p class="featured-desc">
+              {topPriorityMeta.description || topPriorityMeta.summary || labels.noDescription}
+            </p>
+
+            <div class="featured-tags-row">
+              {topPriorityMeta.tags.map((tag) => (
+                <span class="tag-chip">{tag}</span>
+              ))}
+            </div>
+
+            <div class="featured-footer">
+              <span class="time-meta">{labels.publishDate} {formatDate(topPriorityMeta.createTime, "YYYY-MM-DD")}</span>
+              <div class="actions-group">
+                {topPriorityMeta.repoUrl && (
+                  <a class="action-btn" href={topPriorityMeta.repoUrl} target="_blank" rel="noreferrer">
+                    {labels.repo}
+                  </a>
+                )}
+                {topPriorityMeta.demoUrl && (
+                  <a class="action-btn highlight" href={topPriorityMeta.demoUrl} target="_blank" rel="noreferrer">
+                    {labels.demo}
+                  </a>
+                )}
+                <a class="action-btn detail-btn" href={getProjectEntryUrl(topPriorityEntry)}>
+                  {labels.detail} →
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    )}
+
+    <!-- 2. 分类项目展示 (Project Grids) -->
+    <div class="stages-wrapper">
+      {visibleStageGroups.map((group) => (
+        <section class="surface stage-panel">
+          <header class="stage-header">
+            <div class="stage-title-wrap">
+              <span class="accent-dot"></span>
+              <h2>{group.section.title}</h2>
+              <span class="stage-count">{group.entries.length} {labels.sectionCountSuffix}</span>
+            </div>
+            {group.section.description && <p class="stage-sub">{group.section.description}</p>}
           </header>
 
-          {group.entries.length === 0 ? (
-            <p class="empty">{labels.empty}</p>
-          ) : (
-            <div class="project-grid">
-              {group.entries.map((entry) => {
-                const meta = getMeta(entry);
-                return (
-                  <article class="surface project-card">
+          <div class="projects-grid">
+            {group.entries.map((entry) => {
+              const meta = getMeta(entry);
+              return (
+                <article class="project-item-card">
+                  <a href={getProjectEntryUrl(entry)} class="item-cover-wrap" aria-label={meta.title}>
                     <img
-                      class="cover"
+                      class="item-cover"
                       src={resolveCardCover(meta)}
                       alt={meta.title}
                       loading="lazy"
                       decoding="async"
                       referrerpolicy="no-referrer"
                     />
+                    {meta.tags && meta.tags[0] && (
+                      <span class="item-badge">{meta.tags[0]}</span>
+                    )}
+                  </a>
 
-                    <header>
-                      <a href={getProjectEntryUrl(entry)} class="title-link">{meta.title}</a>
-                      {meta.featured && (
-                        <div class="chips">
-                          <span class="chip featured">{labels.featured}</span>
-                        </div>
-                      )}
-                    </header>
+                  <div class="item-body">
+                    <h3 class="item-title">
+                      <a href={getProjectEntryUrl(entry)}>{meta.title}</a>
+                    </h3>
 
-                    <p>{meta.description || meta.summary || labels.noDescription}</p>
+                    <p class="item-desc">
+                      {meta.description || meta.summary || labels.noDescription}
+                    </p>
 
-                    <div class="meta-row">
-                      <span>{labels.publishDate}：{formatDate(meta.createTime)}</span>
-                      <span>{labels.tags}：{meta.tags.slice(0, 3).join(" / ") || labels.unsetTags}</span>
+                    <div class="item-tags-row">
+                      {meta.tags.slice(0, 3).map((t) => (
+                        <span class="micro-tag">{t}</span>
+                      ))}
                     </div>
 
-                    <div class="meta-row links">
-                      {meta.repoUrl && (
-                        <a class="chip" href={meta.repoUrl} target="_blank" rel="noreferrer">{labels.repo}</a>
-                      )}
-                      {meta.docUrl && (
-                        <a class="chip" href={meta.docUrl} target="_blank" rel="noreferrer">{labels.doc}</a>
-                      )}
-                      {meta.demoUrl && (
-                        <a class="chip" href={meta.demoUrl} target="_blank" rel="noreferrer">{labels.demo}</a>
-                      )}
+                    <div class="item-foot">
+                      <span class="item-date">{formatDate(meta.createTime, "YYYY-MM-DD")}</span>
+                      <div class="item-actions">
+                        {meta.repoUrl && (
+                          <a class="btn-link" href={meta.repoUrl} target="_blank" rel="noreferrer">
+                            {labels.repo}
+                          </a>
+                        )}
+                        {meta.demoUrl && (
+                          <a class="btn-link highlight" href={meta.demoUrl} target="_blank" rel="noreferrer">
+                            {labels.demo}
+                          </a>
+                        )}
+                        <a class="btn-link detail-link" href={getProjectEntryUrl(entry)}>
+                          详情 →
+                        </a>
+                      </div>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </section>
-      ))
-    }
-  </section>
+      ))}
+    </div>
+  </div>
 </ListLayout>
 
-<style>
-  .command-panel {
-    padding: 1.5rem;
+<style is:global>
+  .projects-container {
     display: grid;
-    gap: 1rem;
+    gap: var(--space-4);
+  }
+
+  /* 1. 核心重点卡片 */
+  .featured-panel {
+    padding: clamp(1.2rem, 2vw, 1.6rem);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: 1.1rem;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
     background: var(--surface-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
   }
 
-  .panel-head {
+  .featured-head {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 0.8rem;
+    gap: 1rem;
   }
 
-  .panel-head h2,
-  .panel-head p,
-  .stage-head h2,
-  .project-card h3 {
-    margin: 0;
-  }
-
-  .panel-head p {
-    color: var(--text-soft);
-    margin-top: 0.24rem;
-  }
-
-  .alert-chip {
-    border-color: color-mix(in oklab, #ef4444 55%, var(--line) 45%);
-    color: color-mix(in oklab, #ef4444 68%, var(--text) 32%);
-  }
-
-  .top-priority {
-    padding: 1.5rem;
-    display: grid;
-    grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
-    gap: 1.5rem;
-    align-items: start;
-  }
-
-  .priority-cover {
-    width: 100%;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-  }
-
-  .priority-body {
-    display: grid;
-    gap: 0.48rem;
-  }
-
-  .priority-title-row {
+  .featured-title-wrap {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 0.6rem;
   }
 
-  .priority-title-row h3 {
+  .accent-line {
+    width: 3px;
+    height: 1.15em;
+    border-radius: 2px;
+    background: var(--brand);
+  }
+
+  .featured-head h2 {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-  }
-
-  .priority-body p {
-    margin: 0;
-    color: var(--text-soft);
-    line-height: 1.7;
-    font-size: 0.98rem;
-  }
-
-  .priority-meta,
-  .priority-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.42rem;
-  }
-
-  .priority-chip,
-  .priority-tag {
-    font-family: var(--font-mono);
-  }
-
-  .config-note {
-    margin: 0.8rem 0;
-  }
-
-  .project-sections {
-    display: grid;
-    gap: 0.86rem;
-  }
-
-  .stage-section {
-    padding: 0.72rem;
-    display: grid;
-    gap: 0.66rem;
-  }
-
-  .stage-completed {
-    border-color: color-mix(in oklab, #14b8a6 36%, var(--line) 64%);
-  }
-
-  .stage-in-progress {
-    border-color: color-mix(in oklab, #f59e0b 40%, var(--line) 60%);
-  }
-
-  .stage-planned {
-    border-color: color-mix(in oklab, #6366f1 42%, var(--line) 58%);
-  }
-
-  .stage-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.8rem;
-  }
-
-  .stage-head h2 {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-  }
-
-  .stage-head p {
-    margin: 0.4rem 0 0;
-    color: var(--text-soft);
-    font-size: 0.92rem;
-  }
-
-  .count-chip {
-    font-family: var(--font-mono);
-  }
-
-  .empty {
-    margin: 0;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-  }
-
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 0.72rem;
-  }
-
-  .project-card {
-    padding: 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 100%;
-  }
-
-  .cover {
-    width: 100%;
-    border-radius: calc(var(--radius-md) * var(--layout-radius-scale, 1));
-    border: 1px solid var(--line);
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-  }
-
-  .project-card header {
-    display: grid;
-    gap: 0.6rem;
-  }
-
-  .title-link {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .title-link:hover {
-    color: var(--brand);
-  }
-
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.36rem;
-  }
-
-  .project-card p {
-    margin: 0;
-    color: var(--text-soft);
-    line-height: 1.6;
-    font-size: 0.92rem;
-  }
-
-  .featured {
-    color: var(--brand);
-  }
-
-  .meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px dashed var(--line);
-  }
-
-  .meta-row.links {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .links .chip {
     color: var(--text);
   }
 
-  @media (max-width: 900px) {
-    .top-priority {
-      grid-template-columns: minmax(0, 1fr);
+  .featured-status-pill {
+    font-size: 0.72rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--brand) 10%, var(--surface-1) 90%);
+    border: 1px solid color-mix(in oklab, var(--brand) 28%, transparent);
+    color: var(--brand);
+    font-weight: 550;
+  }
+
+  .featured-card {
+    display: grid;
+    grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: center;
+  }
+
+  .featured-cover-link {
+    display: block;
+    aspect-ratio: 16 / 9;
+    min-height: 180px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface-2);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .featured-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease;
+  }
+
+  .featured-cover-link:hover .featured-cover {
+    transform: scale(1.02);
+  }
+
+  .featured-body {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .featured-header-row h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .featured-header-row h3 a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .featured-header-row h3 a:hover {
+    color: var(--brand);
+  }
+
+  .featured-desc {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.7;
+    font-size: 0.92rem;
+  }
+
+  .featured-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+  }
+
+  .tag-chip {
+    font-size: 0.74rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 5px;
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    color: var(--text-soft);
+  }
+
+  .featured-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed color-mix(in oklab, var(--line) 70%, transparent 30%);
+  }
+
+  .time-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+  }
+
+  .actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .action-btn {
+    font-size: 0.78rem;
+    padding: 0.24rem 0.62rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-soft);
+    background: var(--surface-2);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    transition: all 0.15s ease;
+  }
+
+  .action-btn:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+
+  .action-btn.highlight {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
+    background: color-mix(in oklab, var(--brand) 8%, var(--surface-2) 92%);
+  }
+
+  .action-btn.detail-btn {
+    background: transparent;
+    border: none;
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* 2. 阶段网格面板 */
+  .stages-wrapper {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .stage-panel {
+    padding: clamp(1.2rem, 2vw, 1.6rem);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: 1.2rem;
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    background: var(--surface-1);
+  }
+
+  .stage-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 60%, transparent 40%);
+  }
+
+  .stage-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .accent-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand);
+  }
+
+  .stage-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stage-count {
+    font-size: 0.74rem;
+    font-family: var(--font-tech);
+    color: var(--text-muted);
+  }
+
+  .stage-sub {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.15rem;
+  }
+
+  .project-item-card {
+    border-radius: 8px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--surface-2) 30%, var(--surface-1) 70%);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .project-item-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
+    box-shadow: 0 6px 18px color-mix(in oklab, var(--line) 35%, transparent 65%);
+  }
+
+  .item-cover-wrap {
+    display: block;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 140px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    background: var(--surface-2);
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 65%, transparent 35%);
+  }
+
+  .item-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease;
+  }
+
+  .project-item-card:hover .item-cover {
+    transform: scale(1.02);
+  }
+
+  .item-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .item-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 0.5rem;
+  }
+
+  .item-title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .item-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .item-title a:hover {
+    color: var(--brand);
+  }
+
+  .item-desc {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    line-height: 1.62;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .item-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+  }
+
+  .micro-tag {
+    font-size: 0.72rem;
+    padding: 0.12rem 0.42rem;
+    border-radius: 4px;
+    background: var(--surface-1);
+    color: var(--text-muted);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
+  }
+
+  .item-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-top: auto;
+    padding-top: 0.8rem;
+    border-top: 1px dashed color-mix(in oklab, var(--line) 65%, transparent 35%);
+  }
+
+  .item-date {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+  }
+
+  .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .btn-link {
+    font-size: 0.75rem;
+    padding: 0.18rem 0.48rem;
+    border-radius: 5px;
+    text-decoration: none;
+    color: var(--text-soft);
+    background: var(--surface-1);
+    border: 1px solid color-mix(in oklab, var(--line) 80%, transparent 20%);
+    transition: all 0.15s ease;
+  }
+
+  .btn-link:hover {
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+
+  .btn-link.highlight {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
+  }
+
+  .btn-link.detail-link {
+    border: none;
+    background: transparent;
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .featured-card {
+      grid-template-columns: 1fr;
     }
   }
 </style>

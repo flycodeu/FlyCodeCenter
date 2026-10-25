@@ -15,6 +15,7 @@ import { getBlogEntryUrl, sortByDateDesc } from "@/utils/content";
 import { resolveArticleMeta } from "@/utils/article-meta";
 import { formatDate } from "@/utils/date";
 import { buildResponsiveImageSources } from "@/utils/image";
+import { buildTutorialSeriesBuckets, toSeriesRouteKey } from "@/utils/tutorial-series";
 
 const [blogs, tutorials] = await Promise.all([
   fetchBlogEntries(),
@@ -33,6 +34,11 @@ const heroImageAlt = String(heroImageConfig.alt || "Hero Image").trim() || "Hero
 const heroImageSources = buildResponsiveImageSources(heroImageSrc, [768, 1200, 1600, 2400], 1600);
 const featuredConfig = siteConfig.home.featured;
 const tagCount = makeTagItems(allEntries).length;
+const seriesBuckets = Array.from(buildTutorialSeriesBuckets(tutorials).values())
+  .filter((bucket) => bucket.entries.length > 0)
+  .sort((a, b) => b.entries.length - a.entries.length)
+  .slice(0, 4);
+const topTags = makeTagItems(allEntries).slice(0, 10);
 const homeFeedConfig = (siteConfig.home as { feed?: { mode?: "page" | "infinite"; pageSize?: number; mixCollections?: readonly ("blog" | "tutorial")[] } }).feed ?? {};
 const feedMode = homeFeedConfig.mode ?? "page";
 const pageSize = homeFeedConfig.pageSize ?? 10;
@@ -79,19 +85,15 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
           hero.enable && (
             <section class="hero-card fade-up">
               <div class="hero-content">
-                <h1>{hero.title}</h1>
-                {hero.tagline && <p class="tagline">{hero.tagline}</p>}
+                <h1 class="hero-headline">{hero.tagline || hero.title}</h1>
                 <p class="description">{hero.description}</p>
-                <div class="hero-metrics" aria-label="site-overview">
-                  <span class="chip">{blogs.length} 篇博客</span>
-                  <span class="chip">{tutorials.length} 篇教程</span>
-                  <span class="chip">{tagCount} 个标签</span>
+                <div class="hero-meta-stat">
+                  <span>{blogs.length}</span> 篇技术博客 · <span>{tutorials.length}</span> 篇系统教程 · <span>{tagCount}</span> 个技术主题
                 </div>
                 {hero.actions?.length ? (
                   <div class="hero-actions">
-                    {hero.actions.slice(0, 3).map((action) => (
-                      <a href={action.link} class={`btn ${action.type}`}>{action.text}</a>
-                    ))}
+                    <a href="/blog" class="btn primary">浏览博客 →</a>
+                    <a href="/tutorials" class="btn secondary">专栏教程 →</a>
                   </div>
                 ) : null}
               </div>
@@ -122,6 +124,46 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
 
       <aside class="profile-rail home-sidebar">
         <SidebarProfile />
+
+        {
+          seriesBuckets.length > 0 && (
+            <section class="surface side-panel">
+              <header>
+                <h3>专栏教程</h3>
+                <a href="/tutorials">全部 →</a>
+              </header>
+              <ul class="series-list">
+                {seriesBuckets.map((bucket) => (
+                  <li>
+                    <a href={`/tutorials/${encodeURIComponent(toSeriesRouteKey(bucket.key))}`}>
+                      <span class="series-name">{bucket.label}</span>
+                      <span class="series-count">{bucket.entries.length} 篇</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        {
+          topTags.length > 0 && (
+            <section class="surface side-panel">
+              <header>
+                <h3>热门标签</h3>
+                <a href="/tags">全部 →</a>
+              </header>
+              <div class="side-tags">
+                {topTags.map((tag) => (
+                  <a href={tag.href} class="side-tag">
+                    <span>{tag.name}</span>
+                    <span class="tag-count">{tag.count}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )
+        }
       </aside>
     </div>
   </div>
@@ -303,11 +345,11 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   }
 
   .hero-card {
-    padding: var(--space-4) var(--space-4);
-    border-radius: var(--radius-lg);
-    background: color-mix(in oklab, var(--surface-1) 94%, transparent 6%);
-    border: 1px solid color-mix(in oklab, var(--line) 78%, var(--brand) 22%);
-    box-shadow: 0 16px 34px color-mix(in oklab, var(--bg) 78%, transparent 22%);
+    padding: 1.6rem 1.8rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 16px -8px color-mix(in oklab, var(--text) 8%, transparent 92%);
     text-align: left;
     margin-bottom: var(--space-2);
   }
@@ -315,43 +357,41 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   .hero-content {
     max-width: 100%;
     display: grid;
-    gap: var(--space-3);
+    gap: 0.75rem;
     justify-items: start;
   }
 
-  .hero-card h1 {
+  .hero-headline {
     margin: 0;
-    font-size: clamp(1.8rem, 1.8vw + 1.2rem, 2.4rem);
-    line-height: 1.22;
-    letter-spacing: 0;
+    font-size: clamp(1.45rem, 1.4vw + 1.05rem, 2.05rem);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
     font-weight: 700;
-  }
-
-  .tagline {
-    margin: 0;
     color: var(--text);
-    font-size: 1.1rem;
-    font-weight: 600;
   }
 
   .description {
     margin: 0;
     color: var(--text-soft);
-    max-width: 62ch;
-    line-height: 1.75;
-    font-size: 1.01rem;
+    max-width: 65ch;
+    line-height: 1.65;
+    font-size: 0.96rem;
   }
 
-  .hero-metrics {
-    display: inline-flex;
+  .hero-meta-stat {
+    margin: 0.2rem 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-family: var(--font-tech);
+    display: flex;
     flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: var(--space-1);
+    align-items: center;
+    gap: 0.35rem;
   }
 
-  .hero-metrics .chip {
-    font-size: 0.75rem;
-    padding: 0.18rem 0.56rem;
+  .hero-meta-stat span {
+    color: var(--brand);
+    font-weight: 600;
   }
 
   .hero-actions {
@@ -359,20 +399,23 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: var(--space-2);
-    margin-top: var(--space-1);
+    margin-top: 0.2rem;
   }
 
   .btn {
-    border-radius: var(--radius-pill);
-    padding: 0.62rem 1.1rem;
-    font-size: 0.9rem;
+    border-radius: 8px;
+    padding: 0.48rem 0.92rem;
+    font-size: 0.85rem;
     font-weight: 600;
     border: 1px solid var(--line);
-    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
   }
 
   .btn.primary {
-    color: color-mix(in oklab, var(--bg) 86%, #ffffff 14%);
+    color: color-mix(in oklab, var(--bg) 90%, #ffffff 10%);
     border-color: color-mix(in oklab, var(--brand) 54%, var(--line) 46%);
     background: linear-gradient(
       140deg,
@@ -389,6 +432,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   .btn:hover {
     border-color: color-mix(in oklab, var(--brand) 58%, var(--line) 42%);
     color: var(--brand);
+    transform: translateY(-1px);
   }
 
   .home-main {
@@ -578,7 +622,7 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
   }
 
   .side-panel {
-    padding: var(--space-3);
+    padding: var(--space-4);
     border-radius: var(--radius-md);
     display: grid;
     gap: var(--space-3);
@@ -589,34 +633,97 @@ const featuredImageSources = buildResponsiveImageSources(featuredMeta?.cover || 
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 60%, transparent 40%);
   }
 
   .side-panel h3 {
     margin: 0;
-    font-size: 0.94rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
   }
 
-  .side-panel a {
-    font-size: 0.82rem;
+  .side-panel header a {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .side-panel header a:hover {
     color: var(--brand);
   }
 
-  .side-panel ul {
+  .series-list {
     margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
-    gap: var(--space-2);
+    gap: 0.25rem;
   }
 
-  .side-panel li a {
+  .series-list li a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
     color: var(--text-soft);
-    line-height: 1.5;
-    font-size: 0.88rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
-  .side-panel li a:hover {
-    color: var(--text);
+  .series-list li a:hover {
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    color: var(--brand);
+  }
+
+  .series-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0.5rem;
+  }
+
+  .series-count {
+    font-size: 0.74rem;
+    font-family: var(--font-tech);
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .side-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .side-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.55rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-soft);
+    background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
+    border: 1px solid color-mix(in oklab, var(--line) 84%, transparent 16%);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .side-tag:hover {
+    color: var(--brand);
+    border-color: color-mix(in oklab, var(--brand) 30%, var(--line) 70%);
+    background: color-mix(in oklab, var(--surface-2) 95%, transparent 5%);
+  }
+
+  .side-tag .tag-count {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-family: var(--font-tech);
   }
 
   @media (max-width: 1120px) {
