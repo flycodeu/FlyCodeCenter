@@ -1,0 +1,162 @@
+---
+// src/components/ClickEffects.astro
+// 全局轻量二次元微光星芒与水波涟漪点击特效 (0 依赖，GPU 硬件加速，极低开销)
+---
+
+<div id="fly-click-effects-container" class="fly-click-effects-container" aria-hidden="true"></div>
+
+<style is:global>
+  .fly-click-effects-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    z-index: 99999;
+    overflow: hidden;
+  }
+
+  /* 涟漪光环扩散 */
+  .fly-click-ripple {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    margin-left: -16px;
+    margin-top: -16px;
+    border-radius: 50%;
+    border: 1.5px solid color-mix(in oklab, var(--brand, #38bdf8) 75%, #ffffff 25%);
+    box-shadow: 0 0 12px color-mix(in oklab, var(--brand, #38bdf8) 40%, transparent);
+    pointer-events: none;
+    transform: scale(0.2);
+    opacity: 0.9;
+    animation: fly-ripple-expand 0.55s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  @keyframes fly-ripple-expand {
+    0% {
+      transform: scale(0.2);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+
+  /* 微光星芒与飘逸樱花花瓣散落 */
+  .fly-click-sparkle {
+    position: absolute;
+    pointer-events: none;
+    font-size: var(--sparkle-size, 14px);
+    line-height: 1;
+    color: var(--sparkle-color, #38bdf8);
+    text-shadow: 0 0 6px var(--sparkle-glow, rgba(56, 189, 248, 0.6));
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
+    animation: fly-sparkle-float var(--sparkle-duration, 0.65s) cubic-bezier(0.12, 0.85, 0.32, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  @keyframes fly-sparkle-float {
+    0% {
+      transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.95;
+    }
+    100% {
+      transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -30px))) scale(var(--end-scale, 1.1)) rotate(var(--rot, 25deg));
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fly-click-effects-container {
+      display: none !important;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const SPARKLE_ICONS = ["✦", "✨", "🌸", "★", "♥", "✧"];
+    const COLOR_PALETTES = [
+      { color: "#38bdf8", glow: "rgba(56, 189, 248, 0.6)" },
+      { color: "#f472b6", glow: "rgba(244, 114, 182, 0.6)" },
+      { color: "#a855f7", glow: "rgba(168, 85, 247, 0.6)" },
+      { color: "#34d399", glow: "rgba(52, 211, 153, 0.6)" },
+      { color: "#fbbf24", glow: "rgba(251, 191, 36, 0.6)" },
+      { color: "#ffffff", glow: "rgba(255, 255, 255, 0.8)" }
+    ];
+
+    let lastClickTime = 0;
+
+    function createClickEffect(e: MouseEvent) {
+      const now = performance.now();
+      if (now - lastClickTime < 35) return;
+      lastClickTime = now;
+
+      const container = document.getElementById("fly-click-effects-container");
+      if (!container) return;
+
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // 1. 水波轻量光环
+      const ripple = document.createElement("span");
+      ripple.className = "fly-click-ripple";
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      container.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+
+      // 2. 散射 3~5 颗二次元微光星芒/樱花
+      const count = Math.floor(Math.random() * 3) + 3;
+      for (let i = 0; i < count; i++) {
+        const sparkle = document.createElement("span");
+        sparkle.className = "fly-click-sparkle";
+        sparkle.textContent = SPARKLE_ICONS[Math.floor(Math.random() * SPARKLE_ICONS.length)];
+
+        const palette = COLOR_PALETTES[Math.floor(Math.random() * COLOR_PALETTES.length)];
+        const size = Math.floor(Math.random() * 8) + 11;
+
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+        const distance = Math.random() * 32 + 24;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance - (Math.random() * 20 + 15);
+        const rot = (Math.random() - 0.5) * 90;
+        const endScale = (Math.random() * 0.4 + 0.8).toFixed(2);
+        const duration = (Math.random() * 0.2 + 0.55).toFixed(2);
+
+        sparkle.style.left = `${x}px`;
+        sparkle.style.top = `${y}px`;
+        sparkle.style.setProperty("--sparkle-size", `${size}px`);
+        sparkle.style.setProperty("--sparkle-color", palette.color);
+        sparkle.style.setProperty("--sparkle-glow", palette.glow);
+        sparkle.style.setProperty("--dx", `${dx.toFixed(1)}px`);
+        sparkle.style.setProperty("--dy", `${dy.toFixed(1)}px`);
+        sparkle.style.setProperty("--rot", `${rot.toFixed(1)}deg`);
+        sparkle.style.setProperty("--end-scale", endScale);
+        sparkle.style.setProperty("--sparkle-duration", `${duration}s`);
+
+        container.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 750);
+      }
+    }
+
+    if (!(window as any).__flyClickEffectsInited) {
+      (window as any).__flyClickEffectsInited = true;
+      window.addEventListener(
+        "pointerdown",
+        (e) => {
+          if (e.button === 0) {
+            createClickEffect(e);
+          }
+        },
+        { passive: true }
+      );
+    }
+  })();
+</script>

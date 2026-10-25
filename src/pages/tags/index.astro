@@ -210,12 +210,16 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     };
 
     const applyFilter = (rawTag, syncQuery = true) => {
-      currentTag = normalize(rawTag) === "all" ? "all" : normalize(rawTag);
+      const nextTag = normalize(rawTag) === "all" ? "all" : normalize(rawTag);
+      if (currentTag === nextTag && syncQuery) return;
+      currentTag = nextTag;
+
       buttons.forEach((button) => {
         const isActive = normalize(button.getAttribute("data-tag")) === currentTag;
         button.classList.toggle("active", isActive);
       });
 
+      // 瞬时响应过滤，消除 50ms 人工延迟与透明度闪烁
       filteredItems = [];
       for (const item of items) {
         const tagsText = item.getAttribute("data-tags") || "";
@@ -264,6 +268,15 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
           if (!Number.isFinite(next)) return;
           currentPage = next;
           setVisibilityPage();
+
+          // 平滑滚动微修正，增强翻页衔接感
+          const section = document.getElementById("tag-result-section");
+          if (section) {
+            const rect = section.getBoundingClientRect();
+            if (rect.top < 60) {
+              window.scrollTo({ top: window.scrollY + rect.top - 80, behavior: "smooth" });
+            }
+          }
         },
         { signal }
       );
@@ -362,7 +375,7 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
     background: color-mix(in oklab, var(--surface-2) 75%, transparent 25%);
     border-radius: 999px;
-    padding: 0.28rem 0.68rem;
+    padding: 0.32rem 0.72rem;
     cursor: pointer;
     font-size: 0.82rem;
     font-weight: 500;
@@ -370,7 +383,7 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
     white-space: nowrap;
     text-align: left;
     line-height: 1.25;
@@ -380,8 +393,12 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     color: var(--brand);
     border-color: color-mix(in oklab, var(--brand) 40%, var(--line) 60%);
     background: color-mix(in oklab, var(--brand-soft) 40%, var(--bg-elev) 60%);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px -4px color-mix(in oklab, var(--brand) 25%, transparent 75%);
+  }
+
+  .tags-page-root .tag-node:active {
+    transform: scale(0.95);
   }
 
   .tags-page-root .node-label {
@@ -406,8 +423,8 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
     background: var(--brand) !important;
     color: #fff !important;
     border-color: var(--brand) !important;
-    box-shadow: 0 4px 14px -3px var(--brand);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 16px -2px color-mix(in oklab, var(--brand) 60%, transparent 40%);
+    transform: translateY(-2px) scale(1.05);
   }
 
   .tags-page-root .tag-node.active .node-count {
@@ -424,6 +441,31 @@ const pageSize = tagsPageConfig.list?.pageSize ?? 10;
   .tags-page-root .result-list {
     display: grid;
     gap: var(--space-4);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .tags-page-root .result-list.is-filtering {
+    opacity: 0.45;
+    transform: translateY(4px);
+  }
+
+  [data-entry-item] {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+  }
+
+  [data-entry-item]:not([hidden]) {
+    animation: tag-item-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes tag-item-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .tags-page-root .tag-pager {

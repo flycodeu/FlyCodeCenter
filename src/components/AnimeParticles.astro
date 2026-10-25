@@ -1,0 +1,264 @@
+---
+/**
+ * 二次元唯美氛围粒子组件 (樱花瓣 + 雷姆主题冰晶微光)
+ * - 纯轻量 Canvas 渲染，极低 CPU 开销 (<1%)
+ * - 视口离开自动暂停，支持减弱动态效果与性能自动分级
+ * - 支持全局事件一键切换开关 (fly:toggle-particles)
+ */
+---
+
+<canvas id="anime-particles-canvas" class="anime-particles-canvas" aria-hidden="true"></canvas>
+
+<style is:global>
+  .anime-particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.88;
+    transition: opacity 0.4s ease;
+  }
+
+  .anime-particles-canvas.is-hidden {
+    opacity: 0 !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anime-particles-canvas {
+      display: none !important;
+    }
+  }
+
+  @media print {
+    .anime-particles-canvas {
+      display: none !important;
+    }
+  }
+</style>
+
+<script>
+  interface Particle {
+    type: "petal" | "crystal";
+    x: number;
+    y: number;
+    size: number;
+    speedY: number;
+    speedX: number;
+    angle: number;
+    angularSpeed: number;
+    wobble: number;
+    wobbleSpeed: number;
+    opacity: number;
+    color: string;
+  }
+
+  function initAnimeParticles() {
+    const canvas = document.getElementById("anime-particles-canvas") as HTMLCanvasElement | null;
+    if (!canvas) return;
+    if ((canvas as any).__particlesInited) return;
+    (canvas as any).__particlesInited = true;
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    // 检查偏好与低性能模式
+    const STORAGE_KEY = "fly_particles_enabled";
+    let isEnabled = localStorage.getItem(STORAGE_KEY) !== "0";
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      canvas.classList.add("is-hidden");
+      return;
+    }
+
+    let width = 0;
+    let height = 0;
+    let particles: Particle[] = [];
+    let animationId: number | null = null;
+    let isRunning = false;
+
+    // 适中粒子数量：桌面端 22 颗，移动端 10 颗，确保零卡顿
+    function getParticleCount(): number {
+      const isMobile = window.innerWidth <= 768;
+      const isLowPerf = document.documentElement.dataset.perf === "low";
+      if (isLowPerf) return isMobile ? 6 : 10;
+      return isMobile ? 10 : 22;
+    }
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx?.scale(dpr, dpr);
+    }
+
+    function createParticle(randomY = true): Particle {
+      const isPetal = Math.random() < 0.65; // 65% 樱花花瓣，35% 雷姆蓝冰晶
+      const size = isPetal ? 7 + Math.random() * 6 : 4 + Math.random() * 4;
+
+      return {
+        type: isPetal ? "petal" : "crystal",
+        x: Math.random() * width,
+        y: randomY ? Math.random() * height : -size * 2,
+        size,
+        speedY: isPetal ? 0.7 + Math.random() * 0.9 : 0.5 + Math.random() * 0.7,
+        speedX: (Math.random() - 0.5) * 0.5 + 0.3, // 轻微向右随风漂移
+        angle: Math.random() * Math.PI * 2,
+        angularSpeed: (Math.random() - 0.5) * 0.025,
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.015 + Math.random() * 0.02,
+        opacity: isPetal ? 0.55 + Math.random() * 0.35 : 0.65 + Math.random() * 0.3,
+        color: isPetal
+          ? `rgba(255, ${180 + Math.floor(Math.random() * 30)}, ${200 + Math.floor(Math.random() * 25)}, `
+          : `rgba(${56 + Math.floor(Math.random() * 40)}, ${189 + Math.floor(Math.random() * 40)}, 255, `
+      };
+    }
+
+    function initParticles() {
+      const count = getParticleCount();
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push(createParticle(true));
+      }
+    }
+
+    // 绘制优美落樱花瓣 (贝塞尔弧线双瓣)
+    function drawPetal(p: Particle) {
+      if (!ctx) return;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+
+      ctx.fillStyle = `${p.color}${p.opacity})`;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(p.size * 0.6, -p.size * 0.7, p.size * 1.2, 0, 0, p.size * 1.4);
+      ctx.bezierCurveTo(-p.size * 1.2, 0, -p.size * 0.6, -p.size * 0.7, 0, 0);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 绘制雷姆蓝四芒冰晶
+    function drawCrystal(p: Particle) {
+      if (!ctx) return;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+
+      const r = p.size;
+      ctx.fillStyle = `${p.color}${p.opacity})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r * 0.35, -r * 0.2);
+      ctx.lineTo(r, 0);
+      ctx.lineTo(r * 0.35, r * 0.2);
+      ctx.lineTo(0, r);
+      ctx.lineTo(-r * 0.35, r * 0.2);
+      ctx.lineTo(-r, 0);
+      ctx.lineTo(-r * 0.35, -r * 0.2);
+      ctx.closePath();
+      ctx.fill();
+
+      // 中心柔光高光
+      ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.8})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function update() {
+      if (!isRunning || !ctx) return;
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.wobble += p.wobbleSpeed;
+        p.angle += p.angularSpeed;
+        p.x += p.speedX + Math.sin(p.wobble) * 0.6;
+        p.y += p.speedY;
+
+        if (p.type === "petal") {
+          drawPetal(p);
+        } else {
+          drawCrystal(p);
+        }
+
+        // 飘出边界后重新从顶部降落
+        if (p.y > height + 20 || p.x > width + 20 || p.x < -20) {
+          particles[i] = createParticle(false);
+        }
+      }
+
+      animationId = requestAnimationFrame(update);
+    }
+
+    function start() {
+      if (isRunning || !isEnabled) return;
+      isRunning = true;
+      canvas.classList.remove("is-hidden");
+      update();
+    }
+
+    function stop() {
+      isRunning = false;
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      ctx?.clearRect(0, 0, width, height);
+      canvas.classList.add("is-hidden");
+    }
+
+    // 页面可见性监听 (省电与后台保护)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stop();
+      } else if (isEnabled) {
+        start();
+      }
+    });
+
+    // 视口尺寸变化
+    window.addEventListener("resize", () => {
+      resize();
+      initParticles();
+    }, { passive: true });
+
+    // 外部自定义事件触发切换 (支持看板娘工具栏快捷开关)
+    window.addEventListener("fly:toggle-particles", ((e: CustomEvent) => {
+      const explicit = e.detail?.enable;
+      const targetState = typeof explicit === "boolean" ? explicit : !isEnabled;
+      isEnabled = targetState;
+      localStorage.setItem(STORAGE_KEY, isEnabled ? "1" : "0");
+
+      if (isEnabled) {
+        start();
+      } else {
+        stop();
+      }
+    }) as EventListener);
+
+    // 初始化运行
+    resize();
+    initParticles();
+    if (isEnabled) {
+      start();
+    } else {
+      stop();
+    }
+  }
+
+  // Astro 页面生命周期
+  document.addEventListener("astro:page-load", initAnimeParticles);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    initAnimeParticles();
+  }
+</script>

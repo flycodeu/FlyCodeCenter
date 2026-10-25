@@ -354,8 +354,59 @@ html {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
+  /* 导航栏与背景层保持视口稳定，绝不在过渡时跟随页面上下晃动 */
+  .site-header {
+    view-transition-name: site-header;
+  }
+  .site-bg-image {
+    view-transition-name: site-bg-image;
+  }
+  .site-bg-overlay {
+    view-transition-name: site-bg-overlay;
+  }
+
+  /* 彻底禁用固定图层的过渡动画与色彩混色，确保背景与导航栏 100% 纹丝不动 */
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header),
+  ::view-transition-old(site-bg-image),
+  ::view-transition-new(site-bg-image),
+  ::view-transition-old(site-bg-overlay),
+  ::view-transition-new(site-bg-overlay) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* 页面内容层平滑过渡：柔和溶出 (140ms) -> 丝滑渐入 (220ms)，配合 normal 混色杜绝暗色模式高亮闪白 */
+  ::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  ::view-transition-old(root) {
+    animation: 140ms ease-out both fly-page-out;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-new(root) {
+    animation: 220ms cubic-bezier(0.16, 1, 0.3, 1) both fly-page-in;
+    mix-blend-mode: normal;
+  }
+
+  @keyframes fly-page-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fly-page-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 

@@ -5,6 +5,9 @@ import SearchModal from "@/components/SearchModal.astro";
 import Watermark from "@/components/Watermark.astro";
 import JarvisOrb from "@/components/JarvisOrb.astro";
 import MascotWidget from "@/components/MascotWidget.astro";
+import AnimeParticles from "@/components/AnimeParticles.astro";
+import ClickEffects from "@/components/ClickEffects.astro";
+import RouteProgressBar from "@/components/RouteProgressBar.astro";
 import { makePageTitle, resolveCanonical } from "@/utils/seo";
 import { ClientRouter } from "astro:transitions";
 
@@ -535,6 +538,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
   </head>
   <body data-pagefind-ignore={pagefindIgnore ? "all" : undefined}>
     <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <RouteProgressBar />
     <div
       id="site-bg-image"
       class="site-bg-image"
@@ -559,6 +563,8 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
       )}
     </div>
     <div class="site-bg-overlay" data-enabled={globalBackgroundEnable ? "1" : "0"} style={globalBackgroundVars} aria-hidden="true"></div>
+    <AnimeParticles />
+    <ClickEffects />
     {/* aurora-bg removed for minimalist layout */}
     {siteConfig.watermark.enable && siteConfig.watermark.scope === "global" && <Watermark scope="global" />}
     <Header />
@@ -612,7 +618,7 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
 
 <style>
   :global(html) {
-    --layout-header-height: 72px;
+    --layout-header-height: 68px;
     --layout-footer-height: 56px;
   }
 
@@ -699,12 +705,12 @@ const backgroundImageInitialUrl = buildImageUrl(backgroundImageUrl, backgroundIm
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: var(--site-bg-opacity, 0.14);
-    filter: blur(var(--site-bg-blur, 14px)) saturate(var(--site-bg-saturate, 102%))
+    opacity: var(--site-bg-opacity, 0.45);
+    filter: blur(var(--site-bg-blur, 3px)) saturate(var(--site-bg-saturate, 110%))
       grayscale(var(--site-bg-grayscale, 0%));
-    transform: scale(1.06);
+    transform: scale(1.04);
     transform-origin: center;
-    transition: opacity 220ms ease, transform 320ms ease;
+    transition: opacity 300ms ease, transform 400ms ease;
   }
 
   .site-bg-image img.is-switching {

@@ -462,44 +462,35 @@ const siteConfig = defineSiteConfig({
       ]
     },
     backgroundImage: {
-      enable: false,
-      url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
-      fallbackUrl:
-        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80",
-      excludeRoutes: [
-        "/blog",
-        "/blog/*",
-        "/article/*",
-        "/tutorial",
-        "/tutorial/*",
-        "/tutorials",
-        "/tutorials/*",
-        "/interview",
-        "/interview/*",
-        "/projects",
-        "/projects/*",
-        "/tags",
-        "/tags/*",
-        "/archives",
-        "/reading",
-        "/sites",
-        "/gallery"
-      ],
+      enable: true,
+      url: "/wallpapers/anime-sky.webp",
+      fallbackUrl: "/wallpapers/anime-sky.webp",
+      excludeRoutes: [],
       initialWidth: 640,
-      displayWidth: 1600,
+      displayWidth: 1920,
       wallpapers: [
         {
-          id: "default-01",
-          name: "默认背景",
-          url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2400&q=80"
+          id: "anime-sky",
+          name: "新海诚·晴空之境",
+          url: "/wallpapers/anime-sky.webp"
+        },
+        {
+          id: "anime-sunset",
+          name: "黄昏暮色·唯美晚霞",
+          url: "/wallpapers/anime-sunset.webp"
+        },
+        {
+          id: "anime-night",
+          name: "静谧星空·银河微光",
+          url: "/wallpapers/anime-night.webp"
         }
       ],
-      defaultWallpaperId: "default-01",
-      opacity: 0.1,
-      blur: 20,
-      overlayOpacity: 0.78,
-      saturate: 82,
-      grayscale: 20
+      defaultWallpaperId: "anime-sky",
+      opacity: 0.46,
+      blur: 2,
+      overlayOpacity: 0.15,
+      saturate: 110,
+      grayscale: 0
     },
     toc: {
       enable: true,

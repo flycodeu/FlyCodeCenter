@@ -23,7 +23,7 @@ const allowDrag = config.allowDrag ?? true;
   enabled && (
     <>
       <!-- AI 独立对话弹窗及遮罩 (居中大尺寸真实陪伴聊天界面) -->
-      <div id="mascot-ai-backdrop" class="mascot-ai-backdrop" hidden></div>
+      <div id="mascot-ai-backdrop" class="mascot-ai-backdrop" hidden transition:persist="mascot-ai-backdrop"></div>
       <div
         id="mascot-ai-box"
         class="mascot-ai-box"
@@ -31,6 +31,7 @@ const allowDrag = config.allowDrag ?? true;
         aria-modal="true"
         aria-label="雷姆伴聊"
         hidden
+        transition:persist="mascot-ai-box"
       >
         <!-- 顶部身份信息栏 -->
         <header id="mascot-ai-head" class="ai-box-head">
@@ -128,6 +129,7 @@ const allowDrag = config.allowDrag ?? true;
         data-enable-dialogue={enableDialogue ? "1" : "0"}
         data-allow-drag={allowDrag ? "1" : "0"}
         style="display: none;"
+        transition:persist="fly-mascot-root"
       >
         <aside
           id="fly-mascot-widget"
@@ -162,6 +164,11 @@ const allowDrag = config.allowDrag ?? true;
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
               </svg>
             </button>
+            <button type="button" class="toolbar-btn particle-btn" data-action="particles" title="唯美樱花与冰晶微光 (开/关)" aria-label="动效开关">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
+            </button>
             <button type="button" class="toolbar-btn" data-action="top" title="回到顶部" aria-label="回到顶部">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 15l-6-6-6 6" />
@@ -175,15 +182,18 @@ const allowDrag = config.allowDrag ?? true;
             </button>
           </nav>
 
-          <!-- 看板娘主形象 (高清 Live2D Canvas) -->
+          <!-- 看板娘主形象 (高清 Live2D Canvas，放大画幅至 500x760 超清呈现) -->
           <div id="mascot-character" class="mascot-character" title="雷姆">
             <canvas
               id="live2d-canvas"
               class="live2d-canvas"
-              width="420"
-              height="630"
+              width="500"
+              height="760"
             ></canvas>
           </div>
+
+          <!-- 角色底座微光光晕 (贴底自然承托，彻底消除悬空截断感) -->
+          <div class="mascot-pedestal" aria-hidden="true"></div>
         </aside>
 
         <!-- 唤醒/召唤浮动胶囊 -->
@@ -214,33 +224,49 @@ const allowDrag = config.allowDrag ?? true;
   }
 
   .fly-mascot-container.pos-bottom-right {
-    right: 20px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: -24px;
+    bottom: -46px;
   }
 
   .fly-mascot-container.pos-bottom-left {
-    left: 20px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: -24px;
+    bottom: -46px;
   }
 
-  /* 主体挂件容器 (尺寸放大 ~30%，更加清晰饱满精致) */
+  /* 角色底部微光地台光晕 (消除悬空突兀感，优雅承托) */
+  .mascot-pedestal {
+    position: absolute;
+    bottom: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 170px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, color-mix(in oklab, var(--brand) 45%, transparent 55%) 0%, color-mix(in oklab, var(--brand) 16%, transparent 84%) 50%, transparent 80%);
+    box-shadow: 0 4px 18px color-mix(in oklab, var(--brand) 32%, transparent 68%);
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(2px);
+  }
+
+  /* 主体挂件容器 (进一步放大至 250x380px，修长灵动，二次元美少女细节大幅增强) */
   .mascot-widget {
     position: relative;
-    width: 195px;
-    height: 295px;
+    width: 250px;
+    height: 380px;
     display: flex;
     flex-direction: column;
     align-items: center;
     pointer-events: auto;
     touch-action: none;
-    opacity: 0.96;
-    filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.18));
+    opacity: 0.98;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.22));
     transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .mascot-widget:hover {
     opacity: 1;
-    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.26));
+    filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.3));
   }
 
   .mascot-widget.is-dragging {
@@ -271,11 +297,13 @@ const allowDrag = config.allowDrag ?? true;
   }
 
   .live2d-canvas {
-    width: 195px;
-    height: 295px;
+    width: 250px;
+    height: 380px;
     display: block;
     pointer-events: none;
     opacity: 1;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 78%, rgba(0, 0, 0, 0.75) 83%, rgba(0, 0, 0, 0.2) 85.5%, transparent 86.8%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 78%, rgba(0, 0, 0, 0.75) 83%, rgba(0, 0, 0, 0.2) 85.5%, transparent 86.8%);
   }
 
   /* 顶部浮动快捷操作栏 (高度优化贴近角色头部，内置交互安全桥，移动绝不丢失) */
@@ -348,6 +376,11 @@ const allowDrag = config.allowDrag ?? true;
   .toolbar-btn.ai-btn:hover {
     color: #06b6d4;
     background: color-mix(in oklab, #06b6d4 15%, transparent 85%);
+  }
+
+  .toolbar-btn.particle-btn:hover {
+    color: #f43f5e;
+    background: color-mix(in oklab, #f43f5e 15%, transparent 85%);
   }
 
   .toolbar-btn.close-btn:hover {
@@ -448,9 +481,9 @@ const allowDrag = config.allowDrag ?? true;
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(10, 14, 26, 0.45);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    background: rgba(10, 15, 28, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 95;
     pointer-events: auto;
     animation: mascot-fade-in 0.18s ease;
@@ -473,7 +506,7 @@ const allowDrag = config.allowDrag ?? true;
     }
   }
 
-  /* AI 智能对话独立面板 (屏幕居中大尺寸，真实陪伴聊天窗口，宽敞舒适排版) */
+  /* AI 智能对话独立面板 (屏幕居中大尺寸，真实陪伴聊天窗口，高级毛玻璃与柔光二次元质感) */
   .mascot-ai-box {
     display: none !important;
     position: fixed !important;
@@ -484,10 +517,15 @@ const allowDrag = config.allowDrag ?? true;
     height: min(720px, calc(100vh - 48px)) !important;
     max-height: min(760px, calc(100vh - 36px));
     flex-direction: column;
-    background: var(--surface-1); /* 100% 实色背景，无透底穿透 */
-    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--surface-1) 85%, transparent 15%);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--line) 75%, transparent 25%);
     border-radius: 24px;
-    box-shadow: 0 32px 80px -16px rgba(0, 0, 0, 0.42), 0 0 0 1px color-mix(in oklab, var(--line) 80%, transparent 20%);
+    box-shadow:
+      0 32px 80px -16px rgba(0, 0, 0, 0.45),
+      0 0 0 1px color-mix(in oklab, #38bdf8 26%, transparent 74%),
+      0 0 45px -10px color-mix(in oklab, #38bdf8 18%, transparent 82%);
     overflow: hidden;
     overscroll-behavior: contain !important;
     z-index: 96;
@@ -520,8 +558,10 @@ const allowDrag = config.allowDrag ?? true;
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--line);
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent 20%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid color-mix(in oklab, var(--line) 70%, transparent 30%);
     flex-shrink: 0;
     user-select: none;
     -webkit-user-select: none;
@@ -633,7 +673,7 @@ const allowDrag = config.allowDrag ?? true;
     background: color-mix(in oklab, #ef4444 12%, transparent 88%);
   }
 
-  /* 消息视口流 (独立滚动，杜绝背景穿透滚动) */
+  /* 消息视口流 (独立滚动，融入柔蓝与淡紫二次元微光氛围) */
   .ai-box-msgs {
     flex: 1 1 0 !important;
     min-height: 0 !important;
@@ -645,6 +685,9 @@ const allowDrag = config.allowDrag ?? true;
     display: flex;
     flex-direction: column;
     gap: 18px;
+    background:
+      radial-gradient(circle at 92% 10%, color-mix(in oklab, #38bdf8 6%, transparent) 0%, transparent 48%),
+      radial-gradient(circle at 8% 88%, color-mix(in oklab, #a855f7 5%, transparent) 0%, transparent 48%);
     scrollbar-width: thin;
     user-select: text;
     -webkit-user-select: text;
@@ -737,9 +780,11 @@ const allowDrag = config.allowDrag ?? true;
   }
 
   .chat-row.is-bot .chat-bubble {
-    background: var(--surface-2);
+    background: color-mix(in oklab, var(--surface-2) 86%, transparent 14%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--text);
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklab, var(--line) 70%, transparent 30%);
     border-radius: 4px 18px 18px 18px;
   }
 
@@ -805,12 +850,14 @@ const allowDrag = config.allowDrag ?? true;
     }
   }
 
-  /* 底部输入表单 (间距舒展舒适) */
+  /* 底部输入表单 (高级毛玻璃质感) */
   .ai-box-form {
     display: flex;
     flex-direction: column;
     padding: 0 24px 20px;
-    background: var(--surface-1);
+    background: color-mix(in oklab, var(--surface-1) 80%, transparent 20%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     flex-shrink: 0;
   }
 
@@ -888,6 +935,7 @@ const allowDrag = config.allowDrag ?? true;
   /* 唤醒胶囊按钮 */
   .mascot-summoner-btn {
     pointer-events: auto;
+    margin-bottom: 56px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -923,12 +971,17 @@ const allowDrag = config.allowDrag ?? true;
       bottom: calc(14px + env(safe-area-inset-bottom)) !important;
     }
     .mascot-widget {
-      width: 140px;
-      height: 215px;
+      width: 175px;
+      height: 265px;
     }
     .live2d-canvas {
-      width: 140px;
-      height: 215px;
+      width: 175px;
+      height: 265px;
+    }
+    .mascot-feet-layer {
+      width: 175px;
+      height: 63px;
+      bottom: -10px;
     }
     .mascot-ai-box {
       top: auto !important;
@@ -1128,13 +1181,21 @@ const allowDrag = config.allowDrag ?? true;
     let hasMoved = false;
     let pointerDownTargetY = 0;
 
+    // 角色两侧具有约 44px 的透明画幅留白，底部有 46px 留白。
+    // 允许留白区微量溢出，消除右侧生硬间隙，使雷姆本体可以紧贴视口右边缘
+    const BLEED_X = 44;
+    const BLEED_BOTTOM = 46;
+
     function clampPosition(x: number, y: number) {
       const wWidth = window.innerWidth;
       const wHeight = window.innerHeight;
       const rect = widget.getBoundingClientRect();
-      const margin = 8;
-      const clampedX = Math.max(margin, Math.min(wWidth - rect.width - margin, x));
-      const clampedY = Math.max(margin, Math.min(wHeight - rect.height - margin, y));
+      const minX = -BLEED_X;
+      const maxX = wWidth - rect.width + BLEED_X;
+      const minY = 8;
+      const maxY = wHeight - rect.height + BLEED_BOTTOM;
+      const clampedX = Math.max(minX, Math.min(maxX, x));
+      const clampedY = Math.max(minY, Math.min(maxY, y));
       return { x: clampedX, y: clampedY };
     }
 
@@ -1193,12 +1254,15 @@ const allowDrag = config.allowDrag ?? true;
       widget.classList.remove("is-dragging");
 
       if (hasMoved) {
-        const rect = widget.getBoundingClientRect();
+        // 用户拖拽到哪就绝对固定在哪，严禁任何自动平移、弹跳或重新计算
+        const curX = parseFloat(root.style.left) || 0;
+        const curY = parseFloat(root.style.top) || 0;
+
         localStorage.setItem(
           STORAGE_KEY_POS,
           JSON.stringify({
-            x: rect.left,
-            y: rect.top,
+            x: curX,
+            y: curY,
             vw: window.innerWidth,
             vh: window.innerHeight
           })
@@ -1272,6 +1336,16 @@ const allowDrag = config.allowDrag ?? true;
           playMascotMotion("flick_head", 4);
           const text = MOTION_QUOTES[Math.floor(Math.random() * MOTION_QUOTES.length)];
           showBubble(text, 3000);
+        } else if (action === "particles") {
+          const isEnabled = localStorage.getItem("fly_particles_enabled") !== "0";
+          const next = !isEnabled;
+          window.dispatchEvent(new CustomEvent("fly:toggle-particles", { detail: { enable: next } }));
+          if (next) {
+            playMascotMotion("flick_head", 4);
+            showBubble("已为主人开启唯美落樱与冰晶微光~ 🌸", 3200);
+          } else {
+            showBubble("已为您暂时关闭背景飘落动效~ ✨", 2600);
+          }
         } else if (action === "top") {
           window.scrollTo({ top: 0, behavior: "smooth" });
           showBubble("咻~ 已经带您回到页面顶部啦！", 2200);
@@ -1583,8 +1657,30 @@ const allowDrag = config.allowDrag ?? true;
         const saved = localStorage.getItem(STORAGE_KEY_POS);
         if (!saved) return;
         const pos = JSON.parse(saved);
-        if (typeof pos.x === "number" && typeof pos.y === "number") {
-          const clamped = clampPosition(pos.x, pos.y);
+        const wWidth = window.innerWidth;
+        const wHeight = window.innerHeight;
+
+        let targetX: number | null = null;
+        let targetY: number | null = null;
+
+        if (typeof pos.x === "number") {
+          targetX = pos.x;
+        } else if (typeof pos.offsetLeft === "number") {
+          targetX = pos.offsetLeft;
+        } else if (typeof pos.offsetRight === "number") {
+          targetX = wWidth - 250 - pos.offsetRight;
+        }
+
+        if (typeof pos.y === "number") {
+          targetY = pos.y;
+        } else if (typeof pos.offsetTop === "number") {
+          targetY = pos.offsetTop;
+        } else if (typeof pos.offsetBottom === "number") {
+          targetY = wHeight - 380 - pos.offsetBottom;
+        }
+
+        if (targetX !== null && targetY !== null) {
+          const clamped = clampPosition(targetX, targetY);
           root.style.left = `${clamped.x}px`;
           root.style.top = `${clamped.y}px`;
           root.style.right = "auto";
@@ -1594,17 +1690,19 @@ const allowDrag = config.allowDrag ?? true;
       } catch {}
     }
 
-    // 视口尺寸变化时重新纠偏防溢出
+    // 视口尺寸变化时，仅当窗口缩小导致完全不可见时才做防溢出保护，平时绝不自动移动
     window.addEventListener(
       "resize",
       () => {
         if (root.style.left && root.style.left !== "auto") {
           const curX = parseFloat(root.style.left) || 0;
           const curY = parseFloat(root.style.top) || 0;
-          const clamped = clampPosition(curX, curY);
-          root.style.left = `${clamped.x}px`;
-          root.style.top = `${clamped.y}px`;
-          updateFlipState(clamped.x);
+          if (curX > window.innerWidth || curY > window.innerHeight) {
+            const clamped = clampPosition(curX, curY);
+            root.style.left = `${clamped.x}px`;
+            root.style.top = `${clamped.y}px`;
+            updateFlipState(clamped.x);
+          }
         }
       },
       { passive: true }

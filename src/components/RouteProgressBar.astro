@@ -1,0 +1,160 @@
+---
+// src/components/RouteProgressBar.astro
+// 全局页面路由跳转顶部柔光进度条 (即时视觉反馈，彻底消除跳转突兀感)
+---
+
+<div id="fly-route-progress" class="fly-route-progress" aria-hidden="true" transition:persist="fly-route-progress">
+  <div class="progress-bar-inner"></div>
+</div>
+
+<style is:global>
+  .fly-route-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    view-transition-name: fly-route-progress;
+  }
+
+  ::view-transition-old(fly-route-progress),
+  ::view-transition-new(fly-route-progress) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  .fly-route-progress.is-active {
+    opacity: 1;
+  }
+
+  .fly-route-progress .progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(
+      90deg,
+      #38bdf8 0%,
+      var(--brand, #06b6d4) 50%,
+      #a855f7 100%
+    );
+    box-shadow: 0 0 12px color-mix(in oklab, var(--brand, #38bdf8) 85%, transparent);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.28s cubic-bezier(0.1, 0.8, 0.25, 1);
+    will-change: width;
+  }
+
+  .fly-route-progress.is-completing .progress-bar-inner {
+    width: 100% !important;
+    transition: width 0.16s ease-out;
+  }
+</style>
+
+<script>
+  (() => {
+    let progressTimer: any = null;
+    let finishTimer: any = null;
+    let fallbackTimer: any = null;
+
+    const getBar = () => document.getElementById("fly-route-progress");
+    const getInner = () => getBar()?.querySelector(".progress-bar-inner") as HTMLElement | null;
+
+    function startProgress() {
+      const bar = getBar();
+      const inner = getInner();
+      if (!bar || !inner) return;
+
+      clearTimeout(progressTimer);
+      clearTimeout(finishTimer);
+      clearTimeout(fallbackTimer);
+
+      bar.classList.remove("is-completing");
+      inner.style.transition = "width 0.28s cubic-bezier(0.1, 0.8, 0.25, 1)";
+      inner.style.width = "0%";
+      bar.classList.add("is-active");
+
+      requestAnimationFrame(() => {
+        inner.style.width = "42%";
+      });
+
+      progressTimer = setTimeout(() => {
+        inner.style.width = "78%";
+      }, 140);
+
+      // 兜底超时，防止未完成的跳转卡住进度条
+      fallbackTimer = setTimeout(() => {
+        completeProgress();
+      }, 4000);
+    }
+
+    function completeProgress() {
+      const bar = getBar();
+      const inner = getInner();
+      if (!bar || !inner) return;
+
+      clearTimeout(progressTimer);
+      clearTimeout(finishTimer);
+      clearTimeout(fallbackTimer);
+
+      bar.classList.add("is-completing");
+      inner.style.width = "100%";
+
+      finishTimer = setTimeout(() => {
+        bar.classList.remove("is-active");
+        setTimeout(() => {
+          bar.classList.remove("is-completing");
+          inner.style.width = "0%";
+        }, 180);
+      }, 140);
+    }
+
+    // 绑定 Astro 页面路由过渡生命周期与即时点击
+    if (!(window as any).__flyRouteProgressBound) {
+      (window as any).__flyRouteProgressBound = true;
+
+      // 监听内部链接点击，提供 0ms 瞬间触发展开
+      document.addEventListener(
+        "click",
+        (event) => {
+          const target = event.target as HTMLElement | null;
+          const link = target?.closest?.("a");
+          if (!link) return;
+          const href = link.getAttribute("href");
+          if (!href) return;
+          if (link.target && link.target !== "_self") return;
+          if (link.hasAttribute("download")) return;
+          if (href.startsWith("#") || href.startsWith("javascript:")) return;
+
+          try {
+            const destUrl = new URL(link.href, window.location.href);
+            if (destUrl.origin === window.location.origin) {
+              if (
+                destUrl.pathname === window.location.pathname &&
+                destUrl.search === window.location.search &&
+                destUrl.hash
+              ) {
+                return;
+              }
+              startProgress();
+            }
+          } catch {}
+        },
+        { capture: true, passive: true }
+      );
+
+      document.addEventListener("astro:before-preparation", () => {
+        startProgress();
+      });
+
+      document.addEventListener("astro:after-swap", () => {
+        completeProgress();
+      });
+
+      document.addEventListener("astro:page-load", () => {
+        completeProgress();
+      });
+    }
+  })();
+</script>
