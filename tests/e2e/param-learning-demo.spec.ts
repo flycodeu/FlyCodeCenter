@@ -4,6 +4,8 @@ const seriesRoute = '/tutorials/agent/';
 const lesson1Route = '/tutorials/tagent-lesson01/';
 const lesson2Route = '/tutorials/tagent-lesson02/';
 const lesson3Route = '/tutorials/tagent-lesson03/';
+const lesson4Route = '/tutorials/tagent-lesson04/';
+const lesson5Route = '/tutorials/tagent-lesson05/';
 
 test('agent tutorial series and lesson 1 render Mermaid diagrams and interactive parameter demo cleanly', async ({ page }) => {
   const errors = [];
@@ -150,6 +152,90 @@ test('lesson 3 two-param demo scans 25 pairs, switches to exercise 2x+4, and kee
     const staticPage = await context.newPage();
     await staticPage.goto(page.url(), { waitUntil: 'domcontentloaded' });
     await expect(staticPage.locator(demo)).toContainText('25 组组合');
+  } finally {
+    await context.close();
+  }
+});
+
+test('lesson 4 train-test demo reveals test error on doubling and 0 error on linear exercise', async ({ page, browser }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  await page.goto(lesson4Route, { waitUntil: 'domcontentloaded' });
+  const l4Diagram = page.locator('.mermaid-host').first();
+  await l4Diagram.waitFor({ timeout: 12_000 });
+  await l4Diagram.scrollIntoViewIfNeeded();
+  await expect(l4Diagram.locator('svg')).toBeVisible({ timeout: 12_000 });
+
+  const demo = page.locator('train-test-demo');
+  await expect(demo).toHaveAttribute('data-ready', 'true', { timeout: 12_000 });
+  await expect(demo).toHaveAttribute('data-mode', 'doubling');
+
+  const slider = demo.getByRole('slider', { name: '演示步骤' });
+  await slider.focus();
+  await slider.press('End');
+  await expect(demo).toHaveAttribute('data-best-weight', '2');
+  await expect(demo).toHaveAttribute('data-best-bias', '0');
+  await expect(demo).toHaveAttribute('data-train-error', '0');
+  await expect(demo).toHaveAttribute('data-test-error', '5');
+
+  await demo.locator('[data-mode="linear_ex"]').click();
+  await slider.focus();
+  await slider.press('End');
+  await expect(demo).toHaveAttribute('data-best-weight', '2');
+  await expect(demo).toHaveAttribute('data-best-bias', '1');
+  await expect(demo).toHaveAttribute('data-train-error', '0');
+  await expect(demo).toHaveAttribute('data-test-error', '0');
+
+  expect(errors).toEqual([]);
+
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const staticPage = await context.newPage();
+    await staticPage.goto(page.url(), { waitUntil: 'domcontentloaded' });
+    await expect(staticPage.locator(demo)).toContainText('测试平均误差 5.0');
+  } finally {
+    await context.close();
+  }
+});
+
+test('lesson 5 feature-transform demo straightens doubling inputs and learns both datasets cleanly', async ({ page, browser }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  await page.goto(lesson5Route, { waitUntil: 'domcontentloaded' });
+  const l5Diagram = page.locator('.mermaid-host').first();
+  await l5Diagram.waitFor({ timeout: 12_000 });
+  await l5Diagram.scrollIntoViewIfNeeded();
+  await expect(l5Diagram.locator('svg')).toBeVisible({ timeout: 12_000 });
+
+  const demo = page.locator('feature-transform-demo');
+  await expect(demo).toHaveAttribute('data-ready', 'true', { timeout: 12_000 });
+  await expect(demo).toHaveAttribute('data-mode', 'exp_basic');
+
+  const slider = demo.getByRole('slider', { name: '演示步骤' });
+  await slider.focus();
+  await slider.press('End');
+  await expect(demo).toHaveAttribute('data-best-weight', '1');
+  await expect(demo).toHaveAttribute('data-best-bias', '0');
+  await expect(demo).toHaveAttribute('data-train-error', '0');
+  await expect(demo).toHaveAttribute('data-test-error', '0');
+
+  await demo.locator('[data-mode="exp_exercise"]').click();
+  await slider.focus();
+  await slider.press('End');
+  await expect(demo).toHaveAttribute('data-best-weight', '3');
+  await expect(demo).toHaveAttribute('data-best-bias', '1');
+  await expect(demo).toHaveAttribute('data-train-error', '0');
+  await expect(demo).toHaveAttribute('data-test-error', '0');
+
+  expect(errors).toEqual([]);
+
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const staticPage = await context.newPage();
+    await staticPage.goto(page.url(), { waitUntil: 'domcontentloaded' });
+    await expect(staticPage.locator(demo)).toContainText('2 ** x');
   } finally {
     await context.close();
   }

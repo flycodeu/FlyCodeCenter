@@ -1855,6 +1855,22 @@ export function initArticleRuntime(config = {}) {
           .catch((error) => console.error("two param demo could not load", error));
       }
 
+      if (article.querySelector("train-test-demo")) {
+        import("./train-test-demo.js")
+          .then(({ registerTrainTestDemo }) => {
+            if (!signal.aborted && article.isConnected) registerTrainTestDemo();
+          })
+          .catch((error) => console.error("train test demo could not load", error));
+      }
+
+      if (article.querySelector("feature-transform-demo")) {
+        import("./feature-transform-demo.js")
+          .then(({ registerFeatureTransformDemo }) => {
+            if (!signal.aborted && article.isConnected) registerFeatureTransformDemo();
+          })
+          .catch((error) => console.error("feature transform demo could not load", error));
+      }
+
       if (article.querySelector("login-crypto-demo")) {
         import("./login-crypto-demo.js")
           .then(({ registerLoginCryptoDemo }) => {

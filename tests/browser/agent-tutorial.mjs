@@ -225,8 +225,117 @@ try {
     assert.equal(await demo3.getAttribute('data-best-bias'), '4');
     assert.equal(await demo3.getAttribute('data-prediction'), '12');
 
+    // Lesson 4
+    const l4Resp = await page.goto(`${base}/tutorials/tagent-lesson04/`, { waitUntil: 'domcontentloaded' });
+    assert.equal(l4Resp.status(), 200);
+    const l4Diagram = page.locator('.article-body .mermaid-host').first();
+    await l4Diagram.waitFor({ timeout: 30000 });
+    await l4Diagram.scrollIntoViewIfNeeded();
+    await l4Diagram.locator('svg').waitFor({ timeout: 30000 });
+    assert.equal(await page.locator('.article-body .mermaid-host svg').count(), 1);
+
+    const demo4 = page.locator('train-test-demo');
+    await demo4.waitFor();
+    await page.waitForFunction(
+      () => document.querySelector('train-test-demo')?.getAttribute('data-ready') === 'true',
+      null,
+      { timeout: 15000 }
+    );
+    await demo4.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    await demo4.getByRole('button', { name: '▶ 播放演示', exact: true }).click();
+    const canvas4 = demo4.locator('[data-canvas="plot"]');
+    const frame4A = await canvas4.evaluate((el) => el.toDataURL());
+    await page.waitForFunction(
+      (prev) => {
+        const host = document.querySelector('train-test-demo');
+        const c = host?.shadowRoot?.querySelector('[data-canvas="plot"]');
+        return c && c.toDataURL() !== prev;
+      },
+      frame4A,
+      { timeout: 6000 }
+    );
+    await demo4.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+
+    const slider4 = demo4.getByRole('slider', { name: '演示步骤' });
+    await slider4.focus();
+    await slider4.press('End');
+    assert.equal(await demo4.getAttribute('data-best-weight'), '2');
+    assert.equal(await demo4.getAttribute('data-best-bias'), '0');
+    assert.equal(await demo4.getAttribute('data-train-error'), '0');
+    assert.equal(await demo4.getAttribute('data-test-error'), '5');
+    if (width === 1440) {
+      await demo4.screenshot({ path: path.join(output, 'l4-demo-end-1440.png') });
+    } else {
+      await demo4.screenshot({ path: path.join(output, 'l4-demo-390.png') });
+    }
+
+    await demo4.locator('[data-mode="linear_ex"]').click();
+    await slider4.focus();
+    await slider4.press('End');
+    assert.equal(await demo4.getAttribute('data-best-weight'), '2');
+    assert.equal(await demo4.getAttribute('data-best-bias'), '1');
+    assert.equal(await demo4.getAttribute('data-test-error'), '0');
+
+    // Lesson 5
+    const l5Resp = await page.goto(`${base}/tutorials/tagent-lesson05/`, { waitUntil: 'domcontentloaded' });
+    assert.equal(l5Resp.status(), 200);
+    const l5Diagram = page.locator('.article-body .mermaid-host').first();
+    await l5Diagram.waitFor({ timeout: 30000 });
+    await l5Diagram.scrollIntoViewIfNeeded();
+    await l5Diagram.locator('svg').waitFor({ timeout: 30000 });
+    assert.equal(await page.locator('.article-body .mermaid-host svg').count(), 1);
+
+    const demo5 = page.locator('feature-transform-demo');
+    await demo5.waitFor();
+    await page.waitForFunction(
+      () => document.querySelector('feature-transform-demo')?.getAttribute('data-ready') === 'true',
+      null,
+      { timeout: 15000 }
+    );
+    await demo5.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    await demo5.getByRole('button', { name: '▶ 播放演示', exact: true }).click();
+    const canvas5 = demo5.locator('[data-canvas="plot"]');
+    const frame5A = await canvas5.evaluate((el) => el.toDataURL());
+    await page.waitForFunction(
+      (prev) => {
+        const host = document.querySelector('feature-transform-demo');
+        const c = host?.shadowRoot?.querySelector('[data-canvas="plot"]');
+        return c && c.toDataURL() !== prev;
+      },
+      frame5A,
+      { timeout: 6000 }
+    );
+    await demo5.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+
+    const slider5 = demo5.getByRole('slider', { name: '演示步骤' });
+    await slider5.focus();
+    await slider5.press('End');
+    assert.equal(await demo5.getAttribute('data-best-weight'), '1');
+    assert.equal(await demo5.getAttribute('data-best-bias'), '0');
+    assert.equal(await demo5.getAttribute('data-train-error'), '0');
+    assert.equal(await demo5.getAttribute('data-test-error'), '0');
+    if (width === 1440) {
+      await demo5.screenshot({ path: path.join(output, 'l5-demo-end-1440.png') });
+    } else {
+      await demo5.screenshot({ path: path.join(output, 'l5-demo-390.png') });
+    }
+
+    await demo5.locator('[data-mode="exp_exercise"]').click();
+    await slider5.focus();
+    await slider5.press('End');
+    assert.equal(await demo5.getAttribute('data-best-weight'), '3');
+    assert.equal(await demo5.getAttribute('data-best-bias'), '1');
+    assert.equal(await demo5.getAttribute('data-test-error'), '0');
+    if (width === 1440) {
+      await demo5.screenshot({ path: path.join(output, 'l5-demo-ex-1440.png') });
+    }
+
     // Download parity checks
-    for (const file of ['lesson01.py', 'lesson02.py', 'lesson03.py']) {
+    for (const file of ['lesson01.py', 'lesson02.py', 'lesson03.py', 'lesson04.py', 'lesson05.py']) {
       const pyResp = await context.request.get(`${base}/examples/agent/${file}`);
       assert.equal(pyResp.status(), 200);
       const localPy = await fs.readFile(path.resolve(`public/examples/agent/${file}`), 'utf8');
@@ -250,6 +359,41 @@ try {
   const tutorialsHtml = await (await indexContext.request.get(`${base}/tutorials/`)).text();
   assert.ok(tutorialsHtml.includes('Agent 从零实战'));
   await indexContext.close();
+
+  // Verify early route switching works unblocked before Rem silently loads after idle
+  const navCtx = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+  });
+  const navPage = await navCtx.newPage();
+  const navErrors = [];
+  navPage.on('pageerror', (err) => navErrors.push(err.message));
+  const heavyReqsBeforeNav = [];
+  let switched = false;
+  navPage.on('request', (req) => {
+    const u = req.url();
+    if (!switched && (u.includes('live2d.min.js') || u.includes('remu.moc') || u.includes('texture_00'))) {
+      heavyReqsBeforeNav.push(u);
+    }
+  });
+  await navPage.goto(`${base}/tutorials/agent/`, { waitUntil: 'domcontentloaded' });
+  await Promise.all([
+    navPage.waitForURL(/\/tutorials\/tagent-lesson04/, { waitUntil: 'commit', timeout: 8000 }),
+    navPage.click('a[href="/tutorials/tagent-lesson04/"]')
+  ]);
+  switched = true;
+  assert.deepEqual(heavyReqsBeforeNav, []);
+  await navPage.waitForFunction(() => Boolean(document.getElementById('live2d-canvas')?.__live2dLoaded), null, {
+    timeout: 12000
+  });
+  await navPage.waitForTimeout(300);
+  const mascotSilentDone = await navPage.evaluate(() => {
+    const w = document.getElementById('fly-mascot-widget');
+    return w ? !w.classList.contains('is-silent-loading') : false;
+  });
+  assert.equal(mascotSilentDone, true);
+  assert.deepEqual(navErrors, []);
+  await navCtx.close();
 
   console.log(JSON.stringify({ ok: true, output }, null, 2));
 } finally {

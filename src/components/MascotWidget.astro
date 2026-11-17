@@ -37,7 +37,7 @@ const allowDrag = config.allowDrag ?? true;
         <header id="mascot-ai-head" class="ai-box-head">
           <div class="ai-head-user">
             <div class="ai-head-avatar">
-              <img src="/live2d/rem/avatar.png" alt="雷姆" width="40" height="40" />
+              <img src="/live2d/rem/avatar.png" alt="雷姆" width="40" height="40" loading="lazy" decoding="async" fetchpriority="low" />
               <span class="status-indicator" title="在线"></span>
             </div>
             <div class="ai-head-meta">
@@ -82,7 +82,7 @@ const allowDrag = config.allowDrag ?? true;
           <!-- 默认欢迎消息行 -->
           <div class="chat-row is-bot">
             <div class="chat-avatar bot-avatar">
-              <img src="/live2d/rem/avatar.png" alt="雷姆" width="40" height="40" />
+              <img src="/live2d/rem/avatar.png" alt="雷姆" width="40" height="40" loading="lazy" decoding="async" fetchpriority="low" />
             </div>
             <div class="chat-body">
               <div class="chat-meta">
@@ -280,6 +280,12 @@ const allowDrag = config.allowDrag ?? true;
   .mascot-widget.is-closing {
     opacity: 0;
     transform: scale(0.4) translateY(50px);
+    pointer-events: none;
+  }
+
+  .mascot-widget.is-silent-loading {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
     pointer-events: none;
   }
 
@@ -1134,9 +1140,11 @@ const allowDrag = config.allowDrag ?? true;
     const isMobile = window.innerWidth <= 768;
     const defaultOpen = root.dataset.defaultOpen === "1";
     const savedClosed = localStorage.getItem(STORAGE_KEY_CLOSED);
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    const saveData = Boolean(connection && connection.saveData);
 
-    // 移动端默认折叠，桌面端依据设置与缓存
-    let isClosed = savedClosed !== null ? savedClosed === "1" : (isMobile || !defaultOpen);
+    // 移动端与省流模式默认折叠，桌面端依据设置与缓存并在空闲后静默加载
+    let isClosed = savedClosed !== null ? savedClosed === "1" : (isMobile || saveData || !defaultOpen);
 
     // 更新唤醒按钮名字为雷姆
     if (summonName) {
@@ -1149,28 +1157,161 @@ const allowDrag = config.allowDrag ?? true;
       updateFlipState(20);
     }
 
+    let navInFlight = false;
+    let modelLoaded = Boolean((canvas as any).__live2dLoaded);
+    let modelLoadingPromise: Promise<void> | null = null;
+    let silentTimer: number | null = null;
+    let silentIdleId: number | null = null;
+    let waitingForWindowLoad = false;
+
+    if (!isClosed && !modelLoaded) {
+      widget.classList.add("is-silent-loading");
+    }
+
     // 同步展示状态
     syncDisplayState(false);
 
-    // 加载雷姆 Live2D 动漫模型
-    loadCurrentModel();
+    function cancelScheduledLoad() {
+      if (silentTimer !== null) {
+        window.clearTimeout(silentTimer);
+        silentTimer = null;
+      }
+      if (silentIdleId !== null && typeof (window as any).cancelIdleCallback === "function") {
+        (window as any).cancelIdleCallback(silentIdleId);
+        silentIdleId = null;
+      }
+    }
 
-    function loadCurrentModel() {
-      ensureLive2DScript()
-        .then(() => {
-          const loadlive2d = (window as any).loadlive2d;
-          if (typeof loadlive2d !== "function") return;
+    function runWhenIdle(task: () => void) {
+      const ric = (window as any).requestIdleCallback;
+      if (typeof ric === "function") {
+        silentIdleId = ric(
+          () => {
+            silentIdleId = null;
+            task();
+          },
+          { timeout: 2200 }
+        );
+      } else {
+        silentTimer = window.setTimeout(() => {
+          silentTimer = null;
+          task();
+        }, 120);
+      }
+    }
 
-          try {
-            loadlive2d("live2d-canvas", REM_MODEL.url);
-          } catch (err) {
-            console.warn("[Live2D] load error:", err);
-          }
-        })
+    function loadCurrentModel(): Promise<void> {
+      if (modelLoaded || (canvas as any).__live2dLoaded) {
+        widget.classList.remove("is-silent-loading");
+        return Promise.resolve();
+      }
+      if (modelLoadingPromise) return modelLoadingPromise;
+
+      modelLoadingPromise = ensureLive2DScript()
+        .then(
+          () =>
+            new Promise<void>((resolve) => {
+              const invokeLoad = () => {
+                if (isClosed || navInFlight || modelLoaded) {
+                  modelLoadingPromise = null;
+                  resolve();
+                  return;
+                }
+                const loadlive2d = (window as any).loadlive2d;
+                if (typeof loadlive2d !== "function") {
+                  modelLoadingPromise = null;
+                  resolve();
+                  return;
+                }
+                try {
+                  loadlive2d("live2d-canvas", REM_MODEL.url);
+                  modelLoaded = true;
+                  (canvas as any).__live2dLoaded = true;
+                  window.setTimeout(() => {
+                    if (!isClosed) {
+                      widget.classList.remove("is-silent-loading");
+                    }
+                  }, 180);
+                } catch (err) {
+                  console.warn("[Live2D] load error:", err);
+                } finally {
+                  resolve();
+                }
+              };
+
+              window.requestAnimationFrame(invokeLoad);
+            })
+        )
         .catch((err) => {
+          modelLoadingPromise = null;
           console.warn("[Live2D] Failed to load local runtime script:", err);
         });
+
+      return modelLoadingPromise;
     }
+
+    function scheduleSilentLoad(delayMs = 1200) {
+      if (isClosed || modelLoaded || modelLoadingPromise) return;
+      if (document.visibilityState === "hidden") return;
+
+      cancelScheduledLoad();
+
+      if (document.readyState !== "complete") {
+        if (!waitingForWindowLoad) {
+          waitingForWindowLoad = true;
+          window.addEventListener(
+            "load",
+            () => {
+              waitingForWindowLoad = false;
+              scheduleSilentLoad(delayMs);
+            },
+            { once: true }
+          );
+        }
+        return;
+      }
+
+      silentTimer = window.setTimeout(() => {
+        silentTimer = null;
+        if (isClosed || navInFlight || modelLoaded || modelLoadingPromise) return;
+        if (document.visibilityState === "hidden") return;
+        runWhenIdle(() => {
+          if (!isClosed && !navInFlight && !modelLoaded) {
+            loadCurrentModel();
+          }
+        });
+      }, delayMs);
+    }
+
+    if (!(window as any).__flyMascotLifecycleBound) {
+      (window as any).__flyMascotLifecycleBound = true;
+      document.addEventListener("astro:before-preparation", () => {
+        navInFlight = true;
+        cancelScheduledLoad();
+      });
+      const resumeAfterNav = () => {
+        navInFlight = false;
+        if (!isClosed && !modelLoaded && !modelLoadingPromise) {
+          scheduleSilentLoad(800);
+        }
+      };
+      document.addEventListener("astro:after-swap", resumeAfterNav);
+      document.addEventListener("astro:page-load", resumeAfterNav);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && !isClosed && !modelLoaded && !modelLoadingPromise) {
+          scheduleSilentLoad(600);
+        }
+      });
+      const deferOnInteraction = () => {
+        if (!isClosed && !modelLoaded && !modelLoadingPromise) {
+          scheduleSilentLoad(1100);
+        }
+      };
+      document.addEventListener("pointerdown", deferOnInteraction, { passive: true, capture: true });
+    }
+
+    // 仅在非关闭状态下等待页面加载完成、交互与路由空闲后静默加载
+    scheduleSilentLoad(1200);
 
     // 1. 看板娘拖拽移动与部位点击交互判别 (摸头 / 戳身体 / 拖拽防飞出)
     let isDragging = false;
@@ -1608,6 +1749,7 @@ const allowDrag = config.allowDrag ?? true;
 
     // 6. 打开与收起状态同步
     function closeMascot() {
+      cancelScheduledLoad();
       hideBubble();
       closeAiBox();
       widget.classList.add("is-closing");
@@ -1623,11 +1765,16 @@ const allowDrag = config.allowDrag ?? true;
       isClosed = false;
       closeAiBox();
       localStorage.setItem(STORAGE_KEY_CLOSED, "0");
+      if (!modelLoaded && !modelLoadingPromise) {
+        widget.classList.add("is-silent-loading");
+      }
       syncDisplayState(true);
-      playMascotMotion("talk", 3);
-      setTimeout(() => {
-        showBubble(`主人好，我是【${REM_MODEL.name}】~ 有什么可以帮您的吗？`, 3000);
-      }, 150);
+      loadCurrentModel().then(() => {
+        playMascotMotion("talk", 3);
+        setTimeout(() => {
+          showBubble(`主人好，我是【${REM_MODEL.name}】~ 有什么可以帮您的吗？`, 3000);
+        }, 180);
+      });
     }
 
     summonerBtn.addEventListener("click", () => {

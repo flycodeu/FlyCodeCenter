@@ -18,13 +18,13 @@ showOnHome: false
 
 很多教程一上来就介绍框架、提示词和外部接口，写完还是容易把大模型当成“黑盒”。这套专栏换一种做法：**从最小可运行的 Python 代码出发，亲手把关键机制拆开看透，再逐阶段叠加能力。**
 
-当前已完成**第一阶段的全部 3 课**，后续阶段会在整理完成后陆续补充。
+当前已完成**第一阶段的全部 5 课**，后续阶段会在整理完成后陆续补充。
 
 ## 整体学习路线
 
 ```mermaid
 flowchart LR
-    S1["第一阶段：从数据学参数\n第 1～3 课已发布"] --> S2["后续阶段：多参数自动调参\n连续优化与梯度直觉"]
+    S1["第一阶段：从数据学参数\n第 1～5 课已发布"] --> S2["后续阶段：多参数自动调参\n连续优化与梯度直觉"]
     S2 --> S3["后续阶段：模型与工具\n结构化输出与工具调用"]
     S3 --> S4["后续阶段：Agent 循环\n观察 → 决策 → 行动"]
 ```
@@ -36,6 +36,8 @@ flowchart LR
 | 第 1 课 | [程序怎样从数据里“学”到东西](/tutorials/tagent-lesson01/) | 用约 20 行纯 Python 从固定候选列表里挑出误差最小的参数，再预测新输入 |
 | 第 2 课 | [让程序自己小步调整参数](/tutorials/tagent-lesson02/) | 不再枚举固定列表，改用左右试探与步长让程序沿误差曲线自己走到 `2.5` |
 | 第 3 课 | [让模型学会“乘一个数，再加一个数”](/tutorials/tagent-lesson03/) | 引入第二个参数 `bias`，让程序从 25 组搭配里同时学出斜率与偏置 |
+| 第 4 课 | [用新数据检查模型](/tutorials/tagent-lesson04/) | 拆分 `train_samples` 与 `test_samples`，用平均误差揭开“训练全对却测错”的原因 |
+| 第 5 课 | [先变换输入，再训练参数](/tutorials/tagent-lesson05/) | 在 `predict()` 中加入 `2 ** x` 输入变换，复用训练循环直接拟合翻倍规律 |
 
 ## 适合谁看、怎么学
 
@@ -48,3 +50,5 @@ flowchart LR
 - 第 1 课脚本：[lesson01.py](/examples/agent/lesson01.py)
 - 第 2 课脚本：[lesson02.py](/examples/agent/lesson02.py)
 - 第 3 课脚本：[lesson03.py](/examples/agent/lesson03.py)
+- 第 4 课脚本：[lesson04.py](/examples/agent/lesson04.py)
+- 第 5 课脚本：[lesson05.py](/examples/agent/lesson05.py)

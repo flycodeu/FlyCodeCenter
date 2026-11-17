@@ -21,6 +21,8 @@ Main responsibilities:
 - Interactive parameter-learning walkthrough (loaded only when an article contains `param-learning-demo`)
 - Interactive step-adjusting parameter search walkthrough (loaded only when an article contains `step-adjust-demo`)
 - Interactive two-parameter grid search walkthrough (loaded only when an article contains `two-param-demo`)
+- Interactive train/test split evaluation walkthrough (loaded only when an article contains `train-test-demo`)
+- Interactive feature transformation walkthrough (loaded only when an article contains `feature-transform-demo`)
 
 If you need to change article runtime behavior, start here.
 
@@ -94,3 +96,19 @@ If you need to change article runtime behavior, start here.
 ```
 
 - `mode` 可选 `affine32`（`3x + 2`）或 `affine24`（`2x + 4`），由 `two-param-model.js` 与 `two-param-demo.js` 驱动，支持点击 5×5 误差矩阵格子直接跳转。
+
+```html
+<train-test-demo mode="doubling">
+  <p>交互演示需要 JavaScript。默认用 [(1, 2), (2, 4)] 训练并选中 (2, 0)，再用未参与训练的 [(3, 8), (4, 16)] 测试，揭示训练平均误差 0.0 与测试平均误差 5.0 的差异。</p>
+</train-test-demo>
+```
+
+- `mode` 可选 `doubling`（翻倍样例，训练 `0.0` / 测试 `5.0`）或 `linear_ex`（同直线练习，训练 `0.0` / 测试 `0.0`），由 `train-test-model.js` 与 `train-test-demo.js` 驱动。
+
+```html
+<feature-transform-demo mode="exp_basic">
+  <p>交互演示需要 JavaScript。先算 transformed_x = 2 ** x 将指数曲线拉直，再用相同训练循环找到参数，验证 x = 5、6 测试误差均为 0.0。</p>
+</feature-transform-demo>
+```
+
+- `mode` 可选 `exp_basic`（`y = 2^x`）或 `exp_exercise`（`y = 3×(2^x) + 1`），由 `feature-transform-model.js` 与 `feature-transform-demo.js` 驱动。
