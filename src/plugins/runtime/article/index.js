@@ -1831,6 +1831,30 @@ export function initArticleRuntime(config = {}) {
           .catch((error) => console.error("video coding demo could not load", error));
       }
 
+      if (article.querySelector("param-learning-demo")) {
+        import("./param-learning-demo.js")
+          .then(({ registerParamLearningDemo }) => {
+            if (!signal.aborted && article.isConnected) registerParamLearningDemo();
+          })
+          .catch((error) => console.error("param learning demo could not load", error));
+      }
+
+      if (article.querySelector("step-adjust-demo")) {
+        import("./step-adjust-demo.js")
+          .then(({ registerStepAdjustDemo }) => {
+            if (!signal.aborted && article.isConnected) registerStepAdjustDemo();
+          })
+          .catch((error) => console.error("step adjust demo could not load", error));
+      }
+
+      if (article.querySelector("two-param-demo")) {
+        import("./two-param-demo.js")
+          .then(({ registerTwoParamDemo }) => {
+            if (!signal.aborted && article.isConnected) registerTwoParamDemo();
+          })
+          .catch((error) => console.error("two param demo could not load", error));
+      }
+
       if (article.querySelector("login-crypto-demo")) {
         import("./login-crypto-demo.js")
           .then(({ registerLoginCryptoDemo }) => {

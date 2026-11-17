@@ -18,6 +18,9 @@ Main responsibilities:
 - Reading history persistence
 - Interactive video coding lessons (loaded only when an article contains `video-coding-demo`)
 - Local Web Crypto login experiment (loaded only when an article contains `login-crypto-demo`)
+- Interactive parameter-learning walkthrough (loaded only when an article contains `param-learning-demo`)
+- Interactive step-adjusting parameter search walkthrough (loaded only when an article contains `step-adjust-demo`)
+- Interactive two-parameter grid search walkthrough (loaded only when an article contains `two-param-demo`)
 
 If you need to change article runtime behavior, start here.
 
@@ -64,3 +67,30 @@ If you need to change article runtime behavior, start here.
 定向检查：`node --test tests/unit/login-crypto-model.test.mjs`。生产页面验收依次点击“正常提交”“篡改密文”“重复提交”“过期挑战”，应分别显示成功、GCM 校验失败、已消费、已过期；点击“比较密码哈希”应显示不同随机盐/哈希、正确密码匹配且错误密码不匹配。检查 390px 窄屏、键盘聚焦和按钮禁用、离开后返回页面重新操作；不要为了自动化验收关闭站点防爬。
 
 新增验收：正常提交后 `data-same-aes-key="true"`，三步结果可见；“运行 RSA-OAEP 示例”完成后 `data-rsa-result="verified"`，输入为固定演示文本，密文256字节，解密一致且两次密文不同。原五按钮及 `data-result`、`data-hash-result` 契约保持不变。
+
+## 在 Markdown 中嵌入参数学习动画
+
+```html
+<param-learning-demo mode="double">
+  <p>交互演示需要 JavaScript。例题依次尝试候选参数 [1, 2, 3, 4]，比较总误差后选出 weight = 2，并预测输入 4 的结果为 8。</p>
+</param-learning-demo>
+```
+
+- `mode` 可选 `double`（例题 `[(1, 2), (2, 4), (3, 6)]`）或 `triple`（练习 `[(1, 3), (2, 6), (3, 9)]`），默认 `double`，页面内也可切换。
+- 由 `param-learning-model.js`（步骤计算）、`param-learning-demo.js`（交互、Canvas 绘图与生命周期）、`learning-demo-canvas.js` 与 `learning-demo-shared.css`（共享坐标系渲染与 Shadow DOM 样式）组成，不依赖外部动画库。
+
+```html
+<step-adjust-demo mode="fine">
+  <p>交互演示需要 JavaScript。默认以 step = 0.1 从 1.0 出发沿误差曲线走到 2.5；切换至 step = 1.0 时会在 2.0 处跨过 2.5 而提前停止。</p>
+</step-adjust-demo>
+```
+
+- `mode` 可选 `fine`（`step = 0.1`）、`coarse`（`step = 1.0`）或 `reverse`（`weight = 3.5, step = 0.1`），由 `step-adjust-model.js` 与 `step-adjust-demo.js` 驱动。
+
+```html
+<two-param-demo mode="affine32">
+  <p>交互演示需要 JavaScript。默认样例 [(1, 5), (2, 8), (3, 11)] 扫描 25 组 (weight, bias)，选出 (3, 2) 并预测输入 4 得 14。</p>
+</two-param-demo>
+```
+
+- `mode` 可选 `affine32`（`3x + 2`）或 `affine24`（`2x + 4`），由 `two-param-model.js` 与 `two-param-demo.js` 驱动，支持点击 5×5 误差矩阵格子直接跳转。
