@@ -963,6 +963,25 @@ img {
   white-space: normal;
 }
 
+@media (max-width: 720px) {
+  .prose .article-table-scroll > table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .prose th,
+  .prose td {
+    padding: 0.48rem 0.56rem;
+    font-size: 0.88rem;
+  }
+
+  .prose td code,
+  .prose th code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 .fade-up {
   animation: fade-up 280ms ease-out both;
 }
@@ -974,8 +993,13 @@ img {
 }
 
 @media (max-width: 900px) {
+  :root {
+    --layout-header-height: 98px;
+  }
+
   body {
     background: var(--bg);
+    padding-bottom: calc(4.2rem + env(safe-area-inset-bottom));
   }
 
   body::before,
@@ -1028,8 +1052,22 @@ img {
 .prose h1,
 .prose h2,
 .prose h3,
+.prose h4,
+.prose [id],
+param-learning-demo,
+step-adjust-demo,
+two-param-demo,
+train-test-demo,
+feature-transform-demo,
+video-coding-demo,
+login-crypto-demo {
+  scroll-margin-top: calc(var(--layout-header-height, 68px) + 18px);
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
 .prose h4 {
-  scroll-margin-top: calc(var(--layout-header-height, 68px) + 16px);
   font-family: var(--font-display);
   font-weight: 700;
   line-height: 1.24;

@@ -520,10 +520,15 @@ const {
     .tutorial-sidebar-mobile-open {
       display: inline-flex;
       position: fixed;
-      left: 1rem;
-      bottom: calc(5rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+      left: 14px;
+      bottom: calc(14px + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
       z-index: 78;
-      box-shadow: 0 8px 24px color-mix(in oklab, var(--text) 12%, transparent 88%);
+      color: var(--text);
+      font-size: 0.76rem;
+      line-height: 1.25;
+      padding: 0.48rem 0.86rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 24px -16px color-mix(in oklab, var(--text) 32%, transparent 68%);
     }
 
     .tutorial-sidebar-mobile-overlay {

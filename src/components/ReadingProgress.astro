@@ -154,7 +154,7 @@ const progressConfig = siteConfig.article.ui.readingProgress;
   .reading-progress-fab {
     position: fixed;
     right: var(--side-offset, 18px);
-    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    bottom: calc(var(--mascot-fab-clearance, 1rem) + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     transform: translateY(12px) scale(0.96);
     width: 52px;
     height: 52px;
@@ -213,6 +213,16 @@ const progressConfig = siteConfig.article.ui.readingProgress;
     font-weight: 700;
     color: var(--text);
     letter-spacing: 0.02em;
+  }
+
+  :global(html[data-mascot-visible="1"]) .reading-progress-fab {
+    --mascot-fab-clearance: 332px;
+  }
+
+  @media (min-width: 1521px) {
+    :global(html[data-mascot-visible="1"]) .reading-progress-fab {
+      --mascot-fab-clearance: 368px;
+    }
   }
 
   @media (max-width: 1024px) {

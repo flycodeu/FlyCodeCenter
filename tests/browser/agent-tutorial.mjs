@@ -392,8 +392,60 @@ try {
     return w ? !w.classList.contains('is-silent-loading') : false;
   });
   assert.equal(mascotSilentDone, true);
+  // Desktop ReadingProgress FAB and MascotWidget must not overlap
+  await navPage.evaluate(() => window.scrollTo(0, 500));
+  await navPage.waitForTimeout(350);
+  const desktopOverlap = await navPage.evaluate(() => {
+    const a = document.getElementById('fly-mascot-widget')?.getBoundingClientRect();
+    const b = document.getElementById('reading-progress-fab')?.getBoundingClientRect();
+    if (!a || !b || b.width === 0 || b.height === 0) return false;
+    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+  });
+  assert.equal(desktopOverlap, false);
   assert.deepEqual(navErrors, []);
   await navCtx.close();
+
+  // Verify 390px mobile header starts with "首页" visible and bottom controls do not overlap
+  const mobCtx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+  });
+  const mobPage = await mobCtx.newPage();
+  await mobPage.goto(`${base}/tutorials/tagent-lesson04/`, { waitUntil: 'domcontentloaded' });
+  await mobPage.evaluate(() => window.scrollTo(0, 320));
+  await mobPage.waitForTimeout(200);
+  const mobCheck = await mobPage.evaluate(() => {
+    const nav = document.querySelector('.nav');
+    const firstLink = nav?.querySelector('.nav-link');
+    const navRect = nav?.getBoundingClientRect();
+    const linkRect = firstLink?.getBoundingClientRect();
+    const rects = [
+      document.querySelector('.tutorial-sidebar-mobile-open'),
+      document.querySelector('.toc-mobile-toggle'),
+      document.getElementById('mascot-summoner-btn')
+    ]
+      .filter((el) => el && getComputedStyle(el).display !== 'none')
+      .map((el) => el.getBoundingClientRect());
+    let overlap = false;
+    for (let i = 0; i < rects.length; i += 1) {
+      for (let j = i + 1; j < rects.length; j += 1) {
+        const a = rects[i];
+        const b = rects[j];
+        if (!(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom)) {
+          overlap = true;
+        }
+      }
+    }
+    return {
+      firstText: firstLink?.textContent?.trim(),
+      firstLinkVisible: Boolean(navRect && linkRect && linkRect.left >= navRect.left - 1 && linkRect.right <= navRect.right + 1),
+      overlap
+    };
+  });
+  assert.equal(mobCheck.firstText, '首页');
+  assert.equal(mobCheck.firstLinkVisible, true);
+  assert.equal(mobCheck.overlap, false);
+  await mobCtx.close();
 
   console.log(JSON.stringify({ ok: true, output }, null, 2));
 } finally {

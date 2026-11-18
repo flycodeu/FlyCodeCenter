@@ -223,7 +223,11 @@ const moreActive = moreItems.some((item) => isActive(item.link));
       overflow-y: hidden;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 0.08rem;
+      justify-content: flex-start;
+      scroll-padding-inline: 0.2rem;
+      padding: 0 0.75rem 0.08rem 0;
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
+      mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
     }
 
     .nav::-webkit-scrollbar {
@@ -240,7 +244,9 @@ const moreActive = moreItems.some((item) => isActive(item.link));
 
     :global(.nav-link) {
       min-height: 40px;
-      padding: 0.46rem 0.82rem;
+      min-height: 36px;
+      padding: 0.36rem 0.68rem;
+      font-size: 0.8rem;
     }
   }
 </style>

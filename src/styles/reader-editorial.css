@@ -425,6 +425,27 @@
   overflow-wrap: break-word;
 }
 
+@media (max-width: 720px) {
+  .reading-page .reading-body .article-table-scroll {
+    inline-size: 100%;
+  }
+
+  .reading-page .reading-body .article-table-scroll > table {
+    inline-size: 100%;
+  }
+
+  .reading-page .reading-body .article-table-scroll > table th,
+  .reading-page .reading-body .article-table-scroll > table td {
+    padding: 0.56rem 0.62rem;
+    font-size: 0.88rem;
+  }
+
+  .reading-page .reading-body .article-table-scroll code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 .reading-page .reading-body .article-table-scroll::-webkit-scrollbar {
   height: 10px;
 }

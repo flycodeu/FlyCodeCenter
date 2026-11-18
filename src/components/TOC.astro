@@ -454,19 +454,26 @@ const list: TocItem[] = filtered.map((item) => {
 
   .toc-mobile-toggle {
     position: fixed;
-    right: 1rem;
-    bottom: calc(5rem + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
+    left: 14px;
+    right: auto;
+    bottom: calc(14px + env(safe-area-inset-bottom) + var(--floating-safe-bottom, 0px));
     z-index: 78;
     border: 1px solid color-mix(in oklab, var(--line) 74%, transparent 26%);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--bg-elev) 88%, transparent 12%);
+    background: color-mix(in oklab, var(--bg-elev) 90%, transparent 10%);
+    backdrop-filter: blur(10px);
     color: var(--text);
     font-family: var(--font-tech);
     font-size: 0.76rem;
     font-weight: 700;
+    line-height: 1.25;
     letter-spacing: 0.08em;
     padding: 0.48rem 0.86rem;
-    box-shadow: 0 18px 32px -26px rgb(15 23 42 / 0.34);
+    box-shadow: 0 12px 24px -16px rgb(15 23 42 / 0.36);
+  }
+
+  :global(.tutorial-reader:not(.no-sidebar)) .toc-mobile-toggle {
+    left: calc(14px + 86px);
   }
 
   .toc-mobile-overlay {

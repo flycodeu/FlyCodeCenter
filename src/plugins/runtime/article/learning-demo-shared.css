@@ -526,6 +526,18 @@ select {
 
   .mode-picker {
     padding: 12px 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .var-chip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .var-chip span {
+    white-space: nowrap;
   }
 
   .stage-grid {

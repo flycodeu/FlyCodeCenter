@@ -146,12 +146,31 @@
       }
     }
 
+    function shouldIgnoreClick(e: PointerEvent): boolean {
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        target?.closest(
+          "button, a, input, select, textarea, label, pre, code, .code-block-wrapper, .demo, .mascot-widget, .mascot-ai-box, .reading-progress-fab, .toc-mobile-toggle, .tutorial-sidebar-mobile-open"
+        )
+      ) {
+        return true;
+      }
+      if (typeof e.composedPath === "function") {
+        const interactiveHostSelector =
+          "param-learning-demo, step-adjust-demo, two-param-demo, train-test-demo, feature-transform-demo, video-coding-demo, login-crypto-demo";
+        return e.composedPath().some(
+          (node) => node instanceof Element && node.matches?.(interactiveHostSelector)
+        );
+      }
+      return false;
+    }
+
     if (!(window as any).__flyClickEffectsInited) {
       (window as any).__flyClickEffectsInited = true;
       window.addEventListener(
         "pointerdown",
         (e) => {
-          if (e.button === 0) {
+          if (e.button === 0 && !shouldIgnoreClick(e)) {
             createClickEffect(e);
           }
         },

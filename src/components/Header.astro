@@ -160,8 +160,15 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
       grid-template-areas:
         "logo actions"
         "nav nav";
-      padding: 0.75rem 0;
-      gap: 0.75rem;
+      padding: 0.48rem 0;
+      gap: 0.45rem;
+    }
+
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      font-size: 0.84rem;
     }
 
     .logo {
@@ -170,6 +177,7 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
 
     :global(.nav) {
       grid-area: nav;
+      justify-content: flex-start;
     }
 
     .actions {

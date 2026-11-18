@@ -36,7 +36,11 @@ const featuredConfig = siteConfig.home.featured;
 const tagCount = makeTagItems(allEntries).length;
 const seriesBuckets = Array.from(buildTutorialSeriesBuckets(tutorials).values())
   .filter((bucket) => bucket.entries.length > 0)
-  .sort((a, b) => b.entries.length - a.entries.length)
+  .sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    if (b.latestAt !== a.latestAt) return b.latestAt - a.latestAt;
+    return b.entries.length - a.entries.length;
+  })
   .slice(0, 4);
 const topTags = makeTagItems(allEntries).slice(0, 10);
 const homeFeedConfig = (siteConfig.home as { feed?: { mode?: "page" | "infinite"; pageSize?: number; mixCollections?: readonly ("blog" | "tutorial")[] } }).feed ?? {};

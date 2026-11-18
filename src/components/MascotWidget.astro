@@ -233,6 +233,17 @@ const allowDrag = config.allowDrag ?? true;
     bottom: -46px;
   }
 
+  @media (min-width: 769px) and (max-width: 1520px) {
+    .fly-mascot-container {
+      transform: scale(0.86);
+      transform-origin: right bottom;
+    }
+
+    .fly-mascot-container.pos-bottom-left {
+      transform-origin: left bottom;
+    }
+  }
+
   /* 角色底部微光地台光晕 (消除悬空突兀感，优雅承托) */
   .mascot-pedestal {
     position: absolute;
@@ -1230,6 +1241,7 @@ const allowDrag = config.allowDrag ?? true;
                   window.setTimeout(() => {
                     if (!isClosed) {
                       widget.classList.remove("is-silent-loading");
+                      document.documentElement.dataset.mascotVisible = "1";
                     }
                   }, 180);
                 } catch (err) {
@@ -1785,9 +1797,12 @@ const allowDrag = config.allowDrag ?? true;
       if (isClosed) {
         widget.style.display = "none";
         summonerBtn.style.display = "inline-flex";
+        document.documentElement.dataset.mascotVisible = "0";
       } else {
         widget.style.display = "flex";
         summonerBtn.style.display = "none";
+        document.documentElement.dataset.mascotVisible =
+          widget.classList.contains("is-silent-loading") ? "0" : "1";
       }
     }
 
