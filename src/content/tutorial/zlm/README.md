@@ -19,13 +19,13 @@ showOnHome: false
 
 | 顺序 | 文章 | 实际完成的操作 |
 | --- | --- | --- |
-| 00 | [准备模拟源与 Python 工具](/tutorials/zlm-setup/) | 创建视频源；解析地址、查看轨道、读取一帧 |
-| 01 | [RTSP 接入](/tutorials/zlm-rtsp/) | ZLM 拉取 RTSP，转 WebRTC 播放 |
-| 02 | [RTMP 接入](/tutorials/zlm-rtmp/) | 区分主动推流与 RTMP 拉流 |
-| 03 | [HTTP-FLV 接入](/tutorials/zlm-flv/) | 从连续 HTTP 响应读取 FLV |
-| 04 | [HLS 接入](/tutorials/zlm-hls/) | 读取播放列表和 TS 分片 |
-| 05 | [主动 RTSP / cRTSP](/tutorials/zlm-crtsp/) | 发布端主动连接 ZLM |
-| 06 | [GB28181 与 PS/RTP](/tutorials/zlm-gb28181/) | 说明 SIP 会话，执行 PS/RTP 媒体接收实验 |
+| 00 | [准备模拟源与 Python 工具](/tutorials/tzlm-setup/) | 创建视频源；解析地址、查看轨道、读取一帧 |
+| 01 | [RTSP 接入](/tutorials/tzlm-rtsp/) | ZLM 拉取 RTSP，转 WebRTC 播放 |
+| 02 | [RTMP 接入](/tutorials/tzlm-rtmp/) | 区分主动推流与 RTMP 拉流 |
+| 03 | [HTTP-FLV 接入](/tutorials/tzlm-flv/) | 从连续 HTTP 响应读取 FLV |
+| 04 | [HLS 接入](/tutorials/tzlm-hls/) | 读取播放列表和 TS 分片 |
+| 05 | [主动 RTSP / cRTSP](/tutorials/tzlm-crtsp/) | 发布端主动连接 ZLM |
+| 06 | [GB28181 与 PS/RTP](/tutorials/tzlm-gb28181/) | 说明 SIP 会话，执行 PS/RTP 媒体接收实验 |
 
 每篇都使用 [zlm_core.py](/examples/zlm-protocols/zlm_core.py)。下载后不需要安装 pip 依赖。仅读取地址时不需要 ZLM；读取视频参数和像素需要 ffprobe / FFmpeg。
 

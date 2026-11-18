@@ -19,7 +19,7 @@ tags:
 
 ## 创建主动发布模拟源
 
-按[准备篇](/tutorials/zlm-setup/)配置 ZLM、Python 和 FFmpeg。本篇可独立运行，不必先启动 RTMP 模拟源：
+按[准备篇](/tutorials/tzlm-setup/)配置 ZLM、Python 和 FFmpeg。本篇可独立运行，不必先启动 RTMP 模拟源：
 
 ```shell
 ffmpeg -re -f lavfi -i testsrc2=size=640x360:rate=15 -t 600 -an -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -g 15 -bf 0 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/push/camera

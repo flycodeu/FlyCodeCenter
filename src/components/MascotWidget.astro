@@ -362,6 +362,14 @@ const allowDrag = config.allowDrag ?? true;
     transition-delay: 0s; /* 移入立即展现 */
   }
 
+  @media (hover: none) {
+    .mascot-toolbar {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
   /* 当 AI 面板打开时，气泡隐藏，避免与 AI 对话重叠冲突 */
   .mascot-widget.ai-open .mascot-bubble {
     display: none !important;

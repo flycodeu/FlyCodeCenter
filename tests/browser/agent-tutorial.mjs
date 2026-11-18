@@ -445,6 +445,16 @@ try {
   assert.equal(mobCheck.firstText, '首页');
   assert.equal(mobCheck.firstLinkVisible, true);
   assert.equal(mobCheck.overlap, false);
+
+  // Verify mobile sidebar and TOC drawers open above header/mascot and close buttons click cleanly
+  await mobPage.locator('.tutorial-sidebar-mobile-open').click();
+  await mobPage.locator('.mobile-drawer.open').waitFor({ timeout: 3000 });
+  await mobPage.locator('.tutorial-sidebar-mobile-close').first().click({ timeout: 3000 });
+
+  await mobPage.locator('.toc-mobile-toggle').click();
+  await mobPage.locator('.toc-mobile-panel.open').waitFor({ timeout: 3000 });
+  await mobPage.locator('.toc-mobile-close').click({ timeout: 3000 });
+  await mobPage.waitForFunction(() => !document.body.classList.contains('toc-drawer-open'), null, { timeout: 3000 });
   await mobCtx.close();
 
   console.log(JSON.stringify({ ok: true, output }, null, 2));

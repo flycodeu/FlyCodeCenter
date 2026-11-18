@@ -19,7 +19,7 @@ http://主机:端口/app/stream/hls.m3u8。列表中的分片可能是相对路�
 
 ## 先启动模拟源
 
-按[准备篇](/tutorials/zlm-setup/)设置环境变量并下载 [zlm_core.py](/examples/zlm-protocols/zlm_core.py)。窗口 A 保持以下命令运行：
+按[准备篇](/tutorials/tzlm-setup/)设置环境变量并下载 [zlm_core.py](/examples/zlm-protocols/zlm_core.py)。窗口 A 保持以下命令运行：
 
 ```shell
 ffmpeg -re -f lavfi -i testsrc2=size=640x360:rate=15 -t 600 -an -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -g 15 -bf 0 -f flv rtmp://127.0.0.1:1935/sim/camera

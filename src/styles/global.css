@@ -992,6 +992,13 @@ img {
   }
 }
 
+@media (max-width: 1024px) {
+  body.toc-drawer-open main,
+  body.tutorial-sidebar-drawer-open main {
+    z-index: 88;
+  }
+}
+
 @media (max-width: 900px) {
   :root {
     --layout-header-height: 98px;
